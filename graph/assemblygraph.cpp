@@ -17,35 +17,36 @@
 
 
 #include "assemblygraph.h"
-#include <QMapIterator>
-#include "../program/globals.h"
-#include "../program/settings.h"
-#include <limits>
-#include <algorithm>
-#include "../graph/debruijnnode.h"
-#include "../graph/debruijnedge.h"
-#include "../graph/graphicsitemnode.h"
-#include <QFile>
-#include <QTextStream>
-#include <QApplication>
-#include "../graph/graphicsitemedge.h"
+#include "ogdfnode.h"
+#include "path.h"
+
 #include "../blast/blastsearch.h"
+#include "../command_line/commoncommandlinefunctions.h"
+#include "../graph/debruijnedge.h"
+#include "../graph/debruijnnode.h"
+#include "../graph/graphicsitemedge.h"
+#include "../graph/graphicsitemnode.h"
 #include "../ogdf/energybased/FMMMLayout.h"
+#include "../program/globals.h"
 #include "../program/graphlayoutworker.h"
 #include "../program/memory.h"
-#include "path.h"
+#include "../program/settings.h"
 #include "../ui/myprogressdialog.h"
-#include <limits>
-#include <QSet>
-#include <QQueue>
-#include <QList>
-#include <math.h>
-#include <QFileInfo>
+
+#include <QApplication>
 #include <QDir>
-#include <QRegExp>
+#include <QFile>
+#include <QFileInfo>
+#include <QList>
+#include <QMapIterator>
+#include <QQueue>
 #include <QRegularExpression>
-#include "ogdfnode.h"
-#include "../command_line/commoncommandlinefunctions.h"
+#include <QSet>
+#include <QTextStream>
+
+#include <algorithm>
+#include <limits>
+#include <cmath>
 
 AssemblyGraph::AssemblyGraph() :
     m_kmer(0), m_contiguitySearchDone(false),
@@ -954,18 +955,16 @@ int AssemblyGraph::getLengthFromCigar(QString cigar)
 //This function totals up the numbers for any given CIGAR code.
 int AssemblyGraph::getCigarCount(QString cigarCode, QString cigar)
 {
-    QRegExp rx("(\\d+)" + cigarCode);
+    QRegularExpression re("(\\d+)" + cigarCode);
     QStringList list;
-    int pos = 0;
-    while ((pos = rx.indexIn(cigar, pos)) != -1)
-    {
-        list << rx.cap(1);
-        pos += rx.matchedLength();
-    }
 
+    auto it = re.globalMatch(cigar);
     int sum = 0;
-    for (int i = 0; i < list.size(); ++i)
-        sum += list.at(i).toInt();
+    while(it.hasNext()) {
+        auto match = it.next();
+        list << match.captured(1);
+        sum += match.captured(1).toInt();
+    }
 
     return sum;
 }
@@ -1615,18 +1614,19 @@ bool AssemblyGraph::checkFirstLineOfFile(QString fullFileName, QString regExp)
  */
 QStringList AssemblyGraph::splitCsv(QString line, QString sep)
 {
+    QRegularExpression rx(R"(("(?:[^"]|"")*"|[^)" + sep + "]*)");
     QStringList list;
-    QRegExp rx("(\"(?:[^\"]|\"\")*\"|[^"+sep+"]*)");
-    int pos = 0;
 
-    while (rx.indexIn(line, pos) != -1)
-    {
-        QString field = rx.cap().replace("\"\"","\"");
-        if (field[0] == '"' && field[field.length()-1] == '"')
-            field=field.mid(1,field.length()-2);
+    auto it = rx.globalMatch(line);
+    while (it.hasNext()) {
+        auto match = it.next();
+        QString field = match.captured().replace("\"\"", "\"");
+        if (field[0] == '"' && field[field.length() - 1] == '"') {
+            field = field.mid(1, field.length() - 2);
+        }
         list << field;
-        pos += rx.matchedLength() +1;
     }
+
     return list;
 }
 

@@ -17,13 +17,14 @@
 
 
 #include "commoncommandlinefunctions.h"
+
 #include "../graph/assemblygraph.h"
-#include <QDir>
 #include "../blast/blastsearch.h"
-#include <QApplication>
-#include <QRegExp>
 #include "../program/memory.h"
-#include <limits>
+
+#include <QDir>
+#include <QApplication>
+#include <QRegularExpression>
 
 
 QStringList getArgumentList(int argc, char *argv[])
@@ -1265,20 +1266,19 @@ bool isOption(QString text)
 {
     bool option = (text.length() > 2 && text[0] == '-' && text[1] == '-' && text[2] != '-');
 
-    QRegExp rx("^<[\\w_]+>");
-    bool positional = (rx.indexIn(text) != -1);
-
-    return option || positional;
+    QRegularExpression rx("^[\\w ]+:");
+    return option || text.contains(rx);
 }
 
 bool isSectionHeader(QString text)
 {
     //Make an exception:
-    if (text.startsWith("Node widths are determined"))
+    if (text.startsWith("Node widths are determined")) {
         return false;
+    }
 
-    QRegExp rx("^[\\w ]+:");
-    return (rx.indexIn(text) != -1);
+    QRegularExpression rx("^[\\w ]+:");
+    return text.contains(rx);
 }
 
 
