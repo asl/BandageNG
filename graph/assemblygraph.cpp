@@ -960,9 +960,8 @@ int AssemblyGraph::getCigarCount(QString cigarCode, QString cigar)
 
     auto it = re.globalMatch(cigar);
     int sum = 0;
-    while(it.hasNext()) {
+    while (it.hasNext()) {
         auto match = it.next();
-        list << match.captured(1);
         sum += match.captured(1).toInt();
     }
 
