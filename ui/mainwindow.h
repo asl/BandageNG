@@ -19,16 +19,18 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include <QMainWindow>
-#include <QGraphicsScene>
-#include <QMap>
-#include <QString>
-#include <vector>
-#include <QLineEdit>
-#include <QRectF>
-#include "../program/globals.h"
-#include <QThread>
 #include "../ogdf/energybased/FMMMLayout.h"
+#include "../program/globals.h"
+
+#include <QGraphicsScene>
+#include <QLineEdit>
+#include <QMainWindow>
+#include <QMap>
+#include <QRectF>
+#include <QString>
+#include <QThread>
+
+#include <vector>
 
 Q_MOC_INCLUDE("../graph/debruijnnode.h")
 

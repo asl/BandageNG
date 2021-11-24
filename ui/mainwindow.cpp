@@ -16,57 +16,58 @@
 //along with Bandage.  If not, see <http://www.gnu.org/licenses/>.
 
 
-#include "mainwindow.h"
-#include "ui_mainwindow.h"
-#include <QFileDialog>
-#include <QLatin1String>
-#include <QTextStream>
-#include <QLocale>
-#include <QRegExp>
-#include "../ogdf/energybased/FMMMLayout.h"
-#include <math.h>
-#include "../program/settings.h"
-#include <QClipboard>
-#include <QTransform>
-#include <QFontDialog>
-#include <QColorDialog>
-#include <algorithm>
-#include <QFile>
-#include <QTextStream>
-#include <QScrollBar>
-#include "settingsdialog.h"
-#include <stdlib.h>
-#include <time.h>
-#include <QProgressDialog>
-#include <QThread>
-#include "../program/graphlayoutworker.h"
-#include <QRegExp>
-#include <QMessageBox>
-#include <QInputDialog>
-#include <QShortcut>
 #include "aboutdialog.h"
-#include <QMainWindow>
 #include "blastsearchdialog.h"
-#include "../graph/assemblygraph.h"
-#include "mygraphicsview.h"
-#include "graphicsviewzoom.h"
-#include "mygraphicsscene.h"
-#include "../blast/blastsearch.h"
-#include "../graph/debruijnnode.h"
-#include "../graph/debruijnedge.h"
-#include "../graph/graphicsitemnode.h"
-#include "../graph/graphicsitemedge.h"
-#include "myprogressdialog.h"
-#include <limits>
-#include <QDesktopServices>
-#include <QSvgGenerator>
-#include "../graph/path.h"
-#include "pathspecifydialog.h"
-#include "../program/memory.h"
-#include "changenodenamedialog.h"
 #include "changenodedepthdialog.h"
-#include <limits>
+#include "changenodenamedialog.h"
+#include "graphicsviewzoom.h"
 #include "graphinfodialog.h"
+#include "mainwindow.h"
+#include "mygraphicsscene.h"
+#include "mygraphicsview.h"
+#include "myprogressdialog.h"
+#include "pathspecifydialog.h"
+#include "settingsdialog.h"
+#include "ui_mainwindow.h"
+
+#include "../blast/blastsearch.h"
+#include "../graph/assemblygraph.h"
+#include "../graph/debruijnedge.h"
+#include "../graph/debruijnnode.h"
+#include "../graph/graphicsitemedge.h"
+#include "../graph/graphicsitemnode.h"
+#include "../graph/path.h"
+#include "../ogdf/energybased/FMMMLayout.h"
+#include "../program/graphlayoutworker.h"
+#include "../program/memory.h"
+#include "../program/settings.h"
+
+#include <QClipboard>
+#include <QColorDialog>
+#include <QDesktopServices>
+#include <QFile>
+#include <QFileDialog>
+#include <QFontDialog>
+#include <QInputDialog>
+#include <QLatin1String>
+#include <QLocale>
+#include <QMainWindow>
+#include <QMessageBox>
+#include <QProgressDialog>
+
+#include <QScrollBar>
+#include <QShortcut>
+#include <QSvgGenerator>
+#include <QTextStream>
+#include <QTextStream>
+#include <QThread>
+#include <QTransform>
+
+#include <algorithm>
+#include <limits>
+#include <cmath>
+#include <cstdlib>
+#include <ctime>
 
 MainWindow::MainWindow(QString fileToLoadOnStartup, bool drawGraphAfterLoad) :
     QMainWindow(0),
