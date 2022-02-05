@@ -20,15 +20,15 @@
 #include <QDebug>
 #include "ogdf/basic/Graph.h"
 #include "ogdf/basic/GraphAttributes.h"
-#include "../graph/assemblygraph.h"
-#include "../program/settings.h"
-#include "../blast/blastsearch.h"
-#include "../ui/mygraphicsview.h"
-#include "../program/memory.h"
-#include "../graph/debruijnnode.h"
-#include "../graph/debruijnedge.h"
-#include "../program/globals.h"
-#include "../command_line/commoncommandlinefunctions.h"
+#include "graph/assemblygraph.h"
+#include "program/settings.h"
+#include "blast/blastsearch.h"
+#include "ui/mygraphicsview.h"
+#include "program/memory.h"
+#include "graph/debruijnnode.h"
+#include "graph/debruijnedge.h"
+#include "program/globals.h"
+#include "command_line/commoncommandlinefunctions.h"
 
 class BandageTests : public QObject
 {
@@ -525,7 +525,7 @@ void BandageTests::graphScope()
     g_settings->graphScope = WHOLE_GRAPH;
     g_settings->nodeDistance = 0;
     g_settings->doubleMode = false;
-    startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage, g_settings->doubleMode, g_settings->startingNodes, "");
+    startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage, g_settings->doubleMode, g_settings->startingNodes, "", "");
     g_assemblyGraph->buildOgdfGraphFromNodesAndEdges(startingNodes, g_settings->nodeDistance);
     g_assemblyGraph->layoutGraph();
     drawnNodes = g_assemblyGraph->getDrawnNodeCount();
@@ -534,7 +534,7 @@ void BandageTests::graphScope()
     g_settings->graphScope = WHOLE_GRAPH;
     g_settings->nodeDistance = 0;
     g_settings->doubleMode = true;
-    startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage, g_settings->doubleMode, g_settings->startingNodes, "");
+    startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage, g_settings->doubleMode, g_settings->startingNodes, "", "");
     g_assemblyGraph->buildOgdfGraphFromNodesAndEdges(startingNodes, g_settings->nodeDistance);
     g_assemblyGraph->layoutGraph();
     drawnNodes = g_assemblyGraph->getDrawnNodeCount();
@@ -544,7 +544,7 @@ void BandageTests::graphScope()
     g_settings->startingNodes = "1";
     g_settings->nodeDistance = 0;
     g_settings->doubleMode = false;
-    startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage, g_settings->doubleMode, g_settings->startingNodes, "");
+    startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage, g_settings->doubleMode, g_settings->startingNodes, "", "");
     g_assemblyGraph->buildOgdfGraphFromNodesAndEdges(startingNodes, g_settings->nodeDistance);
     g_assemblyGraph->layoutGraph();
     drawnNodes = g_assemblyGraph->getDrawnNodeCount();
@@ -554,7 +554,7 @@ void BandageTests::graphScope()
     g_settings->startingNodes = "1";
     g_settings->nodeDistance = 0;
     g_settings->doubleMode = true;
-    startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage, g_settings->doubleMode, g_settings->startingNodes, "");
+    startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage, g_settings->doubleMode, g_settings->startingNodes, "", "");
     g_assemblyGraph->buildOgdfGraphFromNodesAndEdges(startingNodes, g_settings->nodeDistance);
     g_assemblyGraph->layoutGraph();
     drawnNodes = g_assemblyGraph->getDrawnNodeCount();
@@ -564,7 +564,7 @@ void BandageTests::graphScope()
     g_settings->startingNodes = "1+";
     g_settings->nodeDistance = 0;
     g_settings->doubleMode = true;
-    startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage, g_settings->doubleMode, g_settings->startingNodes, "");
+    startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage, g_settings->doubleMode, g_settings->startingNodes, "", "");
     g_assemblyGraph->buildOgdfGraphFromNodesAndEdges(startingNodes, g_settings->nodeDistance);
     g_assemblyGraph->layoutGraph();
     drawnNodes = g_assemblyGraph->getDrawnNodeCount();
@@ -574,7 +574,7 @@ void BandageTests::graphScope()
     g_settings->startingNodes = "1";
     g_settings->nodeDistance = 1;
     g_settings->doubleMode = false;
-    startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage, g_settings->doubleMode, g_settings->startingNodes, "");
+    startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage, g_settings->doubleMode, g_settings->startingNodes, "", "");
     g_assemblyGraph->buildOgdfGraphFromNodesAndEdges(startingNodes, g_settings->nodeDistance);
     g_assemblyGraph->layoutGraph();
     drawnNodes = g_assemblyGraph->getDrawnNodeCount();
@@ -584,7 +584,7 @@ void BandageTests::graphScope()
     g_settings->startingNodes = "1";
     g_settings->nodeDistance = 2;
     g_settings->doubleMode = false;
-    startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage, g_settings->doubleMode, g_settings->startingNodes, "");
+    startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage, g_settings->doubleMode, g_settings->startingNodes, "", "");
     g_assemblyGraph->buildOgdfGraphFromNodesAndEdges(startingNodes, g_settings->nodeDistance);
     g_assemblyGraph->layoutGraph();
     drawnNodes = g_assemblyGraph->getDrawnNodeCount();
@@ -595,7 +595,7 @@ void BandageTests::graphScope()
     g_settings->doubleMode = false;
     g_settings->minDepthRange = 0.0;
     g_settings->maxDepthRange = 211.0;
-    startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage, g_settings->doubleMode, g_settings->startingNodes, "");
+    startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage, g_settings->doubleMode, g_settings->startingNodes, "", "");
     g_assemblyGraph->buildOgdfGraphFromNodesAndEdges(startingNodes, g_settings->nodeDistance);
     g_assemblyGraph->layoutGraph();
     drawnNodes = g_assemblyGraph->getDrawnNodeCount();
@@ -606,7 +606,7 @@ void BandageTests::graphScope()
     g_settings->doubleMode = false;
     g_settings->minDepthRange = 0.0;
     g_settings->maxDepthRange = 211.0;
-    startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage, g_settings->doubleMode, g_settings->startingNodes, "");
+    startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage, g_settings->doubleMode, g_settings->startingNodes, "", "");
     g_assemblyGraph->buildOgdfGraphFromNodesAndEdges(startingNodes, g_settings->nodeDistance);
     g_assemblyGraph->layoutGraph();
     drawnNodes = g_assemblyGraph->getDrawnNodeCount();
@@ -617,7 +617,7 @@ void BandageTests::graphScope()
     g_settings->doubleMode = false;
     g_settings->minDepthRange = 211.0;
     g_settings->maxDepthRange = 1000.0;
-    startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage, g_settings->doubleMode, g_settings->startingNodes, "");
+    startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage, g_settings->doubleMode, g_settings->startingNodes, "", "");
     g_assemblyGraph->buildOgdfGraphFromNodesAndEdges(startingNodes, g_settings->nodeDistance);
     g_assemblyGraph->layoutGraph();
     drawnNodes = g_assemblyGraph->getDrawnNodeCount();
@@ -628,7 +628,7 @@ void BandageTests::graphScope()
     g_settings->doubleMode = false;
     g_settings->minDepthRange = 40.0;
     g_settings->maxDepthRange = 211.0;
-    startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage, g_settings->doubleMode, g_settings->startingNodes, "");
+    startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage, g_settings->doubleMode, g_settings->startingNodes, "", "");
     g_assemblyGraph->buildOgdfGraphFromNodesAndEdges(startingNodes, g_settings->nodeDistance);
     g_assemblyGraph->layoutGraph();
     drawnNodes = g_assemblyGraph->getDrawnNodeCount();
@@ -642,7 +642,7 @@ void BandageTests::graphScope()
     g_settings->graphScope = AROUND_BLAST_HITS;
     g_settings->nodeDistance = 0;
     g_settings->doubleMode = false;
-    startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage, g_settings->doubleMode, g_settings->startingNodes, "all");
+    startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage, g_settings->doubleMode, g_settings->startingNodes, "all", "");
     g_assemblyGraph->buildOgdfGraphFromNodesAndEdges(startingNodes, g_settings->nodeDistance);
     g_assemblyGraph->layoutGraph();
     drawnNodes = g_assemblyGraph->getDrawnNodeCount();
@@ -651,7 +651,7 @@ void BandageTests::graphScope()
     g_settings->graphScope = AROUND_BLAST_HITS;
     g_settings->nodeDistance = 1;
     g_settings->doubleMode = false;
-    startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage, g_settings->doubleMode, g_settings->startingNodes, "all");
+    startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage, g_settings->doubleMode, g_settings->startingNodes, "all", "");
     g_assemblyGraph->buildOgdfGraphFromNodesAndEdges(startingNodes, g_settings->nodeDistance);
     g_assemblyGraph->layoutGraph();
     drawnNodes = g_assemblyGraph->getDrawnNodeCount();
@@ -660,7 +660,7 @@ void BandageTests::graphScope()
     g_settings->graphScope = AROUND_BLAST_HITS;
     g_settings->nodeDistance = 2;
     g_settings->doubleMode = false;
-    startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage, g_settings->doubleMode, g_settings->startingNodes, "all");
+    startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage, g_settings->doubleMode, g_settings->startingNodes, "all", "");
     g_assemblyGraph->buildOgdfGraphFromNodesAndEdges(startingNodes, g_settings->nodeDistance);
     g_assemblyGraph->layoutGraph();
     drawnNodes = g_assemblyGraph->getDrawnNodeCount();
