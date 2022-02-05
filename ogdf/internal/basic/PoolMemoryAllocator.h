@@ -53,9 +53,9 @@
 #define OGDF_POOL_MEMORY_ALLOCATOR_H
 
 #ifndef OGDF_MEMORY_POOL_NTS
-#include "../../basic/CriticalSection.h"
+#include "ogdf/basic/CriticalSection.h"
 #else
-#include "../../basic/System.h"
+#include "ogdf/basic/System.h"
 #endif
 
 

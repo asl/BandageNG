@@ -1,8 +1,8 @@
 #include "changenodenamedialog.h"
 #include "ui_changenodenamedialog.h"
 
-#include "../program/globals.h"
-#include "../graph/assemblygraph.h"
+#include "program/globals.h"
+#include "graph/assemblygraph.h"
 #include <QPushButton>
 
 ChangeNodeNameDialog::ChangeNodeNameDialog(QWidget * parent, QString oldName) :

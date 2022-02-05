@@ -54,9 +54,9 @@
 
 
 
-#include "../basic/GraphAttributes.h"
-#include "../basic/Constraints.h"
-#include "../internal/energybased/MultilevelGraph.h"
+#include "ogdf/basic/GraphAttributes.h"
+#include "ogdf/basic/Constraints.h"
+#include "ogdf/internal/energybased/MultilevelGraph.h"
 
 namespace ogdf {
 

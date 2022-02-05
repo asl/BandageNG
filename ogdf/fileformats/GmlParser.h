@@ -52,11 +52,11 @@
 #define OGDF_GML_PARSER_H
 
 
-#include "../basic/Hashing.h"
-#include "../basic/String.h"
-#include "../basic/GraphAttributes.h"
-#include "../cluster/ClusterGraph.h"
-#include "../cluster/ClusterGraphAttributes.h"
+#include "ogdf/basic/Hashing.h"
+#include "ogdf/basic/String.h"
+#include "ogdf/basic/GraphAttributes.h"
+#include "ogdf/cluster/ClusterGraph.h"
+#include "ogdf/cluster/ClusterGraphAttributes.h"
 
 
 namespace ogdf {

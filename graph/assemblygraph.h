@@ -22,12 +22,12 @@
 #include <QObject>
 #include <vector>
 
-#include "../ogdf/basic/Graph.h"
-#include "../ogdf/basic/GraphAttributes.h"
+#include "ogdf/basic/Graph.h"
+#include "ogdf/basic/GraphAttributes.h"
 #include <QString>
 #include <QMap>
-#include "../program/globals.h"
-#include "../ui/mygraphicsscene.h"
+#include "program/globals.h"
+#include "ui/mygraphicsscene.h"
 #include "path.h"
 #include <QPair>
 

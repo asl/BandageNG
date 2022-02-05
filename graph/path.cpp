@@ -19,8 +19,8 @@
 #include "path.h"
 #include "debruijnnode.h"
 #include "debruijnedge.h"
-#include "../blast/blasthit.h"
-#include "../blast/blastquery.h"
+#include "blast/blasthit.h"
+#include "blast/blastquery.h"
 #include <QRegularExpression>
 #include "assemblygraph.h"
 #include <QStringList>

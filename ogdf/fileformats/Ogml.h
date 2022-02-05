@@ -52,7 +52,7 @@
 #ifndef OGDF_OGML_H
 #define OGDF_OGML_H
 
-#include "../basic/String.h"
+#include "ogdf/basic/String.h"
 
 
 namespace ogdf

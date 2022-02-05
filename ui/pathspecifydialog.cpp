@@ -18,15 +18,15 @@
 
 #include "pathspecifydialog.h"
 #include "ui_pathspecifydialog.h"
-#include "../program/globals.h"
-#include "../program/settings.h"
-#include "../graph/assemblygraph.h"
+#include "program/globals.h"
+#include "program/settings.h"
+#include "graph/assemblygraph.h"
 #include <QClipboard>
 #include <QTextStream>
 #include <QFileDialog>
 #include <QFileInfo>
 #include "mygraphicsview.h"
-#include "../program/memory.h"
+#include "program/memory.h"
 
 PathSpecifyDialog::PathSpecifyDialog(QWidget *parent) :
     QDialog(parent),

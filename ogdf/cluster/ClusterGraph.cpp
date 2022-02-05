@@ -53,10 +53,10 @@
 #include <ctype.h>
 #include <string.h>
 
-#include "../basic/String.h"
-#include "../basic/AdjEntryArray.h"
+#include "ogdf/basic/String.h"
+#include "ogdf/basic/AdjEntryArray.h"
 
-#include "../fileformats/GmlParser.h"
+#include "ogdf/fileformats/GmlParser.h"
 
 
 namespace ogdf {

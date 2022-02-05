@@ -23,7 +23,7 @@
 #include <QFont>
 #include "globals.h"
 #include <QString>
-#include "../graph/path.h"
+#include "graph/path.h"
 #include "scinot.h"
 
 class DeBruijnNode;

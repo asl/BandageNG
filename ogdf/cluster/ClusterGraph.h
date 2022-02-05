@@ -52,9 +52,9 @@
 #ifndef OGDF_CLUSTER_GRAPH_H
 #define OGDF_CLUSTER_GRAPH_H
 
-#include "../basic/NodeArray.h"
-#include "../basic/Stack.h"
-#include "../basic/GraphObserver.h"
+#include "ogdf/basic/NodeArray.h"
+#include "ogdf/basic/Stack.h"
+#include "ogdf/basic/GraphObserver.h"
 
 
 namespace ogdf {

@@ -20,7 +20,7 @@
 
 #include "debruijnnode.h"
 #include "assemblygraph.h"
-#include "../program/globals.h"
+#include "program/globals.h"
 
 
 

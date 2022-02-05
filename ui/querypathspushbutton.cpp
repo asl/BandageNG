@@ -18,7 +18,7 @@
 
 #include "querypathspushbutton.h"
 
-#include "../program/globals.h"
+#include "program/globals.h"
 
 QueryPathsPushButton::QueryPathsPushButton(int pathCount, BlastQuery * query) :
     m_pathCount(pathCount), m_query(query)

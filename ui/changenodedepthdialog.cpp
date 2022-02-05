@@ -2,8 +2,8 @@
 #include "ui_changenodedepthdialog.h"
 
 
-#include "../program/globals.h"
-#include "../graph/debruijnnode.h"
+#include "program/globals.h"
+#include "graph/debruijnnode.h"
 
 ChangeNodeDepthDialog::ChangeNodeDepthDialog(QWidget * parent,
                                                      std::vector<DeBruijnNode *> * nodes,

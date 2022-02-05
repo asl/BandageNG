@@ -1,8 +1,8 @@
 #include "graphinfodialog.h"
 #include "ui_graphinfodialog.h"
 
-#include "../program/globals.h"
-#include "../graph/assemblygraph.h"
+#include "program/globals.h"
+#include "graph/assemblygraph.h"
 #include <QPair>
 
 GraphInfoDialog::GraphInfoDialog(QWidget *parent) :

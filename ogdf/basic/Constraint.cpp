@@ -44,8 +44,8 @@
 
 
 #include "ogdf/basic/Constraints.h"
-#include "../fileformats/DinoXmlParser.h"
-#include "../fileformats/Ogml.h"
+#include "ogdf/fileformats/DinoXmlParser.h"
+#include "ogdf/fileformats/Ogml.h"
 
 
 namespace ogdf {

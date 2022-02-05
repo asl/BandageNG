@@ -17,10 +17,10 @@
 
 
 #include "runblastsearchworker.h"
-#include "../program/globals.h"
-#include "../program/settings.h"
+#include "program/globals.h"
+#include "program/settings.h"
 #include "blastsearch.h"
-#include "../program/memory.h"
+#include "program/memory.h"
 
 
 RunBlastSearchWorker::RunBlastSearchWorker(QString blastnCommand, QString tblastnCommand, QString parameters) :

@@ -44,9 +44,9 @@
 #include "Multilevel.h"
 #include "Set.h"
 #include "Node.h"
-#include "../basic/Array.h"
-#include "../basic/Math.h"
-#include "../basic/simple_graph_alg.h"
+#include "ogdf/basic/Array.h"
+#include "ogdf/basic/Math.h"
+#include "ogdf/basic/simple_graph_alg.h"
 #include "FMMMLayout.h"
 
 

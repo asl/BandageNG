@@ -18,7 +18,7 @@
 
 #include "info.h"
 #include "commoncommandlinefunctions.h"
-#include "../graph/assemblygraph.h"
+#include "graph/assemblygraph.h"
 #include <QPair>
 
 

@@ -17,9 +17,9 @@
 
 
 #include "blastquery.h"
-#include "../program/settings.h"
-#include "../graph/path.h"
-#include "../graph/debruijnnode.h"
+#include "program/settings.h"
+#include "graph/path.h"
+#include "graph/debruijnnode.h"
 #include <limits>
 #include <vector>
 #include <utility>

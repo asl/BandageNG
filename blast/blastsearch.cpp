@@ -17,16 +17,16 @@
 
 
 #include "blastsearch.h"
-#include "../graph/assemblygraph.h"
+#include "graph/assemblygraph.h"
 #include <QDir>
 #include <QRegularExpression>
 #include "buildblastdatabaseworker.h"
 #include "runblastsearchworker.h"
-#include "../program/settings.h"
+#include "program/settings.h"
 #include <QApplication>
 #include <QRegularExpression>
-#include "../graph/debruijnnode.h"
-#include "../program/memory.h"
+#include "graph/debruijnnode.h"
+#include "program/memory.h"
 #include <math.h>
 
 BlastSearch::BlastSearch() :

@@ -42,7 +42,7 @@
  ***************************************************************/
 
 
-#include "../../basic/basic.h"
+#include "ogdf/basic/basic.h"
 
 
 namespace ogdf {

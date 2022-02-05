@@ -20,30 +20,30 @@
 #include "debruijnnode.h"
 #include "ogdfnode.h"
 #include <QPainterPathStroker>
-#include "../graph/ogdfnode.h"
-#include "../program/settings.h"
+#include "graph/ogdfnode.h"
+#include "program/settings.h"
 #include <QPainter>
 #include <QPen>
 #include <QMessageBox>
 #include "debruijnedge.h"
 #include "graphicsitemedge.h"
-#include "../ogdf/basic/GraphAttributes.h"
+#include "ogdf/basic/GraphAttributes.h"
 #include <math.h>
 #include <QFontMetrics>
 #include <QSize>
 #include <stdlib.h>
 #include <QGraphicsScene>
-#include "../ui/mygraphicsscene.h"
+#include "ui/mygraphicsscene.h"
 #include <set>
-#include "../ui/mygraphicsview.h"
+#include "ui/mygraphicsview.h"
 #include <QTransform>
-#include "../blast/blasthit.h"
-#include "../blast/blastquery.h"
-#include "../blast/blasthitpart.h"
+#include "blast/blasthit.h"
+#include "blast/blastquery.h"
+#include "blast/blasthitpart.h"
 #include "assemblygraph.h"
 #include <math.h>
 #include <QFontMetrics>
-#include "../program/memory.h"
+#include "program/memory.h"
 
 GraphicsItemNode::GraphicsItemNode(DeBruijnNode * deBruijnNode,
                                    ogdf::GraphAttributes * graphAttributes, QGraphicsItem * parent) :

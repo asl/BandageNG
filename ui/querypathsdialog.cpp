@@ -19,12 +19,12 @@
 #include "querypathsdialog.h"
 #include "ui_querypathsdialog.h"
 
-#include "../blast/blastquery.h"
-#include "../blast/blastquerypath.h"
+#include "blast/blastquery.h"
+#include "blast/blastquerypath.h"
 #include "tablewidgetitemint.h"
 #include "tablewidgetitemdouble.h"
-#include "../program/globals.h"
-#include "../program/memory.h"
+#include "program/globals.h"
+#include "program/memory.h"
 #include <QTableWidgetItem>
 #include "querypathsequencecopybutton.h"
 

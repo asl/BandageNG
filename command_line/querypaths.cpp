@@ -18,9 +18,9 @@
 
 #include "querypaths.h"
 #include "commoncommandlinefunctions.h"
-#include "../program/settings.h"
-#include "../graph/assemblygraph.h"
-#include "../blast/blastsearch.h"
+#include "program/settings.h"
+#include "graph/assemblygraph.h"
+#include "blast/blastsearch.h"
 #include <QDateTime>
 
 int bandageQueryPaths(QStringList arguments)

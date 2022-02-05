@@ -22,7 +22,7 @@
 #include <QObject>
 #include <QProcess>
 #include <QString>
-#include "../program/globals.h"
+#include "program/globals.h"
 
 //This class carries out the task of running blastn and/or
 //tblastn.

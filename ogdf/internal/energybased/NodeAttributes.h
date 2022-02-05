@@ -51,9 +51,9 @@
 #ifndef OGDF_NODE_ATTRIBUTES_H
 #define OGDF_NODE_ATTRIBUTES_H
 
-#include "../../basic/geometry.h"
-#include "../../basic/Graph.h"
-#include "../../basic/List.h"
+#include "ogdf/basic/geometry.h"
+#include "ogdf/basic/Graph.h"
+#include "ogdf/basic/List.h"
 
 namespace ogdf {
 

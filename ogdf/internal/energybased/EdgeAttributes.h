@@ -51,8 +51,8 @@
 #ifndef OGDF_EDGE_ATTRIBUTES_H
 #define OGDF_EDGE_ATTRIBUTES_H
 
-#include "../../basic/geometry.h"
-#include "../../basic/Graph.h"
+#include "ogdf/basic/geometry.h"
+#include "ogdf/basic/Graph.h"
 
 namespace ogdf {
 
@@ -118,4 +118,3 @@ private:
 
 }//namespace ogdf
 #endif
-

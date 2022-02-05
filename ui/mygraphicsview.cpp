@@ -18,14 +18,14 @@
 
 #include "mygraphicsview.h"
 #include <QMouseEvent>
-#include "../program/globals.h"
-#include "../program/settings.h"
+#include "program/globals.h"
+#include "program/settings.h"
 #include <QFont>
 #include "graphicsviewzoom.h"
 #include <qmath.h>
 #include <QMessageBox>
 #include <math.h>
-#include "../graph/graphicsitemnode.h"
+#include "graph/graphicsitemnode.h"
 
 MyGraphicsView::MyGraphicsView(QObject * /*parent*/) :
     QGraphicsView(), m_rotation(0.0)

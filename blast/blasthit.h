@@ -25,9 +25,9 @@ class BlastQuery;
 #include <QString>
 #include "blasthitpart.h"
 #include <vector>
-#include "../graph/path.h"
-#include "../graph/graphlocation.h"
-#include "../program/scinot.h"
+#include "graph/path.h"
+#include "graph/graphlocation.h"
+#include "program/scinot.h"
 
 class BlastHit
 {

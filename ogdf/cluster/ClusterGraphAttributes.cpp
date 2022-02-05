@@ -43,8 +43,8 @@
 
 #include "ClusterGraphAttributes.h"
 #include "ClusterArray.h"
-#include "../fileformats/GmlParser.h"
-#include "../fileformats/OgmlParser.h"
+#include "ogdf/fileformats/GmlParser.h"
+#include "ogdf/fileformats/OgmlParser.h"
 #include <sstream>
 
 
@@ -737,4 +737,3 @@ ostream &operator<<(ostream &os, ogdf::cluster c)
 
 
 } // end namespace ogdf
-

@@ -18,10 +18,10 @@
 
 #include "blasthit.h"
 
-#include "../graph/debruijnnode.h"
+#include "graph/debruijnnode.h"
 #include "blastquery.h"
-#include "../program/settings.h"
-#include "../program/globals.h"
+#include "program/settings.h"
+#include "program/globals.h"
 #include <math.h>
 
 BlastHit::BlastHit(BlastQuery * query, DeBruijnNode * node,

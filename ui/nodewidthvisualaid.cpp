@@ -19,7 +19,7 @@
 #include "nodewidthvisualaid.h"
 #include <QPainter>
 #include <QSizePolicy>
-#include "../graph/graphicsitemnode.h"
+#include "graph/graphicsitemnode.h"
 
 NodeWidthVisualAid::NodeWidthVisualAid(QWidget *parent) : QWidget(parent)
 {

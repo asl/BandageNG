@@ -50,8 +50,8 @@
 #ifndef OGDF_MULTILEVEL_GRAPH_H
 #define OGDF_MULTILEVEL_GRAPH_H
 
-#include "../../basic/Graph.h"
-#include "../../basic/GraphAttributes.h"
+#include "ogdf/basic/Graph.h"
+#include "ogdf/basic/GraphAttributes.h"
 #include <vector>
 #include <map>
 

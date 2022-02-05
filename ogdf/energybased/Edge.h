@@ -51,7 +51,7 @@
 #define OGDF_EDGE_H
 
 
-#include "../basic/Graph.h"
+#include "ogdf/basic/Graph.h"
 
 
 namespace ogdf {
@@ -156,4 +156,3 @@ private:
 
 }//namespace ogdf
 #endif
-

@@ -57,10 +57,10 @@
 
 #include "Ogml.h"
 #include "DinoXmlParser.h"
-#include "../basic/Hashing.h"
-#include "../basic/String.h"
-#include "../cluster/ClusterGraph.h"
-#include "../cluster/ClusterGraphAttributes.h"
+#include "ogdf/basic/Hashing.h"
+#include "ogdf/basic/String.h"
+#include "ogdf/cluster/ClusterGraph.h"
+#include "ogdf/cluster/ClusterGraphAttributes.h"
 
 // constraints
 //o#include <ogdf/Constraints.h>
@@ -287,4 +287,3 @@ public:
 }//end namespace ogdf
 
 #endif
-

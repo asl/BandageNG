@@ -41,16 +41,16 @@
  ***************************************************************/
 
 #include "FMMMLayout.h"
-#include "../basic/Math.h"
+#include "ogdf/basic/Math.h"
 #include "numexcept.h"
 #include "MAARPacking.h"
 #include "Multilevel.h"
 #include "Edge.h"
-#include "../basic/simple_graph_alg.h"
-#include "../basic/basic.h"
+#include "ogdf/basic/simple_graph_alg.h"
+#include "ogdf/basic/basic.h"
 
-#include "../internal/energybased/NodeAttributes.h"
-#include "../internal/energybased/EdgeAttributes.h"
+#include "ogdf/internal/energybased/NodeAttributes.h"
+#include "ogdf/internal/energybased/EdgeAttributes.h"
 #include "Rectangle.h"
 #include <time.h>
 

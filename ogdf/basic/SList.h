@@ -54,7 +54,7 @@
 #define OGDF_SLIST_H
 
 
-#include "../internal/basic/list_templates.h"
+#include "ogdf/internal/basic/list_templates.h"
 
 
 namespace ogdf {

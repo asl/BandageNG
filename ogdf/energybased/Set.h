@@ -50,10 +50,10 @@
 #ifndef OGDF_SET_H
 #define OGDF_SET_H
 
-#include "../basic/List.h"
-#include "../basic/Graph.h"
-#include "../basic/NodeArray.h"
-#include "../internal/energybased/NodeAttributes.h"
+#include "ogdf/basic/List.h"
+#include "ogdf/basic/Graph.h"
+#include "ogdf/basic/NodeArray.h"
+#include "ogdf/internal/energybased/NodeAttributes.h"
 
 namespace ogdf {
 
@@ -127,5 +127,3 @@ namespace ogdf {
 
 }//namespace ogdf
 #endif
-
-

@@ -51,10 +51,10 @@
 #ifndef OGDF_DINO_XML_PARSER_H
 #define OGDF_DINO_XML_PARSER_H
 
-#include "../basic/Stack.h"
-#include "../basic/String.h"
-#include "../basic/Hashing.h"
-#include "../basic/GraphAttributes.h"
+#include "ogdf/basic/Stack.h"
+#include "ogdf/basic/String.h"
+#include "ogdf/basic/Hashing.h"
+#include "ogdf/basic/GraphAttributes.h"
 #include "DinoXmlScanner.h"
 
 

@@ -51,10 +51,10 @@
 #ifndef OGDF_NMM_H
 #define OGDF_NMM_H
 
-#include "../../basic/Graph.h"
-#include "../..//basic/List.h"
-#include "../..//basic/Array2D.h"
-#include "../..//basic/geometry.h"
+#include "ogdf/basic/Graph.h"
+#include "ogdf/basic/List.h"
+#include "ogdf/basic/Array2D.h"
+#include "ogdf/basic/geometry.h"
 #include "NodeAttributes.h"
 #include "EdgeAttributes.h"
 #include "QuadTreeNM.h"
@@ -513,4 +513,3 @@ private:
 
 }//namespace ogdf
 #endif
-

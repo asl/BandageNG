@@ -18,11 +18,11 @@
 
 #include "debruijnedge.h"
 #include <math.h>
-#include "../program/settings.h"
+#include "program/settings.h"
 #include "ogdfnode.h"
 #include <QApplication>
-#include "../program/settings.h"
-#include "../program/globals.h"
+#include "program/settings.h"
+#include "program/globals.h"
 #include "assemblygraph.h"
 
 DeBruijnEdge::DeBruijnEdge(DeBruijnNode *startingNode, DeBruijnNode *endingNode) :

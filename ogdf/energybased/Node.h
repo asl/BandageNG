@@ -53,8 +53,8 @@
 #ifndef OGDF_NODE_H
 #define OGDF_NODE_H
 
-#include "../basic/Graph.h"
-#include "../basic/Graph_d.h"
+#include "ogdf/basic/Graph.h"
+#include "ogdf/basic/Graph_d.h"
 #include <iostream>
 
 namespace ogdf {
@@ -95,5 +95,3 @@ namespace ogdf {
 
 }//namespace ogdf
 #endif
-
-

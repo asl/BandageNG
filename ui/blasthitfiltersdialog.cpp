@@ -1,8 +1,8 @@
 #include "blasthitfiltersdialog.h"
 #include "ui_blasthitfiltersdialog.h"
 
-#include "../program/globals.h"
-#include "../program/settings.h"
+#include "program/globals.h"
+#include "program/settings.h"
 
 BlastHitFiltersDialog::BlastHitFiltersDialog(QWidget *parent) :
     QDialog(parent),

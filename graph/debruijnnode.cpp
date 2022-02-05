@@ -21,8 +21,8 @@
 #include "ogdfnode.h"
 #include "graphicsitemnode.h"
 #include <math.h>
-#include "../blast/blasthit.h"
-#include "../blast/blastquery.h"
+#include "blast/blasthit.h"
+#include "blast/blastquery.h"
 #include "assemblygraph.h"
 #include <set>
 #include <QApplication>

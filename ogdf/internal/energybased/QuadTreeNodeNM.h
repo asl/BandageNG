@@ -51,9 +51,9 @@
 #define OGDF_QUAD_TREE_NODE_NM_H
 
 
-#include "../../basic/Graph.h"
-#include "../../basic/List.h"
-#include "../../basic/geometry.h"
+#include "ogdf/basic/Graph.h"
+#include "ogdf/basic/List.h"
+#include "ogdf/basic/geometry.h"
 #include "ParticleInfo.h"
 #include <complex>
 

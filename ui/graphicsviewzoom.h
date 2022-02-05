@@ -21,7 +21,7 @@
 
 #include <QObject>
 #include <QGraphicsView>
-#include "../program/globals.h"
+#include "program/globals.h"
 
 // This class is a modified version of:
 // http://stackoverflow.com/questions/19113532/qgraphicsview-zooming-in-and-out-under-mouse-position-using-mouse-wheel

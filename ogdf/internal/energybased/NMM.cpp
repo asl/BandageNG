@@ -42,9 +42,9 @@
 
 
 #include "NMM.h"
-#include "../../energybased/FMMMLayout.h"
-#include "../../basic/Math.h"
-#include "../../energybased/numexcept.h"
+#include "ogdf/energybased/FMMMLayout.h"
+#include "ogdf/basic/Math.h"
+#include "ogdf/energybased/numexcept.h"
 #include <time.h>
 
 

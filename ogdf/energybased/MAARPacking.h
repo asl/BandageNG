@@ -53,7 +53,7 @@
 #include "PackingRowInfo.h"
 #include "Rectangle.h"
 #include "Set.h"
-#include "../basic/List.h"
+#include "ogdf/basic/List.h"
 #include "PQueue.h"
 
 namespace ogdf {
@@ -158,5 +158,3 @@ namespace ogdf {
 
 }//namespace ogdf
 #endif
-
-

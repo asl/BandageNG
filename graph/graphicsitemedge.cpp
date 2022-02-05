@@ -21,8 +21,8 @@
 #include <QPainterPathStroker>
 #include <QPainter>
 #include <QPen>
-#include "../program/globals.h"
-#include "../program/settings.h"
+#include "program/globals.h"
+#include "program/settings.h"
 #include "debruijnnode.h"
 #include "ogdfnode.h"
 #include <QLineF>

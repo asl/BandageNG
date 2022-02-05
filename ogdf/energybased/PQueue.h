@@ -51,7 +51,7 @@
 #ifndef OGDF_PQUEUE_H
 #define OGDF_PQUEUE_H
 
-#include "../basic/List.h"
+#include "ogdf/basic/List.h"
 
 namespace ogdf {
 
@@ -170,7 +170,3 @@ private:
 
 }//namespace ogdf
 #endif
-
-
-
-

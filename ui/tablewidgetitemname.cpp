@@ -17,7 +17,7 @@
 
 
 #include "tablewidgetitemname.h"
-#include "../blast/blastquery.h"
+#include "blast/blastquery.h"
 
 TableWidgetItemName::TableWidgetItemName(BlastQuery * query) :
     QTableWidgetItem(query->getName()), m_query(query)

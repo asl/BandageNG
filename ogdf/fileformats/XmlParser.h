@@ -52,11 +52,11 @@
 #define OGDF_XML_PARSER_H
 
 
-#include "../basic/Hashing.h"
-#include "../basic/String.h"
-#include "../basic/GraphAttributes.h"
+#include "ogdf/basic/Hashing.h"
+#include "ogdf/basic/String.h"
+#include "ogdf/basic/GraphAttributes.h"
 #include "XmlObject.h"
-#include "../basic/SList.h"
+#include "ogdf/basic/SList.h"
 
 
 namespace ogdf {

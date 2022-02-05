@@ -18,7 +18,7 @@
 
 #include "myprogressdialog.h"
 #include "ui_myprogressdialog.h"
-#include "../program/globals.h"
+#include "program/globals.h"
 
 MyProgressDialog::MyProgressDialog(QWidget * parent, QString message, bool showCancelButton,
                                    QString cancelButtonText, QString cancelMessage, QString cancelInfoText) :

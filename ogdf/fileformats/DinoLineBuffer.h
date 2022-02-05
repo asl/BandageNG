@@ -52,7 +52,7 @@
 #ifndef OGDF_DINO_LINE_BUFFER_H
 #define OGDF_DINO_LINE_BUFFER_H
 
-#include "../basic/basic.h"
+#include "ogdf/basic/basic.h"
 
 
 namespace ogdf {

@@ -18,16 +18,16 @@
 
 #include "reduce.h"
 #include "commoncommandlinefunctions.h"
-#include "../program/globals.h"
-#include "../ui/mygraphicsscene.h"
-#include "../ui/mygraphicsview.h"
-#include "../graph/assemblygraph.h"
+#include "program/globals.h"
+#include "ui/mygraphicsscene.h"
+#include "ui/mygraphicsview.h"
+#include "graph/assemblygraph.h"
 #include <vector>
-#include "../program/settings.h"
+#include "program/settings.h"
 #include <QPainter>
 #include <QSvgGenerator>
 #include <QDir>
-#include "../blast/blastsearch.h"
+#include "blast/blastsearch.h"
 
 int bandageReduce(QStringList arguments)
 {
@@ -166,4 +166,3 @@ QString checkForInvalidReduceOptions(QStringList arguments)
 {
     return checkForInvalidOrExcessSettings(&arguments);
 }
-

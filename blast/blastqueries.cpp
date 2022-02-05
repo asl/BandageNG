@@ -17,11 +17,11 @@
 
 
 #include "blastqueries.h"
-#include "../program/globals.h"
-#include "../program/settings.h"
+#include "program/globals.h"
+#include "program/settings.h"
 #include <QTextStream>
 #include "blastsearch.h"
-#include "../program/memory.h"
+#include "program/memory.h"
 
 BlastQueries::BlastQueries() :
     m_tempNuclFile(0), m_tempProtFile(0)
@@ -245,5 +245,3 @@ void BlastQueries::findQueryPaths()
     for (size_t i = 0; i < m_queries.size(); ++i)
         m_queries[i]->findQueryPaths();
 }
-
-

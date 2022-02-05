@@ -51,7 +51,7 @@
 #define OGDF_CLUSTER_ARRAY_H
 
 
-#include "../basic/Array.h"
+#include "ogdf/basic/Array.h"
 #include "ClusterGraph.h"
 
 

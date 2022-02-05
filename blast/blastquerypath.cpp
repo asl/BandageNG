@@ -19,10 +19,10 @@
 #include "blastquerypath.h"
 
 #include "blastquery.h"
-#include "../graph/debruijnnode.h"
-#include "../program/globals.h"
-#include "../graph/assemblygraph.h"
-#include "../graph/debruijnedge.h"
+#include "graph/debruijnnode.h"
+#include "program/globals.h"
+#include "graph/assemblygraph.h"
+#include "graph/debruijnedge.h"
 #include <limits>
 
 BlastQueryPath::BlastQueryPath(Path path, BlastQuery * query) :
@@ -317,4 +317,3 @@ bool BlastQueryPath::operator<(BlastQueryPath const &other) const
 
     return false;
 }
-

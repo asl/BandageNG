@@ -26,11 +26,11 @@
 #include <vector>
 #include <QLineEdit>
 #include <QRectF>
-#include "../program/globals.h"
+#include "program/globals.h"
 #include <QThread>
-#include "../ogdf/energybased/FMMMLayout.h"
+#include "ogdf/energybased/FMMMLayout.h"
 
-Q_MOC_INCLUDE("../graph/debruijnnode.h")
+Q_MOC_INCLUDE("graph/debruijnnode.h")
 
 class GraphicsViewZoom;
 class MyGraphicsScene;

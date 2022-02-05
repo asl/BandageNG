@@ -42,7 +42,7 @@
 
 
 #include "numexcept.h"
-#include "../basic/basic.h"
+#include "ogdf/basic/basic.h"
 
 #define epsilon 0.1
 #define POS_SMALL_DOUBLE 1e-300

@@ -51,7 +51,7 @@
 #ifndef OGDF_NUMEXCEPT_H
 #define OGDF_NUMEXCEPT_H
 
-#include "../basic/geometry.h"
+#include "ogdf/basic/geometry.h"
 
 namespace ogdf {
 
@@ -101,4 +101,3 @@ namespace ogdf {
 
 }//namespace ogdf
 #endif
-

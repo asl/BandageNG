@@ -53,11 +53,11 @@
 #ifndef OGDF_CLUSTER_GRAPH_ATTRIBUTES_H
 #define OGDF_CLUSTER_GRAPH_ATTRIBUTES_H
 
-#include "../basic/HashArray.h"
+#include "ogdf/basic/HashArray.h"
 #include "ClusterArray.h"
 
 #include "ClusterGraph.h"
-#include "../basic/GraphAttributes.h"
+#include "ogdf/basic/GraphAttributes.h"
 
 
 namespace ogdf {

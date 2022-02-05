@@ -53,7 +53,7 @@
 #define OGDF_LIST_TEMPLATES_H
 
 
-#include "../../basic/Array.h"
+#include "ogdf/basic/Array.h"
 
 
 namespace ogdf {

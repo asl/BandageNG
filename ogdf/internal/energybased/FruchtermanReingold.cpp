@@ -43,8 +43,8 @@
 
 #include "FruchtermanReingold.h"
 
-#include "../../energybased/numexcept.h"
-#include "../../basic/Array2D.h"
+#include "ogdf/energybased/numexcept.h"
+#include "ogdf/basic/Array2D.h"
 
 
 namespace ogdf {

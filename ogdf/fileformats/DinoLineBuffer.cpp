@@ -42,7 +42,7 @@
 
 
 #include "DinoLineBuffer.h"
-#include "../basic/String.h"
+#include "ogdf/basic/String.h"
 #include "DinoTools.h"
 
 #include <ctype.h>

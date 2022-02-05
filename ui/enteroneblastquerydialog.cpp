@@ -18,8 +18,8 @@
 
 #include "enteroneblastquerydialog.h"
 #include "ui_enteroneblastquerydialog.h"
-#include "../program/settings.h"
-#include "../program/globals.h"
+#include "program/settings.h"
+#include "program/globals.h"
 #include <QDialogButtonBox>
 #include <QPushButton>
 

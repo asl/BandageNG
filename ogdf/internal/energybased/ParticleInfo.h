@@ -51,8 +51,8 @@
 #ifndef OGDF_PARTICLE_INFO_H
 #define OGDF_PARTICLE_INFO_H
 
-#include "../../basic/Graph.h"
-#include "../../basic/List.h"
+#include "ogdf/basic/Graph.h"
+#include "ogdf/basic/List.h"
 
 namespace ogdf {
 

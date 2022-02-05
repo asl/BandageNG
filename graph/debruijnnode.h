@@ -21,12 +21,12 @@
 
 #include <QByteArray>
 #include <vector>
-#include "../ogdf/basic/Graph.h"
-#include "../ogdf/basic/GraphAttributes.h"
-#include "../program/globals.h"
+#include "ogdf/basic/Graph.h"
+#include "ogdf/basic/GraphAttributes.h"
+#include "program/globals.h"
 #include <QColor>
-#include "../blast/blasthitpart.h"
-#include "../program/settings.h"
+#include "blast/blasthitpart.h"
+#include "program/settings.h"
 
 class OgdfNode;
 class DeBruijnEdge;

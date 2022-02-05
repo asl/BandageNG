@@ -50,7 +50,7 @@
 #ifndef OGDF_PACKING_ROW_INFO_H
 #define OGDF_PACKING_ROW_INFO_H
 
-#include "../basic/basic.h"
+#include "ogdf/basic/basic.h"
 
 namespace ogdf {
 
@@ -101,5 +101,3 @@ namespace ogdf {
 
 }//namespace ogdf
 #endif
-
-

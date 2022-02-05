@@ -79,8 +79,8 @@
 #define OGDF_MEMORY_POOL_TS
 #endif
 
-#include "../internal/basic/PoolMemoryAllocator.h"
-#include "../internal/basic/MallocMemoryAllocator.h"
+#include "ogdf/internal/basic/PoolMemoryAllocator.h"
+#include "ogdf/internal/basic/MallocMemoryAllocator.h"
 
 
 namespace ogdf {

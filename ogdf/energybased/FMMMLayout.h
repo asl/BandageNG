@@ -51,12 +51,12 @@
 #ifndef OGDF_FMMMLAYOUT_H
 #define OGDF_FMMMLAYOUT_H
 
-#include "../ogdf/basic/Graph.h"
-#include "../ogdf/cluster/ClusterGraphAttributes.h"
-#include "../ogdf/module/LayoutModule.h"
-#include "../ogdf/basic/geometry.h"
-#include "../ogdf/internal/energybased/FruchtermanReingold.h"
-#include "../ogdf/internal/energybased/NMM.h"
+#include "ogdf/basic/Graph.h"
+#include "ogdf/cluster/ClusterGraphAttributes.h"
+#include "ogdf/module/LayoutModule.h"
+#include "ogdf/basic/geometry.h"
+#include "ogdf/internal/energybased/FruchtermanReingold.h"
+#include "ogdf/internal/energybased/NMM.h"
 
 
 namespace ogdf {
@@ -1379,4 +1379,3 @@ private:
 } //end namespace ogdf
 
 #endif
-

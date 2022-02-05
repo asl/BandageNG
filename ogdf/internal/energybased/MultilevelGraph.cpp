@@ -41,7 +41,7 @@
  ***************************************************************/
 
 #include "MultilevelGraph.h"
-#include "../../basic/simple_graph_alg.h"
+#include "ogdf/basic/simple_graph_alg.h"
 #include <algorithm>
 
 

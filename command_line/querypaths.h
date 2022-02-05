@@ -21,7 +21,7 @@
 
 
 #include <QStringList>
-#include "../ui/mainwindow.h"
+#include "ui/mainwindow.h"
 #include <QTextStream>
 #include <QApplication>
 

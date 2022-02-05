@@ -50,8 +50,8 @@
 #ifndef OGDF_DINO_TOOLS_H
 #define OGDF_DINO_TOOLS_H
 
-#include "../basic/String.h"
-#include "../basic/Array.h"
+#include "ogdf/basic/String.h"
+#include "ogdf/basic/Array.h"
 
 
 namespace ogdf {

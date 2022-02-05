@@ -22,7 +22,7 @@
 #include <vector>
 #include "blastquery.h"
 #include <QFile>
-#include "../program/globals.h"
+#include "program/globals.h"
 #include <QSharedPointer>
 
 //This class manages all BLAST queries. It holds BlastQuery

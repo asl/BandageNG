@@ -24,7 +24,7 @@
 #include <vector>
 #include <QString>
 #include <QStringList>
-#include "../program/globals.h"
+#include "program/globals.h"
 #include "graphlocation.h"
 
 class DeBruijnNode;

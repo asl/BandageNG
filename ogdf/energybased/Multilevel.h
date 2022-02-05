@@ -51,13 +51,13 @@
 #ifndef OGDF_MULTILEVEL_H
 #define OGDF_MULTILEVEL_H
 
-#include "../basic/Graph.h"
-#include "../basic/NodeArray.h"
-#include "../basic/EdgeArray.h"
-#include "../basic/List.h"
+#include "ogdf/basic/Graph.h"
+#include "ogdf/basic/NodeArray.h"
+#include "ogdf/basic/EdgeArray.h"
+#include "ogdf/basic/List.h"
 #include "Edge.h"
-#include "../internal/energybased/NodeAttributes.h"
-#include "../internal/energybased/EdgeAttributes.h"
+#include "ogdf/internal/energybased/NodeAttributes.h"
+#include "ogdf/internal/energybased/EdgeAttributes.h"
 
 
 namespace ogdf {
@@ -244,4 +244,3 @@ private:
 
 }//namespace ogdf
 #endif
-

@@ -22,7 +22,7 @@
 #include <QObject>
 #include <QString>
 #include <QColor>
-#include "../program/globals.h"
+#include "program/globals.h"
 #include "blasthit.h"
 #include <QList>
 #include <QSharedPointer>

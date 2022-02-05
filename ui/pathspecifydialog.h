@@ -20,8 +20,8 @@
 #define PATHSPECIFYDIALOG_H
 
 #include <QDialog>
-#include "../graph/path.h"
-#include "../graph/debruijnnode.h"
+#include "graph/path.h"
+#include "graph/debruijnnode.h"
 
 namespace Ui {
 class PathSpecifyDialog;

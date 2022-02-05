@@ -46,7 +46,23 @@ No pre-built binaries are available at the moment
 
 ## Building from source
 
-To be updated...
+### CMake [recommended]
+
+```shell
+mkdir build
+cd build
+cmake ..
+make
+```
+
+### Qmake [deprecated]
+
+```shell
+mkdir build
+cd build
+qmake ../Bandage.pro
+make
+```
 
 
 

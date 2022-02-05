@@ -57,7 +57,7 @@
 #define OGDF_CLUSTER_GRAPH_OBSERVER_H
 
 
-#include "../basic/List.h"
+#include "ogdf/basic/List.h"
 #include "ClusterGraph.h"
 
 namespace ogdf {

@@ -16,24 +16,24 @@
 //along with Bandage.  If not, see <http://www.gnu.org/licenses/>.
 
 
-#include "../ui/mainwindow.h"
+#include "ui/mainwindow.h"
 #include <QApplication>
 #include <QStringList>
 #include <QString>
 #include <QCommandLineParser>
 #include <QTextStream>
-#include "../command_line/load.h"
-#include "../command_line/info.h"
-#include "../command_line/image.h"
-#include "../command_line/querypaths.h"
-#include "../command_line/reduce.h"
-#include "../command_line/commoncommandlinefunctions.h"
-#include "../program/settings.h"
-#include "../program/memory.h"
-#include "../program/globals.h"
-#include "../blast/blastsearch.h"
-#include "../graph/assemblygraph.h"
-#include "../ui/mygraphicsview.h"
+#include "command_line/load.h"
+#include "command_line/info.h"
+#include "command_line/image.h"
+#include "command_line/querypaths.h"
+#include "command_line/reduce.h"
+#include "command_line/commoncommandlinefunctions.h"
+#include "program/settings.h"
+#include "program/memory.h"
+#include "program/globals.h"
+#include "blast/blastsearch.h"
+#include "graph/assemblygraph.h"
+#include "ui/mygraphicsview.h"
 
 #ifndef Q_OS_WIN32
 #include <sys/ioctl.h>

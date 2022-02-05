@@ -20,7 +20,7 @@
 #define REDUCE_H
 
 #include <QStringList>
-#include "../ui/mainwindow.h"
+#include "ui/mainwindow.h"
 #include <QTextStream>
 #include <QApplication>
 
@@ -30,4 +30,3 @@ QString checkForInvalidReduceOptions(QStringList arguments);
 void parseReduceOptions(QStringList arguments, int * width, int * height);
 
 #endif // REDUCE_H
-

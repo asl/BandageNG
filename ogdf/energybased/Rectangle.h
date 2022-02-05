@@ -50,7 +50,7 @@
 #ifndef OGDF_RECTANGLE_H
 #define OGDF_RECTANGLE_H
 
-#include "../basic/geometry.h"
+#include "ogdf/basic/geometry.h"
 #include <iostream>
 
 namespace ogdf {
@@ -236,5 +236,3 @@ namespace ogdf {
 
 }//namespace ogdf
 #endif
-
-

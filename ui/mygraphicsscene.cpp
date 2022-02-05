@@ -17,11 +17,11 @@
 
 
 #include "mygraphicsscene.h"
-#include "../graph/debruijnnode.h"
-#include "../graph/debruijnedge.h"
-#include "../graph/graphicsitemnode.h"
-#include "../graph/graphicsitemedge.h"
-#include "../graph/debruijnnode.h"
+#include "graph/debruijnnode.h"
+#include "graph/debruijnedge.h"
+#include "graph/graphicsitemnode.h"
+#include "graph/graphicsitemedge.h"
+#include "graph/debruijnnode.h"
 
 MyGraphicsScene::MyGraphicsScene(QObject *parent) :
     QGraphicsScene(parent)
@@ -250,4 +250,3 @@ void MyGraphicsScene::possiblyExpandSceneRectangle(std::vector<GraphicsItemNode 
     if (newSceneRect != currentSceneRect)
         setSceneRect(newSceneRect);
 }
-

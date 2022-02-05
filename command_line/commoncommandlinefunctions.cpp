@@ -18,11 +18,11 @@
 
 #include "commoncommandlinefunctions.h"
 
-#include "../graph/assemblygraph.h"
-#include "../blast/blastsearch.h"
 #include <QApplication>
 #include <QRegularExpression>
-#include "../program/memory.h"
+#include "graph/assemblygraph.h"
+#include "blast/blastsearch.h"
+#include "program/memory.h"
 
 #include <QDir>
 #include <QApplication>

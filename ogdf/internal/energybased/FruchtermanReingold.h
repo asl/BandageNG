@@ -51,9 +51,9 @@
 #ifndef OGDF_FRUCHTERMAN_REINGOLD_H
 #define OGDF_FRUCHTERMAN_REINGOLD_H
 
-#include "../../basic/Graph.h"
-#include "../../basic/geometry.h"
-#include "../../basic/NodeArray.h"
+#include "ogdf/basic/Graph.h"
+#include "ogdf/basic/geometry.h"
+#include "ogdf/basic/NodeArray.h"
 #include "NodeAttributes.h"
 #include "EdgeAttributes.h"
 
@@ -105,4 +105,3 @@ private:
 
 }//namespace ogdf
 #endif
-

@@ -19,10 +19,10 @@
 #ifndef MEMORY_H
 #define MEMORY_H
 
-#include "../program/globals.h"
+#include "program/globals.h"
 #include <QList>
 #include <QStringList>
-#include "../graph/querydistance.h"
+#include "graph/querydistance.h"
 
 class Memory
 {

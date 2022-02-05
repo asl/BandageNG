@@ -45,8 +45,8 @@
 
 
 #include "GraphAttributes.h"
-#include "../fileformats/GmlParser.h"
-#include "../fileformats/XmlParser.h"
+#include "ogdf/fileformats/GmlParser.h"
+#include "ogdf/fileformats/XmlParser.h"
 
 
 namespace ogdf {

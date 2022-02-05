@@ -20,7 +20,7 @@
 #define LOAD_H
 
 #include <QStringList>
-#include "../ui/mainwindow.h"
+#include "ui/mainwindow.h"
 #include <QTextStream>
 
 int bandageLoad(QStringList arguments);

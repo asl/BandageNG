@@ -23,7 +23,7 @@
 #include <QMap>
 #include <QThread>
 #include <QProcess>
-#include "../program/globals.h"
+#include "program/globals.h"
 
 class DeBruijnNode;
 class BlastQuery;

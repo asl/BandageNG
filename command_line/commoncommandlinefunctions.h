@@ -19,15 +19,15 @@
 #ifndef COMMANDCOMMANDLINEFUNCTIONS_H
 #define COMMANDCOMMANDLINEFUNCTIONS_H
 
-#include "../program/globals.h"
+#include "program/globals.h"
 #include <QString>
 #include <QStringList>
 #include <QColor>
 #include <QTextStream>
-#include "../program/scinot.h"
+#include "program/scinot.h"
 #include <QDateTime>
 #include <QStringList>
-#include "../program/settings.h"
+#include "program/settings.h"
 
 QStringList getArgumentList(int argc, char *argv[]);
 

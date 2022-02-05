@@ -42,7 +42,7 @@
 
 #include "Array.h"
 #include "AdjEntryArray.h"
-#include "../fileformats/GmlParser.h"
+#include "ogdf/fileformats/GmlParser.h"
 #include "simple_graph_alg.h"
 #include "GraphObserver.h"
 
@@ -1478,4 +1478,3 @@ ostream &operator<<(ostream &os, ogdf::adjEntry adj)
 
 
 } // end namespace ogdf
-
