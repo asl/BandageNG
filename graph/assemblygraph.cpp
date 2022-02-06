@@ -1612,17 +1612,27 @@ bool AssemblyGraph::checkFirstLineOfFile(QString fullFileName, QString regExp)
  */
 QStringList AssemblyGraph::splitCsv(QString line, QString sep)
 {
-    QRegularExpression rx(R"(("(?:[^"]|"")*"|[^)" + sep + "]*)");
+    // TODO: use libraries for parsing CSV
+    QRegularExpression rx(R"(("(?:[^"]|"")*"|[^)" + sep + "]*)(?:" + sep + "|$)");
     QStringList list;
 
     auto it = rx.globalMatch(line);
     while (it.hasNext()) {
         auto match = it.next();
         QString field = match.captured().replace("\"\"", "\"");
-        if (field[0] == '"' && field[field.length() - 1] == '"') {
+        if (field.endsWith(sep)) {
+            field.chop(sep.length());
+        }
+        if (!field.isEmpty() && field[0] == '"' && field[field.length() - 1] == '"') {
             field = field.mid(1, field.length() - 2);
         }
         list << field;
+    }
+
+    // regexp always matches empty string at the end
+    // if string ends with separator then we need to store it
+    if (!line.endsWith(sep)) {
+        list.pop_back();
     }
 
     return list;

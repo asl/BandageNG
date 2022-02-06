@@ -429,13 +429,19 @@ void BandageTests::blastSearch()
     g_settings->blastQueryFilename = getTestDirectory() + "test_queries1.fasta";
     createBlastTempDirectory();
 
-    g_blastSearch->doAutoBlastSearch();
+    auto errorString = g_blastSearch->doAutoBlastSearch();
+
+    QCOMPARE(errorString, "");
 
     BlastQuery * exact = g_blastSearch->m_blastQueries.getQueryFromName("test_query_exact");
     BlastQuery * one_mismatch = g_blastSearch->m_blastQueries.getQueryFromName("test_query_one_mismatch");
     BlastQuery * one_insertion = g_blastSearch->m_blastQueries.getQueryFromName("test_query_one_insertion");
     BlastQuery * one_deletion = g_blastSearch->m_blastQueries.getQueryFromName("test_query_one_deletion");
 
+    QVERIFY(exact != nullptr);
+    QVERIFY(one_mismatch != nullptr);
+    QVERIFY(one_insertion != nullptr);
+    QVERIFY(one_deletion != nullptr);
     QCOMPARE(exact->getLength(), 100);
     QCOMPARE(one_mismatch->getLength(), 100);
     QCOMPARE(one_insertion->getLength(), 101);
