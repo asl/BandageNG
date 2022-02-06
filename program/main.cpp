@@ -39,6 +39,10 @@
 #include <sys/ioctl.h>
 #endif //Q_OS_WIN32
 
+#ifndef APP_VERSION
+#define APP_VERSION "<unknown version>"
+#endif
+
 void printUsage(QTextStream * out, bool all)
 {
     QStringList text;

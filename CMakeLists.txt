@@ -116,6 +116,7 @@ set(FORMS
 set(RESOURCES images/images.qrc)
 
 add_compile_definitions(QT_DISABLE_DEPRECATED_BEFORE=0x050F00)
+add_compile_definitions(APP_VERSION="0.9.0-dev")
 include_directories(.)
 include_directories(ui)
 
