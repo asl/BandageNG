@@ -1,7 +1,15 @@
 #!/bin/bash
 
-# Change this variable to point to the Bandage executable.
-bandagepath="../../build-Bandage-Desktop_Qt_5_6_0_clang_64bit-Release/Bandage.app/Contents/MacOS/Bandage"
+bandagepath=$1
+
+if [[ ! -f "$bandagepath" ]]; then
+    echo "File does not exists: '$bandagepath'"
+    echo "Usage: bandage_command_line_tests.sh \$PATH_TO_BANDAGE_EXECUTABLE"
+    exit 1
+fi
+
+passes=0
+fails=0
 
 # This function tests the exit code, stdout and stderr of a command.
 function test_all {
@@ -19,9 +27,11 @@ function test_all {
     if [ "$std_out" == "$expected_std_out" ]; then correct_std_out=true; else correct_std_out=false; fi
     if [ "$std_err" == "$expected_std_err" ]; then correct_std_err=true; else correct_std_err=false; fi
 
-    if $correct_exit_code && $correct_std_out && $correct_std_err;
-        then echo "PASS: $command";
+    if $correct_exit_code && $correct_std_out && $correct_std_err; then
+        passes=$((passes + 1))
+        echo "PASS: $command";
     else
+        fails=$((fails + 1))
         echo "FAIL: $command"
         if ! $correct_exit_code; then echo "   expected exit code: $expected_exit_code"; echo "   actual exit code: $exit_code"; fi
         if ! $correct_std_out; then echo "   expected std out: $expected_std_out"; echo "   actual std out: $std_out"; fi
@@ -42,9 +52,12 @@ function test_exit_code {
 
     if [ $exit_code == $expected_exit_code ]; then correct_exit_code=true; else correct_exit_code=false; fi
 
-    if $correct_exit_code && $correct_std_out && $correct_std_err;
-        then echo "PASS: $command";
+    if $correct_exit_code && $correct_std_out && $correct_std_err; then
+        passes=$((passes + 1))
+        echo "PASS: $command";
     else
+        fails=$((fails + 1))
+        echo "FAIL: $command"
         echo "FAIL: $command"
         if ! $correct_exit_code; then echo "   expected exit code: $expected_exit_code"; echo "   actual exit code: $exit_code"; fi
     fi
@@ -60,9 +73,12 @@ function test_image_height {
 
     size=`convert $image -print "Size: %wx%h\n" /dev/null`
 
-    if [[ $size == *"x$height"* ]]
-        then echo "PASS: $size";
+    if [[ $size == *"x$height"* ]]; then
+        passes=$((passes + 1))
+        echo "PASS: $size";
     else
+        fails=$((fails + 1))
+        echo "FAIL: $command"
         echo "FAIL:"
         echo "   expected height: $height"
         echo "   actual: $size"
@@ -76,9 +92,12 @@ function test_image_width {
 
     size=`convert $image -print "Size: %wx%h\n" /dev/null`
 
-    if [[ $size == *"$width""x"* ]]
-        then echo "PASS: $size";
+    if [[ $size == *"$width""x"* ]]; then
+        passes=$((passes + 1))
+        echo "PASS: $size";
     else
+        fails=$((fails + 1))
+        echo "FAIL: $command"
         echo "FAIL:"
         echo "   expected width: $width"
         echo "   actual: $size"
@@ -94,9 +113,12 @@ function test_image_width_and_height {
     size=`convert $image -print "Size: %wx%h\n" /dev/null`
     expected_size="Size: $width""x""$height"
 
-    if [ "$size" == "$expected_size" ]
-        then echo "PASS: $size";
+    if [ "$size" == "$expected_size" ]; then
+        passes=$((passes + 1))
+        echo "PASS: $size";
     else
+        fails=$((fails + 1))
+        echo "FAIL: $command"
         echo "FAIL:"
         echo "   expected: $expected_size"
         echo "   actual: $size"
@@ -168,8 +190,8 @@ test_all "$bandagepath --selcol" 1 "" "Bandage error: --selcol must be followed 
 test_all "$bandagepath --textcol" 1 "" "Bandage error: --textcol must be followed by a 6-digit hex colour (e.g. #FFB6C1), an 8-digit hex colour (e.g. #7FD2B48C) or a standard colour name (e.g. skyblue)"
 test_all "$bandagepath --toutcol" 1 "" "Bandage error: --toutcol must be followed by a 6-digit hex colour (e.g. #FFB6C1), an 8-digit hex colour (e.g. #7FD2B48C) or a standard colour name (e.g. skyblue)"
 test_all "$bandagepath --toutline" 1 "" "Bandage error: --toutline must be followed by a number"
-test_all "$bandagepath --colour" 1 "" "Bandage error: --colour must be followed by random, uniform, depth, blastsolid or blastrainbow"
-test_all "$bandagepath --colour abc" 1 "" "Bandage error: --colour must be followed by random, uniform, depth, blastsolid or blastrainbow"
+test_all "$bandagepath --colour" 1 "" "Bandage error: --colour must be followed by random, uniform, depth, blastsolid, blastrainbow or custom"
+test_all "$bandagepath --colour abc" 1 "" "Bandage error: --colour must be followed by random, uniform, depth, blastsolid, blastrainbow or custom"
 test_all "$bandagepath --ransatpos" 1 "" "Bandage error: --ransatpos must be followed by an integer"
 test_all "$bandagepath --ransatneg" 1 "" "Bandage error: --ransatneg must be followed by an integer"
 test_all "$bandagepath --ranligpos" 1 "" "Bandage error: --ranligpos must be followed by an integer"
@@ -205,8 +227,10 @@ test_all "$bandagepath --maxlendis" 1 "" "Bandage error: --maxlendis must be fol
 test_all "$bandagepath --maxevprod" 1 "" "Bandage error: --maxevprod must be followed by a number in scientific notation"
 
 
-
-
-
-
 rmdir tmp
+
+echo ""
+echo "$passes tests passed, $fails tests failed"
+if [[ $fails != 0 ]]; then
+    exit 1;
+fi
