@@ -8,6 +8,8 @@ on:
 
 env:
   BUILD_TYPE: Release
+  QT_QPA_PLATFORM: offscreen
+  XDG_RUNTIME_DIR: '/tmp/runtime-runner'
 
 jobs:
   build:
@@ -35,8 +37,8 @@ jobs:
 
       - name: Unit Tests
         working-directory: ${{github.workspace}}/build
-        run: QT_QPA_PLATFORM=offscreen ./BandageTests
+        run: ./BandageTests
 
       - name: CLI Tests
         working-directory: ${{github.workspace}}/tests
-        run: QT_QPA_PLATFORM=offscreen ./bandage_command_line_tests.sh ${{github.workspace}}/build/Bandage
+        run: ./bandage_command_line_tests.sh ${{github.workspace}}/build/Bandage
