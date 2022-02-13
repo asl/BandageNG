@@ -120,8 +120,10 @@ add_compile_definitions(QT_DISABLE_DEPRECATED_BEFORE=0x050F00)
 add_compile_definitions(APP_VERSION="${PROJECT_VERSION}-dev")
 include_directories(ui)
 
+add_subdirectory(thirdparty)
+
 add_executable(Bandage program/main.cpp ${LIB_SOURCES} ${FORMS} ${RESOURCES})
-target_link_libraries(Bandage PRIVATE Qt6::Widgets Qt6::Svg)
+target_link_libraries(Bandage PRIVATE Qt6::Widgets Qt6::Svg gfa1)
 
 if (APPLE)
   set_target_properties(Bandage PROPERTIES
@@ -131,4 +133,4 @@ if (APPLE)
 endif()
 
 add_executable(BandageTests tests/bandagetests.cpp ${LIB_SOURCES} ${FORMS} ${RESOURCES})
-target_link_libraries(BandageTests PRIVATE Qt6::Widgets Qt6::Svg Qt6::Test)
+target_link_libraries(BandageTests PRIVATE Qt6::Widgets Qt6::Svg Qt6::Test gfa1)
