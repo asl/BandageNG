@@ -398,8 +398,9 @@ void MainWindow::loadGraph2(GraphFileType graphFileType, QString fullFileName)
         {
             bool unsupportedCigar = false;
             QString bandageOptionsError;
-            g_assemblyGraph->buildDeBruijnGraphFromGfa(fullFileName, &unsupportedCigar, &customLabels, &customColours,
-                                                       &bandageOptionsError);
+            g_assemblyGraph
+                ->buildDeBruijnGraphFromGfaFast(fullFileName, &unsupportedCigar, &customLabels, &customColours,
+                                                &bandageOptionsError);
             if (unsupportedCigar)
                 QMessageBox::warning(this, "Unsupported CIGAR", "This GFA file contains "
                                      "links with complex CIGAR strings (containing "
@@ -2400,7 +2401,7 @@ void MainWindow::webBlastSelectedNodes()
 
     QByteArray urlSafeFasta = makeStringUrlSafe(selectedNodesFasta);
     QByteArray url = "http://blast.ncbi.nlm.nih.gov/Blast.cgi?PROGRAM=blastn&PAGE_TYPE=BlastSearch&LINK_LOC=blasthome&QUERY=" + urlSafeFasta;
-    
+
     if (url.length() < 8190)
         QDesktopServices::openUrl(QUrl(url));
 

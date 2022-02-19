@@ -91,6 +91,8 @@ public:
     void buildDeBruijnGraphFromLastGraph(QString fullFileName);
     void buildDeBruijnGraphFromGfa(QString fullFileName, bool * unsupportedCigar, bool * customLabels,
                                    bool * customColours, QString *bandageOptionsError);
+    void buildDeBruijnGraphFromGfaFast(QString fullFileName, bool *unsupportedCigar, bool *customLabels,
+                                       bool *customColours, QString *bandageOptionsError);
     void buildDeBruijnGraphFromFastg(QString fullFileName);
     void buildDeBruijnGraphFromTrinityFasta(QString fullFileName);
     int buildDeBruijnGraphFromAsqg(QString fullFileName);

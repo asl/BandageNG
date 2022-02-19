@@ -1830,7 +1830,7 @@ bool AssemblyGraph::loadGraphFromFile(QString filename)
         {
             bool unsupportedCigar, customLabels, customColours;
             QString bandageOptionsError;
-            buildDeBruijnGraphFromGfa(filename, &unsupportedCigar, &customLabels, &customColours, &bandageOptionsError);
+            buildDeBruijnGraphFromGfaFast(filename, &unsupportedCigar, &customLabels, &customColours, &bandageOptionsError);
         }
         if (graphFileType == TRINITY)
             buildDeBruijnGraphFromTrinityFasta(filename);

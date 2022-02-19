@@ -26,8 +26,10 @@ set(LIB_SOURCES
         command_line/querypaths.cpp
         command_line/reduce.cpp
         graph/assemblygraph.cpp
+        graph/assemblygraphfast.cpp
         graph/debruijnedge.cpp
         graph/debruijnnode.cpp
+        graph/gfawrapper.cpp
         graph/graphicsitemedge.cpp
         graph/graphicsitemnode.cpp
         graph/graphlocation.cpp
@@ -121,6 +123,7 @@ add_compile_definitions(APP_VERSION="${PROJECT_VERSION}-dev")
 include_directories(ui)
 
 add_subdirectory(thirdparty)
+include_directories(thirdparty)
 
 add_executable(Bandage program/main.cpp ${LIB_SOURCES} ${FORMS} ${RESOURCES})
 target_link_libraries(Bandage PRIVATE Qt6::Widgets Qt6::Svg gfa1)
