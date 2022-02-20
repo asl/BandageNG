@@ -49,12 +49,9 @@
 #include <limits>
 #include <cmath>
 
-// TODO: 1) implement bn:Z tag
-//       2) add assertions
-//       3) don't throw strings
-//       4) all paths are not circular
-//       5) add *.layout.readToTig files support for node depths
-//       6) move graph loading to separate thread
+// TODO: - implement bn:Z tag
+//       - all paths are not circular
+//       - add *.layout.readToTig files support for node depths
 void AssemblyGraph::buildDeBruijnGraphFromGfaFast(const QString &fullFileName,
                                                   bool *unsupportedCigar,
                                                   bool *customLabels,
