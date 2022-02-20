@@ -35,19 +35,18 @@ class PathWrapper {
     gfa_path_t &m_gfaPath;
 };
 
-
 class TagsWrapper {
   public:
     explicit TagsWrapper(gfa_aux_t &gfaAux) : m_gfaAux(gfaAux) {}
 
     // TODO: add type checking
-    template <typename T>
+    template<typename T>
     std::optional<T> getNumberTag(const char *tagName) const {
         auto tag = gfa_aux_get(static_cast<int>(m_gfaAux.l_aux), m_gfaAux.aux, tagName);
         if (tag == nullptr) {
             return {};
         } else {
-            return *(reinterpret_cast<T*>(tag + 1));
+            return *(reinterpret_cast<T *>(tag + 1));
         }
     }
 
@@ -63,7 +62,6 @@ class TagsWrapper {
   private:
     gfa_aux_t &m_gfaAux;
 };
-
 
 class SegmentWrapper {
   public:
@@ -85,10 +83,9 @@ class SegmentWrapper {
     gfa_seg_t &m_gfaSeg;
 };
 
-
-class LinkWrapper {
+class EdgeWrapper {
   public:
-    explicit LinkWrapper(gfa_arc_t &gfaArc) : m_gfaArc(gfaArc) {}
+    explicit EdgeWrapper(gfa_arc_t &gfaArc) : m_gfaArc(gfaArc) {}
 
     int64_t getStartVertexId() const {
         return gfa_arc_head(m_gfaArc);
@@ -96,6 +93,10 @@ class LinkWrapper {
 
     int64_t getEndVertexId() const {
         return gfa_arc_tail(m_gfaArc);
+    }
+
+    int64_t getLinkId() const {
+        return static_cast<int64_t>(m_gfaArc.link_id);
     }
 
     int64_t fromOverlapLength() const {
@@ -110,10 +111,9 @@ class LinkWrapper {
     gfa_arc_t &m_gfaArc;
 };
 
-
-class Wrapper{
+class Wrapper {
   private:
-    using GfaPtr = std::unique_ptr<gfa_t, void(*)(gfa_t*)>;
+    using GfaPtr = std::unique_ptr<gfa_t, void (*)(gfa_t *)>;
 
   public:
     explicit Wrapper(gfa_t *gfaRawPointer) : m_gfaPtr(gfaRawPointer, gfa_destroy) {}
@@ -126,7 +126,7 @@ class Wrapper{
         return gfa_n_vtx(m_gfaPtr);
     }
 
-    int64_t linksCount() const {
+    int64_t edgesCount() const {
         return static_cast<int64_t>(m_gfaPtr->n_arc);
     }
 
@@ -138,20 +138,8 @@ class Wrapper{
         return SegmentWrapper(m_gfaPtr->seg[n]);
     }
 
-    int64_t countLeavingLinksFromVertex(int64_t vertexId) {
-        return gfa_arc_n(m_gfaPtr, vertexId);
-    }
-
-    LinkWrapper getNthLeavingLinkFromVertex(int64_t vertexId, int64_t n) {
-        return LinkWrapper(gfa_arc_a(m_gfaPtr, vertexId)[n]);
-    }
-
-    int64_t getNthLeavingLinkIdFromVertex(int64_t vertexId, int64_t n) {
-        return gfa_arc_a(m_gfaPtr, vertexId) + n - m_gfaPtr->arc;
-    }
-
-    LinkWrapper getLinkById(int64_t linkId) const {
-        return LinkWrapper(m_gfaPtr->arc[linkId]);
+    EdgeWrapper getEdgeById(int64_t linkId) const {
+        return EdgeWrapper(m_gfaPtr->arc[linkId]);
     }
 
     static int64_t getVertexId(int64_t segmentId) {
@@ -162,10 +150,6 @@ class Wrapper{
         return vertexId ^ 1;
     }
 
-    int64_t countPaths() const {
-        return m_gfaPtr->n_path;
-    }
-
     PathWrapper getNthPath(int64_t n) const {
         return PathWrapper(m_gfaPtr->path[n]);
     }
@@ -174,12 +158,10 @@ class Wrapper{
     GfaPtr m_gfaPtr;
 };
 
-
 Wrapper load(const std::filesystem::path &filePath) {
     return Wrapper(gfa_read(filePath.c_str()));
 }
 
 }
-
 
 #endif //BANDAGE_GRAPH_GFAWRAPPER_HPP_

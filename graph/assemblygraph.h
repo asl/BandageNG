@@ -35,6 +35,11 @@ class DeBruijnNode;
 class DeBruijnEdge;
 class MyProgressDialog;
 
+class AssemblyGraphError : std::runtime_error {
+  public:
+    using std::runtime_error::runtime_error;
+};
+
 class AssemblyGraph : public QObject
 {
     Q_OBJECT
@@ -91,7 +96,7 @@ public:
     void buildDeBruijnGraphFromLastGraph(QString fullFileName);
     void buildDeBruijnGraphFromGfa(QString fullFileName, bool * unsupportedCigar, bool * customLabels,
                                    bool * customColours, QString *bandageOptionsError);
-    void buildDeBruijnGraphFromGfaFast(QString fullFileName, bool *unsupportedCigar, bool *customLabels,
+    void buildDeBruijnGraphFromGfaFast(const QString& fullFileName, bool *unsupportedCigar, bool *customLabels,
                                        bool *customColours, QString *bandageOptionsError);
     void buildDeBruijnGraphFromFastg(QString fullFileName);
     void buildDeBruijnGraphFromTrinityFasta(QString fullFileName);

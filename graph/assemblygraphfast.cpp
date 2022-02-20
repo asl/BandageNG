@@ -55,8 +55,11 @@
 //       4) all paths are not circular
 //       5) add *.layout.readToTig files support for node depths
 //       6) move graph loading to separate thread
-void AssemblyGraph::buildDeBruijnGraphFromGfaFast(QString fullFileName, bool *unsupportedCigar, bool *customLabels,
-                                                  bool *customColours, QString *bandageOptionsError) {
+void AssemblyGraph::buildDeBruijnGraphFromGfaFast(const QString &fullFileName,
+                                                  bool *unsupportedCigar,
+                                                  bool *customLabels,
+                                                  bool *customColours,
+                                                  QString *bandageOptionsError) {
     m_graphFileType = GFA;
     m_filename = fullFileName;
 
@@ -97,9 +100,9 @@ void AssemblyGraph::buildDeBruijnGraphFromGfaFast(QString fullFileName, bool *un
         if (sequence == "*" || sequence == "") {
             auto lnTag = tagWrapper.getNumberTag<int>("LN");
             if (!lnTag) {
-                throw "expected LN tag because sequence is " + sequence;
+                throw AssemblyGraphError("expected LN tag because sequence is " + sequence);
             }
-            length = *lnTag;
+            length = lnTag.value();
             sequence = "*";
         } else
             length = int(sequence.size());
@@ -128,94 +131,65 @@ void AssemblyGraph::buildDeBruijnGraphFromGfaFast(QString fullFileName, bool *un
 
         auto reverseComplementSequence = getReverseComplement(sequence);
 
-        auto node = new DeBruijnNode(nodeName, nodeDepth, sequence, length);
-        auto oppositeNode = new DeBruijnNode(oppositeNodeName,
-                                             nodeDepth,
-                                             reverseComplementSequence,
-                                             length);
+        auto nodePtr = new DeBruijnNode(nodeName, nodeDepth, sequence, length);
+        auto oppositeNodePtr = new DeBruijnNode(oppositeNodeName,
+                                                nodeDepth,
+                                                reverseComplementSequence,
+                                                length);
 
         auto lb = tagWrapper.getTagString("LB");
         auto l2 = tagWrapper.getTagString("L2");
         *customLabels = *customLabels || lb != nullptr || l2 != nullptr;
-        if (lb != nullptr) node->setCustomLabel(lb);
-        if (l2 != nullptr) oppositeNode->setCustomLabel(l2);
+        if (lb != nullptr) nodePtr->setCustomLabel(lb);
+        if (l2 != nullptr) oppositeNodePtr->setCustomLabel(l2);
 
         auto cl = tagWrapper.getTagString("CB");
         auto c2 = tagWrapper.getTagString("C2");
         *customColours = *customColours || cl != nullptr || c2 != nullptr;
-        if (cl != nullptr) node->setCustomColour(cl);
-        if (c2 != nullptr) node->setCustomColour(c2);
+        if (cl != nullptr) nodePtr->setCustomColour(cl);
+        if (c2 != nullptr) oppositeNodePtr->setCustomColour(c2);
 
-        node->setReverseComplement(oppositeNode);
-        oppositeNode->setReverseComplement(node);
+        nodePtr->setReverseComplement(oppositeNodePtr);
+        oppositeNodePtr->setReverseComplement(nodePtr);
 
-        m_deBruijnGraphNodes[nodeName] = node;
-        m_deBruijnGraphNodes[oppositeNodeName] = oppositeNode;
-        nodePtrs[gfa::Wrapper::getVertexId(i)] = node;
-        nodePtrs[gfa::Wrapper::getComplementVertexId(gfa::Wrapper::getVertexId(i))] = oppositeNode;
+        m_deBruijnGraphNodes[nodeName] = nodePtr;
+        m_deBruijnGraphNodes[oppositeNodeName] = oppositeNodePtr;
+        nodePtrs[gfa::Wrapper::getVertexId(i)] = nodePtr;
+        nodePtrs[gfa::Wrapper::getComplementVertexId(gfa::Wrapper::getVertexId(i))] = oppositeNodePtr;
     }
 
     /* ------------------------ EDGES ------------------------ */
-    std::vector<bool> edgeUsed(gfaWrapper.linksCount());
-    for (int64_t fromVertexId = 0; fromVertexId < gfaWrapper.verticesCount(); fromVertexId++) {
-        QApplication::processEvents();
-        auto oppositeFromVertexId = gfa::Wrapper::getComplementVertexId(fromVertexId);
+    std::vector<DeBruijnEdge *> linkIdToEdgePtr(gfaWrapper.edgesCount());
+    for (int64_t i = 0; i < gfaWrapper.edgesCount(); i++) {
+        auto gfaEdge = gfaWrapper.getEdgeById(i);
+        auto fromNodePtr = nodePtrs[gfaEdge.getStartVertexId()];
+        auto toNodePtr = nodePtrs[gfaEdge.getEndVertexId()];
+        auto edgePtr = new DeBruijnEdge(fromNodePtr, toNodePtr);
 
-        auto linksCount = gfaWrapper.countLeavingLinksFromVertex(fromVertexId);
-        for (int64_t i = 0; i < linksCount; i++) {
-            auto linkId = gfaWrapper.getNthLeavingLinkIdFromVertex(fromVertexId, i);
-            if (edgeUsed[linkId]) continue;
-            edgeUsed[linkId] = true;
-
-            auto link = gfaWrapper.getLinkById(linkId);
-
-            auto toVertexId = link.getEndVertexId();
-            auto oppositeToVertexId = gfa::Wrapper::getComplementVertexId(toVertexId);
-            int64_t oppositeLinkId = -1;
-            auto oppositeLinksCount = gfaWrapper.countLeavingLinksFromVertex(oppositeToVertexId);
-            for (int64_t j = 0; j < oppositeLinksCount; j++) {
-                auto currentOppositeLinkId = gfaWrapper.getNthLeavingLinkIdFromVertex(oppositeToVertexId, j);
-
-                if (gfaWrapper.getLinkById(currentOppositeLinkId).getEndVertexId() == oppositeFromVertexId) {
-                    oppositeLinkId = currentOppositeLinkId;
-                    break;
-                }
-            }
-            assert(oppositeLinkId != -1);
-            edgeUsed[oppositeLinkId] = true;
-//            auto oppositeLink = gfaWrapper.getLinkById(oppositeLinkId);
-
-            bool isOwnPair = fromVertexId == oppositeToVertexId && toVertexId == oppositeFromVertexId;
-
-            auto fromNode = nodePtrs[fromVertexId];
-            auto toNode = nodePtrs[toVertexId];
-            auto oppositeToNode = nodePtrs[oppositeToVertexId];
-            auto oppositeFromNode = nodePtrs[oppositeFromVertexId];
-
-            auto edge = new DeBruijnEdge(fromNode, toNode);
-            auto oppositeEdge = isOwnPair
-                                ? edge
-                                : new DeBruijnEdge(oppositeToNode, oppositeFromNode);
-
-            edge->setReverseComplement(oppositeEdge);
-            oppositeEdge->setReverseComplement(edge);
-
-            // TODO: compare from and to overlaps
-            edge->setOverlap(static_cast<int>(link.fromOverlapLength()));
-            oppositeEdge->setOverlap(static_cast<int>(link.toOverlapLength()));
-            edge->setOverlapType(EXACT_OVERLAP);
-            oppositeEdge->setOverlapType(EXACT_OVERLAP);
-
-            // TODO: check edge does not exists
-            m_deBruijnGraphEdges[{fromNode, toNode}] = edge;
-            if (!isOwnPair)
-                m_deBruijnGraphEdges[{oppositeToNode, oppositeFromNode}] = oppositeEdge;
-
-            fromNode->addEdge(edge);
-            toNode->addEdge(edge);
-            oppositeToNode->addEdge(oppositeEdge);
-            oppositeFromNode->addEdge(oppositeEdge);
+        if (gfaEdge.fromOverlapLength() != gfaEdge.toOverlapLength()) {
+            throw AssemblyGraphError("Non-exact overlaps in gfa are not supported.");
         }
+        edgePtr->setOverlap(static_cast<int>(gfaEdge.fromOverlapLength()));
+        edgePtr->setOverlapType(EXACT_OVERLAP);
+
+        bool isOwnPair = fromNodePtr == toNodePtr->getReverseComplement()
+            && toNodePtr == fromNodePtr->getReverseComplement();
+
+        auto oppositeEdgePtr = isOwnPair ? edgePtr : linkIdToEdgePtr[gfaEdge.getLinkId()];
+        if (oppositeEdgePtr != nullptr) {
+            edgePtr->setReverseComplement(oppositeEdgePtr);
+            oppositeEdgePtr->setReverseComplement(edgePtr);
+        }
+        linkIdToEdgePtr[gfaEdge.getLinkId()] = edgePtr;
+
+        auto &oldEdgePtr = m_deBruijnGraphEdges[{fromNodePtr, toNodePtr}];
+        if (oldEdgePtr != nullptr) {
+            throw AssemblyGraphError("Multiple edges are not supported.");
+        }
+        oldEdgePtr = edgePtr;
+
+        fromNodePtr->addEdge(edgePtr);
+        toNodePtr->addEdge(edgePtr);
     }
 
     /* ------------------------ PATHS ------------------------ */
