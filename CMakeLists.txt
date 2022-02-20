@@ -29,7 +29,6 @@ set(LIB_SOURCES
         graph/assemblygraphfast.cpp
         graph/debruijnedge.cpp
         graph/debruijnnode.cpp
-        graph/gfawrapper.cpp
         graph/graphicsitemedge.cpp
         graph/graphicsitemnode.cpp
         graph/graphlocation.cpp
