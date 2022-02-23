@@ -41,7 +41,6 @@
 
 // TODO: - implement bn:Z tag
 //       - all paths are not circular
-//       - add *.layout.readToTig files support for node depths
 void AssemblyGraph::buildDeBruijnGraphFromGfaFast(const QString &fullFileName,
                                                   bool *unsupportedCigar,
                                                   bool *customLabels,
@@ -190,6 +189,8 @@ void AssemblyGraph::buildDeBruijnGraphFromGfaFast(const QString &fullFileName,
         }
         m_deBruijnGraphPaths[path.name()] = new Path(Path::makeFromOrderedNodes(pathNodes, false));
     }
+
+    tryUpdateNodeDepthsForCanuGraphs();
 
     m_sequencesLoadedFromFasta = NOT_TRIED;
 }

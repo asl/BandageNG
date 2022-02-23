@@ -94,6 +94,7 @@ public:
     void determineGraphInfo();
     void clearGraphInfo();
     void buildDeBruijnGraphFromLastGraph(QString fullFileName);
+    void tryUpdateNodeDepthsForCanuGraphs();
     void buildDeBruijnGraphFromGfa(QString fullFileName, bool * unsupportedCigar, bool * customLabels,
                                    bool * customColours, QString *bandageOptionsError);
     void buildDeBruijnGraphFromGfaFast(const QString& fullFileName, bool *unsupportedCigar, bool *customLabels,

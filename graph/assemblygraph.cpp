@@ -574,6 +574,66 @@ QString AssemblyGraph::convertNormalNumberStringToBandageNodeName(QString number
 }
 
 
+void AssemblyGraph::tryUpdateNodeDepthsForCanuGraphs() {
+    // For Canu graphs, if there is a file called *.layout.readToTig, then we
+    // can use that to get better read depth values.
+    QFileInfo gfaFileInfo(m_filename);
+    QString baseName = gfaFileInfo.completeBaseName();
+    QString readToTigFilename = gfaFileInfo.dir().filePath(baseName + ".layout.readToTig");
+    QFileInfo readToTigFileInfo(readToTigFilename);
+    if (readToTigFileInfo.exists()) {
+        QFile readToTigFile(readToTigFilename);
+        if (readToTigFile.open(QIODevice::ReadOnly)) {
+            // Keep track of how many bases are put into each node.
+            QMap<QString, long long> baseCounts;
+            QMapIterator<QString, DeBruijnNode*> i(m_deBruijnGraphNodes);
+            while (i.hasNext()) {
+                i.next();
+                DeBruijnNode * node = i.value();
+                if (node->isPositiveNode())
+                    baseCounts[node->getNameWithoutSign()] = 0;
+            }
+
+            QTextStream in(&readToTigFile);
+            while (!in.atEnd()) {
+                QApplication::processEvents();
+                QString line = in.readLine();
+                QStringList lineParts = line.split(QRegularExpression("\t"));
+                if (lineParts.length() >= 5) {
+                    bool conversionOkay;
+                    long long readStart = lineParts[3].toLongLong(&conversionOkay);
+                    if (!conversionOkay)
+                        continue;
+                    long long readEnd = lineParts[4].toLongLong(&conversionOkay);
+                    if (!conversionOkay)
+                        continue;
+                    long long readLength = (readEnd < readStart) ? (readStart - readEnd) : (readEnd - readStart);
+                    QString nodeName = lineParts[1];
+                    if (baseCounts.contains(nodeName))
+                        baseCounts[nodeName] += readLength;
+                }
+            }
+
+            // A node's depth is its total bases divided by its length.
+            QMapIterator<QString, DeBruijnNode*> j(m_deBruijnGraphNodes);
+            while (j.hasNext()) {
+                j.next();
+                DeBruijnNode * node = j.value();
+                if (node->isPositiveNode()) {
+                    QString nodeName = node->getNameWithoutSign();
+                    double depth;
+                    if (node->getLength() > 0)
+                        depth = double(baseCounts[nodeName]) / double(node->getLength());
+                    else
+                        depth = 1.0;
+                    node->setDepth(depth);
+                    node->getReverseComplement()->setDepth(depth);
+                }
+            }
+        }
+    }
+}
+
 
 //This function loads a graph from a GFA file.  It reports whether or not it
 //encountered an unsupported CIGAR string, whether the GFA has custom labels
@@ -852,63 +912,7 @@ void AssemblyGraph::buildDeBruijnGraphFromGfa(QString fullFileName, bool *unsupp
     if (m_deBruijnGraphNodes.size() == 0)
         throw "load error";
 
-    // For Canu graphs, if there is a file called *.layout.readToTig, then we
-    // can use that to get better read depth values.
-    QFileInfo gfaFileInfo(m_filename);
-    QString baseName = gfaFileInfo.completeBaseName();
-    QString readToTigFilename = gfaFileInfo.dir().filePath(baseName + ".layout.readToTig");
-    QFileInfo readToTigFileInfo(readToTigFilename);
-    if (readToTigFileInfo.exists()) {
-        QFile readToTigFile(readToTigFilename);
-        if (readToTigFile.open(QIODevice::ReadOnly)) {
-            // Keep track of how many bases are put into each node.
-            QMap<QString, long long> baseCounts;
-            QMapIterator<QString, DeBruijnNode*> i(m_deBruijnGraphNodes);
-            while (i.hasNext()) {
-                i.next();
-                DeBruijnNode * node = i.value();
-                if (node->isPositiveNode())
-                    baseCounts[node->getNameWithoutSign()] = 0;
-            }
-
-            QTextStream in(&readToTigFile);
-            while (!in.atEnd()) {
-                QApplication::processEvents();
-                QString line = in.readLine();
-                QStringList lineParts = line.split(QRegularExpression("\t"));
-                if (lineParts.length() >= 5) {
-                    bool conversionOkay;
-                    long long readStart = lineParts[3].toLongLong(&conversionOkay);
-                    if (!conversionOkay)
-                        continue;
-                    long long readEnd = lineParts[4].toLongLong(&conversionOkay);
-                    if (!conversionOkay)
-                        continue;
-                    long long readLength = (readEnd < readStart) ? (readStart - readEnd) : (readEnd - readStart);
-                    QString nodeName = lineParts[1];
-                    if (baseCounts.contains(nodeName))
-                        baseCounts[nodeName] += readLength;
-                }
-            }
-
-            // A node's depth is its total bases divided by its length.
-            QMapIterator<QString, DeBruijnNode*> j(m_deBruijnGraphNodes);
-            while (j.hasNext()) {
-                j.next();
-                DeBruijnNode * node = j.value();
-                if (node->isPositiveNode()) {
-                    QString nodeName = node->getNameWithoutSign();
-                    double depth;
-                    if (node->getLength() > 0)
-                        depth = double(baseCounts[nodeName]) / double(node->getLength());
-                    else
-                        depth = 1.0;
-                    node->setDepth(depth);
-                    node->getReverseComplement()->setDepth(depth);
-                }
-            }
-        }
-    }
+    tryUpdateNodeDepthsForCanuGraphs();
 
     m_sequencesLoadedFromFasta = NOT_TRIED;
 }
