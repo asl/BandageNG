@@ -39,8 +39,6 @@
 #include <algorithm>
 #include <cmath>
 
-// TODO: - implement bn:Z tag
-//       - all paths are not circular
 void AssemblyGraph::buildDeBruijnGraphFromGfaFast(const QString &fullFileName,
                                                   bool *unsupportedCigar,
                                                   bool *customLabels,
