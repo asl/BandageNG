@@ -1,4 +1,4 @@
-//Copyright 2017 Ryan Wick
+//Copyright 2022 Andrey Zakharov
 
 //This file is part of Bandage
 
@@ -29,24 +29,14 @@
 #include "graph/graphicsitemnode.h"
 #include "ogdf/energybased/FMMMLayout.h"
 #include "program/globals.h"
-#include "program/graphlayoutworker.h"
-#include "program/memory.h"
-#include "program/settings.h"
 #include "ui/myprogressdialog.h"
 
 #include <QApplication>
-#include <QDir>
-#include <QFile>
-#include <QFileInfo>
 #include <QList>
-#include <QMapIterator>
-#include <QQueue>
 #include <QRegularExpression>
-#include <QSet>
 #include <QTextStream>
 
 #include <algorithm>
-#include <limits>
 #include <cmath>
 
 // TODO: - implement bn:Z tag
