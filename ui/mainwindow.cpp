@@ -399,8 +399,8 @@ void MainWindow::loadGraph2(GraphFileType graphFileType, QString fullFileName)
             bool unsupportedCigar = false;
             QString bandageOptionsError;
             g_assemblyGraph
-                ->buildDeBruijnGraphFromGfaFast(fullFileName, &unsupportedCigar, &customLabels, &customColours,
-                                                &bandageOptionsError);
+                ->buildDeBruijnGraphFromGfa(fullFileName, &unsupportedCigar, &customLabels, &customColours,
+                                            &bandageOptionsError);
             if (unsupportedCigar)
                 QMessageBox::warning(this, "Unsupported CIGAR", "This GFA file contains "
                                      "links with complex CIGAR strings (containing "

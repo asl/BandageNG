@@ -95,10 +95,8 @@ public:
     void clearGraphInfo();
     void buildDeBruijnGraphFromLastGraph(QString fullFileName);
     void tryUpdateNodeDepthsForCanuGraphs();
-    void buildDeBruijnGraphFromGfa(QString fullFileName, bool * unsupportedCigar, bool * customLabels,
-                                   bool * customColours, QString *bandageOptionsError);
-    void buildDeBruijnGraphFromGfaFast(const QString& fullFileName, bool *unsupportedCigar, bool *customLabels,
-                                       bool *customColours, QString *bandageOptionsError);
+    void buildDeBruijnGraphFromGfa(const QString& fullFileName, bool *unsupportedCigar, bool *customLabels,
+                                   bool *customColours, QString *bandageOptionsError);
     void buildDeBruijnGraphFromFastg(QString fullFileName);
     void buildDeBruijnGraphFromTrinityFasta(QString fullFileName);
     int buildDeBruijnGraphFromAsqg(QString fullFileName);

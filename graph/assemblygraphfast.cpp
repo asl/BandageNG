@@ -39,11 +39,11 @@
 #include <algorithm>
 #include <cmath>
 
-void AssemblyGraph::buildDeBruijnGraphFromGfaFast(const QString &fullFileName,
-                                                  bool *unsupportedCigar,
-                                                  bool *customLabels,
-                                                  bool *customColours,
-                                                  QString *bandageOptionsError) {
+void AssemblyGraph::buildDeBruijnGraphFromGfa(const QString &fullFileName,
+                                              bool *unsupportedCigar,
+                                              bool *customLabels,
+                                              bool *customColours,
+                                              QString *bandageOptionsError) {
     m_graphFileType = GFA;
     m_filename = fullFileName;
 
@@ -96,7 +96,7 @@ void AssemblyGraph::buildDeBruijnGraphFromGfaFast(const QString &fullFileName,
         auto rc = tagWrapper.getNumberTag<float>("RC");
         auto fc = tagWrapper.getNumberTag<float>("FC");
 
-        double nodeDepth = 1;
+        double nodeDepth = 0;
         if (dp.has_value()) {
             m_depthTag = "DP";
             nodeDepth = *dp;
