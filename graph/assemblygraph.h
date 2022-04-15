@@ -58,7 +58,7 @@ public:
 
     //Edges are stored in a map with a key of the starting and ending node
     //pointers.
-    QMap<QPair<DeBruijnNode*, DeBruijnNode*>, DeBruijnEdge*> m_deBruijnGraphEdges;
+    phmap::parallel_flat_hash_map<QPair<DeBruijnNode*, DeBruijnNode*>, DeBruijnEdge*> m_deBruijnGraphEdges;
 
     phmap::parallel_flat_hash_map<QString, Path*> m_deBruijnGraphPaths;
     
