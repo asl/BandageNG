@@ -764,11 +764,9 @@ void MainWindow::setupPathSelectionComboBox() {
     ui->pathSelectionComboBox2->clear();
 
     QStringList comboBoxItems;
-    for (QMap<QString, Path*>::key_iterator it = g_assemblyGraph->m_deBruijnGraphPaths.keyBegin();
-         it != g_assemblyGraph->m_deBruijnGraphPaths.keyEnd(); ++it)
-    {
-        comboBoxItems.push_back(*it);
-    }
+    for (auto &entry : g_assemblyGraph->m_deBruijnGraphPaths)
+        comboBoxItems.push_back(entry.first);
+    comboBoxItems.sort();
 
     if (comboBoxItems.size() > 0)
     {

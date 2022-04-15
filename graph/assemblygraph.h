@@ -19,18 +19,22 @@
 #ifndef ASSEMBLYGRAPH_H
 #define ASSEMBLYGRAPH_H
 
-#include <QObject>
-#include <vector>
+#include "path.h"
+
+#include "program/globals.h"
+#include "ui/mygraphicsscene.h"
+
+#include "seq/sequence.hpp"
+#include "parallel_hashmap/phmap.h"
 
 #include "ogdf/basic/Graph.h"
 #include "ogdf/basic/GraphAttributes.h"
+
 #include <QString>
 #include <QMap>
-#include "program/globals.h"
-#include "ui/mygraphicsscene.h"
-#include "path.h"
-#include "sequence.hpp"
 #include <QPair>
+#include <QObject>
+#include <vector>
 
 class DeBruijnNode;
 class DeBruijnEdge;
@@ -56,7 +60,7 @@ public:
     //pointers.
     QMap<QPair<DeBruijnNode*, DeBruijnNode*>, DeBruijnEdge*> m_deBruijnGraphEdges;
 
-    QMap<QString, Path*> m_deBruijnGraphPaths;
+    phmap::parallel_flat_hash_map<QString, Path*> m_deBruijnGraphPaths;
     
     ogdf::Graph * m_ogdfGraph;
     ogdf::EdgeArray<double> * m_edgeArray;

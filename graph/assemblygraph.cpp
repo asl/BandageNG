@@ -70,11 +70,8 @@ AssemblyGraph::~AssemblyGraph()
 void AssemblyGraph::cleanUp()
 {
     {
-        QMapIterator<QString, Path*> i(m_deBruijnGraphPaths);
-        while (i.hasNext())
-        {
-            i.next();
-            delete i.value();
+        for (auto &entry : m_deBruijnGraphPaths) {
+            delete entry.second;
         }
         m_deBruijnGraphPaths.clear();
     }
