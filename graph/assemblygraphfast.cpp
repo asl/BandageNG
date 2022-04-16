@@ -62,7 +62,7 @@ void AssemblyGraph::buildDeBruijnGraphFromGfa(const QString &fullFileName,
     std::vector<DeBruijnNode *> nodePtrs;
     nodePtrs.resize(gfaWrapper.verticesCount());
     for (int64_t i = 0; i < gfaWrapper.segmentsCount(); i++) {
-        QApplication::processEvents();
+        if (i % 1000 == 0) QApplication::processEvents();
         const auto &segment = gfaWrapper.getNthSegment(i);
         const auto &tagWrapper = segment.getTagsWrapper();
 
@@ -149,6 +149,7 @@ void AssemblyGraph::buildDeBruijnGraphFromGfa(const QString &fullFileName,
     /* ------------------------ EDGES ------------------------ */
     std::vector<DeBruijnEdge *> linkIdToEdgePtr(gfaWrapper.edgesCount());
     for (int64_t i = 0; i < gfaWrapper.edgesCount(); i++) {
+        if (i % 1000 == 0) QApplication::processEvents();
         auto gfaEdge = gfaWrapper.getEdgeById(i);
         auto fromNodePtr = nodePtrs[gfaEdge.getStartVertexId()];
         auto toNodePtr = nodePtrs[gfaEdge.getEndVertexId()];
@@ -183,7 +184,7 @@ void AssemblyGraph::buildDeBruijnGraphFromGfa(const QString &fullFileName,
     /* ------------------------ PATHS ------------------------ */
     auto pathsCount = gfaWrapper.pathsCount();
     for (int64_t i = 0; i < pathsCount; i++) {
-        QApplication::processEvents();
+        if (i % 1000 == 0) QApplication::processEvents();
         auto path = gfaWrapper.getNthPath(i);
         QList<DeBruijnNode *> pathNodes;
         for (int64_t j = 0; j < path.length(); j++) {
