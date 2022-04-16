@@ -40,28 +40,22 @@ void BuildBlastDatabaseWorker::buildBlastDatabase()
     file.open(QIODevice::WriteOnly | QIODevice::Text);
     QTextStream out(&file);
 
-    QMapIterator<QString, DeBruijnNode*> i(g_assemblyGraph->m_deBruijnGraphNodes);
-    while (i.hasNext())
-    {
+    for (auto &entry : g_assemblyGraph->m_deBruijnGraphNodes) {
         if (g_blastSearch->m_cancelBuildBlastDatabase)
         {
             emit finishedBuild("Build cancelled.");
             return;
         }
 
-        i.next();
-        DeBruijnNode * node = i.value();
+        DeBruijnNode * node = entry.second;
         out << node->getFasta(true, false, false);
     }
     file.close();
 
     // Make sure the graph has sequences to BLAST.
     bool atLeastOneSequence = false;
-    QMapIterator<QString, DeBruijnNode*> j(g_assemblyGraph->m_deBruijnGraphNodes);
-    while (j.hasNext())
-    {
-        j.next();
-        DeBruijnNode * node = j.value();
+    for (auto &entry : g_assemblyGraph->m_deBruijnGraphNodes) {
+        DeBruijnNode * node = entry.second;
         if (!node->sequenceIsMissing())
         {
             atLeastOneSequence = true;

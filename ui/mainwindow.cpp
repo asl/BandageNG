@@ -1945,11 +1945,8 @@ void MainWindow::selectNodesWithBlastHits()
     bool atLeastOneNodeHasBlastHits = false;
     bool atLeastOneNodeSelected = false;
 
-    QMapIterator<QString, DeBruijnNode*> i(g_assemblyGraph->m_deBruijnGraphNodes);
-    while (i.hasNext())
-    {
-        i.next();
-        DeBruijnNode * node = i.value();
+    for (auto &entry : g_assemblyGraph->m_deBruijnGraphNodes) {
+        DeBruijnNode * node = entry.second;
 
         bool nodeHasBlastHits;
 
@@ -2003,11 +2000,8 @@ void MainWindow::selectNodesWithDeadEnds()
     bool atLeastOneNodeHasDeadEnd = false;
     bool atLeastOneNodeSelected = false;
 
-    QMapIterator<QString, DeBruijnNode*> i(g_assemblyGraph->m_deBruijnGraphNodes);
-    while (i.hasNext())
-    {
-        i.next();
-        DeBruijnNode * node = i.value();
+    for (auto &entry : g_assemblyGraph->m_deBruijnGraphNodes) {
+        DeBruijnNode * node = entry.second;
 
         bool nodeHasDeadEnd = node->getDeadEndCount() > 0;
         if (nodeHasDeadEnd)
@@ -2141,11 +2135,8 @@ void MainWindow::selectBasedOnContiguity(ContiguityStatus targetContiguityStatus
     m_scene->blockSignals(true);
     m_scene->clearSelection();
 
-    QMapIterator<QString, DeBruijnNode*> i(g_assemblyGraph->m_deBruijnGraphNodes);
-    while (i.hasNext())
-    {
-        i.next();
-        DeBruijnNode * node = i.value();
+    for (auto &entry : g_assemblyGraph->m_deBruijnGraphNodes) {
+        DeBruijnNode * node = entry.second;
         GraphicsItemNode * graphicsItemNode = node->getGraphicsItemNode();
 
         if (graphicsItemNode == 0)

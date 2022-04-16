@@ -54,7 +54,7 @@ public:
     ~AssemblyGraph();
 
     //Nodes are stored in a map with a key of the node's name.
-    QMap<QString, DeBruijnNode*> m_deBruijnGraphNodes;
+    phmap::parallel_flat_hash_map<QString, DeBruijnNode*> m_deBruijnGraphNodes;
 
     //Edges are stored in a map with a key of the starting and ending node
     //pointers.

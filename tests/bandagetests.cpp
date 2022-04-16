@@ -1248,7 +1248,7 @@ void BandageTests::mergeNodesOnGfa()
 
     //That last node should have a length of its six constituent nodes, minus
     //the overlaps.
-    DeBruijnNode * lastNode = g_assemblyGraph->m_deBruijnGraphNodes.first();
+    DeBruijnNode * lastNode = g_assemblyGraph->m_deBruijnGraphNodes.begin()->second;
     QCOMPARE(lastNode->getLength(), nodeTotalLength - 5 * 81);
 
     //If we make a circular path with this node, its length should be equal to
