@@ -562,7 +562,7 @@ std::vector<BlastHitPart> DeBruijnNode::getBlastHitPartsForThisNode(double scale
 {
     std::vector<BlastHitPart> returnVector;
 
-    const auto &blastHits = g_assemblyGraph->m_blastHits[this];
+    const auto &blastHits = g_assemblyGraph->getBlastHits(this);
     for (const auto &blastHit : blastHits)
     {
         std::vector<BlastHitPart> hitParts = blastHit->getBlastHitParts(false, scaledNodeLength);
@@ -583,13 +583,13 @@ std::vector<BlastHitPart> DeBruijnNode::getBlastHitPartsForThisNodeOrReverseComp
     //since hits were previously filtered such that startPos < endPos,
     //hence we need to look at both positive and negative nodes to recover all hits.
     std::vector<BlastHitPart> returnVector;
-    const auto &positiveNodeBlastHits = g_assemblyGraph->m_blastHits[positiveNode];
+    const auto &positiveNodeBlastHits = g_assemblyGraph->getBlastHits(positiveNode);
     for (const auto &blastHit : positiveNodeBlastHits)
     {
         std::vector<BlastHitPart> hitParts = blastHit->getBlastHitParts(false, scaledNodeLength);
         returnVector.insert(returnVector.end(), hitParts.begin(), hitParts.end());
     }
-    const auto &negativeNodeBlastHits = g_assemblyGraph->m_blastHits[negativeNode];
+    const auto &negativeNodeBlastHits = g_assemblyGraph->getBlastHits(negativeNode);
     for (const auto &blastHit : negativeNodeBlastHits)
     {
         std::vector<BlastHitPart> hitParts = blastHit->getBlastHitParts(true, scaledNodeLength);

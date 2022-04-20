@@ -190,6 +190,7 @@ public:
     bool useLinearLayout() const;
     bool nodeHasBlastHit(DeBruijnNode *node) const;
     bool nodeOrReverseComplementHasBlastHit(DeBruijnNode *node) const;
+    const std::vector<std::shared_ptr<BlastHit>> &getBlastHits(const DeBruijnNode *node) const;
 
 private:
     template<typename T> double getValueUsingFractionalIndex(std::vector<T> * v, double index) const;

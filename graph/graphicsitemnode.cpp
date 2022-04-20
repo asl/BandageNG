@@ -988,7 +988,7 @@ void GraphicsItemNode::shiftPointSideways(bool left)
 void GraphicsItemNode::getBlastHitsTextAndLocationThisNode(std::vector<QString> * blastHitText,
                                                        std::vector<QPointF> * blastHitLocation)
 {
-    const auto &blastHits = g_assemblyGraph->m_blastHits[m_deBruijnNode];
+    const auto &blastHits = g_assemblyGraph->getBlastHits(m_deBruijnNode);
     for (const auto &blastHit : blastHits)
     {
         blastHitText->push_back(blastHit->m_query->getName());
@@ -1001,7 +1001,7 @@ void GraphicsItemNode::getBlastHitsTextAndLocationThisNodeOrReverseComplement(st
 {
     getBlastHitsTextAndLocationThisNode(blastHitText, blastHitLocation);
 
-    const auto &blastHits = g_assemblyGraph->m_blastHits[m_deBruijnNode];
+    const auto &blastHits = g_assemblyGraph->getBlastHits(m_deBruijnNode);
     for (const auto &blastHit : blastHits)
     {
         blastHitText->push_back(blastHit->m_query->getName());

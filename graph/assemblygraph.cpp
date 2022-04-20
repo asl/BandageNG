@@ -3519,3 +3519,13 @@ bool AssemblyGraph::nodeHasBlastHit(DeBruijnNode *node) const {
 bool AssemblyGraph::nodeOrReverseComplementHasBlastHit(DeBruijnNode *node) const {
     return nodeHasBlastHit(node) || nodeHasBlastHit(node->getReverseComplement());
 }
+
+const std::vector<std::shared_ptr<BlastHit>> &AssemblyGraph::getBlastHits(const DeBruijnNode *node) const {
+    auto it = m_blastHits.find(node);
+    if (it != m_blastHits.end()) {
+        return it->second;
+    } else {
+        static const std::vector<std::shared_ptr<BlastHit>> emptyVector{};
+        return emptyVector;
+    }
+}
