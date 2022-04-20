@@ -455,10 +455,10 @@ void BandageTests::blastSearch()
     QCOMPARE(one_insertion->getLength(), 101);
     QCOMPARE(one_deletion->getLength(), 99);
 
-    QSharedPointer<BlastHit> exactHit = exact->getHits().at(0);
-    QSharedPointer<BlastHit> one_mismatchHit = one_mismatch->getHits().at(0);
-    QSharedPointer<BlastHit> one_insertionHit = one_insertion->getHits().at(0);
-    QSharedPointer<BlastHit> one_deletionHit = one_deletion->getHits().at(0);
+    const auto &exactHit = exact->getHits().at(0);
+    const auto &one_mismatchHit = one_mismatch->getHits().at(0);
+    const auto &one_insertionHit = one_insertion->getHits().at(0);
+    const auto &one_deletionHit = one_deletion->getHits().at(0);
 
     QCOMPARE(exactHit->m_numberMismatches, 0);
     QCOMPARE(exactHit->m_numberGapOpens, 0);

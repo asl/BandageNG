@@ -1952,18 +1952,18 @@ void MainWindow::selectNodesWithBlastHits()
 
         //If we're in double mode, only select a node if it has a BLAST hit itself.
         if (g_settings->doubleMode)
-            nodeHasBlastHits = node->thisNodeHasBlastHits();
+            nodeHasBlastHits = g_assemblyGraph->nodeHasBlastHit(node);
 
         //In single mode, select a node if it or its reverse complement has a BLAST hit.
         else
-            nodeHasBlastHits = node->thisNodeOrReverseComplementHasBlastHits();
+            nodeHasBlastHits = g_assemblyGraph->nodeOrReverseComplementHasBlastHit(node);
 
         if (nodeHasBlastHits)
             atLeastOneNodeHasBlastHits = true;
 
         GraphicsItemNode * graphicsItemNode = node->getGraphicsItemNode();
 
-        if (graphicsItemNode == 0)
+        if (graphicsItemNode == nullptr)
             continue;
 
         if (nodeHasBlastHits)

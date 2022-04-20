@@ -295,51 +295,51 @@ void BlastSearchDialog::fillHitsTable()
 
     for (int i = 0; i < hitCount; ++i)
     {
-        BlastHit * hit = g_blastSearch->m_allHits[i].data();
-        BlastQuery * hitQuery = hit->m_query;
+        const BlastHit &hit = *g_blastSearch->m_allHits[i];
+        const BlastQuery &hitQuery = *hit.m_query;
 
-        QTableWidgetItem * queryColour = new QTableWidgetItem(hitQuery->getColour().name());
+        auto *queryColour = new QTableWidgetItem(hitQuery.getColour().name());
         queryColour->setFlags(Qt::ItemIsEnabled);
-        queryColour->setBackground(hitQuery->getColour());
+        queryColour->setBackground(hitQuery.getColour());
 
-        QTableWidgetItem * queryName = new QTableWidgetItem(hitQuery->getName());
+        auto *queryName = new QTableWidgetItem(hitQuery.getName());
         queryName->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
 
-        QTableWidgetItem * nodeName = new QTableWidgetItem(hit->m_node->getName());
+        auto *nodeName = new QTableWidgetItem(hit.m_node->getName());
         nodeName->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
 
-        TableWidgetItemDouble * percentIdentity = new TableWidgetItemDouble(formatDoubleForDisplay(hit->m_percentIdentity, 2) + "%", hit->m_percentIdentity);
+        auto *percentIdentity = new TableWidgetItemDouble(formatDoubleForDisplay(hit.m_percentIdentity, 2) + "%", hit.m_percentIdentity);
         percentIdentity->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
 
-        TableWidgetItemInt * alignmentLength = new TableWidgetItemInt(formatIntForDisplay(hit->m_alignmentLength), hit->m_alignmentLength);
+        auto *alignmentLength = new TableWidgetItemInt(formatIntForDisplay(hit.m_alignmentLength), hit.m_alignmentLength);
         alignmentLength->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
 
-        double queryCoverPercent = 100.0 * hit->getQueryCoverageFraction();
-        TableWidgetItemDouble * queryCover = new TableWidgetItemDouble(formatDoubleForDisplay(queryCoverPercent, 2) + "%", queryCoverPercent);
+        double queryCoverPercent = 100.0 * hit.getQueryCoverageFraction();
+        auto *queryCover = new TableWidgetItemDouble(formatDoubleForDisplay(queryCoverPercent, 2) + "%", queryCoverPercent);
         queryCover->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
 
-        TableWidgetItemInt * numberMismatches = new TableWidgetItemInt(formatIntForDisplay(hit->m_numberMismatches), hit->m_numberMismatches);
+        auto *numberMismatches = new TableWidgetItemInt(formatIntForDisplay(hit.m_numberMismatches), hit.m_numberMismatches);
         numberMismatches->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
 
-        TableWidgetItemInt * numberGapOpens = new TableWidgetItemInt(formatIntForDisplay(hit->m_numberGapOpens), hit->m_numberGapOpens);
+        auto *numberGapOpens = new TableWidgetItemInt(formatIntForDisplay(hit.m_numberGapOpens), hit.m_numberGapOpens);
         numberGapOpens->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
 
-        TableWidgetItemInt * queryStart = new TableWidgetItemInt(formatIntForDisplay(hit->m_queryStart), hit->m_queryStart);
+        auto *queryStart = new TableWidgetItemInt(formatIntForDisplay(hit.m_queryStart), hit.m_queryStart);
         queryStart->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
 
-        TableWidgetItemInt * queryEnd = new TableWidgetItemInt(formatIntForDisplay(hit->m_queryEnd), hit->m_queryEnd);
+        auto *queryEnd = new TableWidgetItemInt(formatIntForDisplay(hit.m_queryEnd), hit.m_queryEnd);
         queryEnd->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
 
-        TableWidgetItemInt * nodeStart = new TableWidgetItemInt(formatIntForDisplay(hit->m_nodeStart), hit->m_nodeStart);
+        auto *nodeStart = new TableWidgetItemInt(formatIntForDisplay(hit.m_nodeStart), hit.m_nodeStart);
         nodeStart->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
 
-        TableWidgetItemInt * nodeEnd = new TableWidgetItemInt(formatIntForDisplay(hit->m_nodeEnd), hit->m_nodeEnd);
+        auto *nodeEnd = new TableWidgetItemInt(formatIntForDisplay(hit.m_nodeEnd), hit.m_nodeEnd);
         nodeEnd->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
 
-        TableWidgetItemDouble * eValue = new TableWidgetItemDouble(hit->m_eValue.asString(false), hit->m_eValue.toDouble());
+        auto *eValue = new TableWidgetItemDouble(hit.m_eValue.asString(false), hit.m_eValue.toDouble());
         eValue->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
 
-        TableWidgetItemDouble * bitScore = new TableWidgetItemDouble(QString::number(hit->m_bitScore), hit->m_bitScore);
+        auto *bitScore = new TableWidgetItemDouble(QString::number(hit.m_bitScore), hit.m_bitScore);
         bitScore->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
 
         ui->blastHitsTableWidget->setItem(i, 0, queryColour);

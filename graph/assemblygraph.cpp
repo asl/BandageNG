@@ -337,9 +337,7 @@ void AssemblyGraph::resetAllNodeColours()
 
 void AssemblyGraph::clearAllBlastHitPointers()
 {
-    for (auto &entry : m_deBruijnGraphNodes) {
-        entry.second->clearBlastHits();
-    }
+    m_blastHits.clear();
 }
 
 void AssemblyGraph::determineGraphInfo()
@@ -2252,7 +2250,7 @@ void AssemblyGraph::clearAllCsvData()
 int AssemblyGraph::getDrawnNodeCount() const
 {
     int nodeCount = 0;
-    
+
     for (auto &entry : m_deBruijnGraphNodes) {
         DeBruijnNode * node = entry.second;
 
@@ -3512,4 +3510,12 @@ bool AssemblyGraph::useLinearLayout() const {
         return true;
     else
         return g_settings->linearLayout;
+}
+
+bool AssemblyGraph::nodeHasBlastHit(DeBruijnNode *node) const {
+    return m_blastHits.count(node) != 0;
+}
+
+bool AssemblyGraph::nodeOrReverseComplementHasBlastHit(DeBruijnNode *node) const {
+    return nodeHasBlastHit(node) || nodeHasBlastHit(node->getReverseComplement());
 }

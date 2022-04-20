@@ -24,26 +24,27 @@
 #include "graph/assemblygraph.h"
 #include "graph/debruijnedge.h"
 #include <limits>
+#include <utility>
 
 BlastQueryPath::BlastQueryPath(Path path, BlastQuery * query) :
-    m_path(path), m_query(query)
+    m_path(std::move(path)), m_query(query)
 {
 
     //This function follows the path, returning the BLAST hits it finds for the
     //query.  It requires that the hits occur in order, i.e. that each hit in
     //the path begins later in the query than the previous hit.
 
-    BlastHit * previousHit = 0;
+    BlastHit * previousHit = nullptr;
     QList<DeBruijnNode *> pathNodes = m_path.getNodes();
     for (int i = 0; i < pathNodes.size(); ++i)
     {
         DeBruijnNode * node = pathNodes[i];
 
         QList<BlastHit *> hitsThisNode;
-        QList< QSharedPointer<BlastHit> > queryHits = query->getHits();
-        for (int j = 0; j < queryHits.size(); ++j)
+        std::vector<std::shared_ptr<BlastHit>> queryHits = query->getHits();
+        for (auto & queryHit : queryHits)
         {
-            BlastHit * hit = queryHits[j].data();
+            BlastHit * hit = queryHit.get();
             if (hit->m_node->getName() == node->getName())
                 hitsThisNode.push_back(hit);
         }
@@ -51,20 +52,17 @@ BlastQueryPath::BlastQueryPath(Path path, BlastQuery * query) :
         std::sort(hitsThisNode.begin(), hitsThisNode.end(),
                   BlastHit::compareTwoBlastHitPointers);
 
-        for (int j = 0; j < hitsThisNode.size(); ++j)
+        for (auto hit : hitsThisNode)
         {
-            BlastHit * hit = hitsThisNode[j];
-
             //First check to make sure the hits are within the path.  This means
             //if we are in the first or last nodes of the path, we need to make
             //sure that our hit is contained within the start/end positions.
             if ( (i != 0 || hit->m_nodeStart >= m_path.getStartLocation().getPosition()) &&
-                    (i != pathNodes.size()-1 || hit->m_nodeEnd <= m_path.getEndLocation().getPosition()))
+                    (i != pathNodes.size() - 1 || hit->m_nodeEnd <= m_path.getEndLocation().getPosition()))
             {
                 //Now make sure that the hit follows the previous hit in the
                 //query.
-                if (previousHit == 0 ||
-                        hit->m_queryStart > previousHit->m_queryStart)
+                if (previousHit == nullptr || hit->m_queryStart > previousHit->m_queryStart)
                 {
                     m_hits.push_back(hit);
                     previousHit = hit;

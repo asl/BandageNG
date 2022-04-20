@@ -51,7 +51,7 @@ class AssemblyGraph : public QObject
 
 public:
     AssemblyGraph();
-    ~AssemblyGraph();
+    ~AssemblyGraph() override;
 
     //Nodes are stored in a map with a key of the node's name.
     phmap::parallel_flat_hash_map<QString, DeBruijnNode*> m_deBruijnGraphNodes;
@@ -65,6 +65,8 @@ public:
     ogdf::Graph * m_ogdfGraph;
     ogdf::EdgeArray<double> * m_edgeArray;
     ogdf::GraphAttributes * m_graphAttributes;
+
+    std::unordered_map<const DeBruijnNode*, std::vector<std::shared_ptr<BlastHit>>> m_blastHits;
 
     int m_kmer;
     int m_nodeCount;
@@ -186,7 +188,8 @@ public:
     bool attemptToLoadSequencesFromFasta();
     long long getTotalLengthOrphanedNodes() const;
     bool useLinearLayout() const;
-
+    bool nodeHasBlastHit(DeBruijnNode *node) const;
+    bool nodeOrReverseComplementHasBlastHit(DeBruijnNode *node) const;
 
 private:
     template<typename T> double getValueUsingFractionalIndex(std::vector<T> * v, double index) const;

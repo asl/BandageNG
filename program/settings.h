@@ -95,7 +95,7 @@ public:
     FloatSetting outlineThickness;
     double selectionThickness;
     double arrowheadSize;
-    double arrowheadsInSingleMode;
+    bool arrowheadsInSingleMode;
     FloatSetting textOutlineThickness;
 
     int blastRainbowPartsPerQuery;

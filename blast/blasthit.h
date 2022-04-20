@@ -37,7 +37,6 @@ public:
              int numberMismatches, int numberGapOpens,
              int queryStart, int queryEnd,
              int nodeStart, int nodeEnd, SciNot eValue, double bitScore);
-    BlastHit();
 
     BlastQuery * m_query;
     DeBruijnNode * m_node;
@@ -57,13 +56,12 @@ public:
     double m_queryStartFraction;
     double m_queryEndFraction;
 
-    Path m_queryPath;
-
-    std::vector<BlastHitPart> getBlastHitParts(bool reverse, double scaledNodeLength);
-    bool onForwardStrand() {return m_queryStart < m_queryEnd;}
-    double getNodeCentreFraction() {return (m_nodeStartFraction + m_nodeEndFraction) / 2.0;}
     static bool compareTwoBlastHitPointers(BlastHit * a, BlastHit * b);
-    double getQueryCoverageFraction();
+
+    std::vector<BlastHitPart> getBlastHitParts(bool reverse, double scaledNodeLength) const;
+    bool onForwardStrand() const {return m_queryStart < m_queryEnd;}
+    double getNodeCentreFraction() const {return (m_nodeStartFraction + m_nodeEndFraction) / 2.0;}
+    double getQueryCoverageFraction() const;
     GraphLocation getHitStart() const;
     GraphLocation getHitEnd() const;
     QByteArray getNodeSequence() const;

@@ -21,11 +21,12 @@
 #include "graph/path.h"
 #include "graph/debruijnnode.h"
 #include <limits>
+#include <utility>
 #include <vector>
 #include <utility>
 
 BlastQuery::BlastQuery(QString name, QString sequence) :
-    m_name(name), m_sequence(sequence), m_searchedFor(false), m_shown(true)
+    m_name(std::move(name)), m_sequence(std::move(sequence)), m_searchedFor(false), m_shown(true)
 {
     autoSetSequenceType();
 }
@@ -86,9 +87,6 @@ void BlastQuery::clearSearchResults()
 }
 
 
-
-
-
 //This function tries to find the paths through the graph which cover the query.
 void BlastQuery::findQueryPaths()
 {
@@ -104,9 +102,9 @@ void BlastQuery::findQueryPaths()
     //start.
     QList<BlastHit *> possibleStarts;
     double acceptableStartFraction = 1.0 - g_settings->minQueryCoveredByPath;
-    for (int i = 0; i < m_hits.size(); ++i)
+    for (auto &m_hit : m_hits)
     {
-        BlastHit * hit = m_hits[i].data();
+        BlastHit * hit = m_hit.get();
         if (hit->m_queryStartFraction <= acceptableStartFraction)
             possibleStarts.push_back(hit);
     }
@@ -114,23 +112,21 @@ void BlastQuery::findQueryPaths()
     //Find all possible path ends.
     QList<BlastHit *> possibleEnds;
     double acceptableEndFraction = g_settings->minQueryCoveredByPath;
-    for (int i = 0; i < m_hits.size(); ++i)
+    for (auto &m_hit : m_hits)
     {
-        BlastHit * hit = m_hits[i].data();
+        BlastHit * hit = m_hit.get();
         if (hit->m_queryEndFraction >= acceptableEndFraction)
             possibleEnds.push_back(hit);
     }
 
     //For each possible start, find paths to each possible end.
     QList<Path> possiblePaths;
-    for (int i = 0; i < possibleStarts.size(); ++i)
+    for (auto start : possibleStarts)
     {
-        BlastHit * start = possibleStarts[i];
         GraphLocation startLocation = start->getHitStart();
 
-        for (int j = 0; j < possibleEnds.size(); ++j)
+        for (auto end : possibleEnds)
         {
-            BlastHit * end = possibleEnds[j];
             GraphLocation endLocation = end->getHitEnd();
 
             //Assuming there is a path from the start hit to the end hit,
@@ -176,12 +172,11 @@ void BlastQuery::findQueryPaths()
         }
     }
 
-
     //Now we use the Path objects to make BlastQueryPath objects.  These contain
     //BLAST-specific information that the Path class doesn't.
     QList<BlastQueryPath> blastQueryPaths;
-    for (int i = 0; i < possiblePaths.size(); ++i)
-        blastQueryPaths.push_back(BlastQueryPath(possiblePaths[i], this));
+    for (auto & possiblePath : possiblePaths)
+        blastQueryPaths.push_back(BlastQueryPath(possiblePath, this));
 
     //We now want to throw out any paths for which the hits fail to meet the
     //thresholds in settings.
@@ -234,7 +229,6 @@ void BlastQuery::findQueryPaths()
 }
 
 
-
 //This function returns the fraction of the query that is covered by BLAST hits.
 //If a list of BLAST hits is passed to the function, it only looks in those
 //hits.  If no such list is passed, it looks in all hits for this query.
@@ -247,26 +241,25 @@ double BlastQuery::fractionCoveredByHits(const QList<BlastHit *> * hitsToCheck) 
         return 0.0;
 
     std::vector<std::pair<int, int> > ranges;
-    if (hitsToCheck == 0) {
-        for (int i = 0; i < m_hits.size(); ++i) {
-            BlastHit * hit = m_hits[i].data();
-            ranges.push_back(std::pair<int,int>(hit->m_queryStart - 1, hit->m_queryEnd));
+    if (hitsToCheck == nullptr) {
+        for (const auto & m_hit : m_hits) {
+            BlastHit * hit = m_hit.get();
+            ranges.emplace_back(hit->m_queryStart - 1, hit->m_queryEnd);
         }
     }
     else {
-        for (int i = 0; i < hitsToCheck->size(); ++i) {
-            BlastHit * hit = (*hitsToCheck)[i];
-            ranges.push_back(std::pair<int,int>(hit->m_queryStart - 1, hit->m_queryEnd));
+        for (auto hit : *hitsToCheck) {
+            ranges.emplace_back(hit->m_queryStart - 1, hit->m_queryEnd);
         }
     }
 
-    if (ranges.size() == 0)
+    if (ranges.empty())
         return 0.0;
 
     std::sort(ranges.begin(), ranges.end());
 
     std::vector<std::pair<int, int> > mergedRanges;
-    std::vector<std::pair<int, int> >::iterator it = ranges.begin();
+    auto it = ranges.begin();
     std::pair<int,int> current = *(it)++;
     while (it != ranges.end())
     {
@@ -280,8 +273,8 @@ double BlastQuery::fractionCoveredByHits(const QList<BlastHit *> * hitsToCheck) 
     }
     mergedRanges.push_back(current);
 
-    for (size_t i = 0; i < mergedRanges.size(); ++i)
-        hitBases += mergedRanges[i].second - mergedRanges[i].first;
+    for (auto &mergedRange : mergedRanges)
+        hitBases += mergedRange.second - mergedRange.first;
 
     return double(hitBases) / queryLength;
 }

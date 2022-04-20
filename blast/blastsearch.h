@@ -39,25 +39,26 @@ public:
 
     BlastQueries m_blastQueries;
     QString m_blastOutput;
-    bool m_cancelBuildBlastDatabase;
-    bool m_cancelRunBlastSearch;
-    QProcess * m_makeblastdb;
-    QProcess * m_blast;
+    bool m_cancelBuildBlastDatabase{};
+    bool m_cancelRunBlastSearch{};
+    QProcess *m_makeblastdb{};
+    QProcess *m_blast{};
     QString m_tempDirectory;
-    QList< QSharedPointer<BlastHit> > m_allHits;
+    std::vector<std::shared_ptr<BlastHit>> m_allHits;
+
+    static QString getNodeNameFromString(const QString& nodeString);
+    static bool findProgram(const QString& programName, QString * command);
+    static int loadBlastQueriesFromFastaFile(QString fullFileName);
+    static QString cleanQueryName(QString queryName);
+    static void blastQueryChanged(const QString& queryName);
 
     void clearBlastHits();
     void cleanUp();
     void buildHitsFromBlastOutput();
     void findQueryPaths();
-    static QString getNodeNameFromString(QString nodeString);
-    bool findProgram(QString programName, QString * command);
     void clearSomeQueries(std::vector<BlastQuery *> queriesToRemove);
-    void emptyTempDirectory();
+    void emptyTempDirectory() const;
     QString doAutoBlastSearch();
-    int loadBlastQueriesFromFastaFile(QString fullFileName);
-    QString cleanQueryName(QString queryName);
-    void blastQueryChanged(QString queryName);
 };
 
 #endif // BLASTSEARCH_H

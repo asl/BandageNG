@@ -20,29 +20,25 @@
 #include "debruijnnode.h"
 #include "ogdfnode.h"
 #include <QPainterPathStroker>
-#include "graph/ogdfnode.h"
-#include "program/settings.h"
 #include <QPainter>
 #include <QPen>
 #include <QMessageBox>
 #include "debruijnedge.h"
 #include "graphicsitemedge.h"
 #include "ogdf/basic/GraphAttributes.h"
-#include <math.h>
+#include <cmath>
 #include <QFontMetrics>
 #include <QSize>
-#include <stdlib.h>
-#include <QGraphicsScene>
+#include <cstdlib>
 #include "ui/mygraphicsscene.h"
 #include <set>
 #include "ui/mygraphicsview.h"
 #include <QTransform>
+#include <utility>
 #include "blast/blasthit.h"
 #include "blast/blastquery.h"
 #include "blast/blasthitpart.h"
 #include "assemblygraph.h"
-#include <math.h>
-#include <QFontMetrics>
 #include "program/memory.h"
 
 GraphicsItemNode::GraphicsItemNode(DeBruijnNode * deBruijnNode,
@@ -54,11 +50,10 @@ GraphicsItemNode::GraphicsItemNode(DeBruijnNode * deBruijnNode,
     setWidth();
 
     OgdfNode * pathOgdfNode = deBruijnNode->getOgdfNode();
-    if (pathOgdfNode != 0)
+    if (pathOgdfNode != nullptr)
     {
-        for (size_t i = 0; i < pathOgdfNode->m_ogdfNodes.size(); ++i)
+        for (auto ogdfNode : pathOgdfNode->m_ogdfNodes)
         {
-            ogdf::node ogdfNode = pathOgdfNode->m_ogdfNodes[i];
             QPointF point(graphAttributes->x(ogdfNode), graphAttributes->y(ogdfNode));
             m_linePoints.push_back(point);
         }
@@ -104,7 +99,7 @@ GraphicsItemNode::GraphicsItemNode(DeBruijnNode * deBruijnNode,
                                    QGraphicsItem * parent) :
     QGraphicsItem(parent), m_deBruijnNode(deBruijnNode),
     m_hasArrow(g_settings->doubleMode),
-    m_linePoints(linePoints)
+    m_linePoints(std::move(linePoints))
 {
     setWidth();
     remakePath();
@@ -128,9 +123,9 @@ void GraphicsItemNode::paint(QPainter * painter, const QStyleOptionGraphicsItem 
 
     bool nodeHasBlastHits;
     if (g_settings->doubleMode)
-        nodeHasBlastHits = m_deBruijnNode->thisNodeHasBlastHits();
+        nodeHasBlastHits = g_assemblyGraph->nodeHasBlastHit(m_deBruijnNode);
     else
-        nodeHasBlastHits = m_deBruijnNode->thisNodeOrReverseComplementHasBlastHits();
+        nodeHasBlastHits = g_assemblyGraph->nodeOrReverseComplementHasBlastHit(m_deBruijnNode);
 
     //If the node contains a BLAST hit, draw that on top.
     if (nodeHasBlastHits && (g_settings->nodeColourScheme == BLAST_HITS_RAINBOW_COLOUR ||
@@ -146,12 +141,12 @@ void GraphicsItemNode::paint(QPainter * painter, const QStyleOptionGraphicsItem 
 
         if (g_settings->doubleMode)
         {
-            if (m_deBruijnNode->thisNodeHasBlastHits())
+            if (g_assemblyGraph->nodeHasBlastHit(m_deBruijnNode))
                 parts = m_deBruijnNode->getBlastHitPartsForThisNode(scaledNodeLength);
         }
         else
         {
-            if (m_deBruijnNode->thisNodeOrReverseComplementHasBlastHits())
+            if (g_assemblyGraph->nodeOrReverseComplementHasBlastHit(m_deBruijnNode))
                 parts = m_deBruijnNode->getBlastHitPartsForThisNodeOrReverseComplement(scaledNodeLength);
         }
 
@@ -166,13 +161,13 @@ void GraphicsItemNode::paint(QPainter * painter, const QStyleOptionGraphicsItem 
         if (m_hasArrow)
             painter->setClipPath(outlinePath);
 
-        for (size_t i = 0; i < parts.size(); ++i)
+        for (auto & part : parts)
         {
-            partPen.setColor(parts[i].m_colour);
+            partPen.setColor(part.m_colour);
             painter->setPen(partPen);
 
-            painter->drawPath(makePartialPath(parts[i].m_nodeFractionStart,
-                                              parts[i].m_nodeFractionEnd));
+            painter->drawPath(makePartialPath(part.m_nodeFractionStart,
+                                              part.m_nodeFractionEnd));
         }
         painter->setClipping(false);
     }
@@ -229,8 +224,8 @@ void GraphicsItemNode::paint(QPainter * painter, const QStyleOptionGraphicsItem 
         else
             centres = getCentres();
 
-        for (size_t i = 0; i < centres.size(); ++i)
-            drawTextPathAtLocation(painter, textPath, centres[i]);
+        for (auto & centre : centres)
+            drawTextPathAtLocation(painter, textPath, centre);
     }
 
     //Draw BLAST hit labels, if appropriate.
@@ -260,7 +255,7 @@ void GraphicsItemNode::paint(QPainter * painter, const QStyleOptionGraphicsItem 
 }
 
 
-void GraphicsItemNode::drawTextPathAtLocation(QPainter * painter, QPainterPath textPath, QPointF centre)
+void GraphicsItemNode::drawTextPathAtLocation(QPainter * painter, const QPainterPath &textPath, QPointF centre)
 {
     QRectF textBoundingRect = textPath.boundingRect();
     double textHeight = textBoundingRect.height();
@@ -341,10 +336,10 @@ void GraphicsItemNode::setNodeColour()
 
         m_colour = colour1;
         DeBruijnNode * revCompNode = m_deBruijnNode->getReverseComplement();
-        if (revCompNode != 0)
+        if (revCompNode != nullptr)
         {
             GraphicsItemNode * revCompGraphNode = revCompNode->getGraphicsItemNode();
-            if (revCompGraphNode != 0)
+            if (revCompGraphNode != nullptr)
                 revCompGraphNode->m_colour = colour2;
         }
         break;
@@ -357,11 +352,6 @@ void GraphicsItemNode::setNodeColour()
     }
 
     case BLAST_HITS_RAINBOW_COLOUR:
-    {
-        m_colour = g_settings->noBlastHitsColour;
-        break;
-    }
-
     case BLAST_HITS_SOLID_COLOUR:
     {
         m_colour = g_settings->noBlastHitsColour;
@@ -495,16 +485,16 @@ void GraphicsItemNode::mouseMoveEvent(QGraphicsSceneMouseEvent * event)
     //If this node is selected, then move all of the other selected nodes too.
     //If it is not selected, then only move this node.
     std::vector<GraphicsItemNode *> nodesToMove;
-    MyGraphicsScene * graphicsScene = dynamic_cast<MyGraphicsScene *>(scene());
+    auto *graphicsScene = dynamic_cast<MyGraphicsScene *>(scene());
     if (isSelected())
         nodesToMove = graphicsScene->getSelectedGraphicsItemNodes();
     else
         nodesToMove.push_back(this);
 
-    for (size_t i = 0; i < nodesToMove.size(); ++i)
+    for (auto & i : nodesToMove)
     {
-        nodesToMove[i]->shiftPoints(difference);
-        nodesToMove[i]->remakePath();
+        i->shiftPoints(difference);
+        i->remakePath();
     }
     graphicsScene->possiblyExpandSceneRectangle(&nodesToMove);
 
@@ -515,30 +505,29 @@ void GraphicsItemNode::mouseMoveEvent(QGraphicsSceneMouseEvent * event)
 //This function remakes edge paths.  If nodes is passed, it will remake the
 //edge paths for all of the nodes.  If nodes isn't passed, then it will just
 //do it for this node.
-void GraphicsItemNode::fixEdgePaths(std::vector<GraphicsItemNode *> * nodes)
+void GraphicsItemNode::fixEdgePaths(std::vector<GraphicsItemNode *> * nodes) const
 {
     std::set<DeBruijnEdge *> edgesToFix;
 
-    if (nodes == 0)
+    if (nodes == nullptr)
     {
         const std::vector<DeBruijnEdge *> * edges = m_deBruijnNode->getEdgesPointer();
-        for (size_t j = 0; j < edges->size(); ++j)
-            edgesToFix.insert((*edges)[j]);
+        for (auto edge : *edges)
+            edgesToFix.insert(edge);
     }
     else
     {
-        for (size_t i = 0; i < nodes->size(); ++i)
+        for (auto & i : *nodes)
         {
-            DeBruijnNode * node = (*nodes)[i]->m_deBruijnNode;
+            DeBruijnNode * node = i->m_deBruijnNode;
             const std::vector<DeBruijnEdge *> * edges = node->getEdgesPointer();
-            for (size_t j = 0; j < edges->size(); ++j)
-                edgesToFix.insert((*edges)[j]);
+            for (auto edge : *edges)
+                edgesToFix.insert(edge);
         }
     }
 
-    for (std::set<DeBruijnEdge *>::iterator i = edgesToFix.begin(); i != edgesToFix.end(); ++i)
+    for (auto deBruijnEdge : edgesToFix)
     {
-        DeBruijnEdge * deBruijnEdge = *i;
         GraphicsItemEdge * graphicsItemEdge = deBruijnEdge->getGraphicsItemEdge();
 
         //If this edge has a graphics item, adjust it now.
@@ -551,7 +540,7 @@ void GraphicsItemNode::fixEdgePaths(std::vector<GraphicsItemNode *> * nodes)
         else if (!g_settings->doubleMode)
         {
             graphicsItemEdge = deBruijnEdge->getReverseComplement()->getGraphicsItemEdge();
-            if (graphicsItemEdge != 0)
+            if (graphicsItemEdge != nullptr)
                 graphicsItemEdge->calculateAndSetPath();
         }
     }
@@ -567,8 +556,8 @@ void GraphicsItemNode::shiftPoints(QPointF difference)
 
     else if (isSelected()) //Move all pieces for selected nodes
     {
-        for (size_t i = 0; i < m_linePoints.size(); ++i)
-            m_linePoints[i] += difference;
+        for (auto & m_linePoint : m_linePoints)
+            m_linePoint += difference;
     }
 
     else if (g_settings->nodeDragging == ONE_PIECE)
@@ -686,7 +675,7 @@ QPointF GraphicsItemNode::findLocationOnPath(double fraction)
     }
 
     //The code shouldn't get here, as the target point should have been found in the above loop.
-    return QPointF();
+    return {};
 }
 
 QPointF GraphicsItemNode::findIntermediatePoint(QPointF p1, QPointF p2, double p1Value, double p2Value, double targetValue)
@@ -696,7 +685,7 @@ QPointF GraphicsItemNode::findIntermediatePoint(QPointF p1, QPointF p2, double p
     return difference * fraction + p1;
 }
 
-double GraphicsItemNode::distance(QPointF p1, QPointF p2) const
+double GraphicsItemNode::distance(QPointF p1, QPointF p2)
 {
     double xDiff = p1.x() - p2.x();
     double yDiff = p1.y() - p2.y();
@@ -704,7 +693,7 @@ double GraphicsItemNode::distance(QPointF p1, QPointF p2) const
 }
 
 
-bool GraphicsItemNode::usePositiveNodeColour()
+bool GraphicsItemNode::usePositiveNodeColour() const
 {
     return !m_hasArrow || m_deBruijnNode->isPositiveNode();
 }
@@ -772,7 +761,7 @@ std::vector<QPointF> GraphicsItemNode::getCentres() const
     }
 
     //If there is a current run, add its centre
-    if (currentRun.size() > 0)
+    if (!currentRun.empty())
         centres.push_back(getCentre(currentRun));
 
     return centres;
@@ -783,8 +772,8 @@ std::vector<QPointF> GraphicsItemNode::getCentres() const
 //This function finds the centre point on the path defined by linePoints.
 QPointF GraphicsItemNode::getCentre(std::vector<QPointF> linePoints) const
 {
-    if (linePoints.size() == 0)
-        return QPointF();
+    if (linePoints.empty())
+        return {};
     if (linePoints.size() == 1)
         return linePoints[0];
 
@@ -814,10 +803,10 @@ QPointF GraphicsItemNode::getCentre(std::vector<QPointF> linePoints) const
     }
 
     //Code should never get here.
-    return QPointF();
+    return {};
 }
 
-QStringList GraphicsItemNode::getNodeText()
+QStringList GraphicsItemNode::getNodeText() const
 {
     QStringList nodeText;
 
@@ -841,14 +830,14 @@ QStringList GraphicsItemNode::getNodeText()
 }
 
 
-QSize GraphicsItemNode::getNodeTextSize(QString text)
+QSize GraphicsItemNode::getNodeTextSize(const QString& text)
 {
     QFontMetrics fontMetrics(g_settings->labelFont);
     return fontMetrics.size(0, text);
 }
 
 
-QColor GraphicsItemNode::getDepthColour()
+QColor GraphicsItemNode::getDepthColour() const
 {
     double depth = m_deBruijnNode->getDepth();
     double lowValue;
@@ -881,7 +870,7 @@ QColor GraphicsItemNode::getDepthColour()
     int blue = int(g_settings->lowDepthColour.blue() + (fraction * blueDifference) + 0.5);
     int alpha = int(g_settings->lowDepthColour.alpha() + (fraction * alphaDifference) + 0.5);
 
-    return QColor(red, green, blue, alpha);
+    return {red, green, blue, alpha};
 }
 
 
@@ -999,12 +988,11 @@ void GraphicsItemNode::shiftPointSideways(bool left)
 void GraphicsItemNode::getBlastHitsTextAndLocationThisNode(std::vector<QString> * blastHitText,
                                                        std::vector<QPointF> * blastHitLocation)
 {
-    const std::vector<BlastHit *> * blastHits = m_deBruijnNode->getBlastHitsPointer();
-    for (size_t i = 0; i < blastHits->size(); ++i)
+    const auto &blastHits = g_assemblyGraph->m_blastHits[m_deBruijnNode];
+    for (const auto &blastHit : blastHits)
     {
-        BlastHit * hit = (*blastHits)[i];
-        blastHitText->push_back(hit->m_query->getName());
-        blastHitLocation->push_back(findLocationOnPath(hit->getNodeCentreFraction()));
+        blastHitText->push_back(blastHit->m_query->getName());
+        blastHitLocation->push_back(findLocationOnPath(blastHit->getNodeCentreFraction()));
     }
 }
 
@@ -1013,16 +1001,13 @@ void GraphicsItemNode::getBlastHitsTextAndLocationThisNodeOrReverseComplement(st
 {
     getBlastHitsTextAndLocationThisNode(blastHitText, blastHitLocation);
 
-    const std::vector<BlastHit *> * blastHits = m_deBruijnNode->getReverseComplement()->getBlastHitsPointer();
-    for (size_t i = 0; i < blastHits->size(); ++i)
+    const auto &blastHits = g_assemblyGraph->m_blastHits[m_deBruijnNode];
+    for (const auto &blastHit : blastHits)
     {
-        BlastHit * hit = (*blastHits)[i];
-        blastHitText->push_back(hit->m_query->getName());
-        blastHitLocation->push_back(findLocationOnPath(1.0 - hit->getNodeCentreFraction()));
+        blastHitText->push_back(blastHit->m_query->getName());
+        blastHitLocation->push_back(findLocationOnPath(1.0 - blastHit->getNodeCentreFraction()));
     }
 }
-
-
 
 
 //This function outlines and shades the appropriate part of a node if it is
@@ -1038,17 +1023,16 @@ void GraphicsItemNode::exactPathHighlightNode(QPainter * painter)
 }
 
 
-
 //This function outlines and shades the appropriate part of a node if it is
 //in the user-specified path.
 void GraphicsItemNode::queryPathHighlightNode(QPainter * painter)
 {
-    if (g_memory->queryPaths.size() == 0)
+    if (g_memory->queryPaths.empty())
         return;
 
-    for (int i = 0; i < g_memory->queryPaths.size(); ++i)
+    for (auto &queryPath : g_memory->queryPaths)
     {
-        Path * path = &(g_memory->queryPaths[i]);
+        Path * path = &queryPath;
         if (path->containsNode(m_deBruijnNode))
             pathHighlightNode2(painter, m_deBruijnNode, false, path);
 
@@ -1057,7 +1041,6 @@ void GraphicsItemNode::queryPathHighlightNode(QPainter * painter)
             pathHighlightNode2(painter, m_deBruijnNode->getReverseComplement(), true, path);
     }
 }
-
 
 
 void GraphicsItemNode::pathHighlightNode2(QPainter * painter,
@@ -1100,7 +1083,6 @@ void GraphicsItemNode::pathHighlightNode3(QPainter * painter,
     painter->setPen(outlinePen);
     painter->drawPath(highlightPath);
 }
-
 
 
 QPainterPath GraphicsItemNode::buildPartialHighlightPath(double startFraction,

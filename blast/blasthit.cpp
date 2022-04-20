@@ -20,7 +20,6 @@
 
 #include "graph/debruijnnode.h"
 #include "blastquery.h"
-#include "program/settings.h"
 #include "program/globals.h"
 #include "graph/sequenceutils.hpp"
 #include <cmath>
@@ -47,7 +46,7 @@ BlastHit::BlastHit(BlastQuery * query, DeBruijnNode * node,
     m_queryEndFraction = double(queryEnd) / queryLength;
 }
 
-std::vector<BlastHitPart> BlastHit::getBlastHitParts(bool reverse, double scaledNodeLength)
+std::vector<BlastHitPart> BlastHit::getBlastHitParts(bool reverse, double scaledNodeLength) const
 {
     std::vector<BlastHitPart> returnVector;
 
@@ -79,9 +78,9 @@ std::vector<BlastHitPart> BlastHit::getBlastHitParts(bool reverse, double scaled
             double nextFraction = nodeFraction + nodeSpacing;
 
             if (reverse)
-                returnVector.push_back(BlastHitPart(dotColour, 1.0 - nodeFraction, 1.0 - nextFraction));
+                returnVector.emplace_back(dotColour, 1.0 - nodeFraction, 1.0 - nextFraction);
             else
-                returnVector.push_back(BlastHitPart(dotColour, nodeFraction, nextFraction));
+                returnVector.emplace_back(dotColour, nodeFraction, nextFraction);
 
             nodeFraction = nextFraction;
             queryFraction += querySpacing;
@@ -93,9 +92,9 @@ std::vector<BlastHitPart> BlastHit::getBlastHitParts(bool reverse, double scaled
     else
     {
         if (reverse)
-            returnVector.push_back(BlastHitPart(m_query->getColour(), 1.0 - m_nodeStartFraction, 1.0 - m_nodeEndFraction));
+            returnVector.emplace_back(m_query->getColour(), 1.0 - m_nodeStartFraction, 1.0 - m_nodeEndFraction);
         else
-            returnVector.push_back(BlastHitPart(m_query->getColour(), m_nodeStartFraction, m_nodeEndFraction));
+            returnVector.emplace_back(m_query->getColour(), m_nodeStartFraction, m_nodeEndFraction);
     }
 
     return returnVector;
@@ -108,7 +107,7 @@ bool BlastHit::compareTwoBlastHitPointers(BlastHit * a, BlastHit * b)
 }
 
 
-double BlastHit::getQueryCoverageFraction()
+double BlastHit::getQueryCoverageFraction() const
 {
     int queryRegionSize = m_queryEnd - m_queryStart + 1;
     int queryLength = m_query->getLength();
@@ -122,12 +121,12 @@ double BlastHit::getQueryCoverageFraction()
 
 GraphLocation BlastHit::getHitStart() const
 {
-    return GraphLocation(m_node, m_nodeStart);
+    return {m_node, m_nodeStart};
 }
 
 GraphLocation BlastHit::getHitEnd() const
 {
-    return GraphLocation(m_node, m_nodeEnd);
+    return {m_node, m_nodeEnd};
 }
 
 

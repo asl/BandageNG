@@ -20,6 +20,7 @@
 #define DEBRUIJNNODE_H
 
 #include <QByteArray>
+#include <utility>
 #include <vector>
 #include "ogdf/basic/Graph.h"
 #include "ogdf/basic/GraphAttributes.h"
@@ -54,7 +55,7 @@ public:
     int getFullLength() const;
     int getLengthWithoutTrailingOverlap() const;
     QByteArray getFasta(bool sign, bool newLines = true, bool evenIfEmpty = true) const;
-    QByteArray getGfaSegmentLine(QString depthTag) const;
+    QByteArray getGfaSegmentLine(const QString& depthTag) const;
     char getBaseAt(int i) const {if (i >= 0 && i < m_sequence.size()) return m_sequence[i]; else return '\0';} // NOTE
     ContiguityStatus getContiguityStatus() const {return m_contiguityStatus;}
     DeBruijnNode * getReverseComplement() const {return m_reverseComplement;}
@@ -84,9 +85,6 @@ public:
     bool thisOrReverseComplementInOgdf() const {return (inOgdf() || getReverseComplement()->inOgdf());}
     bool thisOrReverseComplementNotInOgdf() const {return !thisOrReverseComplementInOgdf();}
     bool isNodeConnected(DeBruijnNode * node) const;
-    const std::vector<BlastHit *> * getBlastHitsPointer() const {return &m_blastHits;}
-    bool thisNodeHasBlastHits() const {return m_blastHits.size() > 0;}
-    bool thisNodeOrReverseComplementHasBlastHits() const {return m_blastHits.size() > 0 || getReverseComplement()->m_blastHits.size() > 0;}
     DeBruijnEdge * doesNodeLeadIn(DeBruijnNode * node) const;
     DeBruijnEdge * doesNodeLeadAway(DeBruijnNode * node) const;
     std::vector<BlastHitPart> getBlastHitPartsForThisNode(double scaledNodeLength) const;
@@ -98,12 +96,12 @@ public:
     bool sequenceIsMissing() const;
     DeBruijnEdge *getSelfLoopingEdge() const;
     int getDeadEndCount() const;
-    int getNumberOfOgdfGraphEdges(double drawnNodeLength) const;
+    static int getNumberOfOgdfGraphEdges(double drawnNodeLength) ;
     double getDrawnNodeLength() const;
 
     //MODIFERS
     void setDepthRelativeToMeanDrawnDepth(double newVal) {m_depthRelativeToMeanDrawnDepth = newVal;}
-    void setSequence(QByteArray newSeq) {m_sequence = Sequence(newSeq); m_length = m_sequence.size();}
+    void setSequence(const QByteArray &newSeq) {m_sequence = Sequence(newSeq); m_length = m_sequence.size();}
     void setSequence(const Sequence &newSeq) {m_sequence = newSeq; m_length = m_sequence.size();}
     void upgradeContiguityStatus(ContiguityStatus newStatus);
     void resetContiguityStatus() {m_contiguityStatus = NOT_CONTIGUOUS;}
@@ -121,13 +119,11 @@ public:
     void addToOgdfGraph(ogdf::Graph * ogdfGraph, ogdf::GraphAttributes * graphAttributes,
                         ogdf::EdgeArray<double> * edgeArray, double xPos, double yPos);
     void determineContiguity();
-    void clearBlastHits() {m_blastHits.clear();}
-    void addBlastHit(BlastHit * newHit) {m_blastHits.push_back(newHit);}
     void labelNeighbouringNodesAsDrawn(int nodeDistance, DeBruijnNode * callingNode);
-    void setCsvData(QStringList csvData) {m_csvData = csvData;}
+    void setCsvData(QStringList csvData) {m_csvData = std::move(csvData);}
     void clearCsvData() {m_csvData.clear();}
     void setDepth(double newDepth) {m_depth = newDepth;}
-    void setName(QString newName) {m_name = newName;}
+    void setName(QString newName) {m_name = std::move(newName);}
 
 private:
     QString m_name;
@@ -145,20 +141,19 @@ private:
     int m_highestDistanceInNeighbourSearch;
     QColor m_customColour;
     QString m_customLabel;
-    std::vector<BlastHit *> m_blastHits;
     QStringList m_csvData;
     QString getNodeNameForFasta(bool sign) const;
     QByteArray getUpstreamSequence(int upstreamSequenceLength) const;
 
-    double getNodeLengthPerMegabase() const;
-    bool isOnlyPathInItsDirection(DeBruijnNode * connectedNode,
+    static double getNodeLengthPerMegabase() ;
+    static bool isOnlyPathInItsDirection(DeBruijnNode * connectedNode,
                                   std::vector<DeBruijnNode *> * incomingNodes,
-                                  std::vector<DeBruijnNode *> * outgoingNodes) const;
-    bool isNotOnlyPathInItsDirection(DeBruijnNode * connectedNode,
+                                  std::vector<DeBruijnNode *> * outgoingNodes) ;
+    static bool isNotOnlyPathInItsDirection(DeBruijnNode * connectedNode,
                                      std::vector<DeBruijnNode *> * incomingNodes,
-                                     std::vector<DeBruijnNode *> * outgoingNodes) const;
-    std::vector<DeBruijnNode *> getNodesCommonToAllPaths(std::vector< std::vector <DeBruijnNode *> > * paths,
-                                                         bool includeReverseComplements) const;
+                                     std::vector<DeBruijnNode *> * outgoingNodes) ;
+    static std::vector<DeBruijnNode *> getNodesCommonToAllPaths(std::vector< std::vector <DeBruijnNode *> > * paths,
+                                                         bool includeReverseComplements) ;
     bool doesPathLeadOnlyToNode(DeBruijnNode * node, bool includeReverseComplement);
 };
 

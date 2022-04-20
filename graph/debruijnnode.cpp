@@ -20,7 +20,7 @@
 #include "debruijnedge.h"
 #include "ogdfnode.h"
 #include "graphicsitemnode.h"
-#include <math.h>
+#include <cmath>
 #include "blast/blasthit.h"
 #include "blast/blastquery.h"
 #include "assemblygraph.h"
@@ -39,9 +39,9 @@ DeBruijnNode::DeBruijnNode(QString name, double depth, const Sequence& sequence,
     m_sequence(sequence),
     m_length(sequence.size()),
     m_contiguityStatus(NOT_CONTIGUOUS),
-    m_reverseComplement(0),
-    m_ogdfNode(0),
-    m_graphicsItemNode(0),
+    m_reverseComplement(nullptr),
+    m_ogdfNode(nullptr),
+    m_graphicsItemNode(nullptr),
     m_specialNode(false),
     m_drawn(false),
     m_highestDistanceInNeighbourSearch(0),
@@ -54,8 +54,7 @@ DeBruijnNode::DeBruijnNode(QString name, double depth, const Sequence& sequence,
 
 DeBruijnNode::~DeBruijnNode()
 {
-    if (m_ogdfNode != 0)
-        delete m_ogdfNode;
+    delete m_ogdfNode;
 }
 
 
@@ -80,10 +79,9 @@ void DeBruijnNode::removeEdge(DeBruijnEdge * edge)
 //file was loaded - no contiguity status and no OGDF nodes.
 void DeBruijnNode::resetNode()
 {
-    if (m_ogdfNode != 0)
-        delete m_ogdfNode;
-    m_ogdfNode = 0;
-    m_graphicsItemNode = 0;
+    delete m_ogdfNode;
+    m_ogdfNode = nullptr;
+    m_graphicsItemNode = nullptr;
     resetContiguityStatus();
     setAsNotDrawn();
     setAsNotSpecial();
@@ -110,8 +108,8 @@ void DeBruijnNode::addToOgdfGraph(ogdf::Graph * ogdfGraph, ogdf::GraphAttributes
     int numberOfGraphNodes = numberOfGraphEdges + 1;
     double drawnLengthPerEdge = drawnNodeLength / numberOfGraphEdges;
 
-    ogdf::node newNode = 0;
-    ogdf::node previousNode = 0;
+    ogdf::node newNode = nullptr;
+    ogdf::node previousNode = nullptr;
     for (int i = 0; i < numberOfGraphNodes; ++i)
     {
         newNode = ogdfGraph->newNode();
@@ -143,7 +141,7 @@ double DeBruijnNode::getDrawnNodeLength() const
     return drawnNodeLength;
 }
 
-int DeBruijnNode::getNumberOfOgdfGraphEdges(double drawnNodeLength) const
+int DeBruijnNode::getNumberOfOgdfGraphEdges(double drawnNodeLength)
 {
     int numberOfGraphEdges = ceil(drawnNodeLength / g_settings->nodeSegmentLength);
     if (numberOfGraphEdges <= 0)
@@ -174,21 +172,19 @@ void DeBruijnNode::determineContiguity()
     //outward.  Nodes in any of the paths for an edge are
     //MAYBE_CONTIGUOUS.  Nodes in all of the paths for an edge
     //are CONTIGUOUS.
-    for (size_t i = 0; i < m_edges.size(); ++i)
+    for (auto edge : m_edges)
     {
-        DeBruijnEdge * edge = m_edges[i];
         bool outgoingEdge = (this == edge->getStartingNode());
 
         std::vector< std::vector <DeBruijnNode *> > allPaths;
         edge->tracePaths(outgoingEdge, g_settings->contiguitySearchSteps, &allPaths, this);
 
         //Set all nodes in the paths as MAYBE_CONTIGUOUS
-        for (size_t j = 0; j < allPaths.size(); ++j)
+        for (auto &allPath : allPaths)
         {
             QApplication::processEvents();
-            for (size_t k = 0; k < allPaths[j].size(); ++k)
+            for (auto node : allPath)
             {
-                DeBruijnNode * node = allPaths[j][k];
                 node->upgradeContiguityStatus(MAYBE_CONTIGUOUS);
                 allCheckedNodes.insert(node);
             }
@@ -196,15 +192,14 @@ void DeBruijnNode::determineContiguity()
 
         //Set all common nodes as CONTIGUOUS_STRAND_SPECIFIC
         std::vector<DeBruijnNode *> commonNodesStrandSpecific = getNodesCommonToAllPaths(&allPaths, false);
-        for (size_t j = 0; j < commonNodesStrandSpecific.size(); ++j)
-            (commonNodesStrandSpecific[j])->upgradeContiguityStatus(CONTIGUOUS_STRAND_SPECIFIC);
+        for (auto &j : commonNodesStrandSpecific)
+            j->upgradeContiguityStatus(CONTIGUOUS_STRAND_SPECIFIC);
 
         //Set all common nodes (when including reverse complement nodes)
         //as CONTIGUOUS_EITHER_STRAND
         std::vector<DeBruijnNode *> commonNodesEitherStrand = getNodesCommonToAllPaths(&allPaths, true);
-        for (size_t j = 0; j < commonNodesEitherStrand.size(); ++j)
+        for (auto node : commonNodesEitherStrand)
         {
-            DeBruijnNode * node = commonNodesEitherStrand[j];
             node->upgradeContiguityStatus(CONTIGUOUS_EITHER_STRAND);
             node->getReverseComplement()->upgradeContiguityStatus(CONTIGUOUS_EITHER_STRAND);
         }
@@ -212,10 +207,9 @@ void DeBruijnNode::determineContiguity()
 
     //For each node that was checked, then we check to see if any
     //of its paths leads unambiuously back to the starting node (this node).
-    for (std::set<DeBruijnNode *>::iterator i = allCheckedNodes.begin(); i != allCheckedNodes.end(); ++i)
+    for (auto node : allCheckedNodes)
     {
         QApplication::processEvents();
-        DeBruijnNode * node = *i;
         ContiguityStatus status = node->getContiguityStatus();
 
         //First check without reverse complement target for
@@ -240,12 +234,12 @@ void DeBruijnNode::determineContiguity()
 //This function differs from the above by including all reverse complement
 //nodes in the path search.
 std::vector<DeBruijnNode *> DeBruijnNode::getNodesCommonToAllPaths(std::vector< std::vector <DeBruijnNode *> > * paths,
-                                                                   bool includeReverseComplements) const
+                                                                   bool includeReverseComplements)
 {
     std::vector<DeBruijnNode *> commonNodes;
 
     //If there are no paths, then return the empty vector.
-    if (paths->size() == 0)
+    if (paths->empty())
         return commonNodes;
 
     //If there is only one path in path, then they are all common nodes
@@ -265,9 +259,8 @@ std::vector<DeBruijnNode *> DeBruijnNode::getNodesCommonToAllPaths(std::vector< 
         std::vector <DeBruijnNode *> pathWithReverseComplements;
         if (includeReverseComplements)
         {
-            for (size_t j = 0; j < path->size(); ++j)
+            for (auto node : *path)
             {
-                DeBruijnNode * node = (*path)[j];
                 pathWithReverseComplements.push_back(node);
                 pathWithReverseComplements.push_back(node->getReverseComplement());
             }
@@ -294,9 +287,8 @@ std::vector<DeBruijnNode *> DeBruijnNode::getNodesCommonToAllPaths(std::vector< 
 //all paths lead either to the node or its reverse complement node.
 bool DeBruijnNode::doesPathLeadOnlyToNode(DeBruijnNode * node, bool includeReverseComplement)
 {
-    for (size_t i = 0; i < m_edges.size(); ++i)
+    for (auto edge : m_edges)
     {
-        DeBruijnEdge * edge = m_edges[i];
         bool outgoingEdge = (this == edge->getStartingNode());
 
         std::vector<DeBruijnNode *> pathSoFar;
@@ -323,7 +315,7 @@ void DeBruijnNode::upgradeContiguityStatus(ContiguityStatus newStatus)
 //this function returns true.
 bool DeBruijnNode::isOnlyPathInItsDirection(DeBruijnNode * connectedNode,
                                             std::vector<DeBruijnNode *> * incomingNodes,
-                                            std::vector<DeBruijnNode *> * outgoingNodes) const
+                                            std::vector<DeBruijnNode *> * outgoingNodes)
 {
     std::vector<DeBruijnNode *> * container;
     if (std::find(incomingNodes->begin(), incomingNodes->end(), connectedNode) != incomingNodes->end())
@@ -335,7 +327,7 @@ bool DeBruijnNode::isOnlyPathInItsDirection(DeBruijnNode * connectedNode,
 }
 bool DeBruijnNode::isNotOnlyPathInItsDirection(DeBruijnNode * connectedNode,
                                  std::vector<DeBruijnNode *> * incomingNodes,
-                                 std::vector<DeBruijnNode *> * outgoingNodes) const
+                                 std::vector<DeBruijnNode *> * outgoingNodes)
 {
     return !isOnlyPathInItsDirection(connectedNode, incomingNodes, outgoingNodes);
 }
@@ -345,7 +337,7 @@ QByteArray DeBruijnNode::getFasta(bool sign, bool newLines, bool evenIfEmpty) co
 {
     QByteArray sequence = sequenceToQByteArray(getSequence());
     if (sequence.isEmpty() && !evenIfEmpty)
-        return QByteArray();
+        return {};
 
     QByteArray fasta = ">";
     fasta += getNodeNameForFasta(sign).toLatin1();
@@ -361,7 +353,7 @@ QByteArray DeBruijnNode::getFasta(bool sign, bool newLines, bool evenIfEmpty) co
 }
 
 
-QByteArray DeBruijnNode::getGfaSegmentLine(QString depthTag) const
+QByteArray DeBruijnNode::getGfaSegmentLine(const QString &depthTag) const
 {
     QByteArray gfaSequence = getSequenceForGfa();
 
@@ -403,7 +395,7 @@ QByteArray DeBruijnNode::getGfaSegmentLine(QString depthTag) const
 QByteArray DeBruijnNode::getSequenceForGfa() const
 {
     if (sequenceIsMissing())
-        return QByteArray("*");
+        return {"*"};
 
     QByteArray sequence = sequenceToQByteArray(getSequence());
 
@@ -447,9 +439,8 @@ QByteArray DeBruijnNode::getUpstreamSequence(int upstreamSequenceLength) const
 
     QByteArray bestUpstreamNodeSequence;
 
-    for (size_t i = 0; i < upstreamNodes.size(); ++i)
+    for (auto upstreamNode : upstreamNodes)
     {
-        DeBruijnNode * upstreamNode = upstreamNodes[i];
         QByteArray upstreamNodeFullSequence = sequenceToQByteArray(upstreamNode->getSequence());
         QByteArray upstreamNodeSequence;
 
@@ -493,13 +484,13 @@ int DeBruijnNode::getLengthWithoutTrailingOverlap() const
     int length = getLength();
     std::vector<DeBruijnEdge *> leavingEdges = getLeavingEdges();
 
-    if (leavingEdges.size() == 0)
+    if (leavingEdges.empty())
         return length;
 
     int maxOverlap = 0;
-    for (size_t i = 0; i < leavingEdges.size(); ++i)
+    for (auto &leavingEdge : leavingEdges)
     {
-        int overlap = leavingEdges[i]->getOverlap();
+        int overlap = leavingEdge->getOverlap();
         if (overlap > maxOverlap)
             maxOverlap = overlap;
     }
@@ -545,9 +536,9 @@ void DeBruijnNode::labelNeighbouringNodesAsDrawn(int nodeDistance, DeBruijnNode 
         return;
 
     DeBruijnNode * otherNode;
-    for (size_t i = 0; i < m_edges.size(); ++i)
+    for (auto &m_edge : m_edges)
     {
-        otherNode = m_edges[i]->getOtherNode(this);
+        otherNode = m_edge->getOtherNode(this);
 
         if (otherNode == callingNode)
             continue;
@@ -571,9 +562,10 @@ std::vector<BlastHitPart> DeBruijnNode::getBlastHitPartsForThisNode(double scale
 {
     std::vector<BlastHitPart> returnVector;
 
-    for (size_t i = 0; i < m_blastHits.size(); ++i)
+    const auto &blastHits = g_assemblyGraph->m_blastHits[this];
+    for (const auto &blastHit : blastHits)
     {
-        std::vector<BlastHitPart> hitParts = m_blastHits[i]->getBlastHitParts(false, scaledNodeLength);
+        std::vector<BlastHitPart> hitParts = blastHit->getBlastHitParts(false, scaledNodeLength);
         returnVector.insert(returnVector.end(), hitParts.begin(), hitParts.end());
     }
 
@@ -591,14 +583,16 @@ std::vector<BlastHitPart> DeBruijnNode::getBlastHitPartsForThisNodeOrReverseComp
     //since hits were previously filtered such that startPos < endPos,
     //hence we need to look at both positive and negative nodes to recover all hits.
     std::vector<BlastHitPart> returnVector;
-    for (size_t i = 0; i < positiveNode->m_blastHits.size(); ++i)
+    const auto &positiveNodeBlastHits = g_assemblyGraph->m_blastHits[positiveNode];
+    for (const auto &blastHit : positiveNodeBlastHits)
     {
-        std::vector<BlastHitPart> hitParts = positiveNode->m_blastHits[i]->getBlastHitParts(false, scaledNodeLength);
+        std::vector<BlastHitPart> hitParts = blastHit->getBlastHitParts(false, scaledNodeLength);
         returnVector.insert(returnVector.end(), hitParts.begin(), hitParts.end());
     }
-    for (size_t i = 0; i < negativeNode->m_blastHits.size(); ++i)
+    const auto &negativeNodeBlastHits = g_assemblyGraph->m_blastHits[negativeNode];
+    for (const auto &blastHit : negativeNodeBlastHits)
     {
-        std::vector<BlastHitPart> hitParts = negativeNode->m_blastHits[i]->getBlastHitParts(true, scaledNodeLength);
+        std::vector<BlastHitPart> hitParts = blastHit->getBlastHitParts(true, scaledNodeLength);
         returnVector.insert(returnVector.end(), hitParts.begin(), hitParts.end());
     }
 
@@ -626,13 +620,12 @@ bool DeBruijnNode::isNegativeNode() const
 //it returns a null pointer.
 DeBruijnEdge * DeBruijnNode::doesNodeLeadIn(DeBruijnNode * node) const
 {
-    for (size_t i = 0; i < m_edges.size(); ++i)
+    for (auto edge : m_edges)
     {
-        DeBruijnEdge * edge = m_edges[i];
         if (edge->getStartingNode() == node && edge->getEndingNode() == this)
             return edge;
     }
-    return 0;
+    return nullptr;
 }
 
 //This function checks to see if the passed node leads away from
@@ -640,21 +633,19 @@ DeBruijnEdge * DeBruijnNode::doesNodeLeadIn(DeBruijnNode * node) const
 //it returns a null pointer.
 DeBruijnEdge * DeBruijnNode::doesNodeLeadAway(DeBruijnNode * node) const
 {
-    for (size_t i = 0; i < m_edges.size(); ++i)
+    for (auto edge : m_edges)
     {
-        DeBruijnEdge * edge = m_edges[i];
         if (edge->getStartingNode() == this && edge->getEndingNode() == node)
             return edge;
     }
-    return 0;
+    return nullptr;
 }
 
 
 bool DeBruijnNode::isNodeConnected(DeBruijnNode * node) const
 {
-    for (size_t i = 0; i < m_edges.size(); ++i)
+    for (auto edge : m_edges)
     {
-        DeBruijnEdge * edge = m_edges[i];
         if (edge->getStartingNode() == node || edge->getEndingNode() == node)
             return true;
     }
@@ -666,9 +657,8 @@ bool DeBruijnNode::isNodeConnected(DeBruijnNode * node) const
 std::vector<DeBruijnEdge *> DeBruijnNode::getEnteringEdges() const
 {
     std::vector<DeBruijnEdge *> returnVector;
-    for (size_t i = 0; i < m_edges.size(); ++i)
+    for (auto edge : m_edges)
     {
-        DeBruijnEdge * edge = m_edges[i];
         if (this == edge->getEndingNode())
             returnVector.push_back(edge);
     }
@@ -677,9 +667,8 @@ std::vector<DeBruijnEdge *> DeBruijnNode::getEnteringEdges() const
 std::vector<DeBruijnEdge *> DeBruijnNode::getLeavingEdges() const
 {
     std::vector<DeBruijnEdge *> returnVector;
-    for (size_t i = 0; i < m_edges.size(); ++i)
+    for (auto edge : m_edges)
     {
-        DeBruijnEdge * edge = m_edges[i];
         if (this == edge->getStartingNode())
             returnVector.push_back(edge);
     }
@@ -693,8 +682,9 @@ std::vector<DeBruijnNode *> DeBruijnNode::getDownstreamNodes() const
     std::vector<DeBruijnEdge *> leavingEdges = getLeavingEdges();
 
     std::vector<DeBruijnNode *> returnVector;
-    for (size_t i = 0; i < leavingEdges.size(); ++i)
-        returnVector.push_back(leavingEdges[i]->getEndingNode());
+    returnVector.reserve(leavingEdges.size());
+    for (auto &leavingEdge : leavingEdges)
+        returnVector.push_back(leavingEdge->getEndingNode());
 
     return returnVector;
 }
@@ -705,15 +695,16 @@ std::vector<DeBruijnNode *> DeBruijnNode::getUpstreamNodes() const
     std::vector<DeBruijnEdge *> enteringEdges = getEnteringEdges();
 
     std::vector<DeBruijnNode *> returnVector;
-    for (size_t i = 0; i < enteringEdges.size(); ++i)
-        returnVector.push_back(enteringEdges[i]->getStartingNode());
+    returnVector.reserve(enteringEdges.size());
+    for (auto &enteringEdge : enteringEdges)
+        returnVector.push_back(enteringEdge->getStartingNode());
 
     return returnVector;
 }
 
 
 
-double DeBruijnNode::getNodeLengthPerMegabase() const
+double DeBruijnNode::getNodeLengthPerMegabase()
 {
     if (g_settings->nodeLengthMode == AUTO_NODE_LENGTH)
         return g_settings->autoNodeLengthPerMegabase;
@@ -731,7 +722,7 @@ bool DeBruijnNode::isInDepthRange(double min, double max) const
 
 bool DeBruijnNode::sequenceIsMissing() const
 {
-    return m_sequence.size() == 0;
+    return m_sequence.empty();
 }
 
 
@@ -749,14 +740,13 @@ Sequence &DeBruijnNode::getSequence()
 //will return it.  Otherwise, it returns 0.
 DeBruijnEdge * DeBruijnNode::getSelfLoopingEdge() const
 {
-    for (size_t i = 0; i < m_edges.size(); ++i)
+    for (auto edge : m_edges)
     {
-        DeBruijnEdge * edge = m_edges[i];
         if (edge->getStartingNode() == this && edge->getEndingNode() == this)
             return edge;
     }
 
-    return 0;
+    return nullptr;
 }
 
 
@@ -765,13 +755,13 @@ DeBruijnEdge * DeBruijnNode::getSelfLoopingEdge() const
 //returns 2.  A node with either incoming or outgoing edges returns 1.
 int DeBruijnNode::getDeadEndCount() const
 {
-    if (m_edges.size() == 0)
+    if (m_edges.empty())
         return 2;
 
     std::vector<DeBruijnEdge *> enteringEdges = getEnteringEdges();
     std::vector<DeBruijnEdge *> leavingEdges = getLeavingEdges();
 
-    if (enteringEdges.size() > 0 && leavingEdges.size() > 0)
+    if (!enteringEdges.empty() && !leavingEdges.empty())
         return 0;
     else
         return 1;
@@ -786,9 +776,8 @@ std::vector<DeBruijnNode *> DeBruijnNode::getAllConnectedPositiveNodes() const
 {
     QSet<DeBruijnNode *> connectedPositiveNodesSet;
 
-    for (size_t i = 0; i < m_edges.size(); ++i)
+    for (auto edge : m_edges)
     {
-        DeBruijnEdge * edge = m_edges[i];
         DeBruijnNode * connectedNode = edge->getOtherNode(this);
         if (connectedNode->isNegativeNode())
             connectedNode = connectedNode->getReverseComplement();
@@ -816,13 +805,13 @@ QStringList DeBruijnNode::getCustomLabelForDisplay() const
     QStringList customLabelLines;
     if (!getCustomLabel().isEmpty()) {
         QStringList labelLines = getCustomLabel().split("\\n");
-        for (int i = 0; i < labelLines.size(); ++i)
-            customLabelLines << labelLines[i];
+        for (auto &labelLine : labelLines)
+            customLabelLines << labelLine;
     }
     if (!g_settings->doubleMode && !m_reverseComplement->getCustomLabel().isEmpty()) {
         QStringList labelLines2 = m_reverseComplement->getCustomLabel().split("\n");
-        for (int i = 0; i < labelLines2.size(); ++i)
-            customLabelLines << labelLines2[i];
+        for (auto &i : labelLines2)
+            customLabelLines << i;
     }
     return customLabelLines;
 }

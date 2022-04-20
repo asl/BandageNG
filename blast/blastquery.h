@@ -26,6 +26,7 @@
 #include "blasthit.h"
 #include <QList>
 #include <QSharedPointer>
+#include <utility>
 #include "blastquerypath.h"
 
 class BlastQuery : public QObject
@@ -34,16 +35,15 @@ class BlastQuery : public QObject
 
 public:
     //CREATORS
-    BlastQuery() {}
     BlastQuery(QString name, QString sequence);
 
     //ACCESSORS
     QString getName() const {return m_name;}
     QString getSequence() const {return m_sequence;}
     int getLength() const {return m_sequence.length();}
-    bool hasHits() const {return m_hits.size() > 0;}
+    bool hasHits() const {return !m_hits.empty();}
     int hitCount() const {return m_hits.size();}
-    QList< QSharedPointer<BlastHit> > getHits() const {return m_hits;}
+    const std::vector<std::shared_ptr<BlastHit>> &getHits() const {return m_hits;}
     bool wasSearchedFor() const {return m_searchedFor;}
     QColor getColour() const {return m_colour;}
     SequenceType getSequenceType() const {return m_sequenceType;}
@@ -55,8 +55,8 @@ public:
     bool isHidden() const {return !m_shown;}
 
     //MODIFIERS
-    void setName(QString newName) {m_name = newName;}
-    void addHit(QSharedPointer<BlastHit> newHit) {m_hits.push_back(newHit);}
+    void setName(QString newName) {m_name = std::move(newName);}
+    void addHit(std::shared_ptr<BlastHit> newHit) {m_hits.emplace_back(std::move(newHit));}
     void clearSearchResults();
     void setAsSearchedFor() {m_searchedFor = true;}
     void findQueryPaths();
@@ -68,7 +68,7 @@ public slots:
 private:
     QString m_name;
     QString m_sequence;
-    QList< QSharedPointer<BlastHit> > m_hits;
+    std::vector<std::shared_ptr<BlastHit>> m_hits;
     bool m_searchedFor;
     QColor m_colour;
     SequenceType m_sequenceType;
@@ -76,8 +76,6 @@ private:
     bool m_shown;
 
     void autoSetSequenceType();
-    bool positionInAnyHit(int position) const;
-    bool positionInHitList(int position, const QList<BlastHit *> * hitsToCheck) const;
 };
 
 #endif // BLASTQUERY_H

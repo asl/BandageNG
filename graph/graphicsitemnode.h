@@ -60,8 +60,8 @@ public:
     QPainterPath shape() const;
     void shiftPoints(QPointF difference);
     void remakePath();
-    double distance(QPointF p1, QPointF p2) const;
-    bool usePositiveNodeColour();
+    static double distance(QPointF p1, QPointF p2) ;
+    bool usePositiveNodeColour() const;
     QPointF getFirst() const {return m_linePoints[0];}
     QPointF getSecond() const {return m_linePoints[1];}
     QPointF getLast() const {return m_linePoints[m_linePoints.size()-1];}
@@ -69,14 +69,14 @@ public:
     std::vector<QPointF> getCentres() const;
     QPointF getCentre(std::vector<QPointF> linePoints) const;
     void setNodeColour();
-    QStringList getNodeText();
-    QSize getNodeTextSize(QString text);
-    QColor getDepthColour();
+    QStringList getNodeText() const;
+    static QSize getNodeTextSize(const QString& text);
+    QColor getDepthColour() const;
     void setWidth();
     QPainterPath makePartialPath(double startFraction, double endFraction);
     double getNodePathLength();
     QPointF findLocationOnPath(double fraction);
-    QPointF findIntermediatePoint(QPointF p1, QPointF p2, double p1Value,
+    static QPointF findIntermediatePoint(QPointF p1, QPointF p2, double p1Value,
                                   double p2Value, double targetValue);
     QRectF boundingRect() const;
     static double getNodeWidth(double depthRelativeToMeanDrawnDepth,
@@ -89,16 +89,16 @@ public:
                                              std::vector<QPointF> * blastHitLocation);
     void getBlastHitsTextAndLocationThisNodeOrReverseComplement(std::vector<QString> * blastHitText,
                                                                 std::vector<QPointF> * blastHitLocation);
-    void drawTextPathAtLocation(QPainter *painter, QPainterPath textPath, QPointF centre);
-    void fixEdgePaths(std::vector<GraphicsItemNode *> * nodes = 0);
+    static void drawTextPathAtLocation(QPainter *painter, const QPainterPath& textPath, QPointF centre);
+    void fixEdgePaths(std::vector<GraphicsItemNode *> * nodes = 0) const;
 
 private:
     void exactPathHighlightNode(QPainter * painter);
     void queryPathHighlightNode(QPainter * painter);
     void pathHighlightNode2(QPainter * painter, DeBruijnNode * node, bool reverse, Path * path);
-    void pathHighlightNode3(QPainter * painter, QPainterPath highlightPath);
+    static void pathHighlightNode3(QPainter * painter, QPainterPath highlightPath);
     QPainterPath buildPartialHighlightPath(double startFraction, double endFraction, bool reverse);
-    bool anyNodeDisplayText();
+    static bool anyNodeDisplayText();
     void shiftPointSideways(bool left);
 };
 
