@@ -16,12 +16,19 @@
 //along with Bandage.  If not, see <http://www.gnu.org/licenses/>.
 
 
-#include "ui/mainwindow.h"
+#include "graph/assemblygraph.h"
+#include "graph/debruijnnode.h"
+#include "graph/debruijnedge.h"
+#include "graph/graphlocation.h"
+#include "graph/path.h"
+
+
 #include <QApplication>
 #include <QStringList>
 #include <QString>
 #include <QCommandLineParser>
 #include <QTextStream>
+
 #include "command_line/load.h"
 #include "command_line/info.h"
 #include "command_line/image.h"
@@ -32,7 +39,8 @@
 #include "program/memory.h"
 #include "program/globals.h"
 #include "blast/blastsearch.h"
-#include "graph/assemblygraph.h"
+
+#include "ui/mainwindow.h"
 #include "ui/mygraphicsview.h"
 
 #ifndef Q_OS_WIN32
@@ -121,7 +129,6 @@ int main(int argc, char *argv[])
 
     QTextStream out(stdout);
     QTextStream err(stderr);
-
     //If the first argument was a recognised command, move to that command's function.
     if (arguments.size() > 0)
     {

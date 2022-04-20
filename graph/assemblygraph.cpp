@@ -1432,9 +1432,9 @@ bool AssemblyGraph::loadCSV(QString filename, QStringList * columns, QString * e
         if (nodeName != "") {
             auto node = m_deBruijnGraphNodes.find(nodeName.toStdString());
             if (node != m_deBruijnGraphNodes.end()) {
-                (*node)->setCsvData(cols);
+                setCsvData(*node, cols);
                 if (colour.isValid())
-                    (*node)->setCustomColour(colour);
+                    setCustomColour(*node, colour);
             } else
                 ++unmatched_nodes;
         } else
@@ -2243,7 +2243,7 @@ void AssemblyGraph::recalculateAllNodeWidths()
 void AssemblyGraph::clearAllCsvData()
 {
     for (auto &entry : m_deBruijnGraphNodes) {
-        entry->clearCsvData();
+        clearCsvData(entry);
     }
 }
 
@@ -2367,12 +2367,12 @@ void AssemblyGraph::duplicateNodePair(DeBruijnNode * node, MyGraphicsScene * sce
     newNegNode->setReverseComplement(newPosNode);
 
     //Copy over additional stuff from the original nodes.
-    newPosNode->setCustomColour(originalPosNode->getCustomColour());
-    newNegNode->setCustomColour(originalNegNode->getCustomColour());
-    newPosNode->setCustomLabel(originalPosNode->getCustomLabel());
-    newNegNode->setCustomLabel(originalNegNode->getCustomLabel());
-    newPosNode->setCsvData(originalPosNode->getAllCsvData());
-    newNegNode->setCsvData(originalNegNode->getAllCsvData());
+    setCustomColour(newPosNode, getCustomColour(originalPosNode));
+    setCustomColour(newNegNode, getCustomColour(originalNegNode));
+    setCustomLabel(newPosNode, getCustomLabel(originalPosNode));
+    setCustomLabel(newNegNode, getCustomLabel(originalNegNode));
+    setCsvData(newPosNode, getAllCsvData(originalPosNode));
+    setCsvData(newNegNode, getAllCsvData(originalNegNode));
 
     m_deBruijnGraphNodes.emplace(newPosNodeName.toStdString(), newPosNode);
     m_deBruijnGraphNodes.emplace(newNegNodeName.toStdString(), newNegNode);
@@ -2964,6 +2964,26 @@ void AssemblyGraph::saveEntireGraphToFastaOnlyPositiveNodes(QString filename)
     }
 }
 
+QString AssemblyGraph::getGfaSegmentLine(const DeBruijnNode *node, QString depthTag) const {
+    QString gfaSegmentLine = node->getGfaSegmentLine(m_depthTag);
+    
+    //If the user has included custom labels or colours, include those.
+    QString label = getCustomLabel(node);
+    if (!label.isEmpty())
+        gfaSegmentLine += "\tLB:z:" + label.toLatin1();
+
+    QString rcLabel = getCustomLabel(node->getReverseComplement());
+    if (!rcLabel.isEmpty())
+        gfaSegmentLine += "\tL2:z:" + rcLabel.toLatin1();
+    if (hasCustomColour(node))
+        gfaSegmentLine += "\tCL:z:" + getColourName(getCustomColour(node)).toLatin1();
+    if (hasCustomColour(node->getReverseComplement()))
+        gfaSegmentLine += "\tC2:z:" + getColourName(getCustomColour(node->getReverseComplement())).toLatin1();
+
+    return gfaSegmentLine;
+}
+
+
 bool AssemblyGraph::saveEntireGraphToGfa(QString filename)
 {
     QFile file(filename);
@@ -2976,7 +2996,7 @@ bool AssemblyGraph::saveEntireGraphToGfa(QString filename)
     for (auto &entry : m_deBruijnGraphNodes) {
         DeBruijnNode * node = entry;
         if (node->isPositiveNode())
-            out << node->getGfaSegmentLine(m_depthTag);
+            out << getGfaSegmentLine(node, m_depthTag) << '\n';
     }
 
     QList<DeBruijnEdge*> edgesToSave;
@@ -3518,4 +3538,33 @@ const std::vector<std::shared_ptr<BlastHit>> &AssemblyGraph::getBlastHits(const 
         static const std::vector<std::shared_ptr<BlastHit>> emptyVector{};
         return emptyVector;
     }
+}
+
+QStringList AssemblyGraph::getCustomLabelForDisplay(const DeBruijnNode *node) const {
+    QStringList customLabelLines;
+    QString label = getCustomLabel(node);
+    if (!label.isEmpty()) {
+        QStringList labelLines = label.split("\n");
+        for (int i = 0; i < labelLines.size(); ++i)
+            customLabelLines << labelLines[i];
+    }
+
+    DeBruijnNode *rc = node->getReverseComplement();
+    if (!g_settings->doubleMode && !getCustomLabel(rc).isEmpty()) {
+        QStringList labelLines2 = getCustomLabel(rc).split("\n");
+        for (int i = 0; i < labelLines2.size(); ++i)
+            customLabelLines << labelLines2[i];
+    }
+    return customLabelLines;
+}
+
+
+QColor AssemblyGraph::getCustomColourForDisplay(const DeBruijnNode *node) const {
+    if (hasCustomColour(node))
+        return getCustomColour(node);
+
+    DeBruijnNode *rc = node->getReverseComplement();
+    if (!g_settings->doubleMode && hasCustomColour(rc))
+        return getCustomColour(rc);
+    return g_settings->defaultCustomNodeColour;
 }

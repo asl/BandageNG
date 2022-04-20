@@ -87,11 +87,6 @@ public:
     bool isDrawn() const {return m_drawn;}
     bool thisNodeOrReverseComplementIsDrawn() const {return isDrawn() || getReverseComplement()->isDrawn();}
     bool isNotDrawn() const {return !m_drawn;}
-    QColor getCustomColour() const {return m_customColour;}
-    QColor getCustomColourForDisplay() const;
-    QString getCustomLabel() const {return m_customLabel;}
-    QStringList getCustomLabelForDisplay() const;
-    bool hasCustomColour() const {return m_customColour.isValid();}
     bool isPositiveNode() const;
     bool isNegativeNode() const;
     bool inOgdf() const {return m_ogdfNode != 0;}
@@ -103,9 +98,6 @@ public:
     DeBruijnEdge * doesNodeLeadAway(DeBruijnNode * node) const;
     std::vector<BlastHitPart> getBlastHitPartsForThisNode(double scaledNodeLength) const;
     std::vector<BlastHitPart> getBlastHitPartsForThisNodeOrReverseComplement(double scaledNodeLength) const;
-    bool hasCsvData() const {return !m_csvData.isEmpty();}
-    QStringList getAllCsvData() const {return m_csvData;}
-    QString getCsvLine(int i) const {if (i < m_csvData.length()) return m_csvData[i]; else return "";}
     bool isInDepthRange(double min, double max) const;
     bool sequenceIsMissing() const;
     DeBruijnEdge *getSelfLoopingEdge() const;
@@ -125,8 +117,6 @@ public:
     void setAsNotSpecial() {m_specialNode = false;}
     void setAsDrawn() {m_drawn = true;}
     void setAsNotDrawn() {m_drawn = false;}
-    void setCustomColour(QColor newColour) {m_customColour = newColour;}
-    void setCustomLabel(QString newLabel);
     void resetNode();
     void addEdge(DeBruijnEdge * edge);
     void removeEdge(DeBruijnEdge * edge);
@@ -134,15 +124,13 @@ public:
                         ogdf::EdgeArray<double> * edgeArray, double xPos, double yPos);
     void determineContiguity();
     void labelNeighbouringNodesAsDrawn(int nodeDistance, DeBruijnNode * callingNode);
-    void setCsvData(QStringList csvData) {m_csvData = std::move(csvData);}
-    void clearCsvData() {m_csvData.clear();}
     void setDepth(double newDepth) {m_depth = newDepth;}
     void setName(QString newName) {m_name = std::move(newName);}
 
 private:
     QString m_name;
-    double m_depth;
-    double m_depthRelativeToMeanDrawnDepth;
+    float m_depth;
+    float m_depthRelativeToMeanDrawnDepth;
     Sequence m_sequence;
     DeBruijnNode * m_reverseComplement;
     adt::SmallPODVector<DeBruijnEdge *> m_edges;
@@ -155,10 +143,6 @@ private:
     ContiguityStatus m_contiguityStatus : 3;
     bool m_specialNode : 1;
     bool m_drawn : 1;
-
-    QColor m_customColour;
-    QString m_customLabel;
-    QStringList m_csvData;
 
     QString getNodeNameForFasta(bool sign) const;
     QByteArray getUpstreamSequence(int upstreamSequenceLength) const;

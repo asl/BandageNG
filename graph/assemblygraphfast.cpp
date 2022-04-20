@@ -128,14 +128,14 @@ void AssemblyGraph::buildDeBruijnGraphFromGfa(const QString &fullFileName,
         auto lb = tagWrapper.getTagString("LB");
         auto l2 = tagWrapper.getTagString("L2");
         *customLabels = *customLabels || lb != nullptr || l2 != nullptr;
-        if (lb != nullptr) nodePtr->setCustomLabel(lb);
-        if (l2 != nullptr) oppositeNodePtr->setCustomLabel(l2);
+        if (lb != nullptr) setCustomLabel(nodePtr, lb);
+        if (l2 != nullptr) setCustomLabel(oppositeNodePtr, l2);
 
         auto cl = tagWrapper.getTagString("CB");
         auto c2 = tagWrapper.getTagString("C2");
         *customColours = *customColours || cl != nullptr || c2 != nullptr;
-        if (cl != nullptr) nodePtr->setCustomColour(cl);
-        if (c2 != nullptr) oppositeNodePtr->setCustomColour(c2);
+        if (cl != nullptr) setCustomColour(nodePtr, cl);
+        if (c2 != nullptr) setCustomColour(oppositeNodePtr, c2);
 
         nodePtr->setReverseComplement(oppositeNodePtr);
         oppositeNodePtr->setReverseComplement(nodePtr);

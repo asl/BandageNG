@@ -63,6 +63,13 @@ public:
     //pointers.
     phmap::parallel_flat_hash_map<QPair<DeBruijnNode*, DeBruijnNode*>, DeBruijnEdge*> m_deBruijnGraphEdges;
 
+    // Custom colors
+    phmap::parallel_flat_hash_map<const DeBruijnNode*, QColor> m_nodeColors;
+    // Custom labels
+    phmap::parallel_flat_hash_map<const DeBruijnNode*, QString> m_nodeLabels;
+    // CSV data
+    phmap::parallel_flat_hash_map<const DeBruijnNode*, QStringList> m_nodeCSVData;
+    
     tsl::htrie_map<char, Path*> m_deBruijnGraphPaths;
     
     ogdf::Graph * m_ogdfGraph;
@@ -191,10 +198,60 @@ public:
     bool attemptToLoadSequencesFromFasta();
     long long getTotalLengthOrphanedNodes() const;
     bool useLinearLayout() const;
+
+    // FIXME: This belongs to UI controller!
     bool nodeHasBlastHit(const DeBruijnNode *node) const;
     bool nodeOrReverseComplementHasBlastHit(const DeBruijnNode *node) const;
     const std::vector<std::shared_ptr<BlastHit>> &getBlastHits(const DeBruijnNode *node) const;
 
+    bool hasCustomColour(const DeBruijnNode* node) const {
+        auto it = m_nodeColors.find(node);
+        return it != m_nodeColors.end() && it->second.isValid();
+    }
+    QColor getCustomColour(const DeBruijnNode* node) const {
+        auto it = m_nodeColors.find(node);
+        return it == m_nodeColors.end() ? QColor() : it->second;
+    }
+    void setCustomColour(const DeBruijnNode* node, QColor color) {
+        m_nodeColors[node] = color;
+    }
+    QString getCustomLabel(const DeBruijnNode* node) const {
+        auto it = m_nodeLabels.find(node);
+        return it == m_nodeLabels.end() ? QString() : it->second;
+    }
+    void setCustomLabel(const DeBruijnNode* node, QString newLabel) {
+        newLabel.replace("\t", "    ");
+        m_nodeLabels[node] = newLabel;
+    }
+
+    bool hasCsvData(const DeBruijnNode* node) const {
+        auto it = m_nodeCSVData.find(node);
+        return it != m_nodeCSVData.end() && !it->second.isEmpty();
+    }
+
+    QStringList getAllCsvData(const DeBruijnNode *node) const {
+        auto it = m_nodeCSVData.find(node);
+        return it == m_nodeCSVData.end() ? QStringList() : it->second;
+    }
+    QString getCsvLine(const DeBruijnNode *node, int i) const {
+        auto it = m_nodeCSVData.find(node);
+        if (it == m_nodeCSVData.end() ||
+            i >= it->second.length())
+            return "";
+        
+        return it->second[i];
+    }
+    void setCsvData(const DeBruijnNode* node, QStringList csvData) {
+        m_nodeCSVData[node] = csvData;
+    }
+    void clearCsvData(const DeBruijnNode* node) {
+        m_nodeCSVData[node].clear();
+    }
+    
+    QColor getCustomColourForDisplay(const DeBruijnNode *node) const;
+    QStringList getCustomLabelForDisplay(const DeBruijnNode *node) const;
+
+    QString getGfaSegmentLine(const DeBruijnNode *node, QString depthTag) const;
 private:
     template<typename T> double getValueUsingFractionalIndex(std::vector<T> * v, double index) const;
     QString convertNormalNumberStringToBandageNodeName(QString number);

@@ -73,9 +73,9 @@ private:
     DeBruijnNode * m_endingNode;
     GraphicsItemEdge * m_graphicsItemEdge;
     DeBruijnEdge * m_reverseComplement;
-    bool m_drawn;
-    EdgeOverlapType m_overlapType;
-    int m_overlap;
+    bool m_drawn : 1;
+    EdgeOverlapType m_overlapType : 2;
+    int m_overlap : 29;
 
     bool edgeIsVisible() const;
     int timesNodeInPath(DeBruijnNode * node, std::vector<DeBruijnNode *> * path) const;

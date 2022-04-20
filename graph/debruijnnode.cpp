@@ -44,8 +44,7 @@ DeBruijnNode::DeBruijnNode(QString name, double depth, const Sequence& sequence,
     m_graphicsItemNode(nullptr),
     m_specialNode(false),
     m_drawn(false),
-    m_highestDistanceInNeighbourSearch(0),
-    m_csvData()
+    m_highestDistanceInNeighbourSearch(0)
 {
     if (length > 0)
         m_length = length;
@@ -374,16 +373,6 @@ QByteArray DeBruijnNode::getGfaSegmentLine(const QString &depthTag) const
     else if (depthTag == "FC")
         gfaSegmentLine += "\tFC:i:" + QString::number(int(getDepth() * gfaSequence.length() + 0.5)).toLatin1();
 
-    //If the user has included custom labels or colours, include those.
-    if (!m_customLabel.isEmpty())
-        gfaSegmentLine += "\tLB:z:" + getCustomLabel().toLatin1();
-    if (!m_reverseComplement->m_customLabel.isEmpty())
-        gfaSegmentLine += "\tL2:z:" + m_reverseComplement->getCustomLabel().toLatin1();
-    if (hasCustomColour())
-        gfaSegmentLine += "\tCL:z:" + getColourName(getCustomColour()).toLatin1();
-    if (m_reverseComplement->hasCustomColour())
-        gfaSegmentLine += "\tC2:z:" + getColourName(m_reverseComplement->getCustomColour()).toLatin1();
-    gfaSegmentLine += "\n";
     return gfaSegmentLine;
 }
 
@@ -791,37 +780,4 @@ std::vector<DeBruijnNode *> DeBruijnNode::getAllConnectedPositiveNodes() const
         connectedPositiveNodesVector.push_back(i.next());
 
     return connectedPositiveNodesVector;
-}
-
-void DeBruijnNode::setCustomLabel(QString newLabel)
-{
-    newLabel.replace("\t", "    ");
-    m_customLabel = newLabel;
-}
-
-
-QStringList DeBruijnNode::getCustomLabelForDisplay() const
-{
-    QStringList customLabelLines;
-    if (!getCustomLabel().isEmpty()) {
-        QStringList labelLines = getCustomLabel().split("\\n");
-        for (auto &labelLine : labelLines)
-            customLabelLines << labelLine;
-    }
-    if (!g_settings->doubleMode && !m_reverseComplement->getCustomLabel().isEmpty()) {
-        QStringList labelLines2 = m_reverseComplement->getCustomLabel().split("\n");
-        for (auto &labelLine : labelLines2)
-            customLabelLines << labelLine;
-    }
-    return customLabelLines;
-}
-
-
-QColor DeBruijnNode::getCustomColourForDisplay() const
-{
-    if (hasCustomColour())
-        return getCustomColour();
-    if (!g_settings->doubleMode && m_reverseComplement->hasCustomColour())
-        return m_reverseComplement->getCustomColour();
-    return g_settings->defaultCustomNodeColour;
 }

@@ -17,6 +17,7 @@
 
 
 #include "mainwindow.h"
+#include "program/globals.h"
 #include "ui_mainwindow.h"
 #include <QFileDialog>
 #include <QLatin1String>
@@ -1403,7 +1404,7 @@ void MainWindow::setNodeCustomColour()
     if (selectedNodes.size() > 1)
         dialogTitle += "s";
 
-    QColor newColour = QColorDialog::getColor(selectedNodes[0]->getCustomColourForDisplay(), this, dialogTitle);
+    QColor newColour = QColorDialog::getColor(g_assemblyGraph->getCustomColourForDisplay(selectedNodes[0]), this, dialogTitle);
     if (newColour.isValid())
     {
         //If we are in single mode, apply the custom colour to both nodes in
@@ -1417,7 +1418,7 @@ void MainWindow::setNodeCustomColour()
 
         for (size_t i = 0; i < selectedNodes.size(); ++i)
         {
-            selectedNodes[i]->setCustomColour(newColour);
+            g_assemblyGraph->setCustomColour(selectedNodes[i], newColour);
             if (selectedNodes[i]->getGraphicsItemNode() != 0)
                 selectedNodes[i]->getGraphicsItemNode()->setNodeColour();
 
@@ -1439,7 +1440,7 @@ void MainWindow::setNodeCustomLabel()
 
     bool ok;
     QString newLabel = QInputDialog::getText(this, "Custom label", dialogMessage, QLineEdit::Normal,
-                                             selectedNodes[0]->getCustomLabel(), &ok);
+                                             g_assemblyGraph->getCustomLabel(selectedNodes[0]), &ok);
 
     if (ok)
     {
@@ -1447,7 +1448,7 @@ void MainWindow::setNodeCustomLabel()
         ui->nodeCustomLabelsCheckBox->setChecked(true);
 
         for (size_t i = 0; i < selectedNodes.size(); ++i)
-            selectedNodes[i]->setCustomLabel(newLabel);
+            g_assemblyGraph->setCustomLabel(selectedNodes[i], newLabel);
     }
 }
 

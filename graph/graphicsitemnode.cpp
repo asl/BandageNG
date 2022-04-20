@@ -20,6 +20,8 @@
 #include "debruijnnode.h"
 #include "ogdfnode.h"
 #include <QPainterPathStroker>
+#include "program/globals.h"
+#include "program/settings.h"
 #include <QPainter>
 #include <QPen>
 #include <QMessageBox>
@@ -360,7 +362,7 @@ void GraphicsItemNode::setNodeColour()
 
     case CUSTOM_COLOURS:
     {
-        m_colour = m_deBruijnNode->getCustomColourForDisplay();
+        m_colour = g_assemblyGraph->getCustomColourForDisplay(m_deBruijnNode);
         break;
     }
 
@@ -809,7 +811,7 @@ QStringList GraphicsItemNode::getNodeText() const
     QStringList nodeText;
 
     if (g_settings->displayNodeCustomLabels)
-        nodeText << m_deBruijnNode->getCustomLabelForDisplay();
+        nodeText << g_assemblyGraph->getCustomLabelForDisplay(m_deBruijnNode);
     if (g_settings->displayNodeNames)
     {
         QString nodeName = m_deBruijnNode->getName();
@@ -821,8 +823,8 @@ QStringList GraphicsItemNode::getNodeText() const
         nodeText << formatIntForDisplay(m_deBruijnNode->getLength()) + " bp";
     if (g_settings->displayNodeDepth)
         nodeText << formatDepthForDisplay(m_deBruijnNode->getDepth());
-    if (g_settings->displayNodeCsvData && m_deBruijnNode->hasCsvData())
-        nodeText << m_deBruijnNode->getCsvLine(g_settings->displayNodeCsvDataCol);
+    if (g_settings->displayNodeCsvData && g_assemblyGraph->hasCsvData(m_deBruijnNode))
+        nodeText << g_assemblyGraph->getCsvLine(m_deBruijnNode, g_settings->displayNodeCsvDataCol);
 
     return nodeText;
 }

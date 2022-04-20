@@ -34,6 +34,13 @@ class BandageTests : public QObject
 {
     Q_OBJECT
 
+public:
+    BandageTests() {
+
+        std::cout << "sizeof(DeBruijnNode)=" << sizeof(DeBruijnNode)
+                  << ", sizeof(DeBruijnEdge)=" << sizeof(DeBruijnEdge) << std::endl;
+    }    
+    
 private slots:
     void loadFastg();
     void loadLastGraph();
@@ -358,46 +365,46 @@ void BandageTests::loadCsvData()
     QCOMPARE(columns.size(), 3);
     QCOMPARE(errormsg, QString("There were 2 unmatched entries in the CSV."));
 
-    QCOMPARE(node6Plus->getCsvLine(0), QString("SIX_PLUS"));
-    QCOMPARE(node6Plus->getCsvLine(1), QString("6plus"));
-    QCOMPARE(node6Plus->getCsvLine(2), QString("plus6"));
-    QCOMPARE(node9Plus->getCsvLine(3), QString(""));
-    QCOMPARE(node9Plus->getCsvLine(25), QString(""));
+    QCOMPARE(g_assemblyGraph->getCsvLine(node6Plus, 0), QString("SIX_PLUS"));
+    QCOMPARE(g_assemblyGraph->getCsvLine(node6Plus, 1), QString("6plus"));
+    QCOMPARE(g_assemblyGraph->getCsvLine(node6Plus, 2), QString("plus6"));
+    QCOMPARE(g_assemblyGraph->getCsvLine(node9Plus, 3), QString(""));
+    QCOMPARE(g_assemblyGraph->getCsvLine(node9Plus, 25), QString(""));
 
-    QCOMPARE(node6Minus->getCsvLine(0), QString("SIX_MINUS"));
-    QCOMPARE(node6Minus->getCsvLine(1), QString("6minus"));
-    QCOMPARE(node6Minus->getCsvLine(2), QString("minus6"));
+    QCOMPARE(g_assemblyGraph->getCsvLine(node6Minus, 0), QString("SIX_MINUS"));
+    QCOMPARE(g_assemblyGraph->getCsvLine(node6Minus, 1), QString("6minus"));
+    QCOMPARE(g_assemblyGraph->getCsvLine(node6Minus, 2), QString("minus6"));
 
-    QCOMPARE(node7Plus->getCsvLine(0), QString("SEVEN_PLUS"));
-    QCOMPARE(node7Plus->getCsvLine(1), QString("7plus"));
-    QCOMPARE(node7Plus->getCsvLine(2), QString("plus7"));
+    QCOMPARE(g_assemblyGraph->getCsvLine(node7Plus, 0), QString("SEVEN_PLUS"));
+    QCOMPARE(g_assemblyGraph->getCsvLine(node7Plus, 1), QString("7plus"));
+    QCOMPARE(g_assemblyGraph->getCsvLine(node7Plus, 2), QString("plus7"));
 
-    QCOMPARE(node4Plus->getCsvLine(0), QString("FOUR_PLUS"));
-    QCOMPARE(node4Plus->getCsvLine(1), QString("4plus"));
-    QCOMPARE(node4Plus->getCsvLine(2), QString("plus4"));
+    QCOMPARE(g_assemblyGraph->getCsvLine(node4Plus, 0), QString("FOUR_PLUS"));
+    QCOMPARE(g_assemblyGraph->getCsvLine(node4Plus, 1), QString("4plus"));
+    QCOMPARE(g_assemblyGraph->getCsvLine(node4Plus, 2), QString("plus4"));
 
-    QCOMPARE(node4Minus->getCsvLine(0), QString("FOUR_MINUS"));
-    QCOMPARE(node4Minus->getCsvLine(1), QString("4minus"));
-    QCOMPARE(node4Minus->getCsvLine(2), QString("minus4"));
+    QCOMPARE(g_assemblyGraph->getCsvLine(node4Minus, 0), QString("FOUR_MINUS"));
+    QCOMPARE(g_assemblyGraph->getCsvLine(node4Minus, 1), QString("4minus"));
+    QCOMPARE(g_assemblyGraph->getCsvLine(node4Minus, 2), QString("minus4"));
 
-    QCOMPARE(node3Plus->getCsvLine(0), QString("THREE_PLUS"));
-    QCOMPARE(node3Plus->getCsvLine(1), QString("3plus"));
-    QCOMPARE(node3Plus->getCsvLine(2), QString("plus3"));
+    QCOMPARE(g_assemblyGraph->getCsvLine(node3Plus, 0), QString("THREE_PLUS"));
+    QCOMPARE(g_assemblyGraph->getCsvLine(node3Plus, 1), QString("3plus"));
+    QCOMPARE(g_assemblyGraph->getCsvLine(node3Plus, 2), QString("plus3"));
 
-    QCOMPARE(node5Minus->getCsvLine(0), QString("FIVE_MINUS"));
-    QCOMPARE(node5Minus->getCsvLine(1), QString(""));
-    QCOMPARE(node5Minus->getCsvLine(2), QString(""));
+    QCOMPARE(g_assemblyGraph->getCsvLine(node5Minus, 0), QString("FIVE_MINUS"));
+    QCOMPARE(g_assemblyGraph->getCsvLine(node5Minus, 1), QString(""));
+    QCOMPARE(g_assemblyGraph->getCsvLine(node5Minus, 2), QString(""));
 
-    QCOMPARE(node8Plus->getCsvLine(0), QString("EIGHT_PLUS"));
-    QCOMPARE(node8Plus->getCsvLine(1), QString("8plus"));
-    QCOMPARE(node8Plus->getCsvLine(2), QString("plus8"));
+    QCOMPARE(g_assemblyGraph->getCsvLine(node8Plus, 0), QString("EIGHT_PLUS"));
+    QCOMPARE(g_assemblyGraph->getCsvLine(node8Plus, 1), QString("8plus"));
+    QCOMPARE(g_assemblyGraph->getCsvLine(node8Plus, 2), QString("plus8"));
 
-    QCOMPARE(node9Plus->getCsvLine(0), QString("NINE_PLUS"));
-    QCOMPARE(node9Plus->getCsvLine(1), QString("9plus"));
-    QCOMPARE(node9Plus->getCsvLine(2), QString("plus9"));
-    QCOMPARE(node9Plus->getCsvLine(3), QString(""));
-    QCOMPARE(node9Plus->getCsvLine(4), QString(""));
-    QCOMPARE(node9Plus->getCsvLine(5), QString(""));
+    QCOMPARE(g_assemblyGraph->getCsvLine(node9Plus, 0), QString("NINE_PLUS"));
+    QCOMPARE(g_assemblyGraph->getCsvLine(node9Plus, 1), QString("9plus"));
+    QCOMPARE(g_assemblyGraph->getCsvLine(node9Plus, 2), QString("plus9"));
+    QCOMPARE(g_assemblyGraph->getCsvLine(node9Plus, 3), QString(""));
+    QCOMPARE(g_assemblyGraph->getCsvLine(node9Plus, 4), QString(""));
+    QCOMPARE(g_assemblyGraph->getCsvLine(node9Plus, 5), QString(""));
 }
 
 
@@ -421,13 +428,13 @@ void BandageTests::loadCsvDataTrinity()
 
     QCOMPARE(columns.size(), 1);
 
-    QCOMPARE(node3912Plus->getCsvLine(0), QString("3912PLUS"));
-    QCOMPARE(node3912Minus->getCsvLine(0), QString("3912MINUS"));
-    QCOMPARE(node3914Plus->getCsvLine(0), QString("3914PLUS"));
-    QCOMPARE(node3915Plus->getCsvLine(0), QString("3915PLUS"));
-    QCOMPARE(node3923Plus->getCsvLine(0), QString("3923PLUS"));
-    QCOMPARE(node3924Plus->getCsvLine(0), QString("3924PLUS"));
-    QCOMPARE(node3940Plus->getCsvLine(0), QString("3940PLUS"));
+    QCOMPARE(g_assemblyGraph->getCsvLine(node3912Plus, 0), QString("3912PLUS"));
+    QCOMPARE(g_assemblyGraph->getCsvLine(node3912Minus, 0), QString("3912MINUS"));
+    QCOMPARE(g_assemblyGraph->getCsvLine(node3914Plus, 0), QString("3914PLUS"));
+    QCOMPARE(g_assemblyGraph->getCsvLine(node3915Plus, 0), QString("3915PLUS"));
+    QCOMPARE(g_assemblyGraph->getCsvLine(node3923Plus, 0), QString("3923PLUS"));
+    QCOMPARE(g_assemblyGraph->getCsvLine(node3924Plus, 0), QString("3924PLUS"));
+    QCOMPARE(g_assemblyGraph->getCsvLine(node3940Plus, 0), QString("3940PLUS"));
 }
 
 void BandageTests::blastSearch()
