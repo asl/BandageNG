@@ -42,7 +42,7 @@ BlastQueryPath::BlastQueryPath(Path path, BlastQuery * query) :
 
         QList<BlastHit *> hitsThisNode;
         std::vector<std::shared_ptr<BlastHit>> queryHits = query->getHits();
-        for (auto & queryHit : queryHits)
+        for (auto &queryHit : queryHits)
         {
             BlastHit * hit = queryHit.get();
             if (hit->m_node->getName() == node->getName())

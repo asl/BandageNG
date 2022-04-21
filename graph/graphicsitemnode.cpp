@@ -161,7 +161,7 @@ void GraphicsItemNode::paint(QPainter * painter, const QStyleOptionGraphicsItem 
         if (m_hasArrow)
             painter->setClipPath(outlinePath);
 
-        for (auto & part : parts)
+        for (auto &part : parts)
         {
             partPen.setColor(part.m_colour);
             painter->setPen(partPen);
@@ -224,7 +224,7 @@ void GraphicsItemNode::paint(QPainter * painter, const QStyleOptionGraphicsItem 
         else
             centres = getCentres();
 
-        for (auto & centre : centres)
+        for (auto &centre : centres)
             drawTextPathAtLocation(painter, textPath, centre);
     }
 
@@ -491,7 +491,7 @@ void GraphicsItemNode::mouseMoveEvent(QGraphicsSceneMouseEvent * event)
     else
         nodesToMove.push_back(this);
 
-    for (auto & i : nodesToMove)
+    for (auto &i : nodesToMove)
     {
         i->shiftPoints(difference);
         i->remakePath();
@@ -517,7 +517,7 @@ void GraphicsItemNode::fixEdgePaths(std::vector<GraphicsItemNode *> * nodes) con
     }
     else
     {
-        for (auto & i : *nodes)
+        for (auto &i : *nodes)
         {
             DeBruijnNode * node = i->m_deBruijnNode;
             const std::vector<DeBruijnEdge *> * edges = node->getEdgesPointer();
@@ -556,7 +556,7 @@ void GraphicsItemNode::shiftPoints(QPointF difference)
 
     else if (isSelected()) //Move all pieces for selected nodes
     {
-        for (auto & m_linePoint : m_linePoints)
+        for (auto &m_linePoint : m_linePoints)
             m_linePoint += difference;
     }
 

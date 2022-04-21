@@ -362,7 +362,7 @@ void BlastSearch::blastQueryChanged(const QString &queryName)
     //the selected target(s).
     for (auto query : shownQueries)
     {
-        for (auto & hit : g_blastSearch->m_allHits)
+        for (auto &hit : g_blastSearch->m_allHits)
         {
             if (hit->m_query == query) {
                 g_assemblyGraph->m_blastHits[hit->m_node].emplace_back(hit);

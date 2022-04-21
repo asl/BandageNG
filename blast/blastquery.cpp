@@ -175,7 +175,7 @@ void BlastQuery::findQueryPaths()
     //Now we use the Path objects to make BlastQueryPath objects.  These contain
     //BLAST-specific information that the Path class doesn't.
     QList<BlastQueryPath> blastQueryPaths;
-    for (auto & possiblePath : possiblePaths)
+    for (auto &possiblePath : possiblePaths)
         blastQueryPaths.push_back(BlastQueryPath(possiblePath, this));
 
     //We now want to throw out any paths for which the hits fail to meet the
@@ -242,7 +242,7 @@ double BlastQuery::fractionCoveredByHits(const QList<BlastHit *> * hitsToCheck) 
 
     std::vector<std::pair<int, int> > ranges;
     if (hitsToCheck == nullptr) {
-        for (const auto & m_hit : m_hits) {
+        for (const auto &m_hit : m_hits) {
             BlastHit * hit = m_hit.get();
             ranges.emplace_back(hit->m_queryStart - 1, hit->m_queryEnd);
         }
