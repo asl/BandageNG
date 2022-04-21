@@ -29,6 +29,7 @@
 
 #include "ogdf/basic/Graph.h"
 #include "ogdf/basic/GraphAttributes.h"
+#include "blast/blasthit.h"
 
 #include <QString>
 #include <QMap>
@@ -188,8 +189,8 @@ public:
     bool attemptToLoadSequencesFromFasta();
     long long getTotalLengthOrphanedNodes() const;
     bool useLinearLayout() const;
-    bool nodeHasBlastHit(DeBruijnNode *node) const;
-    bool nodeOrReverseComplementHasBlastHit(DeBruijnNode *node) const;
+    bool nodeHasBlastHit(const DeBruijnNode *node) const;
+    bool nodeOrReverseComplementHasBlastHit(const DeBruijnNode *node) const;
     const std::vector<std::shared_ptr<BlastHit>> &getBlastHits(const DeBruijnNode *node) const;
 
 private:

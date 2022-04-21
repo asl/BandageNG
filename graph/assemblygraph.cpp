@@ -3512,11 +3512,11 @@ bool AssemblyGraph::useLinearLayout() const {
         return g_settings->linearLayout;
 }
 
-bool AssemblyGraph::nodeHasBlastHit(DeBruijnNode *node) const {
+bool AssemblyGraph::nodeHasBlastHit(const DeBruijnNode *node) const {
     return m_blastHits.count(node) != 0;
 }
 
-bool AssemblyGraph::nodeOrReverseComplementHasBlastHit(DeBruijnNode *node) const {
+bool AssemblyGraph::nodeOrReverseComplementHasBlastHit(const DeBruijnNode *node) const {
     return nodeHasBlastHit(node) || nodeHasBlastHit(node->getReverseComplement());
 }
 
