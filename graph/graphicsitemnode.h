@@ -54,13 +54,22 @@ public:
     QColor m_colour;
     QPainterPath m_path;
 
+    static double distance(QPointF p1, QPointF p2);
+    static QSize getNodeTextSize(const QString& text);
+    static QPointF findIntermediatePoint(QPointF p1, QPointF p2, double p1Value,
+                                         double p2Value, double targetValue);
+    static double getNodeWidth(double depthRelativeToMeanDrawnDepth,
+                               double depthPower,
+                               double depthEffectOnWidth,
+                               double averageNodeWidth);
+    static void drawTextPathAtLocation(QPainter *painter, const QPainterPath& textPath, QPointF centre);
+
     void mousePressEvent(QGraphicsSceneMouseEvent * event);
     void mouseMoveEvent(QGraphicsSceneMouseEvent * event);
     void paint(QPainter * painter, const QStyleOptionGraphicsItem *, QWidget *);
     QPainterPath shape() const;
     void shiftPoints(QPointF difference);
     void remakePath();
-    static double distance(QPointF p1, QPointF p2) ;
     bool usePositiveNodeColour() const;
     QPointF getFirst() const {return m_linePoints[0];}
     QPointF getSecond() const {return m_linePoints[1];}
@@ -70,35 +79,28 @@ public:
     QPointF getCentre(std::vector<QPointF> linePoints) const;
     void setNodeColour();
     QStringList getNodeText() const;
-    static QSize getNodeTextSize(const QString& text);
     QColor getDepthColour() const;
     void setWidth();
     QPainterPath makePartialPath(double startFraction, double endFraction);
     double getNodePathLength();
     QPointF findLocationOnPath(double fraction);
-    static QPointF findIntermediatePoint(QPointF p1, QPointF p2, double p1Value,
-                                  double p2Value, double targetValue);
     QRectF boundingRect() const;
-    static double getNodeWidth(double depthRelativeToMeanDrawnDepth,
-                               double depthPower,
-                               double depthEffectOnWidth,
-                               double averageNodeWidth);
     void shiftPointsLeft();
     void shiftPointsRight();
     void getBlastHitsTextAndLocationThisNode(std::vector<QString> * blastHitText,
                                              std::vector<QPointF> * blastHitLocation);
     void getBlastHitsTextAndLocationThisNodeOrReverseComplement(std::vector<QString> * blastHitText,
                                                                 std::vector<QPointF> * blastHitLocation);
-    static void drawTextPathAtLocation(QPainter *painter, const QPainterPath& textPath, QPointF centre);
     void fixEdgePaths(std::vector<GraphicsItemNode *> * nodes = 0) const;
 
 private:
+    static void pathHighlightNode3(QPainter * painter, QPainterPath highlightPath);
+    static bool anyNodeDisplayText();
+
     void exactPathHighlightNode(QPainter * painter);
     void queryPathHighlightNode(QPainter * painter);
     void pathHighlightNode2(QPainter * painter, DeBruijnNode * node, bool reverse, Path * path);
-    static void pathHighlightNode3(QPainter * painter, QPainterPath highlightPath);
     QPainterPath buildPartialHighlightPath(double startFraction, double endFraction, bool reverse);
-    static bool anyNodeDisplayText();
     void shiftPointSideways(bool left);
 };
 

@@ -491,10 +491,10 @@ void GraphicsItemNode::mouseMoveEvent(QGraphicsSceneMouseEvent * event)
     else
         nodesToMove.push_back(this);
 
-    for (auto &i : nodesToMove)
+    for (auto &node : nodesToMove)
     {
-        i->shiftPoints(difference);
-        i->remakePath();
+        node->shiftPoints(difference);
+        node->remakePath();
     }
     graphicsScene->possiblyExpandSceneRectangle(&nodesToMove);
 
@@ -517,9 +517,9 @@ void GraphicsItemNode::fixEdgePaths(std::vector<GraphicsItemNode *> * nodes) con
     }
     else
     {
-        for (auto &i : *nodes)
+        for (auto &graphicNode : *nodes)
         {
-            DeBruijnNode * node = i->m_deBruijnNode;
+            DeBruijnNode * node = graphicNode->m_deBruijnNode;
             const std::vector<DeBruijnEdge *> * edges = node->getEdgesPointer();
             for (auto edge : *edges)
                 edgesToFix.insert(edge);

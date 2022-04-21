@@ -180,10 +180,10 @@ void DeBruijnNode::determineContiguity()
         edge->tracePaths(outgoingEdge, g_settings->contiguitySearchSteps, &allPaths, this);
 
         //Set all nodes in the paths as MAYBE_CONTIGUOUS
-        for (auto &allPath : allPaths)
+        for (auto &path : allPaths)
         {
             QApplication::processEvents();
-            for (auto node : allPath)
+            for (auto node : path)
             {
                 node->upgradeContiguityStatus(MAYBE_CONTIGUOUS);
                 allCheckedNodes.insert(node);
@@ -192,8 +192,8 @@ void DeBruijnNode::determineContiguity()
 
         //Set all common nodes as CONTIGUOUS_STRAND_SPECIFIC
         std::vector<DeBruijnNode *> commonNodesStrandSpecific = getNodesCommonToAllPaths(&allPaths, false);
-        for (auto &j : commonNodesStrandSpecific)
-            j->upgradeContiguityStatus(CONTIGUOUS_STRAND_SPECIFIC);
+        for (auto &node : commonNodesStrandSpecific)
+            node->upgradeContiguityStatus(CONTIGUOUS_STRAND_SPECIFIC);
 
         //Set all common nodes (when including reverse complement nodes)
         //as CONTIGUOUS_EITHER_STRAND
@@ -810,8 +810,8 @@ QStringList DeBruijnNode::getCustomLabelForDisplay() const
     }
     if (!g_settings->doubleMode && !m_reverseComplement->getCustomLabel().isEmpty()) {
         QStringList labelLines2 = m_reverseComplement->getCustomLabel().split("\n");
-        for (auto &i : labelLines2)
-            customLabelLines << i;
+        for (auto &labelLine : labelLines2)
+            customLabelLines << labelLine;
     }
     return customLabelLines;
 }
