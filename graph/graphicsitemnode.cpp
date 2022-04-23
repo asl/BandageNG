@@ -107,7 +107,6 @@ GraphicsItemNode::GraphicsItemNode(DeBruijnNode * deBruijnNode,
     remakePath();
 }
 
-#define OLD 0
 
 void GraphicsItemNode::paint(QPainter * painter, const QStyleOptionGraphicsItem *, QWidget *)
 {
@@ -122,58 +121,7 @@ void GraphicsItemNode::paint(QPainter * painter, const QStyleOptionGraphicsItem 
     //Fill the node's colour
     QBrush brush(m_colour);
     painter->fillPath(outlinePath, brush);
-#if OLD
-    bool nodeHasBlastHits;
-    if (g_settings->doubleMode)
-        nodeHasBlastHits = g_assemblyGraph->nodeHasBlastHit(m_deBruijnNode);
-    else
-        nodeHasBlastHits = g_assemblyGraph->nodeOrReverseComplementHasBlastHit(m_deBruijnNode);
 
-    //If the node contains a BLAST hit, draw that on top.
-    if (nodeHasBlastHits && (g_settings->nodeColourScheme == BLAST_HITS_RAINBOW_COLOUR ||
-            g_settings->nodeColourScheme == BLAST_HITS_SOLID_COLOUR))
-    {
-        std::vector<BlastHitPart> parts;
-
-        //The scaled node length is passed to the function which makes the
-        //BlastHitPart objects, because we don't want those parts to be much
-        //less than 1 pixel in size, which isn't necessary and can cause weird
-        //visual artefacts.
-        double scaledNodeLength = getNodePathLength() * g_absoluteZoom;
-
-        if (g_settings->doubleMode)
-        {
-            if (g_assemblyGraph->nodeHasBlastHit(m_deBruijnNode))
-                parts = m_deBruijnNode->getBlastHitPartsForThisNode(scaledNodeLength);
-        }
-        else
-        {
-            if (g_assemblyGraph->nodeOrReverseComplementHasBlastHit(m_deBruijnNode))
-                parts = m_deBruijnNode->getBlastHitPartsForThisNodeOrReverseComplement(scaledNodeLength);
-        }
-
-        QPen partPen;
-        partPen.setWidthF(m_width);
-        partPen.setCapStyle(Qt::FlatCap);
-        partPen.setJoinStyle(Qt::BevelJoin);
-
-        //If the node has an arrow, then it's necessary to use the outline
-        //as a clipping path so the colours don't extend past the edge of the
-        //node.
-        if (m_hasArrow)
-            painter->setClipPath(outlinePath);
-
-        for (auto &part : parts)
-        {
-            partPen.setColor(part.m_colour);
-            painter->setPen(partPen);
-
-            painter->drawPath(makePartialPath(part.m_nodeFractionStart,
-                                              part.m_nodeFractionEnd));
-        }
-        painter->setClipping(false);
-    }
-#else
     static std::vector<Annotation> emptyAnnotation{};
 
     const auto &annotations = g_assemblyGraph->getBlastHitAnnotations(m_deBruijnNode);
@@ -217,7 +165,6 @@ void GraphicsItemNode::paint(QPainter * painter, const QStyleOptionGraphicsItem 
 
         painter->setClipping(false);
     }
-#endif
 
     //Draw the node outline
     QColor outlineColour = g_settings->outlineColour;
@@ -275,31 +222,6 @@ void GraphicsItemNode::paint(QPainter * painter, const QStyleOptionGraphicsItem 
     }
 
     //Draw BLAST hit labels, if appropriate.
-#if OLD
-    if (g_settings->displayBlastHits && nodeHasBlastHits)
-    {
-        std::vector<QString> blastHitText;
-        std::vector<QPointF> blastHitLocation;
-
-        if (g_settings->doubleMode)
-            getBlastHitsTextAndLocationThisNode(&blastHitText, &blastHitLocation);
-        else
-            getBlastHitsTextAndLocationThisNodeOrReverseComplement(&blastHitText, &blastHitLocation);
-
-        for (size_t i = 0; i < blastHitText.size(); ++i)
-        {
-            QString text = blastHitText[i];
-            QPointF centre = blastHitLocation[i];
-
-            QPainterPath textPath;
-            QFontMetrics metrics(g_settings->labelFont);
-            double shiftLeft = -metrics.boundingRect(text).width() / 2.0;
-            textPath.addText(shiftLeft, 0.0, g_settings->labelFont, text);
-
-            drawTextPathAtLocation(painter, textPath, centre);
-        }
-    }
-#else
     if (g_settings->displayBlastHits)
     {
         auto drawText = [&painter, this](const Annotation &annotation, bool reverseComplement) {
@@ -322,7 +244,6 @@ void GraphicsItemNode::paint(QPainter * painter, const QStyleOptionGraphicsItem 
             drawText(annotation, true);
         }
     }
-#endif
 }
 
 
