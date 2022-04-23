@@ -119,6 +119,7 @@ public:
     QString csvFilename;
     QString unnamedQueryDefaultName;
     QString blastAnnotationGroupName;
+    QString bedAnnotationGroupName;
 
     double minZoom;
     double minZoomOnGraphDraw;

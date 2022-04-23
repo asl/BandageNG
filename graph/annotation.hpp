@@ -11,6 +11,7 @@
 #include "blast/blastquery.h"
 #include "graphicsitemnode.h"
 #include "program/settings.h"
+#include "bedloader.hpp"
 
 
 class IAnnotationView {
@@ -118,6 +119,54 @@ public:
 private:
     double m_rainbowFractionStart;
     double m_rainbowFractionEnd;
+};
+
+
+class BedThickView : public SolidView {
+public:
+    BedThickView(double widthMultiplier, const QColor &color, int64_t mThickStart, int64_t mThickEnd) : SolidView(
+            widthMultiplier, color), m_thickStart(mThickStart), m_thickEnd(mThickEnd) {}
+
+    void drawFigure(QPainter &painter, GraphicsItemNode &graphicsItemNode, bool reverseComplement, int64_t,
+                    int64_t) const override {
+        SolidView::drawFigure(painter, graphicsItemNode, reverseComplement, m_thickStart, m_thickEnd);
+    }
+
+    QString getTypeName() const override {
+        return "BED Thick";
+    }
+
+private:
+    int64_t m_thickStart;
+    int64_t m_thickEnd;
+};
+
+
+class BedBlockView : public IAnnotationView {
+public:
+    BedBlockView(double widthMultiplier, const QColor &color, const std::vector<bed::Block> &blocks)
+            : m_widthMultiplier(widthMultiplier), m_color(color) {
+        m_blocks.reserve(blocks.size());
+        for (const auto &block: blocks) {
+            m_blocks.emplace_back(widthMultiplier, color, block.start, block.end);
+        }
+    }
+
+    void drawFigure(QPainter &painter, GraphicsItemNode &graphicsItemNode, bool reverseComplement, int64_t start,
+                    int64_t end) const override {
+        for (const auto &block: m_blocks) {
+            block.drawFigure(painter, graphicsItemNode, reverseComplement, start, end);
+        }
+    }
+
+    QString getTypeName() const override {
+        return "BED Blocks";
+    }
+
+private:
+    const double m_widthMultiplier;
+    const QColor m_color;
+    std::vector<BedThickView> m_blocks;
 };
 
 

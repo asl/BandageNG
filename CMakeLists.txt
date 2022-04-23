@@ -29,6 +29,7 @@ set(LIB_SOURCES
         graph/assemblygraph.cpp
         graph/assemblygraphfast.cpp
         graph/annotationsmanager.cpp
+        graph/bedloader.cpp
         graph/debruijnedge.cpp
         graph/debruijnnode.cpp
         graph/graphicsitemedge.cpp
@@ -77,6 +78,7 @@ set(LIB_SOURCES
         program/settings.cpp
         ui/aboutdialog.cpp
         ui/annotationswidget.cpp
+        ui/bedwidget.cpp
         ui/blasthitfiltersdialog.cpp
         ui/blastsearchdialog.cpp
         ui/changenodedepthdialog.cpp

@@ -138,6 +138,7 @@ Settings::Settings()
     blastEValueFilter = SciNotSetting(SciNot(1.0, -10), SciNot(1.0, -999), SciNot(9.9, 1), false);
     blastBitScoreFilter = FloatSetting(1000.0, 0.0, 1000000.0, false);
     blastAnnotationGroupName = "Blast Hits";
+    bedAnnotationGroupName = "BED";
 
     minDepthRange = FloatSetting(10.0, 0.0, 1000000.0);
     maxDepthRange = FloatSetting(100.0, 0.0, 1000000.0);
