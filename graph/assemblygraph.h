@@ -70,15 +70,14 @@ public:
     phmap::parallel_flat_hash_map<const DeBruijnNode*, QString> m_nodeLabels;
     // CSV data
     phmap::parallel_flat_hash_map<const DeBruijnNode*, QStringList> m_nodeCSVData;
-    
+
     tsl::htrie_map<char, Path*> m_deBruijnGraphPaths;
     
     ogdf::Graph * m_ogdfGraph;
     ogdf::EdgeArray<double> * m_edgeArray;
     ogdf::GraphAttributes * m_graphAttributes;
 
-    std::unordered_map<const DeBruijnNode*, std::vector<std::shared_ptr<BlastHit>>> m_blastHits;
-    std::unordered_map<const DeBruijnNode*, std::vector<Annotation>> m_annotations;
+    std::unordered_map<const DeBruijnNode*, std::vector<Annotation>> m_blastHitAnnotations;
 
     int m_kmer;
     int m_nodeCount;
@@ -210,7 +209,7 @@ public:
     bool hasCustomColour(const DeBruijnNode* node) const;
     QColor getCustomColour(const DeBruijnNode* node) const;
     void setCustomColour(const DeBruijnNode* node, QColor color);
-        
+
 
     QString getCustomLabel(const DeBruijnNode* node) const;
     void setCustomLabel(const DeBruijnNode* node, QString newLabel);
@@ -220,7 +219,7 @@ public:
     QString getCsvLine(const DeBruijnNode *node, int i) const;
     void setCsvData(const DeBruijnNode* node, QStringList csvData);
     void clearCsvData(const DeBruijnNode* node);
-    
+
     QColor getCustomColourForDisplay(const DeBruijnNode *node) const;
     QStringList getCustomLabelForDisplay(const DeBruijnNode *node) const;
 

@@ -520,62 +520,18 @@ void DeBruijnNode::labelNeighbouringNodesAsDrawn(int nodeDistance, DeBruijnNode 
 }
 
 
-
-std::vector<BlastHitPart> DeBruijnNode::getBlastHitPartsForThisNode(double scaledNodeLength) const
-{
-    std::vector<BlastHitPart> returnVector;
-
-    const auto &blastHits = g_assemblyGraph->getBlastHits(this);
-    for (const auto &blastHit : blastHits)
-    {
-        std::vector<BlastHitPart> hitParts = blastHit->getBlastHitParts(false, scaledNodeLength);
-        returnVector.insert(returnVector.end(), hitParts.begin(), hitParts.end());
-    }
-
-    return returnVector;
-}
-
-std::vector<BlastHitPart> DeBruijnNode::getBlastHitPartsForThisNodeOrReverseComplement(double scaledNodeLength) const
-{
-    const DeBruijnNode * positiveNode = this;
-    const DeBruijnNode * negativeNode = getReverseComplement();
-    if (isNegativeNode())
-        std::swap(positiveNode, negativeNode);
-
-    //Look for blast hit parts on both the positive and the negative node,
-    //since hits were previously filtered such that startPos < endPos,
-    //hence we need to look at both positive and negative nodes to recover all hits.
-    std::vector<BlastHitPart> returnVector;
-    const auto &positiveNodeBlastHits = g_assemblyGraph->getBlastHits(positiveNode);
-    for (const auto &blastHit : positiveNodeBlastHits)
-    {
-        std::vector<BlastHitPart> hitParts = blastHit->getBlastHitParts(false, scaledNodeLength);
-        returnVector.insert(returnVector.end(), hitParts.begin(), hitParts.end());
-    }
-    const auto &negativeNodeBlastHits = g_assemblyGraph->getBlastHits(negativeNode);
-    for (const auto &blastHit : negativeNodeBlastHits)
-    {
-        std::vector<BlastHitPart> hitParts = blastHit->getBlastHitParts(true, scaledNodeLength);
-        returnVector.insert(returnVector.end(), hitParts.begin(), hitParts.end());
-    }
-
-    return returnVector;
-}
-
-
-
 bool DeBruijnNode::isPositiveNode() const
 {
     QChar lastChar = m_name.at(m_name.length() - 1);
     return lastChar == '+';
 }
 
+
 bool DeBruijnNode::isNegativeNode() const
 {
     QChar lastChar = m_name.at(m_name.length() - 1);
     return lastChar == '-';
 }
-
 
 
 //This function checks to see if the passed node leads into

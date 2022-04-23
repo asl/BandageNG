@@ -365,8 +365,7 @@ void BlastSearch::blastQueryChanged(const QString &queryName)
     {
         for (auto &hit : query->getHits())
         {
-            g_assemblyGraph->m_blastHits[hit->m_node].emplace_back(hit);
-            g_assemblyGraph->m_annotations[hit->m_node].emplace_back(Annotation::fromBlastHit(*hit));
+            g_assemblyGraph->m_blastHitAnnotations[hit->m_node].emplace_back(Annotation::fromBlastHit(*hit));
         }
     }
 }

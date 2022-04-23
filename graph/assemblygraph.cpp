@@ -336,7 +336,7 @@ void AssemblyGraph::resetAllNodeColours()
 
 void AssemblyGraph::clearAllBlastHitPointers()
 {
-    m_blastHits.clear();
+    m_blastHitAnnotations.clear();
 }
 
 void AssemblyGraph::determineGraphInfo()
@@ -3583,12 +3583,12 @@ bool AssemblyGraph::useLinearLayout() const {
         return g_settings->linearLayout;
 }
 
-bool AssemblyGraph::nodeHasBlastHit(const DeBruijnNode *node) const {
-    return m_blastHits.count(node) != 0;
+bool AssemblyGraph::nodeHasBlastHitAnnotations(const DeBruijnNode *node) const {
+    return m_blastHitAnnotations.count(node) != 0;
 }
 
-bool AssemblyGraph::nodeOrReverseComplementHasBlastHit(const DeBruijnNode *node) const {
-    return nodeHasBlastHit(node) || nodeHasBlastHit(node->getReverseComplement());
+bool AssemblyGraph::nodeOrReverseComplementHasBlastHitAnnotations(const DeBruijnNode *node) const {
+    return nodeHasBlastHitAnnotations(node) || nodeHasBlastHitAnnotations(node->getReverseComplement());
 }
 
 template <typename K, typename V>
@@ -3602,12 +3602,8 @@ const V &getFromMapOrDefaultConstructed(const std::unordered_map<K, V> &map, con
     }
 }
 
-const std::vector<std::shared_ptr<BlastHit>> &AssemblyGraph::getBlastHits(const DeBruijnNode *node) const {
-    return getFromMapOrDefaultConstructed(m_blastHits, node);
-}
-
-const std::vector<Annotation> &AssemblyGraph::getAnnotations(const DeBruijnNode *node) const {
-    return getFromMapOrDefaultConstructed(m_annotations, node);
+const std::vector<Annotation> &AssemblyGraph::getBlastHitAnnotations(const DeBruijnNode *node) const {
+    return getFromMapOrDefaultConstructed(m_blastHitAnnotations, node);
 }
 
 QStringList AssemblyGraph::getCustomLabelForDisplay(const DeBruijnNode *node) const {

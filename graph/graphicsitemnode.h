@@ -87,10 +87,6 @@ public:
     QRectF boundingRect() const override;
     void shiftPointsLeft();
     void shiftPointsRight();
-    void getBlastHitsTextAndLocationThisNode(std::vector<QString> * blastHitText,
-                                             std::vector<QPointF> * blastHitLocation);
-    void getBlastHitsTextAndLocationThisNodeOrReverseComplement(std::vector<QString> * blastHitText,
-                                                                std::vector<QPointF> * blastHitLocation);
     void fixEdgePaths(std::vector<GraphicsItemNode *> * nodes = 0) const;
 
 private:

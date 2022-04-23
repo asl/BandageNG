@@ -176,10 +176,10 @@ void GraphicsItemNode::paint(QPainter * painter, const QStyleOptionGraphicsItem 
 #else
     static std::vector<Annotation> emptyAnnotation{};
 
-    const auto &annotations = g_assemblyGraph->getAnnotations(m_deBruijnNode);
+    const auto &annotations = g_assemblyGraph->getBlastHitAnnotations(m_deBruijnNode);
     const auto &revCompAnnotations = g_settings->doubleMode
                                      ? emptyAnnotation
-                                     : g_assemblyGraph->getAnnotations(m_deBruijnNode->getReverseComplement());
+                                     : g_assemblyGraph->getBlastHitAnnotations(m_deBruijnNode->getReverseComplement());
 
     {
         //If the node has an arrow, then it's necessary to use the outline
@@ -1056,31 +1056,6 @@ void GraphicsItemNode::shiftPointSideways(bool left)
 
 double GraphicsItemNode::indexToFraction(int64_t pos) const {
     return static_cast<double>(pos) / m_deBruijnNode->getLength();
-}
-
-
-void GraphicsItemNode::getBlastHitsTextAndLocationThisNode(std::vector<QString> * blastHitText,
-                                                       std::vector<QPointF> * blastHitLocation)
-{
-    const auto &blastHits = g_assemblyGraph->getBlastHits(m_deBruijnNode);
-    for (const auto &blastHit : blastHits)
-    {
-        blastHitText->push_back(blastHit->m_query->getName());
-        blastHitLocation->push_back(findLocationOnPath(blastHit->getNodeCentreFraction()));
-    }
-}
-
-void GraphicsItemNode::getBlastHitsTextAndLocationThisNodeOrReverseComplement(std::vector<QString> * blastHitText,
-                                                                          std::vector<QPointF> * blastHitLocation)
-{
-    getBlastHitsTextAndLocationThisNode(blastHitText, blastHitLocation);
-
-    const auto &blastHits = g_assemblyGraph->getBlastHits(m_deBruijnNode->getReverseComplement());
-    for (const auto &blastHit : blastHits)
-    {
-        blastHitText->push_back(blastHit->m_query->getName());
-        blastHitLocation->push_back(findLocationOnPath(1.0 - blastHit->getNodeCentreFraction()));
-    }
 }
 
 
