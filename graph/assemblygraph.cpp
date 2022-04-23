@@ -3591,14 +3591,23 @@ bool AssemblyGraph::nodeOrReverseComplementHasBlastHit(const DeBruijnNode *node)
     return nodeHasBlastHit(node) || nodeHasBlastHit(node->getReverseComplement());
 }
 
-const std::vector<std::shared_ptr<BlastHit>> &AssemblyGraph::getBlastHits(const DeBruijnNode *node) const {
-    auto it = m_blastHits.find(node);
-    if (it != m_blastHits.end()) {
+template <typename K, typename V>
+const V &getFromMapOrDefaultConstructed(const std::unordered_map<K, V> &map, const K &key) {
+    auto it = map.find(key);
+    if (it != map.end()) {
         return it->second;
     } else {
-        static const std::vector<std::shared_ptr<BlastHit>> emptyVector{};
-        return emptyVector;
+        static const V defaultConstructed{};
+        return defaultConstructed;
     }
+}
+
+const std::vector<std::shared_ptr<BlastHit>> &AssemblyGraph::getBlastHits(const DeBruijnNode *node) const {
+    return getFromMapOrDefaultConstructed(m_blastHits, node);
+}
+
+const std::vector<Annotation> &AssemblyGraph::getAnnotations(const DeBruijnNode *node) const {
+    return getFromMapOrDefaultConstructed(m_annotations, node);
 }
 
 QStringList AssemblyGraph::getCustomLabelForDisplay(const DeBruijnNode *node) const {

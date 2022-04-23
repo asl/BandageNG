@@ -107,7 +107,7 @@ GraphicsItemNode::GraphicsItemNode(DeBruijnNode * deBruijnNode,
     remakePath();
 }
 
-
+#define OLD 0
 
 void GraphicsItemNode::paint(QPainter * painter, const QStyleOptionGraphicsItem *, QWidget *)
 {
@@ -122,7 +122,7 @@ void GraphicsItemNode::paint(QPainter * painter, const QStyleOptionGraphicsItem 
     //Fill the node's colour
     QBrush brush(m_colour);
     painter->fillPath(outlinePath, brush);
-
+#if OLD
     bool nodeHasBlastHits;
     if (g_settings->doubleMode)
         nodeHasBlastHits = g_assemblyGraph->nodeHasBlastHit(m_deBruijnNode);
@@ -173,7 +173,51 @@ void GraphicsItemNode::paint(QPainter * painter, const QStyleOptionGraphicsItem 
         }
         painter->setClipping(false);
     }
+#else
+    static std::vector<Annotation> emptyAnnotation{};
 
+    const auto &annotations = g_assemblyGraph->getAnnotations(m_deBruijnNode);
+    const auto &revCompAnnotations = g_settings->doubleMode
+                                     ? emptyAnnotation
+                                     : g_assemblyGraph->getAnnotations(m_deBruijnNode->getReverseComplement());
+
+    {
+        //If the node has an arrow, then it's necessary to use the outline
+        //as a clipping path so the colours don't extend past the edge of the
+        //node.
+        if (m_hasArrow)
+            painter->setClipPath(outlinePath);
+
+        QPen pen;
+        pen.setCapStyle(Qt::FlatCap);
+        pen.setJoinStyle(Qt::BevelJoin);
+
+        auto drawAnnotation = [&pen, &painter, this](const Annotation &annotation, bool reverseComplement) {
+            pen.setWidthF(annotation.widthMultiplier * m_width);
+
+            pen.setColor(annotation.color);
+            painter->setPen(pen);
+
+            double fractionStart = indexToFraction(annotation.start);
+            double fractionEnd = indexToFraction(annotation.end);
+
+            if (reverseComplement) {
+                painter->drawPath(makePartialPath(1 - fractionEnd, 1 - fractionStart));
+            } else {
+                painter->drawPath(makePartialPath(fractionStart, fractionEnd));
+            }
+        };
+
+        for (const auto &annotation : annotations) {
+            drawAnnotation(annotation, false);
+        }
+        for (const auto &annotation : revCompAnnotations) {
+            drawAnnotation(annotation, true);
+        }
+
+        painter->setClipping(false);
+    }
+#endif
 
     //Draw the node outline
     QColor outlineColour = g_settings->outlineColour;
@@ -231,6 +275,7 @@ void GraphicsItemNode::paint(QPainter * painter, const QStyleOptionGraphicsItem 
     }
 
     //Draw BLAST hit labels, if appropriate.
+#if OLD
     if (g_settings->displayBlastHits && nodeHasBlastHits)
     {
         std::vector<QString> blastHitText;
@@ -254,6 +299,30 @@ void GraphicsItemNode::paint(QPainter * painter, const QStyleOptionGraphicsItem 
             drawTextPathAtLocation(painter, textPath, centre);
         }
     }
+#else
+    if (g_settings->displayBlastHits)
+    {
+        auto drawText = [&painter, this](const Annotation &annotation, bool reverseComplement) {
+            double annotationCenter = (indexToFraction(annotation.start) + indexToFraction(annotation.end)) / 2;
+            auto textPoint = findLocationOnPath(reverseComplement ? 1 - annotationCenter : annotationCenter);
+            auto text = QString::fromStdString(annotation.text);
+
+            QPainterPath textPath;
+            QFontMetrics metrics(g_settings->labelFont);
+            double shiftLeft = -metrics.boundingRect(text).width() / 2.0;
+            textPath.addText(shiftLeft, 0.0, g_settings->labelFont, text);
+
+            drawTextPathAtLocation(painter, textPath, textPoint);
+        };
+
+        for (const auto &annotation : annotations) {
+            drawText(annotation, false);
+        }
+        for (const auto &annotation : revCompAnnotations) {
+            drawText(annotation, true);
+        }
+    }
+#endif
 }
 
 
@@ -985,6 +1054,11 @@ void GraphicsItemNode::shiftPointSideways(bool left)
 }
 
 
+double GraphicsItemNode::indexToFraction(int64_t pos) const {
+    return static_cast<double>(pos) / m_deBruijnNode->getLength();
+}
+
+
 void GraphicsItemNode::getBlastHitsTextAndLocationThisNode(std::vector<QString> * blastHitText,
                                                        std::vector<QPointF> * blastHitLocation)
 {
@@ -1001,7 +1075,7 @@ void GraphicsItemNode::getBlastHitsTextAndLocationThisNodeOrReverseComplement(st
 {
     getBlastHitsTextAndLocationThisNode(blastHitText, blastHitLocation);
 
-    const auto &blastHits = g_assemblyGraph->getBlastHits(m_deBruijnNode);
+    const auto &blastHits = g_assemblyGraph->getBlastHits(m_deBruijnNode->getReverseComplement());
     for (const auto &blastHit : blastHits)
     {
         blastHitText->push_back(blastHit->m_query->getName());

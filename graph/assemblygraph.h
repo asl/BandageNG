@@ -31,6 +31,7 @@
 #include "ogdf/basic/Graph.h"
 #include "ogdf/basic/GraphAttributes.h"
 #include "blast/blasthit.h"
+#include "annotation.hpp"
 
 #include <QString>
 #include <QMap>
@@ -77,6 +78,7 @@ public:
     ogdf::GraphAttributes * m_graphAttributes;
 
     std::unordered_map<const DeBruijnNode*, std::vector<std::shared_ptr<BlastHit>>> m_blastHits;
+    std::unordered_map<const DeBruijnNode*, std::vector<Annotation>> m_annotations;
 
     int m_kmer;
     int m_nodeCount;
@@ -203,6 +205,7 @@ public:
     bool nodeHasBlastHit(const DeBruijnNode *node) const;
     bool nodeOrReverseComplementHasBlastHit(const DeBruijnNode *node) const;
     const std::vector<std::shared_ptr<BlastHit>> &getBlastHits(const DeBruijnNode *node) const;
+    const std::vector<Annotation> &getAnnotations(const DeBruijnNode *node) const;
 
     bool hasCustomColour(const DeBruijnNode* node) const;
     QColor getCustomColour(const DeBruijnNode* node) const;

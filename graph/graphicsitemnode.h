@@ -38,13 +38,13 @@ class GraphicsItemNode : public QGraphicsItem
 public:
     GraphicsItemNode(DeBruijnNode * deBruijnNode,
                      ogdf::GraphAttributes * graphAttributes,
-                     QGraphicsItem * parent = 0);
+                     QGraphicsItem * parent = nullptr);
     GraphicsItemNode(DeBruijnNode * deBruijnNode,
                      GraphicsItemNode * toCopy,
-                     QGraphicsItem * parent = 0);
+                     QGraphicsItem * parent = nullptr);
     GraphicsItemNode(DeBruijnNode * deBruijnNode,
                      std::vector<QPointF> linePoints,
-                     QGraphicsItem * parent = 0);
+                     QGraphicsItem * parent = nullptr);
 
     DeBruijnNode * m_deBruijnNode;
     double m_width;
@@ -64,10 +64,10 @@ public:
                                double averageNodeWidth);
     static void drawTextPathAtLocation(QPainter *painter, const QPainterPath& textPath, QPointF centre);
 
-    void mousePressEvent(QGraphicsSceneMouseEvent * event);
-    void mouseMoveEvent(QGraphicsSceneMouseEvent * event);
-    void paint(QPainter * painter, const QStyleOptionGraphicsItem *, QWidget *);
-    QPainterPath shape() const;
+    void mousePressEvent(QGraphicsSceneMouseEvent * event) override;
+    void mouseMoveEvent(QGraphicsSceneMouseEvent * event) override;
+    void paint(QPainter * painter, const QStyleOptionGraphicsItem *, QWidget *) override;
+    QPainterPath shape() const override;
     void shiftPoints(QPointF difference);
     void remakePath();
     bool usePositiveNodeColour() const;
@@ -84,7 +84,7 @@ public:
     QPainterPath makePartialPath(double startFraction, double endFraction);
     double getNodePathLength();
     QPointF findLocationOnPath(double fraction);
-    QRectF boundingRect() const;
+    QRectF boundingRect() const override;
     void shiftPointsLeft();
     void shiftPointsRight();
     void getBlastHitsTextAndLocationThisNode(std::vector<QString> * blastHitText,
@@ -102,6 +102,7 @@ private:
     void pathHighlightNode2(QPainter * painter, DeBruijnNode * node, bool reverse, Path * path);
     QPainterPath buildPartialHighlightPath(double startFraction, double endFraction, bool reverse);
     void shiftPointSideways(bool left);
+    double indexToFraction(int64_t pos) const;
 };
 
 #endif // GRAPHICSITEMNODE_H
