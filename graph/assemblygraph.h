@@ -204,49 +204,19 @@ public:
     bool nodeOrReverseComplementHasBlastHit(const DeBruijnNode *node) const;
     const std::vector<std::shared_ptr<BlastHit>> &getBlastHits(const DeBruijnNode *node) const;
 
-    bool hasCustomColour(const DeBruijnNode* node) const {
-        auto it = m_nodeColors.find(node);
-        return it != m_nodeColors.end() && it->second.isValid();
-    }
-    QColor getCustomColour(const DeBruijnNode* node) const {
-        auto it = m_nodeColors.find(node);
-        return it == m_nodeColors.end() ? QColor() : it->second;
-    }
-    void setCustomColour(const DeBruijnNode* node, QColor color) {
-        m_nodeColors[node] = color;
-    }
-    QString getCustomLabel(const DeBruijnNode* node) const {
-        auto it = m_nodeLabels.find(node);
-        return it == m_nodeLabels.end() ? QString() : it->second;
-    }
-    void setCustomLabel(const DeBruijnNode* node, QString newLabel) {
-        newLabel.replace("\t", "    ");
-        m_nodeLabels[node] = newLabel;
-    }
-
-    bool hasCsvData(const DeBruijnNode* node) const {
-        auto it = m_nodeCSVData.find(node);
-        return it != m_nodeCSVData.end() && !it->second.isEmpty();
-    }
-
-    QStringList getAllCsvData(const DeBruijnNode *node) const {
-        auto it = m_nodeCSVData.find(node);
-        return it == m_nodeCSVData.end() ? QStringList() : it->second;
-    }
-    QString getCsvLine(const DeBruijnNode *node, int i) const {
-        auto it = m_nodeCSVData.find(node);
-        if (it == m_nodeCSVData.end() ||
-            i >= it->second.length())
-            return "";
+    bool hasCustomColour(const DeBruijnNode* node) const;
+    QColor getCustomColour(const DeBruijnNode* node) const;
+    void setCustomColour(const DeBruijnNode* node, QColor color);
         
-        return it->second[i];
-    }
-    void setCsvData(const DeBruijnNode* node, QStringList csvData) {
-        m_nodeCSVData[node] = csvData;
-    }
-    void clearCsvData(const DeBruijnNode* node) {
-        m_nodeCSVData[node].clear();
-    }
+
+    QString getCustomLabel(const DeBruijnNode* node) const;
+    void setCustomLabel(const DeBruijnNode* node, QString newLabel);
+
+    bool hasCsvData(const DeBruijnNode* node) const;
+    QStringList getAllCsvData(const DeBruijnNode *node) const;
+    QString getCsvLine(const DeBruijnNode *node, int i) const;
+    void setCsvData(const DeBruijnNode* node, QStringList csvData);
+    void clearCsvData(const DeBruijnNode* node);
     
     QColor getCustomColourForDisplay(const DeBruijnNode *node) const;
     QStringList getCustomLabelForDisplay(const DeBruijnNode *node) const;

@@ -3059,8 +3059,56 @@ bool AssemblyGraph::saveVisibleGraphToGfa(QString filename)
     return true;
 }
 
+bool AssemblyGraph::hasCustomColour(const DeBruijnNode* node) const {
+    auto it = m_nodeColors.find(node);
+    return it != m_nodeColors.end() && it->second.isValid();
+}
 
+QColor AssemblyGraph::getCustomColour(const DeBruijnNode* node) const {
+    auto it = m_nodeColors.find(node);
+    return it == m_nodeColors.end() ? QColor() : it->second;
+}
 
+void AssemblyGraph::setCustomColour(const DeBruijnNode* node, QColor color) {
+    m_nodeColors[node] = color;
+}
+
+QString AssemblyGraph::getCustomLabel(const DeBruijnNode* node) const {
+    auto it = m_nodeLabels.find(node);
+    return it == m_nodeLabels.end() ? QString() : it->second;
+}
+
+void AssemblyGraph::setCustomLabel(const DeBruijnNode* node, QString newLabel) {
+    newLabel.replace("\t", "    ");
+    m_nodeLabels[node] = newLabel;
+}
+
+bool AssemblyGraph::hasCsvData(const DeBruijnNode* node) const {
+    auto it = m_nodeCSVData.find(node);
+    return it != m_nodeCSVData.end() && !it->second.isEmpty();
+}
+
+QStringList AssemblyGraph::getAllCsvData(const DeBruijnNode *node) const {
+    auto it = m_nodeCSVData.find(node);
+    return it == m_nodeCSVData.end() ? QStringList() : it->second;
+}
+
+QString AssemblyGraph::getCsvLine(const DeBruijnNode *node, int i) const {
+    auto it = m_nodeCSVData.find(node);
+    if (it == m_nodeCSVData.end() ||
+        i >= it->second.length())
+        return "";
+
+    return it->second[i];
+}
+
+void AssemblyGraph::setCsvData(const DeBruijnNode* node, QStringList csvData) {
+    m_nodeCSVData[node] = csvData;
+}
+
+void AssemblyGraph::clearCsvData(const DeBruijnNode* node) {
+    m_nodeCSVData[node].clear();
+}
 
 //This function changes the name of a node pair.  The new and old names are
 //both assumed to not include the +/- at the end.
