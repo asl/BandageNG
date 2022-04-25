@@ -23,6 +23,7 @@
 #include <QTextStream>
 #include <QLocale>
 #include "ogdf/energybased/FMMMLayout.h"
+#include <iterator>
 #include <math.h>
 #include "program/settings.h"
 #include <QClipboard>
@@ -58,6 +59,8 @@
 #include <limits>
 #include <QDesktopServices>
 #include <QSvgGenerator>
+#include <QCompleter>
+#include <QStringListModel>
 #include "graph/path.h"
 #include "pathspecifydialog.h"
 #include "program/memory.h"
@@ -448,7 +451,9 @@ void MainWindow::loadGraph2(GraphFileType graphFileType, QString fullFileName)
         // to the default of 'Random colours'.
         if (!customColours && ui->coloursComboBox->currentIndex() == 6)
             ui->coloursComboBox->setCurrentIndex(0);
-        setupPathSelectionComboBox();
+
+        setupPathSelectionLineEdit(ui->pathSelectionLineEdit);
+        setupPathSelectionLineEdit(ui->pathSelectionLineEdit2);
     }
 
     catch (...)
@@ -665,7 +670,7 @@ void MainWindow::graphScopeChanged()
 
         ui->graphDrawingGridLayout->addWidget(ui->pathSelectionInfoText, 1, 0, 1, 1);
         ui->graphDrawingGridLayout->addWidget(ui->pathSelectionLabel,    1, 1, 1, 1);
-        ui->graphDrawingGridLayout->addWidget(ui->pathSelectionComboBox,  1, 2, 1, 1);
+        ui->graphDrawingGridLayout->addWidget(ui->pathSelectionLineEdit,  1, 2, 1, 1);
         ui->graphDrawingGridLayout->addWidget(ui->nodeDistanceInfoText, 2, 0, 1, 1);
         ui->graphDrawingGridLayout->addWidget(ui->nodeDistanceLabel, 2, 1, 1, 1);
         ui->graphDrawingGridLayout->addWidget(ui->nodeDistanceSpinBox, 2, 2, 1, 1);
@@ -756,31 +761,43 @@ void MainWindow::setPathSelectionWidgetVisibility(bool visible)
 {
     ui->pathSelectionInfoText->setVisible(visible);
     ui->pathSelectionLabel->setVisible(visible);
-    ui->pathSelectionComboBox->setVisible(visible);
+    ui->pathSelectionLineEdit->setVisible(visible);
 }
 
-void MainWindow::setupPathSelectionComboBox() {
-    ui->pathSelectionComboBox->clear();
-    ui->pathSelectionComboBox2->clear();
+void MainWindow::setupPathSelectionLineEdit(QLineEdit *lineEdit) {
+    lineEdit->clear();
 
-    QStringList comboBoxItems;
-    std::string key_buffer;
-    for (auto it = g_assemblyGraph->m_deBruijnGraphPaths.begin();
-         it != g_assemblyGraph->m_deBruijnGraphPaths.end(); ++it) {
-        it.key(key_buffer);
-        comboBoxItems.push_back(key_buffer.c_str());
-    }
-    comboBoxItems.sort();
+    if (g_assemblyGraph->m_deBruijnGraphPaths.empty())
+        return;
 
-    if (comboBoxItems.size() > 0)
-    {
-        ui->pathSelectionComboBox->addItems(comboBoxItems);
-        ui->pathSelectionComboBox->setEnabled(true);
-        ui->pathSelectionComboBox2->addItems(comboBoxItems);
-        ui->pathSelectionComboBox2->setEnabled(true);
-    }
+    auto *matchedPaths = new QStringListModel(this);
+    auto *completer = new QCompleter(matchedPaths);
+    completer->setCompletionMode(QCompleter::UnfilteredPopupCompletion);
+    lineEdit->setCompleter(completer);
+
+    connect(lineEdit, &QLineEdit::textEdited,
+            [matchedPaths](const QString &text) {
+                QStringList res;
+
+                auto prefix_range = g_assemblyGraph->m_deBruijnGraphPaths.equal_prefix_range(text.toStdString());
+                size_t sz = std::distance(prefix_range.first, prefix_range.second);
+                if (sz > 1000) {
+                    res << "Too many paths to show";
+                } else {
+                    for (auto it = prefix_range.first; it != prefix_range.second; ++it)
+                        res.push_back(it.key().c_str());
+                }
+
+                if (res.empty())
+                    res << "No paths matching prefix";
+
+                res.sort();
+
+                matchedPaths->setStringList(res);
+            });
+
+    lineEdit->setEnabled(true);
 }
-
 
 
 void MainWindow::drawGraph()
@@ -791,7 +808,7 @@ void MainWindow::drawGraph()
                                                                                   ui->doubleNodesRadioButton->isChecked(),
                                                                                   ui->startingNodesLineEdit->text(),
                                                                                   ui->blastQueryComboBox->currentText(),
-                                                                                  ui->pathSelectionComboBox->currentText());
+                                                                                  ui->pathSelectionLineEdit->displayText());
 
     if (errorMessage != "")
     {
@@ -1617,7 +1634,7 @@ void MainWindow::selectPathNodes()
     std::vector<QString> nodesNotInGraph;
     std::vector<DeBruijnNode *> nodesToSelect;
 
-    QList<DeBruijnNode *> nodes = g_assemblyGraph->m_deBruijnGraphPaths[ui->pathSelectionComboBox2->currentText().toStdString()]->getNodes();
+    QList<DeBruijnNode *> nodes = g_assemblyGraph->m_deBruijnGraphPaths[ui->pathSelectionLineEdit2->displayText().toStdString()]->getNodes();
     for (QList<DeBruijnNode *>::iterator i = nodes.begin(); i != nodes.end(); ++i)
         nodesToSelect.push_back(*i);
 

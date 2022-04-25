@@ -87,7 +87,7 @@ private:
     void setNodeColourSchemeComboBox(NodeColourScheme nodeColourScheme);
     void setGraphScopeComboBox(GraphScope graphScope);
     void setupBlastQueryComboBox();
-    void setupPathSelectionComboBox();
+    void setupPathSelectionLineEdit(QLineEdit *lineEdit);
     bool checkForImageSave();
     QString convertGraphFileTypeToString(GraphFileType graphFileType);
     void setSelectedNodesWidgetsVisibility(bool visible);
