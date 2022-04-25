@@ -351,32 +351,6 @@ QByteArray DeBruijnNode::getFasta(bool sign, bool newLines, bool evenIfEmpty) co
     return fasta;
 }
 
-
-QByteArray DeBruijnNode::getGfaSegmentLine(const QString &depthTag) const
-{
-    QByteArray gfaSequence = getSequenceForGfa();
-
-    QByteArray gfaSegmentLine = "S";
-    gfaSegmentLine += "\t" + getNameWithoutSign().toLatin1();
-    gfaSegmentLine += "\t" + gfaSequence;
-    gfaSegmentLine += "\tLN:i:" + QString::number(gfaSequence.length()).toLatin1();
-
-    //We use the depthTag to guide how we save the node depth.
-    //If it is empty, that implies that the loaded graph did not have depth
-    //information and so we don't save depth.
-    if (depthTag == "DP")
-        gfaSegmentLine += "\tDP:f:" + QString::number(getDepth()).toLatin1();
-    else if (depthTag == "KC")
-        gfaSegmentLine += "\tKC:i:" + QString::number(int(getDepth() * gfaSequence.length() + 0.5)).toLatin1();
-    else if (depthTag == "RC")
-        gfaSegmentLine += "\tRC:i:" + QString::number(int(getDepth() * gfaSequence.length() + 0.5)).toLatin1();
-    else if (depthTag == "FC")
-        gfaSegmentLine += "\tFC:i:" + QString::number(int(getDepth() * gfaSequence.length() + 0.5)).toLatin1();
-
-    return gfaSegmentLine;
-}
-
-
 //This function gets the node's sequence for a GFA file.  It has two main
 //differences from getSequence:
 //  -If the graph is from Velvet, it will extend the node sequences

@@ -2965,8 +2965,21 @@ void AssemblyGraph::saveEntireGraphToFastaOnlyPositiveNodes(QString filename)
 }
 
 QString AssemblyGraph::getGfaSegmentLine(const DeBruijnNode *node, QString depthTag) const {
-    QString gfaSegmentLine = node->getGfaSegmentLine(m_depthTag);
-    
+    QByteArray gfaSequence = node->getSequenceForGfa();
+
+    QByteArray gfaSegmentLine = "S";
+    gfaSegmentLine += "\t" + node->getNameWithoutSign().toLatin1();
+    gfaSegmentLine += "\t" + gfaSequence;
+    gfaSegmentLine += "\tLN:i:" + QString::number(gfaSequence.length()).toLatin1();
+
+    //We use the depthTag to guide how we save the node depth.
+    //If it is empty, that implies that the loaded graph did not have depth
+    //information and so we don't save depth.
+    if (depthTag == "DP")
+        gfaSegmentLine += "\tDP:f:" + QString::number(node->getDepth()).toLatin1();
+    else if (depthTag == "KC" || depthTag == "RC" || depthTag == "FC")
+        gfaSegmentLine += "\t" + depthTag.toLatin1() + "KC:i:" + QString::number(int(node->getDepth() * gfaSequence.length() + 0.5)).toLatin1();
+
     //If the user has included custom labels or colours, include those.
     QString label = getCustomLabel(node);
     if (!label.isEmpty())
@@ -3026,7 +3039,7 @@ bool AssemblyGraph::saveVisibleGraphToGfa(QString filename)
     for (auto &entry : m_deBruijnGraphNodes) {
         DeBruijnNode * node = entry;
         if (node->thisNodeOrReverseComplementIsDrawn() && node->isPositiveNode())
-            out << node->getGfaSegmentLine(m_depthTag);
+            out << getGfaSegmentLine(node, m_depthTag);
     }
 
     QList<DeBruijnEdge*> edgesToSave;

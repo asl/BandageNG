@@ -62,7 +62,6 @@ public:
     int getFullLength() const;
     int getLengthWithoutTrailingOverlap() const;
     QByteArray getFasta(bool sign, bool newLines = true, bool evenIfEmpty = true) const;
-    QByteArray getGfaSegmentLine(const QString& depthTag) const;
     char getBaseAt(int i) const {if (i >= 0 && i < m_sequence.size()) return m_sequence[i]; else return '\0';} // NOTE
     ContiguityStatus getContiguityStatus() const {return m_contiguityStatus;}
     DeBruijnNode * getReverseComplement() const {return m_reverseComplement;}
