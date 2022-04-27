@@ -3039,7 +3039,7 @@ bool AssemblyGraph::saveVisibleGraphToGfa(QString filename)
     for (auto &entry : m_deBruijnGraphNodes) {
         DeBruijnNode * node = entry;
         if (node->thisNodeOrReverseComplementIsDrawn() && node->isPositiveNode())
-            out << getGfaSegmentLine(node, m_depthTag);
+            out << getGfaSegmentLine(node, m_depthTag) << '\n';
     }
 
     QList<DeBruijnEdge*> edgesToSave;
