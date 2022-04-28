@@ -77,7 +77,7 @@ public:
     ogdf::EdgeArray<double> * m_edgeArray;
     ogdf::GraphAttributes * m_graphAttributes;
 
-    std::unordered_map<const DeBruijnNode*, std::vector<Annotation>> m_blastHitAnnotations;
+    std::vector<AnnotationGroup> m_annotationGroups;
 
     int m_kmer;
     int m_nodeCount;

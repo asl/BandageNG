@@ -88,6 +88,7 @@ public:
     void shiftPointsLeft();
     void shiftPointsRight();
     void fixEdgePaths(std::vector<GraphicsItemNode *> * nodes = 0) const;
+    double indexToFraction(int64_t pos) const;
 
 private:
     static void pathHighlightNode3(QPainter * painter, QPainterPath highlightPath);
@@ -98,7 +99,6 @@ private:
     void pathHighlightNode2(QPainter * painter, DeBruijnNode * node, bool reverse, Path * path);
     QPainterPath buildPartialHighlightPath(double startFraction, double endFraction, bool reverse);
     void shiftPointSideways(bool left);
-    double indexToFraction(int64_t pos) const;
 };
 
 #endif // GRAPHICSITEMNODE_H

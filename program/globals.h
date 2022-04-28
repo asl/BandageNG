@@ -79,4 +79,17 @@ std::vector<QColor> getPresetColours();
 QString getColourName(QColor colour);
 
 
+// Often used function for access const reference to value in map even if it doesn't exist
+template <typename K, typename V, template<typename, typename, typename...> typename MapLike>
+const V &getFromMapOrDefaultConstructed(const MapLike<K, V> &map, const K &key) {
+    auto it = map.find(key);
+    if (it != map.end()) {
+        return it->second;
+    } else {
+        static const V defaultConstructed{};
+        return defaultConstructed;
+    }
+}
+
+
 #endif // GLOBALS_H

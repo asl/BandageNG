@@ -1952,6 +1952,7 @@ void MainWindow::bringSelectedNodesToFront()
 }
 
 
+// TODO: rewrite to selectNodesWithAnnotation
 void MainWindow::selectNodesWithBlastHits()
 {
     if (ui->blastQueryComboBox->currentText() == "none")

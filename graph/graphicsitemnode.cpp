@@ -122,45 +122,39 @@ void GraphicsItemNode::paint(QPainter * painter, const QStyleOptionGraphicsItem 
     QBrush brush(m_colour);
     painter->fillPath(outlinePath, brush);
 
-    static std::vector<Annotation> emptyAnnotation{};
+    for (const auto &annotationGroup : g_assemblyGraph->m_annotationGroups) {
+        { // This block is temporary. It will be changed after remaking UI to new annotation system.
+            if (g_settings->nodeColourScheme == BLAST_HITS_SOLID_COLOUR) {
+                if (annotationGroup.name != g_settings->blastSolidAnnotationGroupName) {
+                    continue;
+                }
+            } else if (g_settings->nodeColourScheme == BLAST_HITS_RAINBOW_COLOUR) {
+                if (annotationGroup.name != g_settings->blastRainbowAnnotationGroupName) {
+                    continue;
+                }
+            } else {
+                continue;
+            }
+        }
 
-    const auto &annotations = g_assemblyGraph->getBlastHitAnnotations(m_deBruijnNode);
-    const auto &revCompAnnotations = g_settings->doubleMode
-                                     ? emptyAnnotation
-                                     : g_assemblyGraph->getBlastHitAnnotations(m_deBruijnNode->getReverseComplement());
+        static AnnotationGroup::AnnotationVector emptyAnnotations{};
 
-    {
+        const auto &annotations = annotationGroup.getAnnotations(m_deBruijnNode);
+        const auto &revCompAnnotations = g_settings->doubleMode
+                                         ? emptyAnnotations
+                                         : annotationGroup.getAnnotations(m_deBruijnNode->getReverseComplement());
+
         //If the node has an arrow, then it's necessary to use the outline
         //as a clipping path so the colours don't extend past the edge of the
         //node.
         if (m_hasArrow)
             painter->setClipPath(outlinePath);
 
-        QPen pen;
-        pen.setCapStyle(Qt::FlatCap);
-        pen.setJoinStyle(Qt::BevelJoin);
-
-        auto drawAnnotation = [&pen, &painter, this](const Annotation &annotation, bool reverseComplement) {
-            pen.setWidthF(annotation.widthMultiplier * m_width);
-
-            pen.setColor(annotation.color);
-            painter->setPen(pen);
-
-            double fractionStart = indexToFraction(annotation.start);
-            double fractionEnd = indexToFraction(annotation.end);
-
-            if (reverseComplement) {
-                painter->drawPath(makePartialPath(1 - fractionEnd, 1 - fractionStart));
-            } else {
-                painter->drawPath(makePartialPath(fractionStart, fractionEnd));
-            }
-        };
-
         for (const auto &annotation : annotations) {
-            drawAnnotation(annotation, false);
+            annotation->drawFigure(*painter, *this, false);
         }
         for (const auto &annotation : revCompAnnotations) {
-            drawAnnotation(annotation, true);
+            annotation->drawFigure(*painter, *this, true);
         }
 
         painter->setClipping(false);
@@ -224,24 +218,25 @@ void GraphicsItemNode::paint(QPainter * painter, const QStyleOptionGraphicsItem 
     //Draw BLAST hit labels, if appropriate.
     if (g_settings->displayBlastHits)
     {
-        auto drawText = [&painter, this](const Annotation &annotation, bool reverseComplement) {
-            double annotationCenter = (indexToFraction(annotation.start) + indexToFraction(annotation.end)) / 2;
-            auto textPoint = findLocationOnPath(reverseComplement ? 1 - annotationCenter : annotationCenter);
-            auto text = QString::fromStdString(annotation.text);
+        for (const auto &annotationGroup : g_assemblyGraph->m_annotationGroups) {
+            { // This block is temporary. It will be changed after remaking UI to new annotation system.
+                if (annotationGroup.name == g_settings->blastRainbowAnnotationGroupName) {
+                    continue;
+                }
+            }
+            static AnnotationGroup::AnnotationVector emptyAnnotations{};
 
-            QPainterPath textPath;
-            QFontMetrics metrics(g_settings->labelFont);
-            double shiftLeft = -metrics.boundingRect(text).width() / 2.0;
-            textPath.addText(shiftLeft, 0.0, g_settings->labelFont, text);
+            const auto &annotations = annotationGroup.getAnnotations(m_deBruijnNode);
+            const auto &revCompAnnotations = g_settings->doubleMode
+                                             ? emptyAnnotations
+                                             : annotationGroup.getAnnotations(m_deBruijnNode->getReverseComplement());
 
-            drawTextPathAtLocation(painter, textPath, textPoint);
-        };
-
-        for (const auto &annotation : annotations) {
-            drawText(annotation, false);
-        }
-        for (const auto &annotation : revCompAnnotations) {
-            drawText(annotation, true);
+            for (const auto &annotation : annotations) {
+                annotation->drawDescription(*painter, *this, false);
+            }
+            for (const auto &annotation : revCompAnnotations) {
+                annotation->drawDescription(*painter, *this, true);
+            }
         }
     }
 }

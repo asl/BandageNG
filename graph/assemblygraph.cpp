@@ -336,7 +336,14 @@ void AssemblyGraph::resetAllNodeColours()
 
 void AssemblyGraph::clearAllBlastHitPointers()
 {
-    m_blastHitAnnotations.clear();
+    auto newEnd = std::remove_if(
+        m_annotationGroups.begin(),
+        m_annotationGroups.end(),
+        [](const AnnotationGroup &group) {
+            return group.name == g_settings->blastSolidAnnotationGroupName
+                || group.name == g_settings->blastRainbowAnnotationGroupName;
+        });
+    m_annotationGroups.erase(newEnd, m_annotationGroups.end());
 }
 
 void AssemblyGraph::determineGraphInfo()
@@ -3583,27 +3590,29 @@ bool AssemblyGraph::useLinearLayout() const {
         return g_settings->linearLayout;
 }
 
-bool AssemblyGraph::nodeHasBlastHitAnnotations(const DeBruijnNode *node) const {
-    return m_blastHitAnnotations.count(node) != 0;
-}
-
-bool AssemblyGraph::nodeOrReverseComplementHasBlastHitAnnotations(const DeBruijnNode *node) const {
-    return nodeHasBlastHitAnnotations(node) || nodeHasBlastHitAnnotations(node->getReverseComplement());
-}
-
-template <typename K, typename V>
-const V &getFromMapOrDefaultConstructed(const std::unordered_map<K, V> &map, const K &key) {
-    auto it = map.find(key);
-    if (it != map.end()) {
-        return it->second;
+const AnnotationGroup &AssemblyGraph::findAnnotationGroup(const std::string &name) const {
+    auto it = std::find_if(
+        m_annotationGroups.begin(),
+        m_annotationGroups.end(),
+        [&name](const AnnotationGroup &group) {
+            return group.name == name;
+        });
+    if (it != m_annotationGroups.end()) {
+        return *it;
     } else {
-        static const V defaultConstructed{};
+        static const AnnotationGroup defaultConstructed{};
         return defaultConstructed;
     }
 }
 
-const std::vector<Annotation> &AssemblyGraph::getBlastHitAnnotations(const DeBruijnNode *node) const {
-    return getFromMapOrDefaultConstructed(m_blastHitAnnotations, node);
+// Deprecated
+bool AssemblyGraph::nodeHasBlastHitAnnotations(const DeBruijnNode *node) const {
+    return !findAnnotationGroup(g_settings->blastSolidAnnotationGroupName).getAnnotations(node).empty();
+}
+
+// Deprecated
+bool AssemblyGraph::nodeOrReverseComplementHasBlastHitAnnotations(const DeBruijnNode *node) const {
+    return nodeHasBlastHitAnnotations(node) || nodeHasBlastHitAnnotations(node->getReverseComplement());
 }
 
 QStringList AssemblyGraph::getCustomLabelForDisplay(const DeBruijnNode *node) const {

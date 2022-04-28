@@ -106,6 +106,8 @@ public:
     QString startingNodes;
     QString blastQueryFilename;
     QString unnamedQueryDefaultName;
+    std::string blastSolidAnnotationGroupName;
+    std::string blastRainbowAnnotationGroupName;
 
     double minZoom;
     double minZoomOnGraphDraw;
