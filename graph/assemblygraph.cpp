@@ -3578,15 +3578,6 @@ bool AssemblyGraph::useLinearLayout() const {
         return g_settings->linearLayout;
 }
 
-// Deprecated
-bool AssemblyGraph::nodeHasBlastHitAnnotations(const DeBruijnNode *node) const {
-    return false;
-}
-
-// Deprecated
-bool AssemblyGraph::nodeOrReverseComplementHasBlastHitAnnotations(const DeBruijnNode *node) const {
-    return nodeHasBlastHitAnnotations(node) || nodeHasBlastHitAnnotations(node->getReverseComplement());
-}
 
 QStringList AssemblyGraph::getCustomLabelForDisplay(const DeBruijnNode *node) const {
     QStringList customLabelLines;

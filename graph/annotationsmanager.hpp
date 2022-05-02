@@ -27,37 +27,11 @@ public:
     //todo: replace with map???
     using AnnotationGroupVector = std::vector<std::shared_ptr<AnnotationGroup>>;
 
-// todo replace with ref + store unique_ptr
-    std::shared_ptr<AnnotationGroup> createAnnotationGroup(QString name) {
-        auto res = std::make_shared<AnnotationGroup>(AnnotationGroup{nextFreeId, std::move(name), {}});
-        m_annotationGroups.emplace_back(res);
-        nextFreeId++;
-        emit annotationGroupsUpdated();
-        return res;
-    }
-
-    const AnnotationGroupVector &getGroups() const {
-        return m_annotationGroups;
-    }
-
-    void removeGroupByName(const QString &name) {
-        auto newEnd = std::remove_if(
-                m_annotationGroups.begin(),
-                m_annotationGroups.end(),
-                [&name](const std::shared_ptr<AnnotationGroup> &group) {
-                    return group->name == name;
-                });
-        m_annotationGroups.erase(newEnd, m_annotationGroups.end());
-    }
-
-    const AnnotationGroup &findGroupByName(const QString &name) const {
-        return **std::find_if(
-                m_annotationGroups.begin(),
-                m_annotationGroups.end(),
-                [&name](const std::shared_ptr<AnnotationGroup> &group) {
-                    return group->name == name;
-                });
-    }
+    // todo replace with ref + store unique_ptr
+    std::shared_ptr<AnnotationGroup> createAnnotationGroup(QString name);
+    const AnnotationGroupVector &getGroups() const;
+    void removeGroupByName(const QString &name);
+    const AnnotationGroup &findGroupByName(const QString &name) const;
 
 public:
 signals:

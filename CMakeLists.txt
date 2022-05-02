@@ -28,6 +28,7 @@ set(LIB_SOURCES
         command_line/reduce.cpp
         graph/assemblygraph.cpp
         graph/assemblygraphfast.cpp
+        graph/annotationsmanager.cpp
         graph/debruijnedge.cpp
         graph/debruijnnode.cpp
         graph/graphicsitemedge.cpp

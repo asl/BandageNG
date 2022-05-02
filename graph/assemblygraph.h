@@ -198,12 +198,6 @@ public:
     long long getTotalLengthOrphanedNodes() const;
     bool useLinearLayout() const;
 
-    // FIXME: This belongs to UI controller!
-    bool nodeHasBlastHit(const DeBruijnNode *node) const;
-    bool nodeOrReverseComplementHasBlastHit(const DeBruijnNode *node) const;
-    const std::vector<std::shared_ptr<BlastHit>> &getBlastHits(const DeBruijnNode *node) const;
-    const std::vector<Annotation> &getAnnotations(const DeBruijnNode *node) const;
-
     bool hasCustomColour(const DeBruijnNode* node) const;
     QColor getCustomColour(const DeBruijnNode* node) const;
     void setCustomColour(const DeBruijnNode* node, QColor color);

@@ -95,8 +95,6 @@ public:
     bool isNodeConnected(DeBruijnNode * node) const;
     DeBruijnEdge * doesNodeLeadIn(DeBruijnNode * node) const;
     DeBruijnEdge * doesNodeLeadAway(DeBruijnNode * node) const;
-    std::vector<BlastHitPart> getBlastHitPartsForThisNode(double scaledNodeLength) const;
-    std::vector<BlastHitPart> getBlastHitPartsForThisNodeOrReverseComplement(double scaledNodeLength) const;
     bool isInDepthRange(double min, double max) const;
     bool sequenceIsMissing() const;
     DeBruijnEdge *getSelfLoopingEdge() const;
