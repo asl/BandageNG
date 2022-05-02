@@ -364,18 +364,18 @@ void BlastSearch::blastQueryChanged(const QString &queryName)
     //Add the blast hit pointers to nodes that have a hit for
     //the selected target(s).
     if (!shownQueries.empty()) {
-        auto solidGroup = g_annotationsManager->createAnnotationGroup(g_settings->blastSolidAnnotationGroupName);
-        auto rainbowGroup = g_annotationsManager->createAnnotationGroup(g_settings->blastRainbowAnnotationGroupName);
+        auto &solidGroup = g_annotationsManager->createAnnotationGroup(g_settings->blastSolidAnnotationGroupName);
+        auto &rainbowGroup = g_annotationsManager->createAnnotationGroup(g_settings->blastRainbowAnnotationGroupName);
         for (auto query: shownQueries) {
             for (auto &hit: query->getHits()) {
-                solidGroup->annotationMap[hit->m_node].emplace_back(
+                solidGroup.annotationMap[hit->m_node].emplace_back(
                         std::make_unique<SolidAnnotation>(
                                 hit->m_nodeStart,
                                 hit->m_nodeEnd,
                                 query->getName().toStdString(),
                                 1,
                                 query->getColour()));
-                rainbowGroup->annotationMap[hit->m_node].emplace_back(
+                rainbowGroup.annotationMap[hit->m_node].emplace_back(
                         std::make_unique<RainbowBlastHitAnnotation>(
                                 hit->m_nodeStart,
                                 hit->m_nodeEnd,

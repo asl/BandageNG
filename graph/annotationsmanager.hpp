@@ -27,8 +27,7 @@ public:
     //todo: replace with map???
     using AnnotationGroupVector = std::vector<std::shared_ptr<AnnotationGroup>>;
 
-    // todo replace with ref + store unique_ptr
-    std::shared_ptr<AnnotationGroup> createAnnotationGroup(QString name);
+    AnnotationGroup &createAnnotationGroup(QString name);
     const AnnotationGroupVector &getGroups() const;
     void removeGroupByName(const QString &name);
     const AnnotationGroup &findGroupByName(const QString &name) const;

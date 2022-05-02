@@ -27,6 +27,7 @@
 #include "program/memory.h"
 #include "graph/debruijnnode.h"
 #include "graph/debruijnedge.h"
+#include "graph/annotationsmanager.hpp"
 #include "program/globals.h"
 #include "command_line/commoncommandlinefunctions.h"
 
@@ -1529,6 +1530,7 @@ void BandageTests::createGlobals()
     g_blastSearch.reset(new BlastSearch());
     g_assemblyGraph.reset(new AssemblyGraph());
     g_graphicsView = new MyGraphicsView();
+    g_annotationsManager = std::make_shared<AnnotationsManager>();
 }
 
 bool BandageTests::createBlastTempDirectory()

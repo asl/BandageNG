@@ -24,7 +24,7 @@
 #include <QTextStream>
 #include <QApplication>
 #include <QProcess>
-#include <math.h>
+#include <cmath>
 
 QSharedPointer<Settings> g_settings;
 QSharedPointer<Memory> g_memory;
