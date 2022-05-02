@@ -51,6 +51,7 @@
 #include "querypathspushbutton.h"
 #include "querypathsdialog.h"
 #include "blasthitfiltersdialog.h"
+#include "graph/annotationsmanager.hpp"
 
 BlastSearchDialog::BlastSearchDialog(QWidget *parent, QString autoQuery) :
     QDialog(parent),
@@ -159,7 +160,8 @@ void BlastSearchDialog::clearBlastHits()
     ui->blastHitsTableWidget->clearContents();
     while (ui->blastHitsTableWidget->rowCount() > 0)
         ui->blastHitsTableWidget->removeRow(0);
-    g_assemblyGraph->clearAllBlastHitPointers();
+    g_annotationsManager->removeGroupByName(g_settings->blastSolidAnnotationGroupName);
+    g_annotationsManager->removeGroupByName(g_settings->blastRainbowAnnotationGroupName);
 }
 
 void BlastSearchDialog::fillTablesAfterBlastSearch()

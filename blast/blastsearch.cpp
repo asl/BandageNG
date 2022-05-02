@@ -27,6 +27,7 @@
 #include <utility>
 #include "graph/debruijnnode.h"
 #include <cmath>
+#include "graph/annotationsmanager.hpp"
 
 BlastSearch::BlastSearch() :
     m_blastQueries(), m_tempDirectory("bandage_temp/")
@@ -335,7 +336,8 @@ QString BlastSearch::cleanQueryName(QString queryName)
 
 void BlastSearch::blastQueryChanged(const QString &queryName)
 {
-    g_assemblyGraph->clearAllBlastHitPointers();
+    g_annotationsManager->removeGroupByName(g_settings->blastSolidAnnotationGroupName);
+    g_annotationsManager->removeGroupByName(g_settings->blastRainbowAnnotationGroupName);
 
     std::vector<BlastQuery *> queries;
 
@@ -361,28 +363,26 @@ void BlastSearch::blastQueryChanged(const QString &queryName)
 
     //Add the blast hit pointers to nodes that have a hit for
     //the selected target(s).
-    AnnotationGroup solidGroup{g_settings->blastSolidAnnotationGroupName, {}};
-    AnnotationGroup rainbowGroup{g_settings->blastRainbowAnnotationGroupName, {}};
-    for (auto query : shownQueries)
-    {
-        for (auto &hit : query->getHits())
-        {
-            solidGroup.annotationMap[hit->m_node].emplace_back(
-                std::make_unique<SolidAnnotation>(
-                    hit->m_nodeStart,
-                    hit->m_nodeEnd,
-                    query->getName().toStdString(),
-                    1,
-                    query->getColour()));
-            rainbowGroup.annotationMap[hit->m_node].emplace_back(
-                std::make_unique<RainbowBlastHitAnnotation>(
-                    hit->m_nodeStart,
-                    hit->m_nodeEnd,
-                    query->getName().toStdString(),
-                    hit->m_queryStartFraction,
-                    hit->m_queryEndFraction));
+    if (!shownQueries.empty()) {
+        auto solidGroup = g_annotationsManager->createAnnotationGroup(g_settings->blastSolidAnnotationGroupName);
+        auto rainbowGroup = g_annotationsManager->createAnnotationGroup(g_settings->blastRainbowAnnotationGroupName);
+        for (auto query: shownQueries) {
+            for (auto &hit: query->getHits()) {
+                solidGroup->annotationMap[hit->m_node].emplace_back(
+                        std::make_unique<SolidAnnotation>(
+                                hit->m_nodeStart,
+                                hit->m_nodeEnd,
+                                query->getName().toStdString(),
+                                1,
+                                query->getColour()));
+                rainbowGroup->annotationMap[hit->m_node].emplace_back(
+                        std::make_unique<RainbowBlastHitAnnotation>(
+                                hit->m_nodeStart,
+                                hit->m_nodeEnd,
+                                query->getName().toStdString(),
+                                hit->m_queryStartFraction,
+                                hit->m_queryEndFraction));
+            }
         }
     }
-    g_assemblyGraph->m_annotationGroups.emplace_back(std::move(solidGroup));
-    g_assemblyGraph->m_annotationGroups.emplace_back(std::move(rainbowGroup));
 }

@@ -41,6 +41,7 @@
 #include "blast/blastsearch.h"
 
 #include "ui/mainwindow.h"
+#include "graph/annotationsmanager.hpp"
 #include "ui/mygraphicsview.h"
 
 #ifndef Q_OS_WIN32
@@ -114,6 +115,7 @@ int main(int argc, char *argv[])
     g_blastSearch.reset(new BlastSearch());
     g_assemblyGraph.reset(new AssemblyGraph());
     g_graphicsView = new MyGraphicsView();
+    g_annotationsManager = std::make_shared<AnnotationsManager>();
 
     //Save the terminal width (useful for displaying help text neatly).
     #ifndef Q_OS_WIN32

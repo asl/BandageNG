@@ -153,17 +153,4 @@ class RainbowBlastHitAnnotation : public CommonAnnotation {
     double m_rainbowFractionEnd;
 };
 
-
-struct AnnotationGroup {
-    using AnnotationVector = std::vector<std::unique_ptr<IAnnotation>>;
-    using AnnotationMap = std::map<const DeBruijnNode*, AnnotationVector>;
-
-    std::string name;
-    AnnotationMap annotationMap;
-
-    const AnnotationVector &getAnnotations(const DeBruijnNode *node) const {
-        return getFromMapOrDefaultConstructed(annotationMap, node);
-    }
-};
-
 #endif //BANDAGE_GRAPH_ANNOTATION_HPP_

@@ -33,6 +33,7 @@ double g_absoluteZoom;
 QSharedPointer<BlastSearch> g_blastSearch;
 QString m_tempDirectory;
 QSharedPointer<AssemblyGraph> g_assemblyGraph;
+std::shared_ptr<AnnotationsManager> g_annotationsManager;
 
 
 QString formatIntForDisplay(int num)
@@ -449,5 +450,3 @@ QString getColourName(QColor colour)
 
     return colour.name();
 }
-
-

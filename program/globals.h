@@ -30,6 +30,7 @@ class Memory;
 class MyGraphicsView;
 class BlastSearch;
 class AssemblyGraph;
+class AnnotationsManager;
 
 enum NodeColourScheme {UNIFORM_COLOURS, RANDOM_COLOURS, DEPTH_COLOUR,
                        BLAST_HITS_RAINBOW_COLOUR, BLAST_HITS_SOLID_COLOUR,
@@ -59,6 +60,9 @@ enum NodeNameStatus {NODE_NAME_OKAY, NODE_NAME_TAKEN, NODE_NAME_CONTAINS_TAB,
 enum SequencesLoadedFromFasta {NOT_READY, NOT_TRIED, TRIED};
 
 
+using AnnotationGroupId = int;
+
+
 //Some of the program's common components are made global so they don't have
 //to be passed around as parameters.
 extern QSharedPointer<Settings> g_settings;
@@ -67,6 +71,7 @@ extern MyGraphicsView * g_graphicsView;
 extern double g_absoluteZoom;
 extern QSharedPointer<BlastSearch> g_blastSearch;
 extern QSharedPointer<AssemblyGraph> g_assemblyGraph;
+extern std::shared_ptr<AnnotationsManager> g_annotationsManager;
 
 
 //Functions for formatting numbers are used in many places, and are made global.

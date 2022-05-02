@@ -42,6 +42,7 @@
 #include "blast/blasthitpart.h"
 #include "assemblygraph.h"
 #include "program/memory.h"
+#include "annotationsmanager.hpp"
 
 GraphicsItemNode::GraphicsItemNode(DeBruijnNode * deBruijnNode,
                                    ogdf::GraphAttributes * graphAttributes, QGraphicsItem * parent) :
@@ -110,6 +111,8 @@ GraphicsItemNode::GraphicsItemNode(DeBruijnNode * deBruijnNode,
 
 void GraphicsItemNode::paint(QPainter * painter, const QStyleOptionGraphicsItem *, QWidget *)
 {
+    static AnnotationGroup::AnnotationVector emptyAnnotations{};
+
     //This code lets me see the node's bounding box.
     //I use it for debugging graphics issues.
 //    painter->setBrush(Qt::NoBrush);
@@ -122,27 +125,15 @@ void GraphicsItemNode::paint(QPainter * painter, const QStyleOptionGraphicsItem 
     QBrush brush(m_colour);
     painter->fillPath(outlinePath, brush);
 
-    for (const auto &annotationGroup : g_assemblyGraph->m_annotationGroups) {
-        { // This block is temporary. It will be changed after remaking UI to new annotation system.
-            if (g_settings->nodeColourScheme == BLAST_HITS_SOLID_COLOUR) {
-                if (annotationGroup.name != g_settings->blastSolidAnnotationGroupName) {
-                    continue;
-                }
-            } else if (g_settings->nodeColourScheme == BLAST_HITS_RAINBOW_COLOUR) {
-                if (annotationGroup.name != g_settings->blastRainbowAnnotationGroupName) {
-                    continue;
-                }
-            } else {
-                continue;
-            }
+    for (const auto &annotationGroup : g_annotationsManager->getGroups()) {
+        if (!g_settings->annotationsSettings[annotationGroup->id].showLine) {
+            continue;
         }
 
-        static AnnotationGroup::AnnotationVector emptyAnnotations{};
-
-        const auto &annotations = annotationGroup.getAnnotations(m_deBruijnNode);
+        const auto &annotations = annotationGroup->getAnnotations(m_deBruijnNode);
         const auto &revCompAnnotations = g_settings->doubleMode
                                          ? emptyAnnotations
-                                         : annotationGroup.getAnnotations(m_deBruijnNode->getReverseComplement());
+                                         : annotationGroup->getAnnotations(m_deBruijnNode->getReverseComplement());
 
         //If the node has an arrow, then it's necessary to use the outline
         //as a clipping path so the colours don't extend past the edge of the
@@ -216,27 +207,21 @@ void GraphicsItemNode::paint(QPainter * painter, const QStyleOptionGraphicsItem 
     }
 
     //Draw BLAST hit labels, if appropriate.
-    if (g_settings->displayBlastHits)
-    {
-        for (const auto &annotationGroup : g_assemblyGraph->m_annotationGroups) {
-            { // This block is temporary. It will be changed after remaking UI to new annotation system.
-                if (annotationGroup.name == g_settings->blastRainbowAnnotationGroupName) {
-                    continue;
-                }
-            }
-            static AnnotationGroup::AnnotationVector emptyAnnotations{};
+    for (const auto &annotationGroup : g_annotationsManager->getGroups()) {
+        if (!g_settings->annotationsSettings[annotationGroup->id].showText) {
+            continue;
+        }
 
-            const auto &annotations = annotationGroup.getAnnotations(m_deBruijnNode);
-            const auto &revCompAnnotations = g_settings->doubleMode
-                                             ? emptyAnnotations
-                                             : annotationGroup.getAnnotations(m_deBruijnNode->getReverseComplement());
+        const auto &annotations = annotationGroup->getAnnotations(m_deBruijnNode);
+        const auto &revCompAnnotations = g_settings->doubleMode
+                                         ? emptyAnnotations
+                                         : annotationGroup->getAnnotations(m_deBruijnNode->getReverseComplement());
 
-            for (const auto &annotation : annotations) {
-                annotation->drawDescription(*painter, *this, false);
-            }
-            for (const auto &annotation : revCompAnnotations) {
-                annotation->drawDescription(*painter, *this, true);
-            }
+        for (const auto &annotation : annotations) {
+            annotation->drawDescription(*painter, *this, false);
+        }
+        for (const auto &annotation : revCompAnnotations) {
+            annotation->drawDescription(*painter, *this, true);
         }
     }
 }

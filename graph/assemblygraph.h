@@ -77,8 +77,6 @@ public:
     ogdf::EdgeArray<double> * m_edgeArray;
     ogdf::GraphAttributes * m_graphAttributes;
 
-    std::vector<AnnotationGroup> m_annotationGroups;
-
     int m_kmer;
     int m_nodeCount;
     int m_edgeCount;

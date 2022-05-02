@@ -143,4 +143,6 @@ Settings::Settings()
 
     minDepthRange = FloatSetting(10.0, 0.0, 1000000.0);
     maxDepthRange = FloatSetting(100.0, 0.0, 1000000.0);
+
+    annotationsSettings = {};
 }

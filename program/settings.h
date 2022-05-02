@@ -67,6 +67,15 @@ public:
 };
 
 
+struct AnnotationSetting {
+    bool showText = false;
+    bool showLine = false;
+};
+
+
+using AnnotationSettings = std::unordered_map<AnnotationGroupId, AnnotationSetting>;
+
+
 class Settings
 {
 public:
@@ -106,8 +115,8 @@ public:
     QString startingNodes;
     QString blastQueryFilename;
     QString unnamedQueryDefaultName;
-    std::string blastSolidAnnotationGroupName;
-    std::string blastRainbowAnnotationGroupName;
+    QString blastSolidAnnotationGroupName;
+    QString blastRainbowAnnotationGroupName;
 
     double minZoom;
     double minZoomOnGraphDraw;
@@ -204,6 +213,9 @@ public:
     //These are used for the 'Depth range' graph scope.
     FloatSetting minDepthRange;
     FloatSetting maxDepthRange;
+
+    //This controls annotations drawing
+    AnnotationSettings annotationsSettings;
 };
 
 #endif // SETTINGS_H

@@ -334,18 +334,6 @@ void AssemblyGraph::resetAllNodeColours()
     }
 }
 
-void AssemblyGraph::clearAllBlastHitPointers()
-{
-    auto newEnd = std::remove_if(
-        m_annotationGroups.begin(),
-        m_annotationGroups.end(),
-        [](const AnnotationGroup &group) {
-            return group.name == g_settings->blastSolidAnnotationGroupName
-                || group.name == g_settings->blastRainbowAnnotationGroupName;
-        });
-    m_annotationGroups.erase(newEnd, m_annotationGroups.end());
-}
-
 void AssemblyGraph::determineGraphInfo()
 {
     m_shortestContig = std::numeric_limits<long long>::max();
@@ -3590,24 +3578,9 @@ bool AssemblyGraph::useLinearLayout() const {
         return g_settings->linearLayout;
 }
 
-const AnnotationGroup &AssemblyGraph::findAnnotationGroup(const std::string &name) const {
-    auto it = std::find_if(
-        m_annotationGroups.begin(),
-        m_annotationGroups.end(),
-        [&name](const AnnotationGroup &group) {
-            return group.name == name;
-        });
-    if (it != m_annotationGroups.end()) {
-        return *it;
-    } else {
-        static const AnnotationGroup defaultConstructed{};
-        return defaultConstructed;
-    }
-}
-
 // Deprecated
 bool AssemblyGraph::nodeHasBlastHitAnnotations(const DeBruijnNode *node) const {
-    return !findAnnotationGroup(g_settings->blastSolidAnnotationGroupName).getAnnotations(node).empty();
+    return false;
 }
 
 // Deprecated
