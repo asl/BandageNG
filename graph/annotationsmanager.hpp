@@ -1,7 +1,3 @@
-//
-// Created by wafemand on 02/05/2022.
-//
-
 #ifndef BANDAGE_UI_ANNOTATIONSMANAGER_HPP_
 #define BANDAGE_UI_ANNOTATIONSMANAGER_HPP_
 
@@ -46,12 +42,21 @@ public:
 
     void removeGroupByName(const QString &name) {
         auto newEnd = std::remove_if(
-            m_annotationGroups.begin(),
-            m_annotationGroups.end(),
-            [&name](const std::shared_ptr<AnnotationGroup> &group) {
-                return group->name == name;
-            });
+                m_annotationGroups.begin(),
+                m_annotationGroups.end(),
+                [&name](const std::shared_ptr<AnnotationGroup> &group) {
+                    return group->name == name;
+                });
         m_annotationGroups.erase(newEnd, m_annotationGroups.end());
+    }
+
+    const AnnotationGroup &findGroupByName(const QString &name) const {
+        return **std::find_if(
+                m_annotationGroups.begin(),
+                m_annotationGroups.end(),
+                [&name](const std::shared_ptr<AnnotationGroup> &group) {
+                    return group->name == name;
+                });
     }
 
 public:

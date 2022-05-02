@@ -75,6 +75,7 @@ set(LIB_SOURCES
         program/scinot.cpp
         program/settings.cpp
         ui/aboutdialog.cpp
+        ui/annotationswidget.cpp
         ui/blasthitfiltersdialog.cpp
         ui/blastsearchdialog.cpp
         ui/changenodedepthdialog.cpp

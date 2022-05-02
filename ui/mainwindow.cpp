@@ -1965,19 +1965,16 @@ void MainWindow::selectNodesWithBlastHits()
 
     bool atLeastOneNodeHasBlastHits = false;
     bool atLeastOneNodeSelected = false;
-
-    for (auto &entry : g_assemblyGraph->m_deBruijnGraphNodes) {
-        DeBruijnNode * node = entry;
+    const auto &blastHitsGroup = g_annotationsManager->findGroupByName(g_settings->blastSolidAnnotationGroupName);
+    for (auto &[node, annotations] : blastHitsGroup.annotationMap) {
 
         bool nodeHasBlastHits;
 
         //If we're in double mode, only select a node if it has a BLAST hit itself.
-        if (g_settings->doubleMode)
-            nodeHasBlastHits = g_assemblyGraph->nodeHasBlastHitAnnotations(node);
-
-        //In single mode, select a node if it or its reverse complement has a BLAST hit.
-        else
-            nodeHasBlastHits = g_assemblyGraph->nodeOrReverseComplementHasBlastHitAnnotations(node);
+        nodeHasBlastHits = !annotations.empty();
+        if (!g_settings->doubleMode)
+            //In single mode, select a node if it or its reverse complement has a BLAST hit.
+            nodeHasBlastHits = nodeHasBlastHits || !blastHitsGroup.getAnnotations(node->getReverseComplement()).empty();
 
         if (nodeHasBlastHits)
             atLeastOneNodeHasBlastHits = true;

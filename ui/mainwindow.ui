@@ -1484,7 +1484,7 @@
           </layout>
          </widget>
         </item><item>
-        <spacer name="verticalSpacer_7">
+        <spacer name="verticalSpacer_8">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
          </property>
@@ -2689,7 +2689,6 @@
   <tabstop>nodeNamesCheckBox</tabstop>
   <tabstop>nodeLengthsCheckBox</tabstop>
   <tabstop>nodeDepthCheckBox</tabstop>
-  <tabstop>blastHitsCheckBox</tabstop>
   <tabstop>setNodeCustomLabelButton</tabstop>
   <tabstop>csvCheckBox</tabstop>
   <tabstop>csvComboBox</tabstop>
