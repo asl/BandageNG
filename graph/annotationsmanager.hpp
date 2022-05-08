@@ -6,7 +6,7 @@
 
 
 struct AnnotationGroup {
-    using AnnotationVector = std::vector<std::unique_ptr<IAnnotation>>;
+    using AnnotationVector = std::vector<std::unique_ptr<Annotation>>;
     using AnnotationMap = std::map<const DeBruijnNode *, AnnotationVector>;
 
     const AnnotationGroupId id;
@@ -31,6 +31,7 @@ public:
     const AnnotationGroupVector &getGroups() const;
     void removeGroupByName(const QString &name);
     const AnnotationGroup &findGroupByName(const QString &name) const;
+    const AnnotationGroup &findGroupById(AnnotationGroupId id) const;
 
 public:
 signals:
@@ -40,5 +41,6 @@ private:
     AnnotationGroupVector m_annotationGroups;
     AnnotationGroupId nextFreeId = 0;
 };
+
 
 #endif //BANDAGE_UI_ANNOTATIONSMANAGER_HPP_

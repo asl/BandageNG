@@ -23,6 +23,7 @@
 #include <QFont>
 #include "globals.h"
 #include <QString>
+#include <set>
 #include "graph/path.h"
 #include "scinot.h"
 
@@ -69,7 +70,7 @@ public:
 
 struct AnnotationSetting {
     bool showText = false;
-    bool showLine = false;
+    std::set<ViewId> viewsToShow;
 };
 
 
@@ -115,8 +116,7 @@ public:
     QString startingNodes;
     QString blastQueryFilename;
     QString unnamedQueryDefaultName;
-    QString blastSolidAnnotationGroupName;
-    QString blastRainbowAnnotationGroupName;
+    QString blastAnnotationGroupName;
 
     double minZoom;
     double minZoomOnGraphDraw;

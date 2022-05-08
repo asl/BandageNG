@@ -5,53 +5,73 @@
 #include "mygraphicsview.h"
 
 
-struct ItemChangedCallback {
-    bool isText;
+AnnotationSettingsDialog::AnnotationSettingsDialog(const AnnotationGroup &annotationGroup, QWidget *parent)
+        : QDialog(parent), m_annotationGroupId(annotationGroup.id) {
+    auto &annotationSettings = g_settings->annotationsSettings[annotationGroup.id];
+    setWindowTitle(annotationGroup.name);
+    setWindowFlags(windowFlags() | Qt::Tool);
 
-    void operator()(QListWidgetItem *item) const {
-        auto groupId = item->data(Qt::UserRole).value<AnnotationGroupId>();
-        auto &setting = g_settings->annotationsSettings[groupId];
-        (isText ? setting.showText : setting.showLine) = (item->checkState() == Qt::Checked);
-        g_graphicsView->viewport()->update();
+    auto *formLayout = new QFormLayout;
+    auto textCheckBox = new QCheckBox("Text");
+    textCheckBox->setCheckState(annotationSettings.showText ? Qt::Checked : Qt::Unchecked);
+
+    connect(textCheckBox, &QCheckBox::stateChanged,
+            [this](int newState) {
+                g_settings->annotationsSettings[m_annotationGroupId].showText = newState == Qt::Checked;
+                g_graphicsView->viewport()->update();
+            });
+
+    formLayout->addRow(textCheckBox);
+    if (!annotationGroup.annotationMap.empty() && !annotationGroup.annotationMap.begin()->second.empty()) {
+        // All annotations in group have the same types of views, so we can get view's names from any annotation
+        ViewId i = 0;
+        for (const auto &view: annotationGroup.annotationMap.begin()->second.front()->getViews()) {
+            auto viewCheckBox = new QCheckBox(view->getTypeName());
+            viewCheckBox->setCheckState(annotationSettings.viewsToShow.count(i) != 0 ? Qt::Checked : Qt::Unchecked);
+            formLayout->addRow(viewCheckBox);
+
+            connect(viewCheckBox, &QCheckBox::stateChanged,
+                    [i, this](int newState) {
+                        auto &viewsToShow = g_settings->annotationsSettings[m_annotationGroupId].viewsToShow;
+                        switch (newState) {
+                            case Qt::Checked:
+                                viewsToShow.insert(i);
+                                break;
+                            case Qt::Unchecked:
+                                viewsToShow.erase(i);
+                                break;
+                            default: break;
+                        }
+                        g_graphicsView->viewport()->update();
+                    });
+
+            i++;
+        }
     }
-};
 
-
-AnnotationsWidget::AnnotationsWidget(QWidget *parent) : QWidget(parent) {
-    m_vBoxLayout = new QVBoxLayout(this);
-    m_annotationsDrawList = new QListWidget(this);
-    m_annotationsTextList = new QListWidget(this);
-
-    auto *labelDraw = new QLabel("Annotations");
-    auto *labelText = new QLabel("Annotations (Text)");
-    m_vBoxLayout->addWidget(labelDraw);
-    m_vBoxLayout->addWidget(m_annotationsDrawList);
-    m_vBoxLayout->addWidget(labelText);
-    m_vBoxLayout->addWidget(m_annotationsTextList);
-
-    connect(g_annotationsManager.get(), SIGNAL(annotationGroupsUpdated()), this, SLOT(updateAnnotationGroups()));
-    connect(m_annotationsDrawList, &QListWidget::itemChanged, ItemChangedCallback{false});
-    connect(m_annotationsTextList, &QListWidget::itemChanged, ItemChangedCallback{true});
-
-    setLayout(m_vBoxLayout);
+    setLayout(formLayout);
 }
 
 
-void AnnotationsWidget::updateAnnotationGroups() {
-    m_annotationsDrawList->clear();
-    m_annotationsTextList->clear();
-    for (const auto &annotationGroup : g_annotationsManager->getGroups()) {
-        auto &setting = g_settings->annotationsSettings[annotationGroup->id];
-        addItemToList(m_annotationsDrawList, *annotationGroup, setting.showLine);
-        addItemToList(m_annotationsTextList, *annotationGroup, setting.showText);
-    }
+AnnotationsListWidget::AnnotationsListWidget(QWidget *parent) : QListWidget(parent) {
+    connect(g_annotationsManager.get(), &AnnotationsManager::annotationGroupsUpdated,
+            this, &AnnotationsListWidget::updateAnnotationGroups);
+
+    connect(this, &QListWidget::itemDoubleClicked, [this](QListWidgetItem *listWidgetItem) {
+        const auto &annotationGroupPtr = g_annotationsManager->findGroupById(
+                listWidgetItem->data(Qt::UserRole).value<AnnotationGroupId>());
+        auto *settingsDialog = new AnnotationSettingsDialog(annotationGroupPtr, this);
+        settingsDialog->open();
+    });
 }
 
 
-void AnnotationsWidget::addItemToList(QListWidget *listWidget, const AnnotationGroup &annotationGroup, bool checked) {
-    auto *checkBoxItem = new QListWidgetItem(annotationGroup.name);
-    checkBoxItem->setFlags(Qt::ItemIsUserCheckable | Qt::ItemIsEnabled);
-    checkBoxItem->setCheckState(checked ? Qt::Checked : Qt::Unchecked);
-    checkBoxItem->setData(Qt::UserRole, annotationGroup.id);
-    listWidget->addItem(checkBoxItem);
+void AnnotationsListWidget::updateAnnotationGroups() {
+    clear();
+    for (const auto &annotationGroupPtr: g_annotationsManager->getGroups()) {
+        auto &setting = g_settings->annotationsSettings[annotationGroupPtr->id];
+        auto *listWidgetItem = new QListWidgetItem(annotationGroupPtr->name);
+        addItem(listWidgetItem);
+        listWidgetItem->setData(Qt::UserRole, annotationGroupPtr->id);
+    }
 }

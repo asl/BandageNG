@@ -5,24 +5,32 @@
 #include <QWidget>
 #include <QVBoxLayout>
 #include <QListWidget>
+#include <QDialog>
+#include <QFormLayout>
+#include <QCheckBox>
 
 #include "graph/annotationsmanager.hpp"
 
-class AnnotationsWidget : public QWidget {
-    Q_OBJECT
+
+class AnnotationSettingsDialog : public QDialog {
+Q_OBJECT
 
 public:
-    explicit AnnotationsWidget(QWidget *parent);
+    explicit AnnotationSettingsDialog(const AnnotationGroup &annotationGroup, QWidget *parent = nullptr);
+
+private:
+    AnnotationGroupId m_annotationGroupId;
+};
+
+
+class AnnotationsListWidget : public QListWidget {
+Q_OBJECT
+
+public:
+    explicit AnnotationsListWidget(QWidget *parent);
 
 public slots:
     void updateAnnotationGroups();
-
-private:
-    static void addItemToList(QListWidget *listWidget, const AnnotationGroup &annotationGroup, bool checked);
-
-    QVBoxLayout *m_vBoxLayout;
-    QListWidget *m_annotationsDrawList;
-    QListWidget *m_annotationsTextList;
 };
 
 

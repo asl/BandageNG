@@ -1500,7 +1500,7 @@
         </spacer>
        </item>
         <item>
-         <widget class="AnnotationsWidget" name="annotationTextSelectorWidget" native="true"/>
+         <widget class="AnnotationsListWidget" name="annotationsListWidget" native="true"/>
         </item>
         <item>
          <spacer name="verticalSpacer">
@@ -2662,8 +2662,8 @@
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>AnnotationsWidget</class>
-   <extends>QWidget</extends>
+   <class>AnnotationsListWidget</class>
+   <extends>QListWidget</extends>
    <header>annotationswidget.h</header>
    <container>1</container>
   </customwidget>

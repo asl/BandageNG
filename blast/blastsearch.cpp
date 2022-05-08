@@ -90,7 +90,7 @@ void BlastSearch::buildHitsFromBlastOutput()
         auto it = g_assemblyGraph->m_deBruijnGraphNodes.find(nodeName.toStdString());
         if (it == g_assemblyGraph->m_deBruijnGraphNodes.end())
             continue;
-        
+
         node = it.value();
 
         BlastQuery * query = g_blastSearch->m_blastQueries.getQueryFromName(queryName);
@@ -133,7 +133,6 @@ void BlastSearch::findQueryPaths()
 {
     m_blastQueries.findQueryPaths();
 }
-
 
 
 QString BlastSearch::getNodeNameFromString(const QString &nodeString)
@@ -336,8 +335,7 @@ QString BlastSearch::cleanQueryName(QString queryName)
 
 void BlastSearch::blastQueryChanged(const QString &queryName)
 {
-    g_annotationsManager->removeGroupByName(g_settings->blastSolidAnnotationGroupName);
-    g_annotationsManager->removeGroupByName(g_settings->blastRainbowAnnotationGroupName);
+    g_annotationsManager->removeGroupByName(g_settings->blastAnnotationGroupName);
 
     std::vector<BlastQuery *> queries;
 
@@ -364,24 +362,17 @@ void BlastSearch::blastQueryChanged(const QString &queryName)
     //Add the blast hit pointers to nodes that have a hit for
     //the selected target(s).
     if (!shownQueries.empty()) {
-        auto &solidGroup = g_annotationsManager->createAnnotationGroup(g_settings->blastSolidAnnotationGroupName);
-        auto &rainbowGroup = g_annotationsManager->createAnnotationGroup(g_settings->blastRainbowAnnotationGroupName);
+        auto &group = g_annotationsManager->createAnnotationGroup(g_settings->blastAnnotationGroupName);
         for (auto query: shownQueries) {
             for (auto &hit: query->getHits()) {
-                solidGroup.annotationMap[hit->m_node].emplace_back(
-                        std::make_unique<SolidAnnotation>(
+                auto &annotation = group.annotationMap[hit->m_node].emplace_back(
+                        std::make_unique<Annotation>(
                                 hit->m_nodeStart,
                                 hit->m_nodeEnd,
-                                query->getName().toStdString(),
-                                1,
-                                query->getColour()));
-                rainbowGroup.annotationMap[hit->m_node].emplace_back(
-                        std::make_unique<RainbowBlastHitAnnotation>(
-                                hit->m_nodeStart,
-                                hit->m_nodeEnd,
-                                query->getName().toStdString(),
-                                hit->m_queryStartFraction,
-                                hit->m_queryEndFraction));
+                                query->getName().toStdString()));
+                annotation->addView(std::make_unique<SolidView>(1.0, query->getColour()));
+                annotation->addView(std::make_unique<RainbowBlastHitView>(hit->m_queryStartFraction,
+                                                                          hit->m_queryEndFraction));
             }
         }
     }

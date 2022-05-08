@@ -61,6 +61,7 @@ enum SequencesLoadedFromFasta {NOT_READY, NOT_TRIED, TRIED};
 
 
 using AnnotationGroupId = int;
+using ViewId = int;
 
 
 //Some of the program's common components are made global so they don't have

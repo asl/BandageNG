@@ -33,3 +33,12 @@ const AnnotationGroup &AnnotationsManager::findGroupByName(const QString &name) 
                 return group->name == name;
             });
 }
+
+const AnnotationGroup &AnnotationsManager::findGroupById(AnnotationGroupId id) const {
+    return **std::find_if(
+            m_annotationGroups.begin(),
+            m_annotationGroups.end(),
+            [id](const std::shared_ptr<AnnotationGroup> &group) {
+                return group->id == id;
+            });
+}

@@ -160,8 +160,7 @@ void BlastSearchDialog::clearBlastHits()
     ui->blastHitsTableWidget->clearContents();
     while (ui->blastHitsTableWidget->rowCount() > 0)
         ui->blastHitsTableWidget->removeRow(0);
-    g_annotationsManager->removeGroupByName(g_settings->blastSolidAnnotationGroupName);
-    g_annotationsManager->removeGroupByName(g_settings->blastRainbowAnnotationGroupName);
+    g_annotationsManager->removeGroupByName(g_settings->blastAnnotationGroupName);
 }
 
 void BlastSearchDialog::fillTablesAfterBlastSearch()

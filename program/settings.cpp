@@ -138,8 +138,7 @@ Settings::Settings()
     blastIdentityFilter = FloatSetting(90.0, 0.0, 100.0, false);
     blastEValueFilter = SciNotSetting(SciNot(1.0, -10), SciNot(1.0, -999), SciNot(9.9, 1), false);
     blastBitScoreFilter = FloatSetting(1000.0, 0.0, 1000000.0, false);
-    blastSolidAnnotationGroupName = "Blast Hits (Solid)";
-    blastRainbowAnnotationGroupName = "Blast Hits (Rainbow)";
+    blastAnnotationGroupName = "Blast Hits";
 
     minDepthRange = FloatSetting(10.0, 0.0, 1000000.0);
     maxDepthRange = FloatSetting(100.0, 0.0, 1000000.0);

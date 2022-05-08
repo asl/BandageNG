@@ -125,31 +125,28 @@ void GraphicsItemNode::paint(QPainter * painter, const QStyleOptionGraphicsItem 
     QBrush brush(m_colour);
     painter->fillPath(outlinePath, brush);
 
+    //If the node has an arrow, then it's necessary to use the outline
+    //as a clipping path so the colours don't extend past the edge of the
+    //node.
+    if (m_hasArrow) {
+        painter->setClipPath(outlinePath);
+    }
     for (const auto &annotationGroup : g_annotationsManager->getGroups()) {
-        if (!g_settings->annotationsSettings[annotationGroup->id].showLine) {
-            continue;
-        }
+        auto annotationSettings = g_settings->annotationsSettings[annotationGroup->id];
 
         const auto &annotations = annotationGroup->getAnnotations(m_deBruijnNode);
         const auto &revCompAnnotations = g_settings->doubleMode
                                          ? emptyAnnotations
                                          : annotationGroup->getAnnotations(m_deBruijnNode->getReverseComplement());
 
-        //If the node has an arrow, then it's necessary to use the outline
-        //as a clipping path so the colours don't extend past the edge of the
-        //node.
-        if (m_hasArrow)
-            painter->setClipPath(outlinePath);
-
         for (const auto &annotation : annotations) {
-            annotation->drawFigure(*painter, *this, false);
+            annotation->drawFigure(*painter, *this, false, annotationSettings.viewsToShow);
         }
         for (const auto &annotation : revCompAnnotations) {
-            annotation->drawFigure(*painter, *this, true);
+            annotation->drawFigure(*painter, *this, true, annotationSettings.viewsToShow);
         }
-
-        painter->setClipping(false);
     }
+    painter->setClipping(false);
 
     //Draw the node outline
     QColor outlineColour = g_settings->outlineColour;

@@ -1965,7 +1965,7 @@ void MainWindow::selectNodesWithBlastHits()
 
     bool atLeastOneNodeHasBlastHits = false;
     bool atLeastOneNodeSelected = false;
-    const auto &blastHitsGroup = g_annotationsManager->findGroupByName(g_settings->blastSolidAnnotationGroupName);
+    const auto &blastHitsGroup = g_annotationsManager->findGroupByName(g_settings->blastAnnotationGroupName);
     for (auto &[node, annotations] : blastHitsGroup.annotationMap) {
 
         bool nodeHasBlastHits;
@@ -2592,8 +2592,7 @@ void MainWindow::mergeAllPossible()
 void MainWindow::cleanUpAllBlast()
 {
     g_blastSearch->cleanUp();
-    g_annotationsManager->removeGroupByName(g_settings->blastSolidAnnotationGroupName);
-    g_annotationsManager->removeGroupByName(g_settings->blastRainbowAnnotationGroupName);
+    g_annotationsManager->removeGroupByName(g_settings->blastAnnotationGroupName);
     ui->blastQueryComboBox->clear();
 
     if (m_blastSearchDialog != nullptr)
