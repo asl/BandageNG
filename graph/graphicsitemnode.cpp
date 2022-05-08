@@ -320,10 +320,9 @@ void GraphicsItemNode::setNodeColour()
         break;
     }
 
-    case BLAST_HITS_RAINBOW_COLOUR:
-    case BLAST_HITS_SOLID_COLOUR:
+    case GRAY_COLOR:
     {
-        m_colour = g_settings->noBlastHitsColour;
+        m_colour = g_settings->grayColor;
         break;
     }
 

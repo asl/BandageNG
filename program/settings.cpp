@@ -104,7 +104,7 @@ Settings::Settings()
     notContiguousColour = QColor(220, 220, 220);
     contiguityStartingColour = QColor(0, 255, 0);
 
-    noBlastHitsColour = QColor(220, 220, 220);
+    grayColor = QColor(220, 220, 220);
 
     autoDepthValue = true;
     lowDepthValue = FloatSetting(5.0, 0.0, 1000000.0);

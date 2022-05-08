@@ -967,6 +967,11 @@
                 </property>
                 <item>
                  <property name="text">
+                  <string>Gray color</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
                   <string>Random colours</string>
                  </property>
                 </item>
@@ -978,16 +983,6 @@
                 <item>
                  <property name="text">
                   <string>Colour by depth</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>BLAST hits (solid)</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>BLAST hits (rainbow)</string>
                  </property>
                 </item>
                 <item>

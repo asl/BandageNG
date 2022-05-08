@@ -1135,36 +1135,31 @@ void MainWindow::switchColourScheme()
     switch (ui->coloursComboBox->currentIndex())
     {
     case 0:
-        g_settings->nodeColourScheme = RANDOM_COLOURS;
+        g_settings->nodeColourScheme = GRAY_COLOR;
         ui->contiguityButton->setVisible(false);
         ui->contiguityInfoText->setVisible(false);
         break;
     case 1:
-        g_settings->nodeColourScheme = UNIFORM_COLOURS;
+        g_settings->nodeColourScheme = RANDOM_COLOURS;
         ui->contiguityButton->setVisible(false);
         ui->contiguityInfoText->setVisible(false);
         break;
     case 2:
-        g_settings->nodeColourScheme = DEPTH_COLOUR;
+        g_settings->nodeColourScheme = UNIFORM_COLOURS;
         ui->contiguityButton->setVisible(false);
         ui->contiguityInfoText->setVisible(false);
         break;
     case 3:
-        g_settings->nodeColourScheme = BLAST_HITS_SOLID_COLOUR;
+        g_settings->nodeColourScheme = DEPTH_COLOUR;
         ui->contiguityButton->setVisible(false);
         ui->contiguityInfoText->setVisible(false);
         break;
     case 4:
-        g_settings->nodeColourScheme = BLAST_HITS_RAINBOW_COLOUR;
-        ui->contiguityButton->setVisible(false);
-        ui->contiguityInfoText->setVisible(false);
-        break;
-    case 5:
         g_settings->nodeColourScheme = CONTIGUITY_COLOUR;
         ui->contiguityButton->setVisible(true);
         ui->contiguityInfoText->setVisible(true);
         break;
-    case 6:
+    case 5:
         g_settings->nodeColourScheme = CUSTOM_COLOURS;
         ui->contiguityButton->setVisible(false);
         ui->contiguityInfoText->setVisible(false);
@@ -1506,7 +1501,7 @@ void MainWindow::openSettingsDialog()
                 settingsBefore.highDepthColour != g_settings->highDepthColour ||
                 settingsBefore.lowDepthValue != g_settings->lowDepthValue ||
                 settingsBefore.highDepthValue != g_settings->highDepthValue ||
-                settingsBefore.noBlastHitsColour != g_settings->noBlastHitsColour ||
+                settingsBefore.grayColor != g_settings->grayColor ||
                 settingsBefore.contiguousStrandSpecificColour != g_settings->contiguousStrandSpecificColour ||
                 settingsBefore.contiguousEitherStrandColour != g_settings->contiguousEitherStrandColour ||
                 settingsBefore.notContiguousColour != g_settings->notContiguousColour ||
@@ -1694,21 +1689,6 @@ void MainWindow::blastChanged()
         int indexOfQuery = ui->blastQueryComboBox->findText(queryBefore->getName());
         if (indexOfQuery != -1)
             ui->blastQueryComboBox->setCurrentIndex(indexOfQuery);
-    }
-
-    if (g_blastSearch->m_blastQueries.getQueryCount() > 0)
-    {
-        //If the colouring scheme is not currently BLAST hits, change it to BLAST hits now
-        if (g_settings->nodeColourScheme != BLAST_HITS_RAINBOW_COLOUR &&
-                g_settings->nodeColourScheme != BLAST_HITS_SOLID_COLOUR)
-        {
-            //If there is only one query, use BLAST rainbow.  Otherwise, use
-            //BLAST solid.
-            if (g_blastSearch->m_blastQueries.getQueryCount() == 1)
-                setNodeColourSchemeComboBox(BLAST_HITS_RAINBOW_COLOUR);
-            else
-                setNodeColourSchemeComboBox(BLAST_HITS_SOLID_COLOUR);
-        }
     }
 
     g_blastSearch->blastQueryChanged(ui->blastQueryComboBox->currentText());
@@ -2231,13 +2211,12 @@ void MainWindow::setNodeColourSchemeComboBox(NodeColourScheme nodeColourScheme)
 {
     switch (nodeColourScheme)
     {
-    case RANDOM_COLOURS: ui->coloursComboBox->setCurrentIndex(0); break;
-    case UNIFORM_COLOURS: ui->coloursComboBox->setCurrentIndex(1); break;
-    case DEPTH_COLOUR: ui->coloursComboBox->setCurrentIndex(2); break;
-    case BLAST_HITS_SOLID_COLOUR: ui->coloursComboBox->setCurrentIndex(3); break;
-    case BLAST_HITS_RAINBOW_COLOUR: ui->coloursComboBox->setCurrentIndex(4); break;
-    case CONTIGUITY_COLOUR: ui->coloursComboBox->setCurrentIndex(5); break;
-    case CUSTOM_COLOURS: ui->coloursComboBox->setCurrentIndex(6); break;
+        case GRAY_COLOR: ui->coloursComboBox->setCurrentIndex(0); break;
+        case RANDOM_COLOURS: ui->coloursComboBox->setCurrentIndex(1); break;
+        case UNIFORM_COLOURS: ui->coloursComboBox->setCurrentIndex(2); break;
+        case DEPTH_COLOUR: ui->coloursComboBox->setCurrentIndex(3); break;
+        case CONTIGUITY_COLOUR: ui->coloursComboBox->setCurrentIndex(4); break;
+        case CUSTOM_COLOURS: ui->coloursComboBox->setCurrentIndex(5); break;
     }
 }
 

@@ -58,9 +58,6 @@ public:
 
     static bool compareTwoBlastHitPointers(BlastHit * a, BlastHit * b);
 
-    std::vector<BlastHitPart> getBlastHitParts(bool reverse, double scaledNodeLength) const;
-    bool onForwardStrand() const {return m_queryStart < m_queryEnd;}
-    double getNodeCentreFraction() const {return (m_nodeStartFraction + m_nodeEndFraction) / 2.0;}
     double getQueryCoverageFraction() const;
     GraphLocation getHitStart() const;
     GraphLocation getHitEnd() const;

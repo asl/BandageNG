@@ -167,7 +167,7 @@ public:
     QColor notContiguousColour;
     QColor contiguityStartingColour;
 
-    QColor noBlastHitsColour;
+    QColor grayColor;
 
     bool autoDepthValue;
     FloatSetting lowDepthValue;

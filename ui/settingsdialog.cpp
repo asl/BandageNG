@@ -199,7 +199,7 @@ void SettingsDialog::loadOrSaveSettingsToOrFromWidgets(bool setWidgets, Settings
     colourFunctionPointer(&settings->highDepthColour, ui->highDepthColourButton);
     doubleFunctionPointer(&settings->lowDepthValue, ui->lowDepthValueSpinBox, false);
     doubleFunctionPointer(&settings->highDepthValue, ui->highDepthValueSpinBox, false);
-    colourFunctionPointer(&settings->noBlastHitsColour, ui->noBlastHitsColourButton);
+    colourFunctionPointer(&settings->grayColor, ui->noBlastHitsColourButton);
     intFunctionPointer(&settings->contiguitySearchSteps, ui->contiguitySearchDepthSpinBox);
     colourFunctionPointer(&settings->contiguousStrandSpecificColour, ui->contiguousStrandSpecificColourButton);
     colourFunctionPointer(&settings->contiguousEitherStrandColour, ui->contiguousEitherStrandColourButton);

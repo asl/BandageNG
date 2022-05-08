@@ -843,14 +843,6 @@ void BandageTests::commandLineSettings()
     parseSettings(commandLineSettings);
     QCOMPARE(g_settings->nodeColourScheme, DEPTH_COLOUR);
 
-    commandLineSettings = QString("--colour blastsolid").split(" ");
-    parseSettings(commandLineSettings);
-    QCOMPARE(g_settings->nodeColourScheme, BLAST_HITS_SOLID_COLOUR);
-
-    commandLineSettings = QString("--colour blastrainbow").split(" ");
-    parseSettings(commandLineSettings);
-    QCOMPARE(g_settings->nodeColourScheme, BLAST_HITS_RAINBOW_COLOUR);
-
     commandLineSettings = QString("--ransatpos 12").split(" ");
     parseSettings(commandLineSettings);
     QCOMPARE(g_settings->randomColourPositiveSaturation.val, 12);

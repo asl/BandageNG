@@ -1030,8 +1030,6 @@ SciNot getSciNotOption(QString option, QStringList * arguments)
 NodeColourScheme getColourSchemeOption(QString option, QStringList * arguments)
 {
     NodeColourScheme defaultScheme = RANDOM_COLOURS;
-    if (isOptionPresent("--query", arguments))
-        defaultScheme = BLAST_HITS_SOLID_COLOUR;
 
     int optionIndex = arguments->indexOf(option);
     if (optionIndex == -1)
@@ -1048,10 +1046,6 @@ NodeColourScheme getColourSchemeOption(QString option, QStringList * arguments)
         return UNIFORM_COLOURS;
     else if (colourString == "depth")
         return DEPTH_COLOUR;
-    else if (colourString == "blastsolid")
-        return BLAST_HITS_SOLID_COLOUR;
-    else if (colourString == "blastrainbow")
-        return BLAST_HITS_RAINBOW_COLOUR;
     else if (colourString == "custom")
         return CUSTOM_COLOURS;
 
