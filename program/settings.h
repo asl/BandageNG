@@ -24,6 +24,7 @@
 #include "globals.h"
 #include <QString>
 #include <set>
+#include <unordered_map>
 #include "graph/path.h"
 #include "scinot.h"
 

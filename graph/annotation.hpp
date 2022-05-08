@@ -20,6 +20,8 @@ public:
                int64_t end) const = 0;
 
     virtual QString getTypeName() const = 0;
+
+    virtual ~IAnnotationView() = default;
 };
 
 
