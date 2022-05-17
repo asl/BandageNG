@@ -2105,7 +2105,7 @@ std::vector<int> AssemblyGraph::makeOverlapCountVector()
 
 //The function returns a node name, replacing "+" at the end with "-" or
 //vice-versa.
-QString AssemblyGraph::getOppositeNodeName(QString nodeName)
+QString AssemblyGraph::getOppositeNodeName(QString nodeName) const
 {
     QChar lastChar = nodeName.at(nodeName.size() - 1);
     nodeName.chop(1);
@@ -2979,7 +2979,7 @@ QString AssemblyGraph::getGfaSegmentLine(const DeBruijnNode *node, QString depth
     if (depthTag == "DP")
         gfaSegmentLine += "\tDP:f:" + QString::number(node->getDepth()).toLatin1();
     else if (depthTag == "KC" || depthTag == "RC" || depthTag == "FC")
-        gfaSegmentLine += "\t" + depthTag.toLatin1() + "KC:i:" + QString::number(int(node->getDepth() * gfaSequence.length() + 0.5)).toLatin1();
+        gfaSegmentLine += "\t" + depthTag.toLatin1() + ":i:" + QString::number(int(node->getDepth() * gfaSequence.length() + 0.5)).toLatin1();
 
     //If the user has included custom labels or colours, include those.
     QString label = getCustomLabel(node);

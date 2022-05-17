@@ -231,7 +231,8 @@ private:
     int getLengthFromSimpleCigar(QString cigar);
     int getLengthFromCigar(QString cigar);
     int getCigarCount(QString cigarCode, QString cigar);
-    QString getOppositeNodeName(QString nodeName);
+    QString getOppositeNodeName(QString nodeName) const;
+    std::string getOppositeNodeName(std::string nodeName) const;
     void clearAllCsvData();
     QString getNodeNameFromString(QString string);
     QString getNewNodeName(QString oldNodeName);
@@ -252,7 +253,8 @@ private:
     QString cleanNodeName(QString name);
     double findDepthAtIndex(QList<DeBruijnNode *> * nodeList, long long targetIndex) const;
     bool allNodesStartWith(QString start) const;
-    QString simplifyCanuNodeName(QString oldName) const;
+    std::string_view simplifyCanuNodeName(std::string_view old) const;
+    QString simplifyCanuNodeName(QString old) const;
 
 signals:
     void setMergeTotalCount(int totalCount);

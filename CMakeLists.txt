@@ -128,9 +128,13 @@ include_directories(ui)
 add_subdirectory(thirdparty)
 include_directories(thirdparty)
 
+include(FetchContent)
+FetchContent_Declare(lexy URL https://lexy.foonathan.net/download/lexy-src.zip)
+FetchContent_MakeAvailable(lexy)
+
 # FIXME: Untagle this
 add_library(BandageLib STATIC ${LIB_SOURCES} ${FORMS})
-target_link_libraries(BandageLib PRIVATE Qt6::Widgets Qt6::Svg gfa1)
+target_link_libraries(BandageLib PRIVATE Qt6::Widgets Qt6::Svg foonathan::lexy)
 
 add_executable(BandageNG program/main.cpp ${RESOURCES})
 target_link_libraries(BandageNG BandageLib Qt6::Core Qt6::Widgets)
