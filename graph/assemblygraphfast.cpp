@@ -35,15 +35,16 @@
 #include <lexy/input/argv_input.hpp>
 #include <lexy_ext/report_error.hpp>
 
+#include <algorithm>
+#include <memory>
 #include <vector>
 #include <string>
 #include <string_view>
 #include <variant>
+
 #include <cstdint>
 #include <cinttypes>
 #include <cstdio>
-
-#include <algorithm>
 #include <cmath>
 
 namespace gfa {
@@ -500,11 +501,21 @@ void AssemblyGraph::buildDeBruijnGraphFromGfa(const QString &fullFileName,
 
     bool sequencesAreMissing = false;
 
-    std::ifstream is(fullFileName.toStdString());
+    std::unique_ptr<FILE, decltype(&fclose)>
+            fp(fopen(fullFileName.toStdString().c_str(), "r"), fclose);
+    if (!fp)
+        throw AssemblyGraphError("failed to open file: " + fullFileName.toStdString());
+
     size_t i = 0;
-    for (std::string line; std::getline(is, line); ) {
+    char *line = nullptr;
+    size_t len = 0;
+    ssize_t read;
+    while ((read = getline(&line, &len, fp.get())) != -1) {
+        if (read <= 1)
+            continue; // skip empty lines
+
         if (++i % 1000 == 0) QApplication::processEvents();
-        auto result = lexy::parse<grammar::record>(lexy::string_input(line), lexy_ext::report_error);
+        auto result = lexy::parse<grammar::record>(lexy::string_input(line, read - 1), lexy_ext::report_error);
         if (!result.has_value())
             continue;
 
