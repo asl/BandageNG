@@ -11,6 +11,7 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 find_package(Qt6 REQUIRED COMPONENTS Widgets Svg Test)
+find_package(ZLib REQUIRED)
 
 set(LIB_SOURCES
         blast/blasthit.cpp
@@ -134,10 +135,10 @@ FetchContent_MakeAvailable(lexy)
 
 # FIXME: Untagle this
 add_library(BandageLib STATIC ${LIB_SOURCES} ${FORMS})
-target_link_libraries(BandageLib PRIVATE Qt6::Widgets Qt6::Svg foonathan::lexy)
+target_link_libraries(BandageLib PRIVATE Qt6::Widgets Qt6::Svg foonathan::lexy ZLIB::ZLIB)
 
 add_executable(BandageNG program/main.cpp ${RESOURCES})
-target_link_libraries(BandageNG BandageLib Qt6::Core Qt6::Widgets)
+target_link_libraries(BandageNG BandageLib Qt6::Core Qt6::Widgets ZLIB::ZLIB)
 
 if (APPLE)
   set_target_properties(BandageNG PROPERTIES

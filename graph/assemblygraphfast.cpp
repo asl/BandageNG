@@ -37,6 +37,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <type_traits>
 #include <vector>
 #include <string>
 #include <string_view>
@@ -46,6 +47,8 @@
 #include <cinttypes>
 #include <cstdio>
 #include <cmath>
+
+#include <zlib.h>
 
 namespace gfa {
 struct tag {
@@ -491,6 +494,53 @@ std::optional<T> getTag(const char *name,
 }
 
 
+ssize_t gzgetdelim(char **buf, size_t *bufsiz, int delimiter, gzFile fp) {
+    char *ptr, *eptr;
+
+
+    if (*buf == NULL || *bufsiz == 0) {
+        *bufsiz = BUFSIZ;
+        if ((*buf = (char*)malloc(*bufsiz)) == NULL)
+            return -1;
+    }
+
+    for (ptr = *buf, eptr = *buf + *bufsiz;;) {
+        char c = gzgetc(fp);
+        if (c == -1) {
+            if (gzeof(fp)) {
+                ssize_t diff = (ssize_t) (ptr - *buf);
+                if (diff != 0) {
+                    *ptr = '\0';
+                    return diff;
+                }
+            }
+            return -1;
+        }
+        *ptr++ = c;
+        if (c == delimiter) {
+            *ptr = '\0';
+            return ptr - *buf;
+        }
+        if (ptr + 2 >= eptr) {
+            char *nbuf;
+            size_t nbufsiz = *bufsiz * 2;
+            ssize_t d = ptr - *buf;
+            if ((nbuf = (char*)realloc(*buf, nbufsiz)) == NULL)
+                return -1;
+
+            *buf = nbuf;
+            *bufsiz = nbufsiz;
+            eptr = nbuf + nbufsiz;
+            ptr = nbuf + d;
+        }
+    }
+}
+
+
+ssize_t gzgetline(char **buf, size_t *bufsiz, gzFile fp) {
+    return gzgetdelim(buf, bufsiz, '\n', fp);
+}
+
 void AssemblyGraph::buildDeBruijnGraphFromGfa(const QString &fullFileName,
                                               bool *unsupportedCigar,
                                               bool *customLabels,
@@ -501,8 +551,8 @@ void AssemblyGraph::buildDeBruijnGraphFromGfa(const QString &fullFileName,
 
     bool sequencesAreMissing = false;
 
-    std::unique_ptr<FILE, decltype(&fclose)>
-            fp(fopen(fullFileName.toStdString().c_str(), "r"), fclose);
+    std::unique_ptr<std::remove_pointer<gzFile>::type, decltype(&gzclose)>
+            fp(gzopen(fullFileName.toStdString().c_str(), "r"), gzclose);
     if (!fp)
         throw AssemblyGraphError("failed to open file: " + fullFileName.toStdString());
 
@@ -510,7 +560,7 @@ void AssemblyGraph::buildDeBruijnGraphFromGfa(const QString &fullFileName,
     char *line = nullptr;
     size_t len = 0;
     ssize_t read;
-    while ((read = getline(&line, &len, fp.get())) != -1) {
+    while ((read = gzgetline(&line, &len, fp.get())) != -1) {
         if (read <= 1)
             continue; // skip empty lines
 
