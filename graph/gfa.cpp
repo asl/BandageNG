@@ -212,6 +212,30 @@ struct link {
     static constexpr auto value = lexy::construct<gfa::link>;
 };
 
+// Gap link line
+// =============
+// Required fields:
+// Column   Field        Type        Regexp                   Description
+// 1        RecordType   Character   J                        Record type
+// 2        From         String      [!-)+-<>-~][!-~]*        Name of segment
+// 3        FromOrient   String      +|-                      Orientation of From segment
+// 4        To           String      [!-)+-<>-~][!-~]*        Name of segment
+// 5        ToOrient     String      +|-                      Orientation of To segment
+// 6        Overlap      String      [0-9]+                   Overlap
+struct gaplink {
+    static constexpr auto name = "GFA gap link line";
+
+    static constexpr auto rule =
+            LEXY_LIT("J") >>
+            tab + dsl::p<segment_name> +
+            tab + dsl::p<segment_orientation> +
+            tab + dsl::p<segment_name> +
+            tab + dsl::p<segment_orientation> +
+            tab + (LEXY_LIT("*") | dsl::identifier(dsl::ascii::alpha)) +
+            dsl::p<opt_tags>;
+    static constexpr auto value = lexy::construct<gfa::gaplink>;
+};
+
 // Path line
 // =========
 // Required fields
@@ -257,6 +281,7 @@ struct record {
         return dsl::p<header> |
                dsl::p<segment> |
                dsl::p<link> |
+               dsl::p<gaplink> |                
                dsl::p<path> |
                comment |
                // Explicitly ignore all other records (though require proper tab-delimited format)

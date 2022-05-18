@@ -153,6 +153,43 @@ struct link {
     }
 };
 
+struct gaplink {
+    std::string_view lhs;
+    bool lhs_revcomp;
+    std::string_view rhs;
+    bool rhs_revcomp;
+    std::string_view overlap;
+    std::vector<gfa::tag> tags;
+
+    template<typename Seq>
+    explicit gaplink(std::string_view l, std::string_view lr, std::string_view r, std::string_view rr,
+                     Seq o,
+                     std::vector<gfa::tag> t)
+            : lhs{std::move(l)}, lhs_revcomp(lr.front() == '-'),
+              rhs{std::move(r)}, rhs_revcomp(rr.front() == '-'),
+              overlap{o.data(), o.size()},
+              tags(std::move(t)) {}
+
+    explicit gaplink(std::string_view l, std::string_view lr, std::string_view r, std::string_view rr,
+                     std::vector<gfa::tag> t)
+            : lhs{std::move(l)}, lhs_revcomp(lr.front() == '-'),
+              rhs{std::move(r)}, rhs_revcomp(rr.front() == '-'),
+              overlap{"*"},
+              tags(std::move(t)) {}
+
+    void print() const {
+        std::fputs("J", stdout);
+        std::fprintf(stdout, "\t%s\t%c", std::string(lhs).c_str(), lhs_revcomp ? '-' : '+');
+        std::fprintf(stdout, "\t%s\t%c", std::string(rhs).c_str(), rhs_revcomp ? '-' : '+');
+        std::fprintf(stdout, "\t%s", std::string(overlap).c_str());
+
+        for (const auto &tag : tags) {
+            fputs("\t", stdout);
+            tag.print();
+        }
+    }
+};
+
 struct path {
     std::string_view name;
     std::vector<std::string_view> segments;
@@ -193,7 +230,7 @@ struct path {
     }
 };
 
-using record = std::variant<header, segment, link, path>;
+using record = std::variant<header, segment, link, gaplink, path>;
 
 static inline std::optional<gfa::tag>
 getTag(const char *name,
