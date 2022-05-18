@@ -412,8 +412,74 @@ class GFAAssemblyGraphBuilder : public AssemblyGraphBuilder {
 
     }
 
-    static void handlePath(const gfa::path &record,
-                           AssemblyGraph &graph) {
+    void handleGapLink(const gfa::gaplink &record,
+                       AssemblyGraph &graph) {
+        // FIXME: get rid of severe duplication!
+        std::string fromNode{record.lhs};
+        fromNode.push_back(record.lhs_revcomp ? '-' : '+');
+        std::string toNode{record.rhs};
+        toNode.push_back(record.rhs_revcomp ? '-' : '+');
+
+        DeBruijnNode *fromNodePtr = nullptr;
+        DeBruijnNode *toNodePtr = nullptr;
+
+        auto fromNodeIt = graph.m_deBruijnGraphNodes.find(fromNode);
+        if (fromNodeIt== graph.m_deBruijnGraphNodes.end()) {
+            // Add placeholder
+            DeBruijnNode *oppositeNodePtr;
+            std::tie(fromNodePtr, oppositeNodePtr) = addSegmentPair(fromNode, 0, Sequence(), graph);
+        } else
+            fromNodePtr = *fromNodeIt;
+
+        auto toNodeIt = graph.m_deBruijnGraphNodes.find(toNode);
+        if (toNodeIt== graph.m_deBruijnGraphNodes.end()) {
+            // Add placeholder
+            DeBruijnNode *oppositeNodePtr;
+            std::tie(toNodePtr, oppositeNodePtr) = addSegmentPair(toNode, 0, Sequence(), graph);
+        } else
+            toNodePtr = *toNodeIt;
+
+        auto edgePtr = new DeBruijnEdge(fromNodePtr, toNodePtr);
+
+        edgePtr->setOverlap(0);
+        edgePtr->setOverlapType(NO_OVERLAP);
+
+        bool isOwnPair = fromNodePtr == toNodePtr->getReverseComplement() &&
+                         toNodePtr == fromNodePtr->getReverseComplement();
+        graph.m_deBruijnGraphEdges[{fromNodePtr, toNodePtr}] = edgePtr;
+        fromNodePtr->addEdge(edgePtr);
+        toNodePtr->addEdge(edgePtr);
+
+        DeBruijnEdge *rcEdgePtr = nullptr;
+        if (isOwnPair) {
+            edgePtr->setReverseComplement(edgePtr);
+        } else {
+            auto *rcFromNodePtr = fromNodePtr->getReverseComplement();
+            auto *rcToNodePtr = toNodePtr->getReverseComplement();
+            rcEdgePtr = new DeBruijnEdge(rcToNodePtr, rcFromNodePtr);
+            rcEdgePtr->setOverlap(edgePtr->getOverlap());
+            rcEdgePtr->setOverlapType(edgePtr->getOverlapType());
+            rcFromNodePtr->addEdge(rcEdgePtr);
+            rcToNodePtr->addEdge(rcEdgePtr);
+            edgePtr->setReverseComplement(rcEdgePtr);
+            rcEdgePtr->setReverseComplement(edgePtr);
+            graph.m_deBruijnGraphEdges[{rcToNodePtr, rcFromNodePtr}] = rcEdgePtr;
+        }
+
+        graph.setCustomColour(edgePtr, "red");
+        if (rcEdgePtr) graph.setCustomColour(rcEdgePtr, "red");
+        graph.setCustomStyle(edgePtr, Qt::DashLine);
+        if (rcEdgePtr) graph.setCustomStyle(rcEdgePtr, Qt::DashLine);
+
+        auto cb = getTag<std::string>("CB", record.tags);
+        auto c2 = getTag<std::string>("C2", record.tags);
+        hasCustomColours_ |= cb || c2;
+        if (cb) graph.setCustomColour(edgePtr, cb->c_str());
+        if (c2 && rcEdgePtr) graph.setCustomColour(rcEdgePtr, c2->c_str());
+    }
+
+    void handlePath(const gfa::path &record,
+                    AssemblyGraph &graph) {
         QList<DeBruijnNode *> pathNodes;
         pathNodes.reserve(record.segments.size());
 
@@ -457,6 +523,8 @@ class GFAAssemblyGraphBuilder : public AssemblyGraphBuilder {
                         sequencesAreMissing |= handleSegment(record, graph);
                     } else if constexpr (std::is_same_v<T, gfa::link>) {
                         handleLink(record, graph);
+                    } else if constexpr (std::is_same_v<T, gfa::gaplink>) {
+                        handleGapLink(record, graph);
                     } else if constexpr (std::is_same_v<T, gfa::path>) {
                         handlePath(record, graph);
                     }

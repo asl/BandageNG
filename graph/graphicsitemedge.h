@@ -41,6 +41,8 @@ public:
     QPointF m_afterEndingLocation;
     QPointF m_controlPoint1;
     QPointF m_controlPoint2;
+    QColor m_edgeColor;
+    Qt::PenStyle m_penStyle;
 
     void paint(QPainter * painter, const QStyleOptionGraphicsItem *, QWidget *);
     QPainterPath shape() const;

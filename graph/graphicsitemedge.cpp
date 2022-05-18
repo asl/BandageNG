@@ -17,10 +17,13 @@
 
 
 #include "graphicsitemedge.h"
+#include "graphicsitemnode.h"
 #include "debruijnedge.h"
 #include "debruijnnode.h"
 #include "ogdfnode.h"
 #include "graphicsitemnode.h"
+
+#include "graph/assemblygraph.h"
 
 #include "program/globals.h"
 
@@ -33,6 +36,9 @@ GraphicsItemEdge::GraphicsItemEdge(DeBruijnEdge * deBruijnEdge, QGraphicsItem * 
     QGraphicsPathItem(parent), m_deBruijnEdge(deBruijnEdge)
 
 {
+    m_edgeColor = g_assemblyGraph->getCustomColour(deBruijnEdge);
+    m_penStyle = g_assemblyGraph->getCustomStyle(deBruijnEdge);
+
     calculateAndSetPath();
 }
 
@@ -50,12 +56,8 @@ QPointF GraphicsItemEdge::extendLine(QPointF start, QPointF end, double extensio
 void GraphicsItemEdge::paint(QPainter * painter, const QStyleOptionGraphicsItem *, QWidget *)
 {
     double edgeWidth = g_settings->edgeWidth;
-    QColor penColour;
-    if (isSelected())
-        penColour = g_settings->selectionColour;
-    else
-        penColour = g_settings->edgeColour;
-    QPen edgePen(QBrush(penColour), edgeWidth, Qt::SolidLine, Qt::RoundCap);
+    QColor penColour = isSelected() ? g_settings->selectionColour : m_edgeColor;
+    QPen edgePen(QBrush(penColour), edgeWidth, m_penStyle, Qt::RoundCap);
     painter->setPen(edgePen);
     painter->drawPath(path());
 }

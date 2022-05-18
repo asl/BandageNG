@@ -2025,8 +2025,26 @@ QColor AssemblyGraph::getCustomColour(const DeBruijnNode* node) const {
     return it == m_nodeColors.end() ? QColor() : it->second;
 }
 
+QColor AssemblyGraph::getCustomColour(const DeBruijnEdge* edge) const {
+    auto it = m_edgeColors.find(edge);
+    return it == m_edgeColors.end() ? g_settings->edgeColour : it->second;
+}
+
+Qt::PenStyle AssemblyGraph::getCustomStyle(const DeBruijnEdge* edge) const {
+    auto it = m_edgeStyles.find(edge);
+    return it == m_edgeStyles.end() ? Qt::SolidLine : it->second;
+}
+
 void AssemblyGraph::setCustomColour(const DeBruijnNode* node, QColor color) {
     m_nodeColors[node] = color;
+}
+
+void AssemblyGraph::setCustomColour(const DeBruijnEdge* edge, QColor color) {
+    m_edgeColors[edge] = color;
+}
+
+void AssemblyGraph::setCustomStyle(const DeBruijnEdge* edge, Qt::PenStyle style) {
+    m_edgeStyles[edge] = style;
 }
 
 QString AssemblyGraph::getCustomLabel(const DeBruijnNode* node) const {

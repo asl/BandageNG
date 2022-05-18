@@ -63,14 +63,21 @@ public:
     //Nodes are stored in a map with a key of the node's name.
     tsl::htrie_map<char, DeBruijnNode*> m_deBruijnGraphNodes;
 
-    //Edges are stored in a map with a key of the starting and ending node
-    //pointers.
-    phmap::parallel_flat_hash_map<QPair<DeBruijnNode*, DeBruijnNode*>, DeBruijnEdge*> m_deBruijnGraphEdges;
+    using DeBruijnLink = QPair<DeBruijnNode*, DeBruijnNode*>;
+
+    // Edges are stored in a map with a key of the starting and ending node
+    // pointers.
+    phmap::parallel_flat_hash_map<DeBruijnLink, DeBruijnEdge*> m_deBruijnGraphEdges;
 
     // Custom colors
     phmap::parallel_flat_hash_map<const DeBruijnNode*, QColor> m_nodeColors;
     // Custom labels
     phmap::parallel_flat_hash_map<const DeBruijnNode*, QString> m_nodeLabels;
+    // Edge styles
+    phmap::parallel_flat_hash_map<const DeBruijnEdge*, Qt::PenStyle> m_edgeStyles;
+    // Edge colors
+    phmap::parallel_flat_hash_map<const DeBruijnEdge*, QColor> m_edgeColors;
+
     // CSV data
     phmap::parallel_flat_hash_map<const DeBruijnNode*, QStringList> m_nodeCSVData;
     QStringList m_csvHeaders;
@@ -79,7 +86,7 @@ public:
     phmap::parallel_flat_hash_map<const DeBruijnEdge*, std::vector<gfa::tag>> m_edgeTags;
 
     tsl::htrie_map<char, Path*> m_deBruijnGraphPaths;
-    
+
     ogdf::Graph * m_ogdfGraph;
     ogdf::EdgeArray<double> * m_edgeArray;
     ogdf::GraphAttributes * m_graphAttributes;
@@ -178,7 +185,12 @@ public:
 
     bool hasCustomColour(const DeBruijnNode* node) const;
     QColor getCustomColour(const DeBruijnNode* node) const;
+    QColor getCustomColour(const DeBruijnEdge* edge) const;
     void setCustomColour(const DeBruijnNode* node, QColor color);
+    void setCustomColour(const DeBruijnEdge* edge, QColor color);
+
+    Qt::PenStyle getCustomStyle(const DeBruijnEdge* edge) const;
+    void setCustomStyle(const DeBruijnEdge* edge, Qt::PenStyle style);
 
     QString getCustomLabel(const DeBruijnNode* node) const;
     void setCustomLabel(const DeBruijnNode* node, QString newLabel);
