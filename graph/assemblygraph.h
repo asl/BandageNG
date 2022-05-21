@@ -31,7 +31,6 @@
 #include "ogdf/basic/Graph.h"
 #include "ogdf/basic/GraphAttributes.h"
 #include "blast/blasthit.h"
-#include "annotation.hpp"
 
 #include <QString>
 #include <QMap>

@@ -211,8 +211,13 @@ void MainWindow::afterMainWindowShow()
         return;
 
     //If the user passed a filename as a command line argument, try to open it now.
-    if (m_fileToLoadOnStartup != "")
+    if (m_fileToLoadOnStartup != "") {
+        auto start = std::chrono::system_clock::now();
         loadGraph(m_fileToLoadOnStartup);
+        auto end = std::chrono::system_clock::now();
+        std::cerr << std::filesystem::path(m_fileToLoadOnStartup.toStdString()).filename().string()
+                  << ", " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << std::endl;
+    }
 
     //If a BLAST query filename is present, do the BLAST search now automatically.
     if (g_settings->blastQueryFilename != "")
@@ -227,6 +232,8 @@ void MainWindow::afterMainWindowShow()
         drawGraph();
 
     m_alreadyShown = true;
+
+//    close();
 }
 
 MainWindow::~MainWindow()

@@ -7,7 +7,7 @@
 
 struct AnnotationGroup {
     using AnnotationVector = std::vector<std::unique_ptr<Annotation>>;
-    using AnnotationMap = std::map<const DeBruijnNode *, AnnotationVector>;
+    using AnnotationMap = std::unordered_map<const DeBruijnNode *, AnnotationVector>;
 
     const AnnotationGroupId id;
     const QString name;
@@ -24,8 +24,7 @@ Q_OBJECT
 public:
     explicit AnnotationsManager(QObject *parent = nullptr) : QObject(parent) {}
 
-    //todo: replace with map???
-    using AnnotationGroupVector = std::vector<std::shared_ptr<AnnotationGroup>>;
+    using AnnotationGroupVector = std::vector<std::unique_ptr<AnnotationGroup>>;
 
     AnnotationGroup &createAnnotationGroup(QString name);
     const AnnotationGroupVector &getGroups() const;

@@ -19,11 +19,8 @@
 #include "globals.h"
 #include <QLocale>
 #include <QDir>
-#include <QStringList>
-#include <QFile>
 #include <QTextStream>
 #include <QApplication>
-#include <QProcess>
 #include <cmath>
 
 QSharedPointer<Settings> g_settings;

@@ -472,7 +472,12 @@ void parseSettings(QStringList arguments)
     g_settings->displayNodeNames = isOptionPresent("--names", &arguments);
     g_settings->displayNodeLengths = isOptionPresent("--lengths", &arguments);
     g_settings->displayNodeDepth = isOptionPresent("--depth", &arguments);
-    g_settings->displayBlastHits = isOptionPresent("--blasthits", &arguments);
+
+    if (isOptionPresent("--blasthits", &arguments)) {
+        // For backward compatibility we allow enabling blast annotation text by "--blasthits" option.
+        // To be removed when we can set up annotations from CLI.
+        g_settings->defaultBlastAnnotationSetting.showText = true;
+    }
 
     if (isOptionPresent("--fontsize", &arguments))
     {
@@ -495,6 +500,10 @@ void parseSettings(QStringList arguments)
     }
 
     g_settings->nodeColourScheme = getColourSchemeOption("--colour", &arguments);
+
+    // For backward compatibility we allow setting blast annotation view to show from "--colour" option.
+    // To be removed when we can set up annotations from CLI.
+    g_settings->defaultBlastAnnotationSetting.viewsToShow = getBlastAnnotationViews("--colour", &arguments);
 
     if (isOptionPresent("--ransatpos", &arguments))
         g_settings->randomColourPositiveSaturation = getIntOption("--ransatpos", &arguments);
@@ -1051,6 +1060,25 @@ NodeColourScheme getColourSchemeOption(QString option, QStringList * arguments)
 
     //Random colours is the default
     return defaultScheme;
+}
+
+
+std::set<ViewId> getBlastAnnotationViews(QString option, QStringList * arguments) {
+    int optionIndex = arguments->indexOf(option);
+    if (optionIndex == -1)
+        return {};
+
+    int settingsIndex = optionIndex + 1;
+    if (settingsIndex >= arguments->size())
+        return {};
+
+    QString settingsString = arguments->at(settingsIndex).toLower();
+    if (settingsString == "blastsolid") {
+        return {0};
+    } else if (settingsString == "blastrainbow") {
+        return {1};
+    }
+    return {};
 }
 
 

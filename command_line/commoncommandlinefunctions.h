@@ -60,6 +60,7 @@ double getFloatOption(QString option, QStringList * arguments);
 SciNot getSciNotOption(QString option, QStringList * arguments);
 QColor getColourOption(QString option, QStringList * arguments);
 NodeColourScheme getColourSchemeOption(QString option, QStringList * arguments);
+std::set<ViewId> getBlastAnnotationViews(QString option, QStringList * arguments);
 GraphScope getGraphScopeOption(QString option, QStringList * arguments);
 QString getStringOption(QString option, QStringList * arguments);
 

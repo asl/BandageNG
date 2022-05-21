@@ -134,7 +134,6 @@ public:
     bool displayNodeDepth;
     bool displayNodeCsvData;
     int  displayNodeCsvDataCol;
-    bool displayBlastHits;
     QFont labelFont;
     bool textOutline;
     bool antialiasing;
@@ -215,8 +214,12 @@ public:
     FloatSetting minDepthRange;
     FloatSetting maxDepthRange;
 
-    //This controls annotations drawing
+    //This controls annotations drawing.
     AnnotationSettings annotationsSettings;
+
+    // This is needed for backward compatibility to support selecting blast colors from CLI.
+    // To be removed when general approach will be implemented.
+    AnnotationSetting defaultBlastAnnotationSetting;
 };
 
 #endif // SETTINGS_H
