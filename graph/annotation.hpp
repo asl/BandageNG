@@ -41,7 +41,7 @@ public:
         painter.setPen(pen);
 
         double fractionStart = graphicsItemNode.indexToFraction(start);
-        double fractionEnd = graphicsItemNode.indexToFraction(end);
+        double fractionEnd = graphicsItemNode.indexToFraction(end + 1);
 
         if (reverseComplement) {
             fractionStart = 1 - fractionStart;
@@ -70,7 +70,7 @@ public:
 
         double scaledNodeLength = graphicsItemNode.getNodePathLength() * g_absoluteZoom;
         double fractionStart = graphicsItemNode.indexToFraction(start);
-        double fractionEnd = graphicsItemNode.indexToFraction(end);
+        double fractionEnd = graphicsItemNode.indexToFraction(end + 1);
         double scaledHitLength = (fractionEnd - fractionStart) * scaledNodeLength;
         int partCount = ceil(
                 g_settings->blastRainbowPartsPerQuery * fabs(m_rainbowFractionStart - m_rainbowFractionEnd));
