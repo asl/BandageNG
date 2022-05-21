@@ -779,10 +779,10 @@ void BandageTests::commandLineSettings()
     parseSettings(commandLineSettings);
     QCOMPARE(g_settings->displayNodeDepth, true);
 
-    QCOMPARE(g_settings->displayBlastHits, false);
+    QCOMPARE(g_settings->defaultBlastAnnotationSetting.showText, false);
     commandLineSettings = QString("--blasthits").split(" ");
     parseSettings(commandLineSettings);
-    QCOMPARE(g_settings->displayBlastHits, true);
+    QCOMPARE(g_settings->defaultBlastAnnotationSetting.showText, true);
 
     commandLineSettings = QString("--fontsize 5").split(" ");
     parseSettings(commandLineSettings);
