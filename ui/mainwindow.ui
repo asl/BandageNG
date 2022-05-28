@@ -1440,65 +1440,7 @@
          </spacer>
         </item>
         <item>
-         <widget class="QWidget" name="annotationSelectorWidget" native="true">
-          <property name="enabled">
-           <bool>true</bool>
-          </property>
-          <layout class="QVBoxLayout" name="annotationsVBoxLayout">
-           <property name="leftMargin">
-            <number>0</number>
-           </property>
-           <property name="topMargin">
-            <number>0</number>
-           </property>
-           <property name="rightMargin">
-            <number>0</number>
-           </property>
-           <property name="bottomMargin">
-            <number>0</number>
-           </property>
-           <item>
-            <widget class="QLabel" name="nodeLabelsG_5">
-             <property name="font">
-              <font>
-               <bold>true</bold>
-              </font>
-             </property>
-             <property name="text">
-              <string>Annotations</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="Line" name="line_11">
-             <property name="orientation">
-              <enum>Qt::Horizontal</enum>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </widget>
-        </item><item>
-        <spacer name="verticalSpacer_8">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeType">
-          <enum>QSizePolicy::Fixed</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>229</width>
-           <height>15</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-        <item>
-         <widget class="AnnotationsListWidget" name="annotationsListWidget" native="true"/>
-        </item>
-        <item>
-         <spacer name="verticalSpacer_7">
+         <spacer name="verticalSpacer_8">
           <property name="orientation">
            <enum>Qt::Vertical</enum>
           </property>
@@ -1536,7 +1478,7 @@
          <widget class="BedWidget" name="bedWidget" native="true"/>
         </item>
         <item>
-         <spacer name="verticalSpacer_8">
+         <spacer name="verticalSpacer_9">
           <property name="orientation">
            <enum>Qt::Vertical</enum>
           </property>
@@ -1591,7 +1533,7 @@
           </layout>
          </widget>
         </item><item>
-        <spacer name="verticalSpacer_9">
+        <spacer name="verticalSpacer_10">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
          </property>
