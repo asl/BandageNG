@@ -7,9 +7,7 @@
 
 class BedWidget : public QWidget {
 public:
-    BedWidget(QWidget *parent);
-
-
+    explicit BedWidget(QWidget *parent);
 };
 
 
