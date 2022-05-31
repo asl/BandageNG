@@ -70,6 +70,7 @@
 #include "changenodedepthdialog.h"
 #include "graphinfodialog.h"
 #include "graph/sequenceutils.hpp"
+#include "graph/assemblygraphbuilder.h"
 
 MainWindow::MainWindow(QString fileToLoadOnStartup, bool drawGraphAfterLoad) :
     QMainWindow(0),
@@ -285,11 +286,9 @@ void MainWindow::loadCSV(QString fullFileName)
 {
     QString selectedFilter = "Comma separated value (*.csv)";
     if (fullFileName == "")
-    {
         fullFileName = QFileDialog::getOpenFileName(this, "Load CSV", g_memory->rememberedPath,
                                                     "Comma separated value (*.csv)",
                                                     &selectedFilter);
-    }
 
     if (fullFileName == "")
         return; // user clicked on cancel
@@ -338,113 +337,48 @@ void MainWindow::loadGraph(QString fullFileName)
 {
     QString selectedFilter = "Any supported graph (*)";
     if (fullFileName == "")
-        fullFileName = QFileDialog::getOpenFileName(this, "Load graph", g_memory->rememberedPath,
-                                                    "Any supported graph (*);;LastGraph (*LastGraph*);;FASTG (*.fastg);;GFA (*.gfa);;Trinity.fasta (*.fasta);;ASQG (*.asqg);;Plain FASTA (*.fasta)",
-                                                    &selectedFilter);
+        fullFileName =
+                QFileDialog::getOpenFileName(this, "Load graph", g_memory->rememberedPath,
+                                             "Any supported graph (*);;"
+                                             "LastGraph (*LastGraph*);;"
+                                             "FASTG (*.fastg);;"
+                                             "GFA (*.gfa);;"
+                                             "Trinity.fasta (*.fasta);;"
+                                             "ASQG (*.asqg);;"
+                                             "Plain FASTA (*.fasta)",
+                                             &selectedFilter);
 
-    if (fullFileName != "") //User did not hit cancel
-    {
-        GraphFileType detectedFileType = g_assemblyGraph->getGraphFileTypeFromFile(fullFileName);
-
-        GraphFileType selectedFileType = ANY_FILE_TYPE;
-        if (selectedFilter == "LastGraph (*LastGraph*)")
-            selectedFileType = LAST_GRAPH;
-        else if (selectedFilter == "FASTG (*.fastg)")
-            selectedFileType = FASTG;
-        else if (selectedFilter == "GFA (*.gfa)")
-            selectedFileType = GFA;
-        else if (selectedFilter == "Trinity.fasta (*.fasta)")
-            selectedFileType = TRINITY;
-        else if (selectedFilter == "ASQG (*.asqg)")
-            selectedFileType = ASQG;
-        else if (selectedFilter == "Plain FASTA (*.fasta)")
-            selectedFileType = PLAIN_FASTA;
-
-        if (selectedFileType == ANY_FILE_TYPE)
-        {
-            //If the user chose any file type but it can't be determined, show an error and quit.
-            if (detectedFileType == UNKNOWN_FILE_TYPE)
-            {
-                QMessageBox::warning(this, "Graph format not recognised", "Cannot load file. The selected file's format was not recognised as any supported graph type.");
-                return;
-            }
-
-            //If the user chose any file type and it can be determined, then use that type.
-            else
-                selectedFileType = detectedFileType;
-        }
-
-        //If there is a discrepancy between the selected and detected file types, make sure the
-        //user wants to continue.
-        if (selectedFileType != detectedFileType)
-        {
-            QString graphFileTypeString = convertGraphFileTypeToString(selectedFileType);
-            QMessageBox::StandardButton reply;
-            reply = QMessageBox::question(this, graphFileTypeString + " file?",
-                                          "This file does not appear to be a " + graphFileTypeString + " file."
-                                          "\nDo you want to load it as a " + graphFileTypeString + " file anyway?",
-                                          QMessageBox::Yes|QMessageBox::No);
-            if (reply == QMessageBox::No)
-                return;
-        }
-
-        loadGraph2(selectedFileType, fullFileName);
+    if (fullFileName == "") //User did hit cancel
+        return;
+    
+    auto builder = AssemblyGraphBuilder::get(fullFileName);
+    if (!builder) {
+        QMessageBox::warning(this,
+                             "Graph format not recognised",
+                             "Cannot load file. The selected file's format was not recognised as any supported graph type.");
+        return;
     }
-}
 
-
-void MainWindow::loadGraph2(GraphFileType graphFileType, QString fullFileName)
-{
     resetScene();
     cleanUp();
     ui->selectionSearchNodesLineEdit->clear();
 
-    bool customColours = false, customLabels = false;
-
-    try
-    {
-        MyProgressDialog progress(this, "Loading " + convertGraphFileTypeToString(graphFileType) + " file...", false);
+    try {
+        MyProgressDialog progress(this, "Loading " + fullFileName, false);
         progress.setWindowModality(Qt::WindowModal);
         progress.show();
 
-        if (graphFileType == LAST_GRAPH)
-            g_assemblyGraph->buildDeBruijnGraphFromLastGraph(fullFileName);
-        else if (graphFileType == FASTG)
-            g_assemblyGraph->buildDeBruijnGraphFromFastg(fullFileName);
-        else if (graphFileType == GFA)
-        {
-            bool unsupportedCigar = false;
-            QString bandageOptionsError;
-            g_assemblyGraph
-                ->buildDeBruijnGraphFromGfa(fullFileName, &unsupportedCigar, &customLabels, &customColours,
-                                            &bandageOptionsError);
-            if (unsupportedCigar)
-                QMessageBox::warning(this, "Unsupported CIGAR", "This GFA file contains "
-                                     "links with complex CIGAR strings (containing "
-                                     "operators other than M).\n\n"
-                                     "Bandage does not support edge overlaps that are not "
-                                     "perfect, so the behaviour of such edges in this graph "
-                                     "is undefined.");
-            if (bandageOptionsError.length() > 0)
-                QMessageBox::warning(this, "Bad Bandage options", "This GFA file contains Bandage options but they "
-                                     "were not used because of this error:\n\n" + bandageOptionsError);
+        builder->build(*g_assemblyGraph);
 
-        }
-        else if (graphFileType == TRINITY)
-            g_assemblyGraph->buildDeBruijnGraphFromTrinityFasta(fullFileName);
-        else if (graphFileType == ASQG)
-        {
-            int badEdgeCount = g_assemblyGraph->buildDeBruijnGraphFromAsqg(fullFileName);
-            if (badEdgeCount > 0)
-                QMessageBox::warning(this, "Edges not loaded", "Bandage could not load " +
-                                     QString::number(badEdgeCount) + " edges in this file "
-                                     "because they have an abnormal overlap.\n\nBandage can "
-                                     "only handle edges with an exact overlap at the "
-                                     "start/end of node sequences.");
-        }
-        else if (graphFileType == PLAIN_FASTA)
-            g_assemblyGraph->buildDeBruijnGraphFromPlainFasta(fullFileName);
-
+        if (builder->hasComplexOverlaps())
+            QMessageBox::warning(this, "Unsupported CIGAR",
+                                 "This GFA file contains "
+                                 "links with complex CIGAR strings (containing "
+                                 "operators other than M).\n\n"
+                                 "Bandage does not support edge overlaps that are not "
+                                 "perfect, so the behaviour of such edges in this graph "
+                                 "is undefined.");
+        
         setUiState(GRAPH_LOADED);
         setWindowTitle("Bandage - " + fullFileName);
 
@@ -452,6 +386,9 @@ void MainWindow::loadGraph2(GraphFileType graphFileType, QString fullFileName)
         displayGraphDetails();
         g_memory->rememberedPath = QFileInfo(fullFileName).absolutePath();
         g_memory->clearGraphSpecificMemory();
+
+        bool customColours = builder->hasCustomColours(),
+              customLabels = builder->hasCustomLables();
 
         // If the graph has custom colours, automatically switch the colour scheme to custom colours.
         if (customColours) {
@@ -468,10 +405,8 @@ void MainWindow::loadGraph2(GraphFileType graphFileType, QString fullFileName)
 
         setupPathSelectionLineEdit(ui->pathSelectionLineEdit);
         setupPathSelectionLineEdit(ui->pathSelectionLineEdit2);
-    }
-
-    catch (const AssemblyGraphError &err) {
-        QString errorTitle = "Error loading " + convertGraphFileTypeToString(graphFileType);
+    }  catch (const AssemblyGraphError &err) {
+        QString errorTitle = "Error loading graph";
         QString errorMessage = "There was an error when attempting to load\n"
                                + fullFileName + ":\n"
                                + err.what() + "\n\n"
@@ -481,11 +416,8 @@ void MainWindow::loadGraph2(GraphFileType graphFileType, QString fullFileName)
         cleanUp();
         clearGraphDetails();
         setUiState(NO_GRAPH_LOADED);
-    }
-    
-    catch (...)
-    {
-        QString errorTitle = "Error loading " + convertGraphFileTypeToString(graphFileType);
+    } catch (...) {
+        QString errorTitle = "Error loading graph";
         QString errorMessage = "There was an error when attempting to load:\n"
                                + fullFileName + "\n\n"
                                "Please verify that this file has the correct format.";
@@ -496,8 +428,6 @@ void MainWindow::loadGraph2(GraphFileType graphFileType, QString fullFileName)
         setUiState(NO_GRAPH_LOADED);
     }
 }
-
-
 
 void MainWindow::displayGraphDetails()
 {

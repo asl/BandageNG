@@ -28,8 +28,8 @@ set(LIB_SOURCES
         command_line/querypaths.cpp
         command_line/reduce.cpp
         graph/gfa.cpp
+        graph/assemblygraphbuilder.cpp
         graph/assemblygraph.cpp
-        graph/assemblygraphfast.cpp
         graph/annotationsmanager.cpp
         graph/bedloader.cpp
         graph/debruijnedge.cpp

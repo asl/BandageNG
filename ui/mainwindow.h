@@ -78,7 +78,6 @@ private:
     QString getSelectedEdgeListText();
     std::vector<DeBruijnNode *> getNodesFromLineEdit(QLineEdit * lineEdit, bool exactMatch, std::vector<QString> * nodesNotInGraph = 0);
     void setSceneRectangle();
-    void loadGraph2(GraphFileType graphFileType, QString filename);
     void setInfoTexts();
     void setUiState(UiState uiState);
     void selectBasedOnContiguity(ContiguityStatus contiguityStatus);
