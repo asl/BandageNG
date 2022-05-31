@@ -27,6 +27,7 @@ set(LIB_SOURCES
         command_line/load.cpp
         command_line/querypaths.cpp
         command_line/reduce.cpp
+        graph/gfa.cpp
         graph/assemblygraph.cpp
         graph/assemblygraphfast.cpp
         graph/annotationsmanager.cpp
