@@ -2398,8 +2398,8 @@ void MainWindow::removeSelection()
     g_assemblyGraph->removeGraphicsItemEdges(selectedEdges, true, m_scene);
     g_assemblyGraph->removeGraphicsItemNodes(selectedNodes, true, m_scene);
 
-    g_assemblyGraph->deleteEdges(&selectedEdges);
-    g_assemblyGraph->deleteNodes(&selectedNodes);
+    g_assemblyGraph->deleteEdges(selectedEdges);
+    g_assemblyGraph->deleteNodes(selectedNodes);
 
     g_assemblyGraph->determineGraphInfo();
     displayGraphDetails();
@@ -2574,10 +2574,9 @@ void MainWindow::changeNodeDepth()
     ChangeNodeDepthDialog changeNodeDepthDialog(this, &selectedNodes,
                                                 oldDepth);
 
-    if (changeNodeDepthDialog.exec()) //The user clicked OK
-    {
-        g_assemblyGraph->changeNodeDepth(&selectedNodes,
-                                             changeNodeDepthDialog.getNewDepth());
+    if (changeNodeDepthDialog.exec()) { //The user clicked OK
+        g_assemblyGraph->changeNodeDepth(selectedNodes,
+                                         changeNodeDepthDialog.getNewDepth());
         selectionChanged();
         g_assemblyGraph->recalculateAllDepthsRelativeToDrawnMean();
         g_assemblyGraph->recalculateAllNodeWidths();

@@ -1084,7 +1084,7 @@ void BandageTests::graphEdits()
     edgesToRemove.push_back(getEdgeFromNodeNames("6+", "26+"));
     edgesToRemove.push_back(getEdgeFromNodeNames("26+", "23+"));
     edgesToRemove.push_back(getEdgeFromNodeNames("23+", "26_copy+"));
-    g_assemblyGraph->deleteEdges(&edgesToRemove);
+    g_assemblyGraph->deleteEdges(edgesToRemove);
 
     QCOMPARE(g_assemblyGraph->m_deBruijnGraphNodes.size(), 90);
     QCOMPARE(g_assemblyGraph->m_deBruijnGraphEdges.size(), 118);
@@ -1241,7 +1241,7 @@ void BandageTests::mergeNodesOnGfa()
     nodesToDelete.push_back(node277Plus);
     nodesToDelete.push_back(node297Plus);
     nodesToDelete.push_back(node282Plus);
-    g_assemblyGraph->deleteNodes(&nodesToDelete);
+    g_assemblyGraph->deleteNodes(nodesToDelete);
 
     //There should now be six nodes in the graph (plus complements).
     QCOMPARE(12, g_assemblyGraph->m_deBruijnGraphNodes.size());
@@ -1306,7 +1306,7 @@ void BandageTests::changeNodeDepths()
     QCOMPARE(node6Plus->getDepth(), node6Minus->getDepth());
     QCOMPARE(node7Plus->getDepth(), node7Minus->getDepth());
 
-    g_assemblyGraph->changeNodeDepth(&nodes, 0.5);
+    g_assemblyGraph->changeNodeDepth(nodes, 0.5);
 
     //Check to make sure the change worked.
     QCOMPARE(0.5, node6Plus->getDepth());

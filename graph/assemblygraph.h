@@ -148,8 +148,8 @@ public:
                               std::vector<QByteArray> * sequences);
 
     int getDrawnNodeCount() const;
-    void deleteNodes(std::vector<DeBruijnNode *> * nodes);
-    void deleteEdges(std::vector<DeBruijnEdge *> * edges);
+    void deleteNodes(const std::vector<DeBruijnNode *> &nodes);
+    void deleteEdges(const std::vector<DeBruijnEdge *> &edges);
     void duplicateNodePair(DeBruijnNode * node, MyGraphicsScene * scene);
     bool mergeNodes(QList<DeBruijnNode *> nodes, MyGraphicsScene * scene,
                     bool recalulateDepth);
@@ -168,8 +168,8 @@ public:
     bool saveVisibleGraphToGfa(QString filename);
     void changeNodeName(QString oldName, QString newName);
     NodeNameStatus checkNodeNameValidity(QString nodeName);
-    void changeNodeDepth(std::vector<DeBruijnNode *> * nodes,
-                             double newDepth);
+    void changeNodeDepth(const std::vector<DeBruijnNode *> &nodes,
+                         double newDepth);
 
     static QByteArray addNewlinesToSequence(QByteArray sequence, int interval = 70);
     int getDeadEndCount() const;

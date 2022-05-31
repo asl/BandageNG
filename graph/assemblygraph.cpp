@@ -1398,13 +1398,13 @@ int AssemblyGraph::getDrawnNodeCount() const
 }
 
 
-void AssemblyGraph::deleteNodes(std::vector<DeBruijnNode *> * nodes)
+void AssemblyGraph::deleteNodes(const std::vector<DeBruijnNode *> &nodes)
 {
     //Build a list of nodes to delete.
     QList<DeBruijnNode *> nodesToDelete;
-    for (size_t i = 0; i < nodes->size(); ++i)
+    for (size_t i = 0; i < nodes.size(); ++i)
     {
-        DeBruijnNode * node = (*nodes)[i];
+        DeBruijnNode * node = nodes[i];
         DeBruijnNode * rcNode = node->getReverseComplement();
 
         if (!nodesToDelete.contains(node))
@@ -1434,7 +1434,7 @@ void AssemblyGraph::deleteNodes(std::vector<DeBruijnNode *> * nodes)
     }
 
     //Remove the edges from the graph,
-    deleteEdges(&edgesToDelete);
+    deleteEdges(edgesToDelete);
 
     //Remove the nodes from the graph.
     for (int i = 0; i < nodesNamesToDelete.size(); ++i)
@@ -1449,13 +1449,13 @@ void AssemblyGraph::deleteNodes(std::vector<DeBruijnNode *> * nodes)
     }
 }
 
-void AssemblyGraph::deleteEdges(std::vector<DeBruijnEdge *> * edges)
+void AssemblyGraph::deleteEdges(const std::vector<DeBruijnEdge *> &edges)
 {
     //Build a list of edges to delete.
     QList<DeBruijnEdge *> edgesToDelete;
-    for (size_t i = 0; i < edges->size(); ++i)
+    for (size_t i = 0; i < edges.size(); ++i)
     {
-        DeBruijnEdge * edge = (*edges)[i];
+        DeBruijnEdge * edge = edges[i];
         DeBruijnEdge * rcEdge = edge->getReverseComplement();
 
         if (!edgesToDelete.contains(edge))
@@ -1738,7 +1738,7 @@ bool AssemblyGraph::mergeNodes(QList<DeBruijnNode *> nodes, MyGraphicsScene * sc
     std::vector<DeBruijnNode *> nodesToDelete;
     for (auto node : orderedList)
         nodesToDelete.push_back(node);
-    deleteNodes(&nodesToDelete);
+    deleteNodes(nodesToDelete);
 
     return true;
 }
@@ -2281,16 +2281,15 @@ NodeNameStatus AssemblyGraph::checkNodeNameValidity(QString nodeName)
 
 
 
-void AssemblyGraph::changeNodeDepth(std::vector<DeBruijnNode *> * nodes,
-                                        double newDepth)
+void AssemblyGraph::changeNodeDepth(const std::vector<DeBruijnNode *> &nodes,
+                                    double newDepth)
 {
-    if (nodes->size() == 0)
+    if (nodes.size() == 0)
         return;
 
-    for (size_t i = 0; i < nodes->size(); ++i)
-    {
-        (*nodes)[i]->setDepth(newDepth);
-        (*nodes)[i]->getReverseComplement()->setDepth(newDepth);
+    for (size_t i = 0; i < nodes.size(); ++i) {
+        nodes[i]->setDepth(newDepth);
+        nodes[i]->getReverseComplement()->setDepth(newDepth);
     }
 
     //If this graph does not already have a depthTag, give it a depthTag of KC
