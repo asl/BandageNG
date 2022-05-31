@@ -450,8 +450,8 @@ std::string AssemblyGraph::getOppositeNodeName(std::string nodeName) const {
             nodeName.substr(0, nodeName.size() - 1) + '-');
 }
 
-std::optional<gfa::tag> getTag(const char *name,
-                               const std::vector<gfa::tag> &tags) {
+static std::optional<gfa::tag> getTag(const char *name,
+                                      const std::vector<gfa::tag> &tags) {
     auto res = std::find_if(tags.begin(), tags.end(),
                             [=](const gfa::tag &tag) {
                                 return (tag.name[0] == name[0] &&
