@@ -110,7 +110,6 @@ public:
     void determineGraphInfo();
     void clearGraphInfo();
     void buildDeBruijnGraphFromLastGraph(QString fullFileName);
-    void tryUpdateNodeDepthsForCanuGraphs();
     void buildDeBruijnGraphFromGfa(const QString& fullFileName, bool *unsupportedCigar, bool *customLabels,
                                    bool *customColours, QString *bandageOptionsError);
     void buildDeBruijnGraphFromFastg(QString fullFileName);
@@ -253,8 +252,6 @@ private:
     QString cleanNodeName(QString name);
     double findDepthAtIndex(QList<DeBruijnNode *> * nodeList, long long targetIndex) const;
     bool allNodesStartWith(QString start) const;
-    std::string_view simplifyCanuNodeName(std::string_view old) const;
-    QString simplifyCanuNodeName(QString old) const;
 
 signals:
     void setMergeTotalCount(int totalCount);

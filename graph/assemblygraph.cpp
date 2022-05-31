@@ -538,63 +538,6 @@ QString AssemblyGraph::convertNormalNumberStringToBandageNodeName(QString number
 }
 
 
-void AssemblyGraph::tryUpdateNodeDepthsForCanuGraphs() {
-    // For Canu graphs, if there is a file called *.layout.readToTig, then we
-    // can use that to get better read depth values.
-    QFileInfo gfaFileInfo(m_filename);
-    QString baseName = gfaFileInfo.completeBaseName();
-    QString readToTigFilename = gfaFileInfo.dir().filePath(baseName + ".layout.readToTig");
-    QFileInfo readToTigFileInfo(readToTigFilename);
-    if (readToTigFileInfo.exists()) {
-        QFile readToTigFile(readToTigFilename);
-        if (readToTigFile.open(QIODevice::ReadOnly)) {
-            // Keep track of how many bases are put into each node.
-            QMap<QString, long long> baseCounts;
-            for (auto &entry : m_deBruijnGraphNodes) {
-                DeBruijnNode * node = entry;
-                if (node->isPositiveNode())
-                    baseCounts[node->getNameWithoutSign()] = 0;
-            }
-
-            QTextStream in(&readToTigFile);
-            while (!in.atEnd()) {
-                QApplication::processEvents();
-                QString line = in.readLine();
-                QStringList lineParts = line.split(QRegularExpression("\t"));
-                if (lineParts.length() >= 5) {
-                    bool conversionOkay;
-                    long long readStart = lineParts[3].toLongLong(&conversionOkay);
-                    if (!conversionOkay)
-                        continue;
-                    long long readEnd = lineParts[4].toLongLong(&conversionOkay);
-                    if (!conversionOkay)
-                        continue;
-                    long long readLength = (readEnd < readStart) ? (readStart - readEnd) : (readEnd - readStart);
-                    QString nodeName = lineParts[1];
-                    if (baseCounts.contains(nodeName))
-                        baseCounts[nodeName] += readLength;
-                }
-            }
-
-            // A node's depth is its total bases divided by its length.
-            for (auto &entry : m_deBruijnGraphNodes) {
-                DeBruijnNode * node = entry;
-                if (node->isPositiveNode()) {
-                    QString nodeName = node->getNameWithoutSign();
-                    double depth;
-                    if (node->getLength() > 0)
-                        depth = double(baseCounts[nodeName]) / double(node->getLength());
-                    else
-                        depth = 1.0;
-                    node->setDepth(depth);
-                    node->getReverseComplement()->setDepth(depth);
-                }
-            }
-        }
-    }
-}
-
-
 bool AssemblyGraph::cigarContainsOnlyM(QString cigar)
 {
     QRegularExpression rx("\\d+M");
@@ -3511,7 +3454,6 @@ bool AssemblyGraph::attemptToLoadSequencesFromFasta()
     for (size_t i = 0; i < names.size(); ++i)
     {
         QString name = names[i];
-        name = simplifyCanuNodeName(name);
         name = name.split(QRegularExpression("\\s+"))[0];
         if (m_deBruijnGraphNodes.count((name + "+").toStdString()))
         {
@@ -3539,30 +3481,6 @@ bool AssemblyGraph::allNodesStartWith(QString start) const
             return false;
     }
     return true;
-}
-
-
-QString AssemblyGraph::simplifyCanuNodeName(QString oldName) const
-{
-    QString newName;
-
-    // Remove "tig" from front.
-    if (!oldName.startsWith("tig"))
-        return oldName;
-    newName = oldName.remove(0, 3);
-    if (newName.isEmpty())
-        return oldName;
-
-    // Remove +/- from end.
-    QChar sign = oldName[oldName.length()-1];
-    newName.chop(1);
-    if (newName.isEmpty())
-        return oldName;
-
-    // Remove leading zeros.
-    while (newName.length() > 1 && newName[0] == '0')
-        newName.remove(0, 1);
-    return newName + sign;
 }
 
 long long AssemblyGraph::getTotalLengthOrphanedNodes() const {

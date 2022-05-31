@@ -444,22 +444,6 @@ struct record {
 };
 
 
-std::string_view AssemblyGraph::simplifyCanuNodeName(std::string_view old) const {
-    if (old.size() <= 3)
-        return old;
-
-    // Remove "tig" from front.
-    if (old.compare(0, 3, "tig") != 0)
-        return old;
-
-    old.remove_prefix(3);
-
-    while (old.size() > 1 && old.front() == '0')
-        old.remove_prefix(1);
-
-    return old;
-}
-
 std::string AssemblyGraph::getOppositeNodeName(std::string nodeName) const {
     return (nodeName.back() == '-' ?
             nodeName.substr(0, nodeName.size() - 1) + '+' :
@@ -494,9 +478,8 @@ std::optional<T> getTag(const char *name,
 }
 
 
-ssize_t gzgetdelim(char **buf, size_t *bufsiz, int delimiter, gzFile fp) {
+static ssize_t gzgetdelim(char **buf, size_t *bufsiz, int delimiter, gzFile fp) {
     char *ptr, *eptr;
-
 
     if (*buf == NULL || *bufsiz == 0) {
         *bufsiz = BUFSIZ;
@@ -537,7 +520,7 @@ ssize_t gzgetdelim(char **buf, size_t *bufsiz, int delimiter, gzFile fp) {
 }
 
 
-ssize_t gzgetline(char **buf, size_t *bufsiz, gzFile fp) {
+static ssize_t gzgetline(char **buf, size_t *bufsiz, gzFile fp) {
     return gzgetdelim(buf, bufsiz, '\n', fp);
 }
 
@@ -565,6 +548,7 @@ void AssemblyGraph::buildDeBruijnGraphFromGfa(const QString &fullFileName,
             continue; // skip empty lines
 
         if (++i % 1000 == 0) QApplication::processEvents();
+
         auto result = lexy::parse<grammar::record>(lexy::string_input(line, read - 1), lexy_ext::report_error);
         if (!result.has_value())
             continue;
@@ -573,8 +557,7 @@ void AssemblyGraph::buildDeBruijnGraphFromGfa(const QString &fullFileName,
             [&](const auto &record) {
                 using T = std::decay_t<decltype(record)>;
                 if constexpr (std::is_same_v<T, gfa::segment>) {
-                    // Canu nodes start with "tig" which we can remove for simplicity.
-                    std::string nodeName{simplifyCanuNodeName(record.name)};
+                    std::string nodeName{record.name};
                     const auto &seq = record.seq;
 
                     // We check to see if the node ended in a "+" or "-".
@@ -641,9 +624,9 @@ void AssemblyGraph::buildDeBruijnGraphFromGfa(const QString &fullFileName,
                     m_deBruijnGraphNodes[nodeName] = nodePtr;
                     m_deBruijnGraphNodes[oppositeNodeName] = oppositeNodePtr;
                 } else if constexpr (std::is_same_v<T, gfa::link>) {
-                    std::string fromNode(simplifyCanuNodeName(record.lhs));
+                    std::string fromNode{record.lhs};
                     fromNode.push_back(record.lhs_revcomp ? '-' : '+');
-                    std::string toNode(simplifyCanuNodeName(record.rhs));
+                    std::string toNode{record.rhs};
                     toNode.push_back(record.rhs_revcomp ? '-' : '+');
 
                     auto fromNodePtr = m_deBruijnGraphNodes.at(fromNode);
@@ -689,14 +672,12 @@ void AssemblyGraph::buildDeBruijnGraphFromGfa(const QString &fullFileName,
                 } else if constexpr (std::is_same_v<T, gfa::path>) {
                     QList<DeBruijnNode *> pathNodes;
                     for (const auto &node : record.segments)
-                        pathNodes.push_back(m_deBruijnGraphNodes.at(simplifyCanuNodeName(node)));
+                        pathNodes.push_back(m_deBruijnGraphNodes.at(node));
                     m_deBruijnGraphPaths[record.name] = new Path(Path::makeFromOrderedNodes(pathNodes, false));
                 }
             },
             result.value());
     }
-
-    tryUpdateNodeDepthsForCanuGraphs();
 
     m_sequencesLoadedFromFasta = NOT_TRIED;
 
