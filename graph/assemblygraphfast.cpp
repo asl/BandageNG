@@ -629,8 +629,23 @@ void AssemblyGraph::buildDeBruijnGraphFromGfa(const QString &fullFileName,
                     std::string toNode{record.rhs};
                     toNode.push_back(record.rhs_revcomp ? '-' : '+');
 
-                    auto fromNodePtr = m_deBruijnGraphNodes.at(fromNode);
-                    auto toNodePtr = m_deBruijnGraphNodes.at(toNode);
+                    DeBruijnNode *fromNodePtr = nullptr;
+                    DeBruijnNode *toNodePtr = nullptr;
+
+                    auto fromNodeIt = m_deBruijnGraphNodes.find(fromNode);
+                    if (fromNodeIt== m_deBruijnGraphNodes.end())
+                        throw AssemblyGraphError("Unknown segment name " + fromNode + " at link: " +
+                                                 fromNode + " -- " + toNode);
+                    else
+                        fromNodePtr = *fromNodeIt;
+
+                    auto toNodeIt = m_deBruijnGraphNodes.find(toNode);
+                    if (toNodeIt== m_deBruijnGraphNodes.end())
+                        throw AssemblyGraphError("Unknown segment name " + toNode + " at link: " +
+                                                 fromNode + " -- " + toNode);
+                    else
+                        toNodePtr = *toNodeIt;
+
                     // Ignore dups, hifiasm seems to create them
                     if (m_deBruijnGraphEdges.count({fromNodePtr, toNodePtr}))
                         return;
