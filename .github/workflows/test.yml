@@ -22,7 +22,10 @@ jobs:
         experimental: [false]
 
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout repository and submodules
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
 
       - name: Cache Qt
         id: cache-qt
