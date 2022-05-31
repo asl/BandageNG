@@ -380,6 +380,7 @@ class GFAAssemblyGraphBuilder : public AssemblyGraphBuilder {
         graph.m_deBruijnGraphEdges[{fromNodePtr, toNodePtr}] = edgePtr;
         fromNodePtr->addEdge(edgePtr);
         toNodePtr->addEdge(edgePtr);
+
         if (isOwnPair) {
             edgePtr->setReverseComplement(edgePtr);
         } else {
@@ -395,6 +396,12 @@ class GFAAssemblyGraphBuilder : public AssemblyGraphBuilder {
             graph.m_deBruijnGraphEdges[{rcToNodePtr, rcFromNodePtr}] = rcEdgePtr;
         }
 
+        auto cb = getTag<std::string>("CB", record.tags);
+        auto c2 = getTag<std::string>("C2", record.tags);
+        hasCustomColours_ |= cb || c2;
+        if (cb) graph.setCustomColour(edgePtr, cb->c_str());
+        if (c2 && rcEdgePtr) graph.setCustomColour(rcEdgePtr, c2->c_str());
+
         bool tagsInserted = false;
         for (const auto& tag : record.tags) {
             if (isStandardTag(tag.name))
@@ -409,7 +416,6 @@ class GFAAssemblyGraphBuilder : public AssemblyGraphBuilder {
             if (rcEdgePtr)
                 graph.m_edgeTags[rcEdgePtr].shrink_to_fit();
         }
-
     }
 
     void handleGapLink(const gfa::gaplink &record,
@@ -440,6 +446,7 @@ class GFAAssemblyGraphBuilder : public AssemblyGraphBuilder {
             toNodePtr = *toNodeIt;
 
         auto edgePtr = new DeBruijnEdge(fromNodePtr, toNodePtr);
+        DeBruijnEdge *rcEdgePtr = nullptr;
 
         edgePtr->setOverlap(0);
         edgePtr->setOverlapType(NO_OVERLAP);
@@ -450,7 +457,6 @@ class GFAAssemblyGraphBuilder : public AssemblyGraphBuilder {
         fromNodePtr->addEdge(edgePtr);
         toNodePtr->addEdge(edgePtr);
 
-        DeBruijnEdge *rcEdgePtr = nullptr;
         if (isOwnPair) {
             edgePtr->setReverseComplement(edgePtr);
         } else {
@@ -476,6 +482,21 @@ class GFAAssemblyGraphBuilder : public AssemblyGraphBuilder {
         hasCustomColours_ |= cb || c2;
         if (cb) graph.setCustomColour(edgePtr, cb->c_str());
         if (c2 && rcEdgePtr) graph.setCustomColour(rcEdgePtr, c2->c_str());
+
+        bool tagsInserted = false;
+        for (const auto& tag : record.tags) {
+            if (isStandardTag(tag.name))
+                continue;
+            graph.m_edgeTags[edgePtr].push_back(tag);
+            if (rcEdgePtr)
+                graph.m_edgeTags[rcEdgePtr].push_back(tag);
+            tagsInserted = true;
+        }
+        if (tagsInserted) {
+            graph.m_edgeTags[edgePtr].shrink_to_fit();
+            if (rcEdgePtr)
+                graph.m_edgeTags[rcEdgePtr].shrink_to_fit();
+        }
     }
 
     void handlePath(const gfa::path &record,
