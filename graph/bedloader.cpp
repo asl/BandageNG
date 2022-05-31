@@ -1,5 +1,10 @@
 #include "bedloader.hpp"
 
+#include <sstream>
+
+#include <fast-cpp-csv-parser/csv.h>
+
+
 namespace bed {
 
 std::vector<int64_t> parseIntArray(const std::string &intArrayString) {

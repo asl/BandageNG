@@ -5,7 +5,6 @@
 #include <vector>
 #include <filesystem>
 
-#include <fast-cpp-csv-parser/csv.h>
 #include <QColor>
 
 namespace bed {
