@@ -234,8 +234,8 @@ void SettingsDialog::loadOrSaveSettingsToOrFromWidgets(bool setWidgets, Settings
         ui->antialiasingOffRadioButton->setChecked(!settings->antialiasing);
         ui->antialiasingOnRadioButton->setChecked(settings->antialiasing);
         ui->antialiasingOffRadioButton->setChecked(!settings->antialiasing);
-        ui->singleNodeArrowHeadsOnRadioButton ->setChecked(settings->arrowheadsInSingleMode);
-        ui->singleNodeArrowHeadsOffRadioButton ->setChecked(!settings->arrowheadsInSingleMode);
+        ui->singleNodeArrowHeadsOnRadioButton->setChecked(settings->arrowheadsInSingleMode);
+        ui->singleNodeArrowHeadsOffRadioButton->setChecked(!settings->arrowheadsInSingleMode);
         ui->depthValueAutoRadioButton->setChecked(settings->autoDepthValue);
         ui->depthValueManualRadioButton->setChecked(!settings->autoDepthValue);
         nodeLengthPerMegabaseManualChanged();
