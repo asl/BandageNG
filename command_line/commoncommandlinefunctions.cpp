@@ -79,7 +79,7 @@ void getSettingsUsage(QStringList * text)
     *text << "--outline <float>   Node outline thickness " + getRangeAndDefault(g_settings->outlineThickness);
     *text << "--selcol <col>      Colour for selections " + getDefaultColour(g_settings->selectionColour);
     *text << "--noaa              Disable antialiasing (default: antialiasing on)";
-    *text << "--nosinglearr       Show node arrowheads in single mode (default: node arrowheads are shown)";
+    *text << "--nosinglearr       Hide node arrowheads in single mode (default: node arrowheads are shown)";
     *text << "";
     *text << "Text appearance";
     *text << dashes;
