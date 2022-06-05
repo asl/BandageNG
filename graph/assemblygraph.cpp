@@ -93,6 +93,12 @@ void AssemblyGraph::cleanUp()
     }
     m_deBruijnGraphEdges.clear();
 
+    m_nodeTags.clear();
+    m_edgeTags.clear();
+    m_nodeColors.clear();
+    m_nodeLabels.clear();
+    m_nodeCSVData.clear();
+    
     m_contiguitySearchDone = false;
 
     clearGraphInfo();
