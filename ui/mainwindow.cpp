@@ -1,6 +1,4 @@
-﻿//Copyright 2017 Ryan Wick
-
-//This file is part of Bandage
+﻿//This file is part of Bandage
 
 //Bandage is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -36,6 +34,7 @@
 #include <QTextStream>
 #include <QScrollBar>
 #include "settingsdialog.h"
+#include <sstream>
 #include <stdexcept>
 #include <stdlib.h>
 #include <time.h>
@@ -350,7 +349,7 @@ void MainWindow::loadGraph(QString fullFileName)
 
     if (fullFileName == "") //User did hit cancel
         return;
-    
+
     auto builder = AssemblyGraphBuilder::get(fullFileName);
     if (!builder) {
         QMessageBox::warning(this,
@@ -378,7 +377,7 @@ void MainWindow::loadGraph(QString fullFileName)
                                  "Bandage does not support edge overlaps that are not "
                                  "perfect, so the behaviour of such edges in this graph "
                                  "is undefined.");
-        
+
         setUiState(GRAPH_LOADED);
         setWindowTitle("BandageNG - " + fullFileName);
 
@@ -465,20 +464,28 @@ void MainWindow::selectionChanged()
         QString selectedNodeListText;
         QString selectedNodeLengthText;
         QString selectedNodeDepthText;
+        QString selectedNodeTagText;
 
-        getSelectedNodeInfo(selectedNodeCount, selectedNodeCountText, selectedNodeListText, selectedNodeLengthText, selectedNodeDepthText);
+        getSelectedNodeInfo(selectedNodeCount, selectedNodeCountText, selectedNodeListText, selectedNodeLengthText,
+                            selectedNodeDepthText, selectedNodeTagText);
 
         if (selectedNodeCount == 1)
         {
             ui->selectedNodesTitleLabel->setText("Selected node");
             ui->selectedNodesLengthLabel->setText("Length: " + selectedNodeLengthText);
             ui->selectedNodesDepthLabel->setText("Depth: " + selectedNodeDepthText);
+            if (selectedNodeTagText.length()) {
+                ui->selectedNodesTagLabel->setVisible(true);
+                ui->selectedNodesTagLabel->setText("Tags: " + selectedNodeTagText);
+            } else
+                ui->selectedNodesTagLabel->setVisible(false);
         }
         else
         {
             ui->selectedNodesTitleLabel->setText("Selected nodes (" + selectedNodeCountText + ")");
             ui->selectedNodesLengthLabel->setText("Total length: " + selectedNodeLengthText);
             ui->selectedNodesDepthLabel->setText("Mean depth: " + selectedNodeDepthText);
+            ui->selectedNodesTagLabel->setVisible(false);
         }
 
         ui->selectedNodesTextEdit->setPlainText(selectedNodeListText);
@@ -504,7 +511,9 @@ void MainWindow::selectionChanged()
 }
 
 
-void MainWindow::getSelectedNodeInfo(int & selectedNodeCount, QString & selectedNodeCountText, QString & selectedNodeListText, QString & selectedNodeLengthText, QString & selectedNodeDepthText)
+void MainWindow::getSelectedNodeInfo(int & selectedNodeCount, QString & selectedNodeCountText,
+                                     QString & selectedNodeListText, QString & selectedNodeLengthText, QString & selectedNodeDepthText,
+                                     QString &selectNodeTagsText)
 {
     std::vector<DeBruijnNode *> selectedNodes = m_scene->getSelectedNodes();
 
@@ -530,6 +539,16 @@ void MainWindow::getSelectedNodeInfo(int & selectedNodeCount, QString & selected
 
     selectedNodeLengthText = formatIntForDisplay(totalLength) + " bp";
     selectedNodeDepthText = formatDepthForDisplay(g_assemblyGraph->getMeanDepth(selectedNodes));
+
+    if (selectedNodeCount == 1) {
+        auto tags = g_assemblyGraph->m_nodeTags.find(selectedNodes.front());
+        if (tags != g_assemblyGraph->m_nodeTags.end()) {
+            std::stringstream txt;
+            for (const auto &tag : tags->second)
+                txt << tag << ' ';
+            selectNodeTagsText = txt.str().c_str();
+        }
+    }
 }
 
 
@@ -551,6 +570,18 @@ QString MainWindow::getSelectedEdgeListText()
         if (i != selectedEdges.size() - 1)
             edgeText += ", ";
     }
+
+    if (selectedEdges.size() == 1) {
+        auto tags = g_assemblyGraph->m_edgeTags.find(selectedEdges.front());
+        if (tags != g_assemblyGraph->m_edgeTags.end()) {
+            std::stringstream txt;
+            for (const auto &tag : tags->second)
+                txt << tag << ' ';
+            edgeText += ", tags: ";
+            edgeText += txt.str().c_str();
+        }
+    }
+
 
     return edgeText;
 }
@@ -2253,6 +2284,7 @@ void MainWindow::setSelectedNodesWidgetsVisibility(bool visible)
     ui->selectedNodesModificationWidget->setVisible(visible);
     ui->selectedNodesLengthLabel->setVisible(visible);
     ui->selectedNodesDepthLabel->setVisible(visible);
+    ui->selectedNodesTagLabel->setVisible(visible);
     ui->selectedNodesSpacerWidget->setVisible(visible);
 }
 

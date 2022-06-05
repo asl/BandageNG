@@ -29,6 +29,12 @@
 
 
 namespace gfa {
+
+std::ostream &operator<<(std::ostream &s, const tag &t) {
+    s << t.name[0] << t.name[1] << ':';
+    return std::visit([&](const auto& value) -> std::ostream& { return s << value; }, t.val);
+}
+
 namespace grammar {
 namespace dsl = lexy::dsl;
 

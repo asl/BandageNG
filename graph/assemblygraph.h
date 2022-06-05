@@ -20,6 +20,7 @@
 
 #pragma once
 
+#include "gfa.hpp"
 #include "path.h"
 #include "annotation.hpp"
 
@@ -35,7 +36,6 @@
 #include <QString>
 #include <QPair>
 #include <QObject>
-#include <unordered_map>
 #include <vector>
 
 class DeBruijnNode;
@@ -73,6 +73,9 @@ public:
     phmap::parallel_flat_hash_map<const DeBruijnNode*, QString> m_nodeLabels;
     // CSV data
     phmap::parallel_flat_hash_map<const DeBruijnNode*, QStringList> m_nodeCSVData;
+    // Tags
+    phmap::parallel_flat_hash_map<const DeBruijnNode*, std::vector<gfa::tag>> m_nodeTags;
+    phmap::parallel_flat_hash_map<const DeBruijnEdge*, std::vector<gfa::tag>> m_edgeTags;
 
     tsl::htrie_map<char, Path*> m_deBruijnGraphPaths;
     

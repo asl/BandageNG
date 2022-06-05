@@ -74,7 +74,9 @@ private:
     void zoomToFitRect(QRectF rect);
     void zoomToFitScene();
     void setZoomSpinBoxStep();
-    void getSelectedNodeInfo(int & selectedNodeCount, QString & selectedNodeCountText, QString & selectedNodeListText, QString & selectedNodeLengthText, QString &selectedNodeDepthText);
+    void getSelectedNodeInfo(int & selectedNodeCount, QString & selectedNodeCountText,
+                             QString & selectedNodeListText, QString & selectedNodeLengthText, QString &selectedNodeDepthText,
+                             QString &selectNodeTagText);
     QString getSelectedEdgeListText();
     std::vector<DeBruijnNode *> getNodesFromLineEdit(QLineEdit * lineEdit, bool exactMatch, std::vector<QString> * nodesNotInGraph = 0);
     void setSceneRectangle();

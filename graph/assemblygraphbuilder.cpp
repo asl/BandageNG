@@ -175,6 +175,28 @@ static bool attemptToLoadSequencesFromFasta(AssemblyGraph &graph) {
 
 class GFAAssemblyGraphBuilder : public AssemblyGraphBuilder {
   private:
+    static constexpr unsigned makeTag(const char name[2]) {
+        return (unsigned)name[0] << 8 | name[1];
+    }
+
+    bool isStandardTag(const char name[2]) {
+        switch (makeTag(name)) {
+            case makeTag("DP"):
+            case makeTag("LN"):
+            case makeTag("KC"):
+            case makeTag("FC"):
+            case makeTag("RC"):
+            case makeTag("LB"):
+            case makeTag("L2"):
+            case makeTag("CB"):
+            case makeTag("C2"):
+                return true;
+        }
+
+        return false;
+    }
+
+
     DeBruijnNode *maybeAddSegment(const std::string &nodeName,
                                   double nodeDepth, Sequence sequence,
                                   AssemblyGraph &graph) {
@@ -276,6 +298,18 @@ class GFAAssemblyGraphBuilder : public AssemblyGraphBuilder {
         if (cb) graph.setCustomColour(nodePtr, cb->c_str());
         if (c2) graph.setCustomColour(oppositeNodePtr, c2->c_str());
 
+        bool tagsInserted = false;
+        for (const auto& tag : record.tags) {
+            if (isStandardTag(tag.name))
+                continue;
+            graph.m_nodeTags[nodePtr].push_back(tag);
+            graph.m_nodeTags[oppositeNodePtr].push_back(tag);
+        }
+        if (tagsInserted) {
+            graph.m_nodeTags[nodePtr].shrink_to_fit();
+            graph.m_nodeTags[oppositeNodePtr].shrink_to_fit();
+        }
+
         return sequencesAreMissing;
     }
 
@@ -309,7 +343,8 @@ class GFAAssemblyGraphBuilder : public AssemblyGraphBuilder {
         if (graph.m_deBruijnGraphEdges.count({fromNodePtr, toNodePtr}))
             return;
 
-        auto edgePtr = new DeBruijnEdge(fromNodePtr, toNodePtr);
+        DeBruijnEdge *edgePtr = new DeBruijnEdge(fromNodePtr, toNodePtr);
+        DeBruijnEdge *rcEdgePtr = nullptr;
         const auto &overlap = record.overlap;
         size_t overlapLength = 0;
         if (overlap.size() > 1 ||
@@ -332,7 +367,7 @@ class GFAAssemblyGraphBuilder : public AssemblyGraphBuilder {
         } else {
             auto *rcFromNodePtr = fromNodePtr->getReverseComplement();
             auto *rcToNodePtr = toNodePtr->getReverseComplement();
-            auto rcEdgePtr = new DeBruijnEdge(rcToNodePtr, rcFromNodePtr);
+            rcEdgePtr = new DeBruijnEdge(rcToNodePtr, rcFromNodePtr);
             rcEdgePtr->setOverlap(edgePtr->getOverlap());
             rcEdgePtr->setOverlapType(edgePtr->getOverlapType());
             rcFromNodePtr->addEdge(rcEdgePtr);
@@ -341,6 +376,21 @@ class GFAAssemblyGraphBuilder : public AssemblyGraphBuilder {
             rcEdgePtr->setReverseComplement(edgePtr);
             graph.m_deBruijnGraphEdges[{rcToNodePtr, rcFromNodePtr}] = rcEdgePtr;
         }
+
+        bool tagsInserted = false;
+        for (const auto& tag : record.tags) {
+            if (isStandardTag(tag.name))
+                continue;
+            graph.m_edgeTags[edgePtr].push_back(tag);
+            if (rcEdgePtr)
+                graph.m_edgeTags[rcEdgePtr].push_back(tag);
+        }
+        if (tagsInserted) {
+            graph.m_edgeTags[edgePtr].shrink_to_fit();
+            if (rcEdgePtr)
+                graph.m_edgeTags[rcEdgePtr].shrink_to_fit();
+        }
+
     }
 
     void handlePath(const gfa::path &record,

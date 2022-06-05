@@ -22,6 +22,7 @@
 #include <string>
 #include <variant>
 #include <vector>
+#include <ostream>
 
 #include <cstdio>
 #include <cstdlib>
@@ -38,6 +39,8 @@ struct tag {
     tag(std::string_view n, std::string_view t, T v)
             : name{n[0], n[1]}, type(t.front()), val(std::move(v))
     {}
+
+    friend std::ostream &operator<<(std::ostream &s, const tag &t);
 
     void print() const {
         std::fprintf(stdout, "%c%c", name[0], name[1]);
@@ -221,4 +224,3 @@ std::optional<T> getTag(const char *name,
 
 std::optional<gfa::record> parse_record(const char* line, size_t len);
 } // namespace gfa
-
