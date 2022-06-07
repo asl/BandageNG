@@ -74,9 +74,7 @@ QString RunBlastSearchWorker::runOneBlastSearch(SequenceType sequenceType, bool 
                                  (sequenceType == NUCLEOTIDE ? "nucl_queries.fasta" : "prot_queries.fasta"))
                  << "-db" << (g_blastSearch->m_tempDirectory + "all_nodes.fasta")
                  << "-outfmt" << "6";
-
-    if (m_parameters.size())
-        blastOptions << m_parameters;
+    blastOptions << m_parameters.split(" ", Qt::SkipEmptyParts);
     
     g_blastSearch->m_blast = new QProcess();
     g_blastSearch->m_blast->start(sequenceType == NUCLEOTIDE ? m_blastnCommand : m_tblastnCommand,
