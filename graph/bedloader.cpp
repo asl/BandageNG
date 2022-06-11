@@ -17,10 +17,11 @@
 
 #include "bedloader.hpp"
 
+#include <exception>
+#include <ostream>
 #include <sstream>
 
-#include <fast-cpp-csv-parser/csv.h>
-
+#include <csv/csv.hpp>
 
 namespace bed {
 
@@ -37,46 +38,91 @@ std::vector<int64_t> parseIntArray(const std::string &intArrayString) {
     return res;
 }
 
-/* TODO: 1) add assertions
- *       2) support custom fields ?
- *       3) make better error handling
- */
 std::vector<Line> load(const std::filesystem::path &path) {
-    io::CSVReader<12,
-                  io::trim_chars<' '>,
-                  io::no_quote_escape<'\t'>,
-                  io::throw_on_overflow,
-                  io::single_and_empty_line_comment<'#'>> csvReader(path);
+    csv::CSVFormat format;
+    format.delimiter('\t')
+          .quote('"')
+          .no_header();  // Parse TSVs without a header row
+    format.column_names({
+            "chrom", "chromStart", "chromEnd",
+            "name", "score", "strand",
+            "thickStart", "thinkEnd",
+            "itemRgb", "blockCount",
+            "blockSizes", "blockStarts"
+        });
+    csv::CSVReader csvReader(path.native(), format);
+
+    csv::CSVRow row;
     std::vector<Line> res;
-    Line bedLine;
-    char strandChar = '.';
-    std::string itemRgbString;
-    int64_t blockCount = 0;
-    std::string blockSizesString;
-    std::string blockStartsString;
-    while (csvReader.read_row(bedLine.chrom,
-                              bedLine.chromStart,
-                              bedLine.chromEnd,
-                              bedLine.name,
-                              bedLine.score,
-                              strandChar,
-                              bedLine.thickStart,
-                              bedLine.thickEnd,
-                              itemRgbString,
-                              blockCount,
-                              blockSizesString,
-                              blockStartsString)) {
-        bedLine.strand = Strand{strandChar};
+    while (csvReader.read_row(row)) {
+        // At least 3 columns are mandatory
+        if (row.size() < 3)
+            throw std::logic_error("Mandatory columns were not found");
+
+        Line bedLine;
+        std::string itemRgbString = "0";
+        int64_t blockCount = 0;
+        std::string blockSizesString;
+        std::string blockStartsString;
+        for (size_t i = 0; i < row.size(); ++i) {
+            auto cell = row[i];
+            switch (i) {
+            case 0:
+                bedLine.chrom = cell.get();
+                break;
+            case 1:
+                bedLine.chromStart = cell.get<int64_t>();
+                break;
+            case 2:
+                bedLine.chromEnd = cell.get<int64_t>();
+                break;
+            case 3:
+                bedLine.name = cell.get();
+                break;
+            case 4:
+                bedLine.score = cell.is_int() ? cell.get<int>() : 0;
+                break;
+            case 5:
+                bedLine.strand = Strand{cell.get()[0]};
+                break;
+            case 6:
+                bedLine.thickStart = cell.get<int64_t>();
+                break;
+            case 7:
+                bedLine.thickEnd = cell.get<int64_t>();
+                break;
+            case 8:
+                itemRgbString = cell.get();
+                break;
+            case 9:
+                blockCount = cell.get<int64_t>();
+                break;
+            case 10:
+                blockSizesString = cell.get();
+                break;
+            case 11:
+                blockStartsString = cell.get();
+                break;
+            }
+        }
+
         if (bedLine.thickStart == -1 || bedLine.thickEnd == -1) {
             bedLine.thickStart = bedLine.chromStart;
             bedLine.thickEnd = bedLine.chromEnd;
         }
-        if (itemRgbString != "0") {
-            auto rgbArray = parseIntArray(itemRgbString);
+
+        {
+            std::vector<int64_t> rgbArray;
+            if (itemRgbString != "0") {
+                rgbArray = parseIntArray(itemRgbString);
+            } else {
+                rgbArray = { rand() & 0xFF, rand() & 0xFF, rand() & 0xFF };
+            }
             bedLine.itemRgb.r = rgbArray[0];
             bedLine.itemRgb.g = rgbArray[1];
             bedLine.itemRgb.b = rgbArray[2];
         }
+
         if (blockCount != 0) {
             auto blockSizes = parseIntArray(blockSizesString);
             auto blockStarts = parseIntArray(blockStartsString);
@@ -88,6 +134,7 @@ std::vector<Line> load(const std::filesystem::path &path) {
         }
         res.emplace_back(bedLine);
     }
+
     return res;
 }
 
