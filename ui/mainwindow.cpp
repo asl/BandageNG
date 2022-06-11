@@ -129,6 +129,7 @@ MainWindow::MainWindow(QString fileToLoadOnStartup, bool drawGraphAfterLoad) :
 
     ui->bedButton->setContent(ui->bedWidget);
     ui->annotationsButton->setContent(ui->annotationsListWidget);
+    ui->blastDetailsButton->setContent(ui->blastDetailsWidget);
     
     //If this is a Mac, change the 'Delete' shortcuts to 'Backspace' instead.
 #ifdef Q_OS_MAC

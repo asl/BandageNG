@@ -3,6 +3,7 @@
 #include <QParallelAnimationGroup>
 #include <QApplication>
 #include <QPropertyAnimation>
+#include <QLayout>
 
 #pragma once
 
@@ -26,11 +27,12 @@ public:
   void setContent(QWidget *content) {
     assert(content != nullptr);
     content_ = content;
+
     auto animation_ = new QPropertyAnimation(content_, "maximumHeight"); // QObject with auto delete
     animation_->setStartValue(0);
     animation_->setEasingCurve(QEasingCurve::InOutQuad);
     animation_->setDuration(300);
-    animation_->setEndValue(content->geometry().height() + 10);
+    animation_->setEndValue(content->sizeHint().height() + 10);
     animator_.addAnimation(animation_);
     if (!isChecked()) {
       content->setMaximumHeight(0);
