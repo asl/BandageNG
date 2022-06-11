@@ -127,6 +127,9 @@ MainWindow::MainWindow(QString fileToLoadOnStartup, bool drawGraphAfterLoad) :
     graphScopeChanged();
     switchColourScheme();
 
+    ui->bedButton->setContent(ui->bedWidget);
+    ui->annotationsButton->setContent(ui->annotationsListWidget);
+    
     //If this is a Mac, change the 'Delete' shortcuts to 'Backspace' instead.
 #ifdef Q_OS_MAC
     ui->actionHide_selected_nodes->setShortcut(Qt::Key_Backspace);
