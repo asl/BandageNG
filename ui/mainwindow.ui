@@ -58,9 +58,9 @@
        <property name="geometry">
         <rect>
          <x>0</x>
-         <y>-644</y>
+         <y>-322</y>
          <width>283</width>
-         <height>1487</height>
+         <height>1486</height>
         </rect>
        </property>
        <property name="sizePolicy">
@@ -864,52 +864,51 @@
               <property name="rightMargin">
                <number>0</number>
               </property>
-              <item row="2" column="0">
-               <widget class="InfoTextWidget" name="nodeColourInfoText" native="true">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
+              <item row="2" column="1" colspan="2">
+               <widget class="QComboBox" name="coloursComboBox">
+                <property name="focusPolicy">
+                 <enum>Qt::StrongFocus</enum>
                 </property>
-                <property name="minimumSize">
-                 <size>
-                  <width>16</width>
-                  <height>16</height>
-                 </size>
-                </property>
-               </widget>
-              </item>
-              <item row="0" column="0">
-               <widget class="InfoTextWidget" name="zoomInfoText" native="true">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="minimumSize">
-                 <size>
-                  <width>16</width>
-                  <height>16</height>
-                 </size>
-                </property>
-               </widget>
-              </item>
-              <item row="3" column="0">
-               <widget class="InfoTextWidget" name="contiguityInfoText" native="true">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="minimumSize">
-                 <size>
-                  <width>16</width>
-                  <height>16</height>
-                 </size>
-                </property>
+                <item>
+                 <property name="text">
+                  <string>Gray color</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Random colours</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Uniform colour</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Colour by depth</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Colour by contiguity</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Custom colours</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>GC content</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Colour by GFA tag</string>
+                 </property>
+                </item>
                </widget>
               </item>
               <item row="0" column="2">
@@ -956,60 +955,56 @@
                 </property>
                </widget>
               </item>
-              <item row="2" column="1" colspan="2">
-               <widget class="QComboBox" name="coloursComboBox">
-                <property name="focusPolicy">
-                 <enum>Qt::StrongFocus</enum>
-                </property>
-                <item>
-                 <property name="text">
-                  <string>Gray color</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>Random colours</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>Uniform colour</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>Colour by depth</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>Colour by contiguity</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>Custom colours</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
-                  <string>GC content</string>
-                 </property>
-                </item>
-               </widget>
-              </item>
-              <item row="0" column="1">
-               <widget class="QLabel" name="label_13">
-                <property name="text">
-                 <string>Zoom:</string>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                </property>
-               </widget>
-              </item>
               <item row="1" column="0">
                <widget class="InfoTextWidget" name="nodeWidthInfoText" native="true">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="minimumSize">
+                 <size>
+                  <width>16</width>
+                  <height>16</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="0">
+               <widget class="InfoTextWidget" name="contiguityInfoText" native="true">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="minimumSize">
+                 <size>
+                  <width>16</width>
+                  <height>16</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="0">
+               <widget class="InfoTextWidget" name="zoomInfoText" native="true">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="minimumSize">
+                 <size>
+                  <width>16</width>
+                  <height>16</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0">
+               <widget class="InfoTextWidget" name="nodeColourInfoText" native="true">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                   <horstretch>0</horstretch>
@@ -1065,6 +1060,23 @@
                 </property>
                 <property name="value">
                  <double>5.000000000000000</double>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QLabel" name="label_13">
+                <property name="text">
+                 <string>Zoom:</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="1" colspan="2">
+               <widget class="QComboBox" name="tagsComboBox">
+                <property name="focusPolicy">
+                 <enum>Qt::StrongFocus</enum>
                 </property>
                </widget>
               </item>

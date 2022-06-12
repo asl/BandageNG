@@ -260,6 +260,7 @@ void SettingsDialog::loadOrSaveSettingsToOrFromWidgets(bool setWidgets, Settings
             settings->nodeLengthMode = MANUAL_NODE_LENGTH;
         settings->positionTextNodeCentre = ui->positionCentreRadioButton->isChecked();
         settings->colorMap = ColorMap(ui->colorMapCombo->currentIndex());
+        settings->nodeColorer->reset();
     }
 }
 

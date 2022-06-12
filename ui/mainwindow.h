@@ -115,6 +115,7 @@ private slots:
     void copySelectedPathToClipboard();
     void saveSelectedPathToFile();
     void switchColourScheme();
+    void switchTagValue();
     void determineContiguityFromSelectedNode();
     void saveImageCurrentView();
     void saveImageEntireScene();

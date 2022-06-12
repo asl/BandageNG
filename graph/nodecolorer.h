@@ -32,7 +32,8 @@ enum NodeColorScheme : int {
     CONTIGUITY_COLOUR = 4,
     CUSTOM_COLOURS = 5,
     GC_CONTENT = 6,
-    LAST_SCHEME = GC_CONTENT
+    TAG_VALUE = 7,
+    LAST_SCHEME = TAG_VALUE
 };
 
 class INodeColorer {

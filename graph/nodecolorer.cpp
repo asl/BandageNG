@@ -16,16 +16,20 @@
 // along with Bandage.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "nodecolorer.h"
+#include "nodecolorers.h"
 #include "assemblygraph.h"
 #include "debruijnnode.h"
 #include "program/globals.h"
 
 #define TINYCOLORMAP_WITH_QT5
 #include <colormap/tinycolormap.hpp>
+#include "parallel_hashmap/phmap.h"
+
+#include <unordered_set>
 
 INodeColorer::INodeColorer(NodeColorScheme scheme)
-    : m_graph(g_assemblyGraph), m_scheme(scheme) {}
-
+    : m_graph(g_assemblyGraph), m_scheme(scheme) {
+}
 
 std::pair<QColor, QColor> INodeColorer::get(const GraphicsItemNode *node,
                                             const GraphicsItemNode *rcNode) {
@@ -34,64 +38,6 @@ std::pair<QColor, QColor> INodeColorer::get(const GraphicsItemNode *node,
 
     return { posColor, negColor };
 }
-
-class DepthNodeColorer : public INodeColorer {
-public:
-    using INodeColorer::INodeColorer;
-
-    QColor get(const GraphicsItemNode *node) override;
-    [[nodiscard]] const char* name() const override { return "Color by depth"; };
-};
-
-class UniformNodeColorer : public INodeColorer {
-public:
-    using INodeColorer::INodeColorer;
-
-    QColor get(const GraphicsItemNode *node) override;
-    [[nodiscard]] const char* name() const override { return "Uniform color"; };
-};
-
-class RandomNodeColorer : public INodeColorer {
-public:
-    using INodeColorer::INodeColorer;
-
-    QColor get(const GraphicsItemNode *node) override;
-    [[nodiscard]] std::pair<QColor, QColor> get(const GraphicsItemNode *node,
-                                                const GraphicsItemNode *rcNode) override;
-    [[nodiscard]] const char* name() const override { return "Random colors"; };
-};
-
-class GrayNodeColorer : public INodeColorer {
-public:
-    using INodeColorer::INodeColorer;
-
-    QColor get(const GraphicsItemNode *node) override;
-    [[nodiscard]] const char* name() const override { return "Gray colors"; };
-};
-
-class CustomNodeColorer : public INodeColorer {
-public:
-    using INodeColorer::INodeColorer;
-
-    QColor get(const GraphicsItemNode *node) override;
-    [[nodiscard]] const char* name() const override { return "Custom colors"; };
-};
-
-class ContiguityNodeColorer : public INodeColorer {
-public:
-    using INodeColorer::INodeColorer;
-
-    QColor get(const GraphicsItemNode *node) override;
-    [[nodiscard]] const char* name() const override { return "Color by contiguity"; };
-};
-
-class GCNodeColorer : public INodeColorer {
-public:
-    using INodeColorer::INodeColorer;
-
-    QColor get(const GraphicsItemNode *node) override;
-    [[nodiscard]] const char* name() const override { return "Color by GC content"; };
-};
 
 std::unique_ptr<INodeColorer> INodeColorer::create(NodeColorScheme scheme) {
     switch (scheme) {
@@ -109,21 +55,11 @@ std::unique_ptr<INodeColorer> INodeColorer::create(NodeColorScheme scheme) {
             return std::make_unique<GrayNodeColorer>(scheme);
         case GC_CONTENT:
             return std::make_unique<GCNodeColorer>(scheme);
+        case TAG_VALUE:
+            return std::make_unique<TagValueNodeColorer>(scheme);
     }
 
     return nullptr;
-}
-
-static QColor interpolateRgb(QColor from, QColor to, float fraction) {
-    float rDiff = to.redF() - from.redF();
-    float gDiff = to.greenF() - from.greenF();
-    float bDiff = to.blueF() - from.blueF();
-    float aDiff = to.alphaF() - from.alphaF();
-
-    return QColor::fromRgbF(from.redF() + rDiff * fraction,
-                            from.greenF() + gDiff * fraction,
-                            from.blueF() + bDiff * fraction,
-                            from.alphaF() + aDiff * fraction);
 }
 
 QColor DepthNodeColorer::get(const GraphicsItemNode *node) {
@@ -237,4 +173,50 @@ QColor GCNodeColorer::get(const GraphicsItemNode *node) {
     float lowValue = 0.2, highValue = 0.8, value = deBruijnNode->getGC();
     float fraction = (value - lowValue) / (highValue - lowValue);
     return tinycolormap::GetColor(fraction, colorMap(g_settings->colorMap)).ConvertToQColor();
+}
+
+QColor TagValueNodeColorer::get(const GraphicsItemNode *node) {
+    const DeBruijnNode *deBruijnNode = node->m_deBruijnNode;
+
+    auto tags = g_assemblyGraph->m_nodeTags.find(deBruijnNode);
+    if (tags != g_assemblyGraph->m_nodeTags.end()) {
+        if (auto tag = gfa::getTag(m_tagName.c_str(), tags->second)) {
+            std::stringstream stream;
+            stream << *tag;
+            return m_allTags.at(stream.str());
+        }
+    }
+
+    return {};
+}
+
+void TagValueNodeColorer::reset() {
+    m_allTags.clear();
+    m_tagNames.clear();
+
+    // Collect all tags and their corresponding values
+    for (const auto &entry : g_assemblyGraph->m_nodeTags) {
+        for (const auto &tag: entry.second) {
+            std::stringstream stream;
+            stream << tag;
+            std::string tagWithValue = stream.str();
+            std::string tagName{std::string_view(tag.name, 2)};
+            m_allTags.insert(tagWithValue, QColor());
+            m_tagNames.insert(tagName);
+        }
+    }
+
+    // Assign colors
+    for (const auto &tagName : m_tagNames) {
+        auto tagRange = m_allTags.equal_prefix_range(tagName);
+        size_t sz = std::distance(tagRange.first, tagRange.second), i = 0;
+        for (auto it = tagRange.first; it != tagRange.second; ++it) {
+            *it = tinycolormap::GetColor(double(i) / double(sz),
+                                         colorMap(g_settings->colorMap)).ConvertToQColor();
+            i += 1;
+        }
+    }
+
+    if (!m_tagNames.empty())
+        m_tagName = *m_tagNames.begin();
 }

@@ -648,7 +648,11 @@ bool AssemblyGraph::loadGraphFromFile(const QString& filename) {
     }
 
     determineGraphInfo();
+
+    // FIXME: get rid of this!
     g_memory->clearGraphSpecificMemory();
+    g_settings->nodeColorer->reset();
+
     return true;
 }
 

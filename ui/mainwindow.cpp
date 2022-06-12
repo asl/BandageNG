@@ -66,7 +66,7 @@
 #include "graphinfodialog.h"
 #include "graph/sequenceutils.hpp"
 #include "graph/assemblygraphbuilder.h"
-#include "graph/nodecolorer.h"
+#include "graph/nodecolorers.h"
 
 MainWindow::MainWindow(QString fileToLoadOnStartup, bool drawGraphAfterLoad) :
     QMainWindow(nullptr),
@@ -145,6 +145,7 @@ MainWindow::MainWindow(QString fileToLoadOnStartup, bool drawGraphAfterLoad) :
     connect(ui->actionCopy_selected_node_path_to_clipboard, SIGNAL(triggered(bool)), this, SLOT(copySelectedPathToClipboard()));
     connect(ui->actionSave_selected_node_path_to_FASTA, SIGNAL(triggered(bool)), this, SLOT(saveSelectedPathToFile()));
     connect(ui->coloursComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(switchColourScheme()));
+    connect(ui->tagsComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(switchTagValue()));
     connect(ui->actionSave_image_current_view, SIGNAL(triggered()), this, SLOT(saveImageCurrentView()));
     connect(ui->actionSave_image_entire_scene, SIGNAL(triggered()), this, SLOT(saveImageEntireScene()));
     connect(ui->nodeCustomLabelsCheckBox, SIGNAL(toggled(bool)), this, SLOT(setTextDisplaySettings()));
@@ -392,8 +393,8 @@ void MainWindow::loadGraph(QString fullFileName)
 
         // If the graph has custom colours, automatically switch the colour scheme to custom colours.
         if (customColours) {
-            if (ui->coloursComboBox->currentIndex() != 6)
-                ui->coloursComboBox->setCurrentIndex(6);
+            if (ui->coloursComboBox->currentIndex() != CUSTOM_COLOURS)
+                ui->coloursComboBox->setCurrentIndex(CUSTOM_COLOURS);
             else
                 switchColourScheme();
         }
@@ -1133,12 +1134,31 @@ void MainWindow::resetAllNodeColours() {
     g_graphicsView->viewport()->update();
 }
 
+void MainWindow::switchTagValue() {
+    auto *colorer = dynamic_cast<TagValueNodeColorer*>(&*g_settings->nodeColorer);
+    colorer->setTagName(ui->tagsComboBox->currentText().toStdString());
+
+    resetAllNodeColours();
+}
+
 void MainWindow::switchColourScheme()
 {
     NodeColorScheme scheme = (NodeColorScheme)ui->coloursComboBox->currentIndex();
     g_settings->initializeColorer(scheme);
     ui->contiguityButton->setVisible(scheme == CONTIGUITY_COLOUR);
     ui->contiguityInfoText->setVisible(scheme == CONTIGUITY_COLOUR);
+
+    if (scheme == TAG_VALUE) {
+        ui->tagsComboBox->clear();
+        auto *colorer = dynamic_cast<TagValueNodeColorer*>(&*g_settings->nodeColorer);
+        auto tagNames = colorer->tagNames();
+        for (const auto &tag : tagNames)
+            ui->tagsComboBox->addItem(tag.c_str());
+        colorer->setTagName(tagNames.front());
+        ui->tagsComboBox->setVisible(true);
+    } else {
+        ui->tagsComboBox->setVisible(false);
+    }
 
     resetAllNodeColours();
 }
