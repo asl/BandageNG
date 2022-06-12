@@ -41,9 +41,9 @@
       <property name="geometry">
        <rect>
         <x>0</x>
-        <y>-2839</y>
-        <width>402</width>
-        <height>3466</height>
+        <y>-1924</y>
+        <width>373</width>
+        <height>3388</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -51,7 +51,6 @@
         <widget class="QLabel" name="graphSizeHeadingLabel">
          <property name="font">
           <font>
-           <weight>75</weight>
            <bold>true</bold>
           </font>
          </property>
@@ -537,7 +536,6 @@ per megabase:</string>
         <widget class="QLabel" name="graphLayoutQualityHeadingLabel">
          <property name="font">
           <font>
-           <weight>75</weight>
            <bold>true</bold>
           </font>
          </property>
@@ -880,7 +878,6 @@ per megabase:</string>
         <widget class="QLabel" name="graphAppearanceHeadingLabel">
          <property name="font">
           <font>
-           <weight>75</weight>
            <bold>true</bold>
           </font>
          </property>
@@ -1318,7 +1315,6 @@ single node style:</string>
         <widget class="QLabel" name="textAppearanceHeadingLabel">
          <property name="font">
           <font>
-           <weight>75</weight>
            <bold>true</bold>
           </font>
          </property>
@@ -1687,7 +1683,6 @@ single node style:</string>
         <widget class="QLabel" name="nodeWidthHeadingLabel">
          <property name="font">
           <font>
-           <weight>75</weight>
            <bold>true</bold>
           </font>
          </property>
@@ -2057,7 +2052,6 @@ single node style:</string>
         <widget class="QLabel" name="randomColourSchemeHeadingLabel">
          <property name="font">
           <font>
-           <weight>75</weight>
            <bold>true</bold>
           </font>
          </property>
@@ -2522,7 +2516,6 @@ single node style:</string>
         <widget class="QLabel" name="uniformColourSchemeHeadingLabel">
          <property name="font">
           <font>
-           <weight>75</weight>
            <bold>true</bold>
           </font>
          </property>
@@ -2744,7 +2737,6 @@ single node style:</string>
         <widget class="QLabel" name="depthColourSchemeHeadingLabel">
          <property name="font">
           <font>
-           <weight>75</weight>
            <bold>true</bold>
           </font>
          </property>
@@ -2812,22 +2804,6 @@ single node style:</string>
           <property name="bottomMargin">
            <number>0</number>
           </property>
-          <item row="0" column="1">
-           <widget class="InfoTextWidget" name="lowDepthColourInfoText" native="true">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="minimumSize">
-             <size>
-              <width>16</width>
-              <height>16</height>
-             </size>
-            </property>
-           </widget>
-          </item>
           <item row="0" column="0">
            <spacer name="horizontalSpacer_23">
             <property name="orientation">
@@ -2844,36 +2820,7 @@ single node style:</string>
             </property>
            </spacer>
           </item>
-          <item row="0" column="2">
-           <widget class="QLabel" name="label_15">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="text">
-             <string>Low depth:</string>
-            </property>
-           </widget>
-          </item>
           <item row="0" column="3">
-           <widget class="ColourButton" name="lowDepthColourButton">
-            <property name="minimumSize">
-             <size>
-              <width>100</width>
-              <height>0</height>
-             </size>
-            </property>
-            <property name="focusPolicy">
-             <enum>Qt::StrongFocus</enum>
-            </property>
-            <property name="text">
-             <string/>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="4">
            <spacer name="horizontalSpacer_24">
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
@@ -2889,24 +2836,77 @@ single node style:</string>
             </property>
            </spacer>
           </item>
-          <item row="1" column="1">
-           <widget class="InfoTextWidget" name="highDepthColourInfoText" native="true">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="minimumSize">
-             <size>
-              <width>16</width>
-              <height>16</height>
-             </size>
-            </property>
+          <item row="0" column="2">
+           <widget class="QComboBox" name="colorMapCombo">
+            <item>
+             <property name="text">
+              <string>Viridis</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Parula</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Heat</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Jet</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Turbo</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Hot</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Gray</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Magma</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Inferno</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Plasma</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Cividis</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Github</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Cubehelix</string>
+             </property>
+            </item>
            </widget>
           </item>
-          <item row="1" column="2">
-           <widget class="QLabel" name="label_16">
+          <item row="0" column="1">
+           <widget class="QLabel" name="label_15">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
               <horstretch>0</horstretch>
@@ -2914,17 +2914,7 @@ single node style:</string>
              </sizepolicy>
             </property>
             <property name="text">
-             <string>High depth:</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="3">
-           <widget class="ColourButton" name="highDepthColourButton">
-            <property name="focusPolicy">
-             <enum>Qt::StrongFocus</enum>
-            </property>
-            <property name="text">
-             <string/>
+             <string>Color scheme:</string>
             </property>
            </widget>
           </item>
@@ -3220,7 +3210,6 @@ single node style:</string>
         <widget class="QLabel" name="blastColourSchemeHeadingLabel">
          <property name="font">
           <font>
-           <weight>75</weight>
            <bold>true</bold>
           </font>
          </property>
@@ -3364,7 +3353,6 @@ single node style:</string>
         <widget class="QLabel" name="contiguityColourSchemeHeadingLabel">
          <property name="font">
           <font>
-           <weight>75</weight>
            <bold>true</bold>
           </font>
          </property>
@@ -3709,7 +3697,6 @@ single node style:</string>
         <widget class="QLabel" name="blastQueryPathsHeadingLabel">
          <property name="font">
           <font>
-           <weight>75</weight>
            <bold>true</bold>
           </font>
          </property>
@@ -4390,8 +4377,6 @@ discrepancy (bases):</string>
   <tabstop>uniformPositiveNodeColourButton</tabstop>
   <tabstop>uniformNegativeNodeColourButton</tabstop>
   <tabstop>uniformNodeSpecialColourButton</tabstop>
-  <tabstop>lowDepthColourButton</tabstop>
-  <tabstop>highDepthColourButton</tabstop>
   <tabstop>depthValueAutoRadioButton</tabstop>
   <tabstop>depthValueManualRadioButton</tabstop>
   <tabstop>lowDepthValueSpinBox</tabstop>

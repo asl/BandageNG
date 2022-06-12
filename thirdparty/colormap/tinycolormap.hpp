@@ -69,16 +69,13 @@
 #include <glm/vec3.hpp>
 #endif
 
+#include "tinycolormap_fwd.hpp"
+
 namespace tinycolormap
 {
     //////////////////////////////////////////////////////////////////////////////////
     // Interface
     //////////////////////////////////////////////////////////////////////////////////
-
-    enum class ColormapType
-    {
-        Parula, Heat, Jet, Turbo, Hot, Gray, Magma, Inferno, Plasma, Viridis, Cividis, Github, Cubehelix
-    };
 
     struct Color
     {

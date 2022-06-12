@@ -107,9 +107,8 @@ Settings::Settings()
 
     autoDepthValue = true;
     lowDepthValue = FloatSetting(5.0, 0.0, 1000000.0);
-    lowDepthColour = QColor(0, 0, 0);
     highDepthValue = FloatSetting(50.0, 0.0, 1000000.0);
-    highDepthColour = QColor(255, 0, 0);
+    colorMap = ColorMap::Viridis;
 
     pathHighlightShadingColour = QColor(0, 0, 0, 60);
     pathHighlightOutlineColour = QColor(0, 0, 0);

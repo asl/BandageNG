@@ -132,9 +132,8 @@ void getSettingsUsage(QStringList * text)
     *text << "";
     *text << "Depth colour scheme";
     *text << dashes;
-    *text << "These settings only apply when the depth colour scheme is used.";
-    *text << "--depcollow <col>   Colour for nodes with depth below the low depth value " + getDefaultColour(g_settings->lowDepthColour);
-    *text << "--depcolhi <col>    Colour for nodes with depth above the high depth value " + getDefaultColour(g_settings->highDepthColour);
+    *text << "These settings only apply when the depth / GC colour scheme is used.";
+    *text << "--colormap <mapname>  Color map to use " + getDefaultColorMap(g_settings->colorMap);
     *text << "--depvallow <float> Low depth value " + getRangeAndDefault(g_settings->lowDepthValue, "auto");
     *text << "--depvalhi <float>  High depth value " + getRangeAndDefault(g_settings->highDepthValue, "auto");
     *text << "";
@@ -527,10 +526,8 @@ void parseSettings(QStringList arguments)
     if (isOptionPresent("--unicolspe", &arguments))
         g_settings->uniformNodeSpecialColour = getColourOption("--unicolspe", &arguments);
 
-    if (isOptionPresent("--depcollow", &arguments))
-        g_settings->lowDepthColour = getColourOption("--depcollow", &arguments);
-    if (isOptionPresent("--depcolhi", &arguments))
-        g_settings->highDepthColour = getColourOption("--depcolhi", &arguments);
+    if (isOptionPresent("--colormap", &arguments))
+        g_settings->colorMap = getColorMapOption("--colormap", &arguments);
     if (isOptionPresent("--depvallow", &arguments))
     {
         g_settings->lowDepthValue = getFloatOption("--depvallow", &arguments);
@@ -1122,6 +1119,19 @@ QColor getColourOption(const QString& option, QStringList * arguments)
     return {arguments->at(colIndex)};
 }
 
+ColorMap getColorMapOption(const QString& option, QStringList * arguments)
+{
+    int optionIndex = arguments->indexOf(option);
+    if (optionIndex == -1)
+        return {};
+
+    int colIndex = optionIndex + 1;
+    if (colIndex >= arguments->size())
+        return {};
+
+    return colorMapFromName(arguments->at(colIndex));
+}
+
 
 QString getStringOption(const QString& option, QStringList * arguments)
 {
@@ -1281,6 +1291,11 @@ QString getRangeAndDefault(const QString& min, QString max, QString defaultVal)
 QString getDefaultColour(QColor colour)
 {
     return "(default: " + getColourName(colour.name()) + ")";
+}
+
+QString getDefaultColorMap(ColorMap colorMap)
+{
+    return "(default: " + getColorMapName(colorMap) + ")";
 }
 
 QString getBandageTitleAsciiArt()

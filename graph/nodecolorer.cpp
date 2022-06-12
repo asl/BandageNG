@@ -129,23 +129,15 @@ static QColor interpolateRgb(QColor from, QColor to, float fraction) {
 QColor DepthNodeColorer::get(const GraphicsItemNode *node) {
     const DeBruijnNode *deBruijnNode = node->m_deBruijnNode;
     double depth = deBruijnNode->getDepth();
-    double lowValue;
-    double highValue;
+
+    double lowValue = g_settings->lowDepthValue, highValue = g_settings->highDepthValue;
     if (g_settings->autoDepthValue) {
         lowValue = m_graph->m_firstQuartileDepth;
         highValue = m_graph->m_thirdQuartileDepth;
-    } else {
-        lowValue = g_settings->lowDepthValue;
-        highValue = g_settings->highDepthValue;
     }
 
-    if (depth <= lowValue)
-        return g_settings->lowDepthColour;
-    if (depth >= highValue)
-        return g_settings->highDepthColour;
-
     float fraction = (depth - lowValue) / (highValue - lowValue);
-    return interpolateRgb(g_settings->lowDepthColour, g_settings->highDepthColour, fraction);
+    return tinycolormap::GetColor(fraction, colorMap(g_settings->colorMap)).ConvertToQColor();
 }
 
 QColor UniformNodeColorer::get(const GraphicsItemNode *node) {
@@ -244,5 +236,5 @@ QColor GCNodeColorer::get(const GraphicsItemNode *node) {
     const DeBruijnNode *deBruijnNode = node->m_deBruijnNode;
     float lowValue = 0.2, highValue = 0.8, value = deBruijnNode->getGC();
     float fraction = (value - lowValue) / (highValue - lowValue);
-    return tinycolormap::GetColor(fraction).ConvertToQColor();
+    return tinycolormap::GetColor(fraction, colorMap(g_settings->colorMap)).ConvertToQColor();
 }

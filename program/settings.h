@@ -77,7 +77,6 @@ struct AnnotationSetting {
 
 using AnnotationSettings = std::unordered_map<AnnotationGroupId, AnnotationSetting>;
 
-
 class Settings
 {
 public:
@@ -173,9 +172,8 @@ public:
 
     bool autoDepthValue;
     FloatSetting lowDepthValue;
-    QColor lowDepthColour;
     FloatSetting highDepthValue;
-    QColor highDepthColour;
+    ColorMap colorMap;
 
     QColor pathHighlightShadingColour;
     QColor pathHighlightOutlineColour;

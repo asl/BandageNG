@@ -59,6 +59,7 @@ int getIntOption(const QString& option, QStringList * arguments);
 double getFloatOption(const QString& option, QStringList * arguments);
 SciNot getSciNotOption(const QString& option, QStringList * arguments);
 QColor getColourOption(const QString& option, QStringList * arguments);
+ColorMap getColorMapOption(const QString& option, QStringList * arguments);
 NodeColorScheme getColourSchemeOption(const QString& option, QStringList * arguments);
 std::set<ViewId> getBlastAnnotationViews(const QString& option, QStringList * arguments);
 GraphScope getGraphScopeOption(const QString& option, QStringList * arguments);
@@ -95,6 +96,7 @@ QString getRangeAndDefault(double min, double max, double defaultVal);
 QString getRangeAndDefault(double min, double max, QString defaultVal);
 QString getRangeAndDefault(const QString& min, QString max, QString defaultVal);
 QString getDefaultColour(QColor colour);
+QString getDefaultColorMap(ColorMap colorMap);
 
 QString getBandageTitleAsciiArt();
 bool isOption(QString text);

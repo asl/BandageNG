@@ -19,11 +19,14 @@
 #ifndef GLOBALS_H
 #define GLOBALS_H
 
-#include <vector>
+#include <colormap/tinycolormap_fwd.hpp>
+
 #include <QString>
 #include <QProcess>
 #include <QSharedPointer>
 #include <QColor>
+
+#include <vector>
 
 class Settings;
 class Memory;
@@ -56,6 +59,11 @@ enum NodeNameStatus {NODE_NAME_OKAY, NODE_NAME_TAKEN, NODE_NAME_CONTAINS_TAB,
                      NODE_NAME_CONTAINS_SPACE};
 enum SequencesLoadedFromFasta {NOT_READY, NOT_TRIED, TRIED};
 
+// FIXME: factor out
+enum ColorMap : int {
+    Viridis = 0,
+    Parula, Heat, Jet, Turbo, Hot, Gray, Magma, Inferno, Plasma, Cividis, Github, Cubehelix
+};
 
 using AnnotationGroupId = int;
 using ViewId = int;
@@ -80,7 +88,9 @@ QString formatDepthForDisplay(double depth);
 
 std::vector<QColor> getPresetColours();
 QString getColourName(QColor colour);
-
+ColorMap colorMapFromName(const QString& name);
+tinycolormap::ColormapType colorMap(ColorMap colorMap);
+QString getColorMapName(ColorMap colorMap);
 
 // Often used function for access const reference to value in map even if it doesn't exist
 template <typename K, typename V, template<typename, typename, typename...> typename MapLike>

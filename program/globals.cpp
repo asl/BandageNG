@@ -446,3 +446,96 @@ QString getColourName(QColor colour)
 
     return colour.name();
 }
+
+ColorMap colorMapFromName(const QString& name) {
+    if (name == "viridis")
+        return Viridis;
+    if (name == "parula")
+        return Parula;
+    if (name == "heat")
+        return Heat;
+    if (name == "jet")
+        return Jet;
+    if (name == "turbo")
+        return Turbo;
+    if (name == "hot")
+        return Hot;
+    if (name == "gray")
+        return Gray;
+    if (name == "magma")
+        return Magma;
+    if (name == "inferno")
+        return Inferno;
+    if (name == "plasma")
+        return Plasma;
+    if (name == "cividis")
+        return Cividis;
+    if (name == "github")
+        return Github;
+    if (name == "cubehelix")
+        return Cubehelix;
+
+    return Viridis;
+}
+
+tinycolormap::ColormapType colorMap(ColorMap colorMap) {
+    switch (colorMap) {
+        case Viridis:
+            return tinycolormap::ColormapType::Viridis;
+        case Parula:
+            return tinycolormap::ColormapType::Parula;
+        case Heat:
+            return tinycolormap::ColormapType::Heat;
+        case Jet:
+            return tinycolormap::ColormapType::Jet;
+        case Turbo:
+            return tinycolormap::ColormapType::Turbo;
+        case Hot:
+            return tinycolormap::ColormapType::Hot;
+        case Gray:
+            return tinycolormap::ColormapType::Gray;
+        case Magma:
+            return tinycolormap::ColormapType::Magma;
+        case Inferno:
+            return tinycolormap::ColormapType::Inferno;
+        case Plasma:
+            return tinycolormap::ColormapType::Plasma;
+        case Cividis:
+            return tinycolormap::ColormapType::Cividis;
+        case Github:
+            return tinycolormap::ColormapType::Github;
+        case Cubehelix:
+            return tinycolormap::ColormapType::Cubehelix;
+    }
+
+}
+QString getColorMapName(ColorMap colorMap) {
+    switch (colorMap) {
+        case Viridis:
+            return "viridis";
+        case Parula:
+            return "parula";
+        case Heat:
+            return "heat";
+        case Jet:
+            return "jet";
+        case Turbo:
+            return "turbo";
+        case Hot:
+            return "hot";
+        case Gray:
+            return "gray";
+        case Magma:
+            return "magma";
+        case Inferno:
+            return "inferno";
+        case Plasma:
+            return "plasma";
+        case Cividis:
+            return "cividis";
+        case Github:
+            return "github";
+        case Cubehelix:
+            return "cubehelix";
+    }
+}

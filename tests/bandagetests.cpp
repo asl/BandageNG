@@ -925,13 +925,13 @@ void BandageTests::commandLineSettings()
     parseSettings(commandLineSettings);
     QCOMPARE(getColourName(g_settings->uniformNodeSpecialColour), QString("papayawhip"));
 
-    commandLineSettings = QString("--depcollow mediumorchid").split(" ");
+    commandLineSettings = QString("--colormap github").split(" ");
     parseSettings(commandLineSettings);
-    QCOMPARE(getColourName(g_settings->lowDepthColour), QString("mediumorchid"));
+    QCOMPARE(getColorMapName(g_settings->colorMap), QString("github"));
 
-    commandLineSettings = QString("--depcolhi linen").split(" ");
+    commandLineSettings = QString("--colormap heat").split(" ");
     parseSettings(commandLineSettings);
-    QCOMPARE(getColourName(g_settings->highDepthColour), QString("linen"));
+    QCOMPARE(g_settings->colorMap, ColorMap::Heat);
 
     QCOMPARE(g_settings->autoDepthValue, true);
     commandLineSettings = QString("--depvallow 56.7").split(" ");

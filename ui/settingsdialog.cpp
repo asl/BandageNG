@@ -51,8 +51,6 @@ SettingsDialog::SettingsDialog(QWidget *parent) :
     ui->uniformPositiveNodeColourButton->m_name = "Uniform positive node colour";
     ui->uniformNegativeNodeColourButton->m_name = "Uniform negative node colour";
     ui->uniformNodeSpecialColourButton->m_name = "Uniform special node colour";
-    ui->lowDepthColourButton->m_name = "Low depth colour";
-    ui->highDepthColourButton->m_name = "High depth colour";
     ui->noBlastHitsColourButton->m_name = "No BLAST hits colour";
     ui->contiguousStrandSpecificColourButton->m_name = "Contiguous (strand-specific) colour";
     ui->contiguousEitherStrandColourButton->m_name = "Contiguous (either strand) colour";
@@ -198,8 +196,6 @@ void SettingsDialog::loadOrSaveSettingsToOrFromWidgets(bool setWidgets, Settings
     colourFunctionPointer(&settings->uniformPositiveNodeColour, ui->uniformPositiveNodeColourButton);
     colourFunctionPointer(&settings->uniformNegativeNodeColour, ui->uniformNegativeNodeColourButton);
     colourFunctionPointer(&settings->uniformNodeSpecialColour, ui->uniformNodeSpecialColourButton);
-    colourFunctionPointer(&settings->lowDepthColour, ui->lowDepthColourButton);
-    colourFunctionPointer(&settings->highDepthColour, ui->highDepthColourButton);
     doubleFunctionPointer(&settings->lowDepthValue, ui->lowDepthValueSpinBox, false);
     doubleFunctionPointer(&settings->highDepthValue, ui->highDepthValueSpinBox, false);
     colourFunctionPointer(&settings->grayColor, ui->noBlastHitsColourButton);
@@ -249,6 +245,7 @@ void SettingsDialog::loadOrSaveSettingsToOrFromWidgets(bool setWidgets, Settings
         ui->nodeLengthPerMegabaseManualRadioButton->setChecked(settings->nodeLengthMode != AUTO_NODE_LENGTH);
         ui->positionVisibleRadioButton->setChecked(!settings->positionTextNodeCentre);
         ui->positionCentreRadioButton->setChecked(settings->positionTextNodeCentre);
+        ui->colorMapCombo->setCurrentIndex(int(settings->colorMap));
     }
     else
     {
@@ -262,6 +259,7 @@ void SettingsDialog::loadOrSaveSettingsToOrFromWidgets(bool setWidgets, Settings
         else
             settings->nodeLengthMode = MANUAL_NODE_LENGTH;
         settings->positionTextNodeCentre = ui->positionCentreRadioButton->isChecked();
+        settings->colorMap = ColorMap(ui->colorMapCombo->currentIndex());
     }
 }
 
@@ -351,10 +349,6 @@ void SettingsDialog::setInfoTexts()
                                                          "Set to the minimum value for fully transparent nodes. Set to the maximum value for completely opaque nodes.<br><br>"
                                                          "Note that negative nodes are only visible when the graph is drawn in double mode.");
 
-    ui->lowDepthColourInfoText->setInfoText("When Bandage is set to the 'Colour by depth' option, this colour is used for nodes with depth at or below the low depth value.<br><br>"
-                                            "Nodes with depth between the low and high depth values will get an intermediate colour.");
-    ui->highDepthColourInfoText->setInfoText("When Bandage is set to the 'Colour by depth' option, this colour is used for nodes with depth above the high depth value.<br><br>"
-                                             "Nodes with depth between the low and high depth values will get an intermediate colour.");
     ui->depthAutoValuesInfoText->setInfoText("When set to 'Auto', the low depth value is set to the first quartile and the high depth value is set to the third quartile.");
     ui->depthManualValuesInfoText->setInfoText("When set to 'Manual', you can specify the values used for depth colouring.");
     ui->noBlastHitsColourInfoText->setInfoText("When Bandage is set to the 'Colour using BLAST hits' option, this colour is used for nodes that do not have any BLAST hits. It is also used for any region of a node without BLAST hits, even if there are BLAST hits in other regions of that node.");
