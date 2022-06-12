@@ -20,6 +20,9 @@
 #include "debruijnnode.h"
 #include "program/globals.h"
 
+#define TINYCOLORMAP_WITH_QT5
+#include <colormap/tinycolormap.hpp>
+
 INodeColorer::INodeColorer(NodeColorScheme scheme)
     : m_graph(g_assemblyGraph), m_scheme(scheme) {}
 
@@ -239,13 +242,7 @@ QColor ContiguityNodeColorer::get(const GraphicsItemNode *node) {
 
 QColor GCNodeColorer::get(const GraphicsItemNode *node) {
     const DeBruijnNode *deBruijnNode = node->m_deBruijnNode;
-
     float lowValue = 0.2, highValue = 0.8, value = deBruijnNode->getGC();
-    if (value > highValue)
-        return g_settings->highDepthColour;
-    else if (value < lowValue)
-        return g_settings->lowDepthColour;
-
     float fraction = (value - lowValue) / (highValue - lowValue);
-    return interpolateRgb(g_settings->lowDepthColour, g_settings->highDepthColour, fraction);
+    return tinycolormap::GetColor(fraction).ConvertToQColor();
 }
