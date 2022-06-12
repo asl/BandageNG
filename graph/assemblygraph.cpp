@@ -261,7 +261,7 @@ double AssemblyGraph::getMeanDepth(bool drawnNodesOnly)
 }
 
 
-double AssemblyGraph::getMeanDepth(std::vector<DeBruijnNode *> nodes)
+double AssemblyGraph::getMeanDepth(const std::vector<DeBruijnNode *> &nodes)
 {
     if (nodes.empty())
         return 0.0;

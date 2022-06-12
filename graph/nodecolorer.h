@@ -31,7 +31,8 @@ enum NodeColorScheme : int {
     DEPTH_COLOUR = 3,
     CONTIGUITY_COLOUR = 4,
     CUSTOM_COLOURS = 5,
-    LAST_SCHEME = CUSTOM_COLOURS
+    GC_CONTENT = 6,
+    LAST_SCHEME = GC_CONTENT
 };
 
 class INodeColorer {

@@ -108,7 +108,7 @@ public:
     static QByteArray getReverseComplement(const QByteArray& forwardSequence);
     void resetEdges();
     double getMeanDepth(bool drawnNodesOnly = false);
-    static double getMeanDepth(std::vector<DeBruijnNode *> nodes);
+    static double getMeanDepth(const std::vector<DeBruijnNode *> &nodes);
     static double getMeanDepth(const QList<DeBruijnNode *>& nodes);
     void resetNodeContiguityStatus();
     void determineGraphInfo();

@@ -82,6 +82,14 @@ public:
     [[nodiscard]] const char* name() const override { return "Color by contiguity"; };
 };
 
+class GCNodeColorer : public INodeColorer {
+public:
+    using INodeColorer::INodeColorer;
+
+    QColor get(const GraphicsItemNode *node) override;
+    [[nodiscard]] const char* name() const override { return "Color by GC content"; };
+};
+
 std::unique_ptr<INodeColorer> INodeColorer::create(NodeColorScheme scheme) {
     switch (scheme) {
         case UNIFORM_COLOURS:
@@ -96,6 +104,8 @@ std::unique_ptr<INodeColorer> INodeColorer::create(NodeColorScheme scheme) {
             return std::make_unique<CustomNodeColorer>(scheme);
         case GRAY_COLOR:
             return std::make_unique<GrayNodeColorer>(scheme);
+        case GC_CONTENT:
+            return std::make_unique<GCNodeColorer>(scheme);
     }
 
     return nullptr;
@@ -225,4 +235,17 @@ QColor ContiguityNodeColorer::get(const GraphicsItemNode *node) {
         default: //NOT_CONTIGUOUS
             return g_settings->notContiguousColour;
     }
+}
+
+QColor GCNodeColorer::get(const GraphicsItemNode *node) {
+    const DeBruijnNode *deBruijnNode = node->m_deBruijnNode;
+
+    float lowValue = 0.2, highValue = 0.8, value = deBruijnNode->getGC();
+    if (value > highValue)
+        return g_settings->highDepthColour;
+    else if (value < lowValue)
+        return g_settings->lowDepthColour;
+
+    float fraction = (value - lowValue) / (highValue - lowValue);
+    return interpolateRgb(g_settings->lowDepthColour, g_settings->highDepthColour, fraction);
 }

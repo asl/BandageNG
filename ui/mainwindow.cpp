@@ -542,6 +542,9 @@ void MainWindow::getSelectedNodeInfo(int & selectedNodeCount, QString & selected
     selectedNodeDepthText = formatDepthForDisplay(g_assemblyGraph->getMeanDepth(selectedNodes));
 
     if (selectedNodeCount == 1) {
+        // FIXME: Hack!
+        selectedNodeDepthText += " GC: " + formatDoubleForDisplay(100 * selectedNodes[0]->getGC(), 1) + "%";
+
         auto tags = g_assemblyGraph->m_nodeTags.find(selectedNodes.front());
         if (tags != g_assemblyGraph->m_nodeTags.end()) {
             std::stringstream txt;

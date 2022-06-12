@@ -709,3 +709,13 @@ std::vector<DeBruijnNode *> DeBruijnNode::getAllConnectedPositiveNodes() const
 
     return connectedPositiveNodesVector;
 }
+
+float DeBruijnNode::getGC() const {
+    size_t gc = 0;
+    for (size_t i = 0; i < m_sequence.size(); ++i) {
+        char c = m_sequence[i];
+        gc += (c == 'G' || c == 'C');
+    }
+
+    return float(gc) / float(m_sequence.size());
+}

@@ -54,6 +54,8 @@ public:
     double getDepth() const {return m_depth;}
     double getDepthRelativeToMeanDrawnDepth() const {return m_depthRelativeToMeanDrawnDepth;}
 
+    float getGC() const;
+
     const Sequence &getSequence() const;
     Sequence &getSequence();
 
@@ -67,7 +69,6 @@ public:
     DeBruijnNode * getReverseComplement() const {return m_reverseComplement;}
     OgdfNode * getOgdfNode() const {return m_ogdfNode;}
     GraphicsItemNode * getGraphicsItemNode() const {return m_graphicsItemNode;}
-    bool thisOrReverseComplementHasGraphicsItemNode() const {return (m_graphicsItemNode != nullptr || getReverseComplement()->m_graphicsItemNode != nullptr);}
     bool hasGraphicsItem() const {return m_graphicsItemNode != nullptr;}
 
     auto edgeBegin() { return m_edges.begin(); }
