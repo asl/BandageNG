@@ -287,25 +287,16 @@ void GraphicsItemNode::setNodeColour()
                          g_settings->randomColourNegativeLightness);
         negColour.setAlpha(g_settings->randomColourNegativeOpacity);
 
-        QColor colour1, colour2;
-        if (m_deBruijnNode->isPositiveNode())
-        {
-            colour1 = posColour;
-            colour2 = negColour;
-        }
-        else
-        {
-            colour1 = negColour;
-            colour2 = posColour;
-        }
+        if (!m_deBruijnNode->isPositiveNode())
+            std::swap(posColour, negColour);
 
-        m_colour = colour1;
+        m_colour = posColour;
         DeBruijnNode * revCompNode = m_deBruijnNode->getReverseComplement();
         if (revCompNode != nullptr)
         {
             GraphicsItemNode * revCompGraphNode = revCompNode->getGraphicsItemNode();
             if (revCompGraphNode != nullptr)
-                revCompGraphNode->m_colour = colour2;
+                revCompGraphNode->m_colour = negColour;
         }
         break;
     }
