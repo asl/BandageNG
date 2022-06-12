@@ -19,6 +19,10 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include "program/globals.h"
+#include "graph/nodecolorer.h"
+#include "ogdf/energybased/FMMMLayout.h"
+
 #include <QMainWindow>
 #include <QGraphicsScene>
 #include <QMap>
@@ -26,9 +30,7 @@
 #include <vector>
 #include <QLineEdit>
 #include <QRectF>
-#include "program/globals.h"
 #include <QThread>
-#include "ogdf/energybased/FMMMLayout.h"
 
 Q_MOC_INCLUDE("graph/debruijnnode.h")
 
@@ -69,6 +71,7 @@ private:
     void displayGraphDetails();
     void clearGraphDetails();
     void resetScene();
+    void resetAllNodeColours();
     void layoutGraph();
     void zoomToFitRect(QRectF rect);
     void zoomToFitScene();
@@ -83,7 +86,6 @@ private:
     void selectBasedOnContiguity(ContiguityStatus contiguityStatus);
     void setWidgetsFromSettings();
     QString getDefaultImageFileName();
-    void setNodeColourSchemeComboBox(NodeColourScheme nodeColourScheme);
     void setGraphScopeComboBox(GraphScope graphScope);
     void setupBlastQueryComboBox();
     void setupPathSelectionLineEdit(QLineEdit *lineEdit);

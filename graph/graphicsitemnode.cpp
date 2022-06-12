@@ -17,28 +17,33 @@
 
 
 #include "graphicsitemnode.h"
+#include "graphicsitemedge.h"
 #include "debruijnnode.h"
+#include "debruijnedge.h"
 #include "ogdfnode.h"
-#include <QPainterPathStroker>
+#include "assemblygraph.h"
+#include "annotationsmanager.hpp"
+
 #include "program/globals.h"
+#include "program/memory.h"
+
+#include "ui/mygraphicsscene.h"
+#include "ui/mygraphicsview.h"
+
+#include "ogdf/basic/GraphAttributes.h"
+
+#include <QTransform>
+#include <QPainterPathStroker>
 #include <QPainter>
 #include <QPen>
 #include <QMessageBox>
-#include "debruijnedge.h"
-#include "graphicsitemedge.h"
-#include "ogdf/basic/GraphAttributes.h"
-#include <cmath>
 #include <QFontMetrics>
 #include <QSize>
-#include <cstdlib>
-#include "ui/mygraphicsscene.h"
+
 #include <set>
-#include "ui/mygraphicsview.h"
-#include <QTransform>
-#include "blast/blasthitpart.h"
-#include "assemblygraph.h"
-#include "program/memory.h"
-#include "annotationsmanager.hpp"
+
+#include <cmath>
+#include <cstdlib>
 
 GraphicsItemNode::GraphicsItemNode(DeBruijnNode * deBruijnNode,
                                    ogdf::GraphAttributes * graphAttributes, QGraphicsItem * parent) :
@@ -51,7 +56,7 @@ GraphicsItemNode::GraphicsItemNode(DeBruijnNode * deBruijnNode,
     OgdfNode * pathOgdfNode = deBruijnNode->getOgdfNode();
     if (pathOgdfNode != nullptr)
     {
-        for (auto ogdfNode : pathOgdfNode->m_ogdfNodes)
+        for (auto *ogdfNode : pathOgdfNode->m_ogdfNodes)
         {
             QPointF point(graphAttributes->x(ogdfNode), graphAttributes->y(ogdfNode));
             m_linePoints.push_back(point);
@@ -255,108 +260,9 @@ void GraphicsItemNode::drawTextPathAtLocation(QPainter * painter, const QPainter
     painter->translate(-centre);
 }
 
-
-
-void GraphicsItemNode::setNodeColour()
-{
-    switch (g_settings->nodeColourScheme)
-    {
-    case UNIFORM_COLOURS:
-        if (m_deBruijnNode->isSpecialNode())
-            m_colour = g_settings->uniformNodeSpecialColour;
-        else if (usePositiveNodeColour())
-            m_colour = g_settings->uniformPositiveNodeColour;
-        else
-            m_colour = g_settings->uniformNegativeNodeColour;
-        break;
-
-    case RANDOM_COLOURS:
-    {
-        //Make a colour with a random hue.  Assign a colour to both this node and
-        //its complement so their hue matches.
-        int hue = rand() % 360;
-        QColor posColour;
-        posColour.setHsl(hue,
-                         g_settings->randomColourPositiveSaturation,
-                         g_settings->randomColourPositiveLightness);
-        posColour.setAlpha(g_settings->randomColourPositiveOpacity);
-
-        QColor negColour;
-        negColour.setHsl(hue,
-                         g_settings->randomColourNegativeSaturation,
-                         g_settings->randomColourNegativeLightness);
-        negColour.setAlpha(g_settings->randomColourNegativeOpacity);
-
-        if (!m_deBruijnNode->isPositiveNode())
-            std::swap(posColour, negColour);
-
-        m_colour = posColour;
-        DeBruijnNode * revCompNode = m_deBruijnNode->getReverseComplement();
-        if (revCompNode != nullptr)
-        {
-            GraphicsItemNode * revCompGraphNode = revCompNode->getGraphicsItemNode();
-            if (revCompGraphNode != nullptr)
-                revCompGraphNode->m_colour = negColour;
-        }
-        break;
-    }
-
-    case DEPTH_COLOUR:
-    {
-        m_colour = getDepthColour();
-        break;
-    }
-
-    case GRAY_COLOR:
-    {
-        m_colour = g_settings->grayColor;
-        break;
-    }
-
-    case CUSTOM_COLOURS:
-    {
-        m_colour = g_assemblyGraph->getCustomColourForDisplay(m_deBruijnNode);
-        break;
-    }
-
-    default: //CONTIGUITY COLOUR
-    {
-        //For single nodes, display the colour of whichever of the
-        //twin nodes has the greatest contiguity status.
-        ContiguityStatus contiguityStatus = m_deBruijnNode->getContiguityStatus();
-        if (!m_hasArrow)
-        {
-            ContiguityStatus twinContiguityStatus = m_deBruijnNode->getReverseComplement()->getContiguityStatus();
-            if (twinContiguityStatus < contiguityStatus)
-                contiguityStatus = twinContiguityStatus;
-        }
-
-        switch (contiguityStatus)
-        {
-        case STARTING:
-            m_colour = g_settings->contiguityStartingColour;
-            break;
-        case CONTIGUOUS_STRAND_SPECIFIC:
-            m_colour = g_settings->contiguousStrandSpecificColour;
-            break;
-        case CONTIGUOUS_EITHER_STRAND:
-            m_colour = g_settings->contiguousEitherStrandColour;
-            break;
-        case MAYBE_CONTIGUOUS:
-            m_colour = g_settings->maybeContiguousColour;
-            break;
-        default: //NOT_CONTIGUOUS
-            m_colour = g_settings->notContiguousColour;
-            break;
-        }
-    }
-    }
-}
-
-
 QPainterPath GraphicsItemNode::shape() const
 {
-    //If there is only one segment and it is shorter than half its
+    //If there is only one segment, and it is shorter than half its
     //width, then the arrow head will not be made with 45 degree
     //angles, but rather whatever angle is made by going from the
     //end to the back corners (the final node will be a triangle).
@@ -390,9 +296,9 @@ QPainterPath GraphicsItemNode::shape() const
     //NOTE: THIS APPROACH CAN LEAD TO WEIRD EFFECTS WHEN THE NODE'S
     //POINTY END OVERLAPS WITH ANOTHER PART OF THE NODE.  PERHAPS THERE
     //IS A BETTER WAY TO MAKE ARROWHEADS?
-    QLineF frontline = QLineF(getLast(), getSecondLast()).normalVector();
-    frontline.setLength(m_width / 2.0);
-    QPointF frontVector = frontline.p2() - frontline.p1();
+    QLineF frontLine = QLineF(getLast(), getSecondLast()).normalVector();
+    frontLine.setLength(m_width / 2.0);
+    QPointF frontVector = frontLine.p2() - frontLine.p1();
     QLineF arrowheadLine(getLast(), getSecondLast());
     arrowheadLine.setLength(1.42 * (m_width / 2.0));
     arrowheadLine.setAngle(arrowheadLine.angle() + 45.0);
@@ -412,18 +318,18 @@ QPainterPath GraphicsItemNode::shape() const
 
     QPainterPath mainNodePathTmp = mainNodePath.subtracted(subtractionPath);
 
-    QLineF backline = QLineF(getFirst(), getSecond()).normalVector();
-    backline.setLength(m_width / 2.0);
-    QPointF backVector = backline.p2() - backline.p1();
-    QLineF arrowbackLine(getSecond(), getFirst());
-    arrowbackLine.setLength(m_width / 2.0);
-    QPointF arrowbackVector = arrowbackLine.p2() - arrowbackLine.p1();
+    QLineF backLine = QLineF(getFirst(), getSecond()).normalVector();
+    backLine.setLength(m_width / 2.0);
+    QPointF backVector = backLine.p2() - backLine.p1();
+    QLineF arrowBackLine(getSecond(), getFirst());
+    arrowBackLine.setLength(m_width / 2.0);
+    QPointF arrowBackVector = arrowBackLine.p2() - arrowBackLine.p1();
     QPainterPath addedPath;
     addedPath.moveTo(getFirst());
-    addedPath.lineTo(getFirst() + backVector + arrowbackVector);
+    addedPath.lineTo(getFirst() + backVector + arrowBackVector);
     addedPath.lineTo(getFirst() + backVector);
     addedPath.lineTo(getFirst() - backVector);
-    addedPath.lineTo(getFirst() - backVector + arrowbackVector);
+    addedPath.lineTo(getFirst() - backVector + arrowBackVector);
     addedPath.lineTo(getFirst());
     mainNodePathTmp.addPath(addedPath);
 
@@ -497,7 +403,7 @@ void GraphicsItemNode::fixEdgePaths(std::vector<GraphicsItemNode *> * nodes) con
         }
     }
 
-    for (auto deBruijnEdge : edgesToFix)
+    for (auto *deBruijnEdge : edgesToFix)
     {
         GraphicsItemEdge * graphicsItemEdge = deBruijnEdge->getGraphicsItemEdge();
 
@@ -505,9 +411,9 @@ void GraphicsItemNode::fixEdgePaths(std::vector<GraphicsItemNode *> * nodes) con
         if (graphicsItemEdge != nullptr)
             graphicsItemEdge->calculateAndSetPath();
 
-        //If this edge does not have a graphics item, then perhaps its
-        //reverse complment does.  Only do this check if the graph was drawn
-        //on single mode.
+        // If this edge does not have a graphics item, then perhaps its
+        // reverse complement does.  Only do this check if the graph was drawn
+        // on single mode.
         else if (!g_settings->doubleMode)
         {
             graphicsItemEdge = deBruijnEdge->getReverseComplement()->getGraphicsItemEdge();
@@ -806,45 +712,6 @@ QSize GraphicsItemNode::getNodeTextSize(const QString& text)
     QFontMetrics fontMetrics(g_settings->labelFont);
     return fontMetrics.size(0, text);
 }
-
-
-QColor GraphicsItemNode::getDepthColour() const
-{
-    double depth = m_deBruijnNode->getDepth();
-    double lowValue;
-    double highValue;
-    if (g_settings->autoDepthValue)
-    {
-        lowValue = g_assemblyGraph->m_firstQuartileDepth;
-        highValue = g_assemblyGraph->m_thirdQuartileDepth;
-    }
-    else
-    {
-        lowValue = g_settings->lowDepthValue;
-        highValue = g_settings->highDepthValue;
-    }
-
-    if (depth <= lowValue)
-        return g_settings->lowDepthColour;
-    if (depth >= highValue)
-        return g_settings->highDepthColour;
-
-    double fraction = (depth - lowValue) / (highValue - lowValue);
-
-    int redDifference = g_settings->highDepthColour.red() - g_settings->lowDepthColour.red();
-    int greenDifference = g_settings->highDepthColour.green() - g_settings->lowDepthColour.green();
-    int blueDifference = g_settings->highDepthColour.blue() - g_settings->lowDepthColour.blue();
-    int alphaDifference = g_settings->highDepthColour.alpha() - g_settings->lowDepthColour.alpha();
-
-    int red = int(g_settings->lowDepthColour.red() + (fraction * redDifference) + 0.5);
-    int green = int(g_settings->lowDepthColour.green() + (fraction * greenDifference) + 0.5);
-    int blue = int(g_settings->lowDepthColour.blue() + (fraction * blueDifference) + 0.5);
-    int alpha = int(g_settings->lowDepthColour.alpha() + (fraction * alphaDifference) + 0.5);
-
-    return {red, green, blue, alpha};
-}
-
-
 
 void GraphicsItemNode::setWidth()
 {

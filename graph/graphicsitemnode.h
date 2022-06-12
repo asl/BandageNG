@@ -16,19 +16,20 @@
 //along with Bandage.  If not, see <http://www.gnu.org/licenses/>.
 
 
-#ifndef GRAPHICSITEMNODE_H
-#define GRAPHICSITEMNODE_H
+#pragma once
 
-#include <QGraphicsItem>
-#include <QGraphicsSceneMouseEvent>
 #include "ogdf/basic/GraphAttributes.h"
-#include <vector>
+
 #include <QPointF>
 #include <QColor>
 #include <QFont>
 #include <QString>
 #include <QPainterPath>
 #include <QStringList>
+#include <QGraphicsItem>
+#include <QGraphicsSceneMouseEvent>
+
+#include <vector>
 
 class DeBruijnNode;
 class Path;
@@ -77,9 +78,8 @@ public:
     QPointF getSecondLast() const {return m_linePoints[m_linePoints.size()-2];}
     std::vector<QPointF> getCentres() const;
     QPointF getCentre(std::vector<QPointF> linePoints) const;
-    void setNodeColour();
+    void setNodeColour(QColor color) { m_colour = color; }
     QStringList getNodeText() const;
-    QColor getDepthColour() const;
     void setWidth();
     QPainterPath makePartialPath(double startFraction, double endFraction);
     double getNodePathLength();
@@ -100,5 +100,3 @@ private:
     QPainterPath buildPartialHighlightPath(double startFraction, double endFraction, bool reverse);
     void shiftPointSideways(bool left);
 };
-
-#endif // GRAPHICSITEMNODE_H

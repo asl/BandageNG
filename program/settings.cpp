@@ -17,6 +17,7 @@
 
 
 #include "settings.h"
+#include "graph/nodecolorer.h"
 #include <QDir>
 
 Settings::Settings()
@@ -43,7 +44,6 @@ Settings::Settings()
     edgeWidth = FloatSetting(1.5, 0.1, 100);
     outlineThickness = FloatSetting(0.0, 0.0, 100.0);
     selectionThickness = 1.0;
-    arrowheadSize = 0.01;
     arrowheadsInSingleMode = true;
     textOutlineThickness = FloatSetting(1.5, 0.0, 10.0);
 
@@ -78,7 +78,7 @@ Settings::Settings()
 
     nodeDragging = NEARBY_PIECES;
 
-    nodeColourScheme = RANDOM_COLOURS;
+    initializeColorer(RANDOM_COLOURS);
     uniformPositiveNodeColour = QColor(178, 34, 34);
     uniformNegativeNodeColour = QColor(128, 0, 0);
     uniformNodeSpecialColour = QColor(0, 128, 0);
@@ -144,4 +144,9 @@ Settings::Settings()
     maxDepthRange = FloatSetting(100.0, 0.0, 1000000.0);
 
     annotationsSettings = {};
+}
+
+
+void Settings::initializeColorer(NodeColorScheme scheme) {
+    nodeColorer = INodeColorer::create(scheme);
 }

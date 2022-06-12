@@ -19,18 +19,18 @@
 #ifndef SETTINGS_H
 #define SETTINGS_H
 
+#include "globals.h"
+#include "scinot.h"
+// FIXME: This needs to be properly factored out
+#include "graph/nodecolorer.h"
+
 #include <QColor>
 #include <QFont>
-#include "globals.h"
 #include <QString>
 #include <set>
 #include <unordered_map>
-#include "graph/path.h"
-#include "scinot.h"
 
-class DeBruijnNode;
-
-
+class INodeColorer;
 
 class IntSetting
 {
@@ -105,7 +105,6 @@ public:
     FloatSetting edgeWidth;
     FloatSetting outlineThickness;
     double selectionThickness;
-    double arrowheadSize;
     bool arrowheadsInSingleMode;
     FloatSetting textOutlineThickness;
 
@@ -149,7 +148,9 @@ public:
     QColor textColour;
     QColor textOutlineColour;
 
-    NodeColourScheme nodeColourScheme;
+    // FIXME: This does not belong here!
+    void initializeColorer(NodeColorScheme scheme);
+    std::shared_ptr<INodeColorer> nodeColorer;
     QColor uniformPositiveNodeColour;
     QColor uniformNegativeNodeColour;
     QColor uniformNodeSpecialColour;
@@ -204,7 +205,7 @@ public:
     //running a BLAST search.
     QString blastSearchParameters;
 
-    //These are the optional BLAST hit filters: whether or not they are used and
+    //These are the optional BLAST hit filters: whether they are used and
     //what their values are.
     IntSetting blastAlignmentLengthFilter;
     FloatSetting blastQueryCoverageFilter;

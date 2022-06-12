@@ -32,8 +32,6 @@ class BlastSearch;
 class AssemblyGraph;
 class AnnotationsManager;
 
-enum NodeColourScheme {UNIFORM_COLOURS, RANDOM_COLOURS, DEPTH_COLOUR,
-                       CONTIGUITY_COLOUR, CUSTOM_COLOURS, GRAY_COLOR};
 enum GraphScope {WHOLE_GRAPH, AROUND_NODE, AROUND_PATHS, AROUND_BLAST_HITS, DEPTH_RANGE};
 enum ContiguityStatus {STARTING, CONTIGUOUS_STRAND_SPECIFIC,
                        CONTIGUOUS_EITHER_STRAND, MAYBE_CONTIGUOUS,
@@ -63,7 +61,7 @@ using AnnotationGroupId = int;
 using ViewId = int;
 
 
-//Some of the program's common components are made global so they don't have
+//Some of the program's common components are made global, so they don't have
 //to be passed around as parameters.
 extern QSharedPointer<Settings> g_settings;
 extern QSharedPointer<Memory> g_memory;

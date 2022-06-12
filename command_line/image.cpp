@@ -151,7 +151,7 @@ int bandageImage(QStringList arguments)
             err << csvPath << " didn't contain color" << Qt::endl;
             return 1;
         }
-         g_settings->nodeColourScheme = CUSTOM_COLOURS;
+         g_settings->initializeColorer(CUSTOM_COLOURS);
     }
 
     if (errorMessage != "")

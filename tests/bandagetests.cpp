@@ -879,15 +879,15 @@ void BandageTests::commandLineSettings()
 
     commandLineSettings = QString("--colour random").split(" ");
     parseSettings(commandLineSettings);
-    QCOMPARE(g_settings->nodeColourScheme, RANDOM_COLOURS);
+    QCOMPARE(g_settings->nodeColorer->scheme(), RANDOM_COLOURS);
 
     commandLineSettings = QString("--colour uniform").split(" ");
     parseSettings(commandLineSettings);
-    QCOMPARE(g_settings->nodeColourScheme, UNIFORM_COLOURS);
+    QCOMPARE(g_settings->nodeColorer->scheme(), UNIFORM_COLOURS);
 
     commandLineSettings = QString("--colour depth").split(" ");
     parseSettings(commandLineSettings);
-    QCOMPARE(g_settings->nodeColourScheme, DEPTH_COLOUR);
+    QCOMPARE(g_settings->nodeColorer->scheme(), DEPTH_COLOUR);
 
     commandLineSettings = QString("--ransatpos 12").split(" ");
     parseSettings(commandLineSettings);

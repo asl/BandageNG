@@ -17,10 +17,13 @@
 
 
 #include "settingsdialog.h"
-#include "program/settings.h"
+
 #include "colourbutton.h"
-#include "graph/assemblygraph.h"
 #include "program/scinot.h"
+#include "program/settings.h"
+
+#include "graph/assemblygraph.h"
+#include "graph/nodecolorer.h"
 
 #include <QMessageBox>
 #include "ui_settingsdialog.h"

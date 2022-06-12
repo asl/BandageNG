@@ -66,6 +66,7 @@
 #include "graphinfodialog.h"
 #include "graph/sequenceutils.hpp"
 #include "graph/assemblygraphbuilder.h"
+#include "graph/nodecolorer.h"
 
 MainWindow::MainWindow(QString fileToLoadOnStartup, bool drawGraphAfterLoad) :
     QMainWindow(nullptr),
@@ -1117,71 +1118,49 @@ void MainWindow::saveSelectedPathToFile()
 }
 
 
+void MainWindow::resetAllNodeColours() {
+    for (auto &entry : g_assemblyGraph->m_deBruijnGraphNodes) {
+        auto *graphicsItemNode = entry->getGraphicsItemNode();
+        if (!graphicsItemNode)
+            continue;
 
+        graphicsItemNode->setNodeColour(g_settings->nodeColorer->get(graphicsItemNode));
+    }
+
+    g_graphicsView->viewport()->update();
+}
 
 void MainWindow::switchColourScheme()
 {
-    switch (ui->coloursComboBox->currentIndex())
-    {
-    case 0:
-        g_settings->nodeColourScheme = GRAY_COLOR;
-        ui->contiguityButton->setVisible(false);
-        ui->contiguityInfoText->setVisible(false);
-        break;
-    case 1:
-        g_settings->nodeColourScheme = RANDOM_COLOURS;
-        ui->contiguityButton->setVisible(false);
-        ui->contiguityInfoText->setVisible(false);
-        break;
-    case 2:
-        g_settings->nodeColourScheme = UNIFORM_COLOURS;
-        ui->contiguityButton->setVisible(false);
-        ui->contiguityInfoText->setVisible(false);
-        break;
-    case 3:
-        g_settings->nodeColourScheme = DEPTH_COLOUR;
-        ui->contiguityButton->setVisible(false);
-        ui->contiguityInfoText->setVisible(false);
-        break;
-    case 4:
-        g_settings->nodeColourScheme = CONTIGUITY_COLOUR;
-        ui->contiguityButton->setVisible(true);
-        ui->contiguityInfoText->setVisible(true);
-        break;
-    case 5:
-        g_settings->nodeColourScheme = CUSTOM_COLOURS;
-        ui->contiguityButton->setVisible(false);
-        ui->contiguityInfoText->setVisible(false);
-        break;
-    }
+    NodeColorScheme scheme = (NodeColorScheme)ui->coloursComboBox->currentIndex();
+    g_settings->initializeColorer(scheme);
+    ui->contiguityButton->setVisible(scheme == CONTIGUITY_COLOUR);
+    ui->contiguityInfoText->setVisible(scheme == CONTIGUITY_COLOUR);
 
-    g_assemblyGraph->resetAllNodeColours();
-    g_graphicsView->viewport()->update();
+    resetAllNodeColours();
 }
 
 
 
-void MainWindow::determineContiguityFromSelectedNode()
-{
+void MainWindow::determineContiguityFromSelectedNode() {
     g_assemblyGraph->resetNodeContiguityStatus();
 
     std::vector<DeBruijnNode *> selectedNodes = m_scene->getSelectedNodes();
-    if (!selectedNodes.empty())
-    {
-        MyProgressDialog progress(this, "Determining contiguity...", false);
-        progress.setWindowModality(Qt::WindowModal);
-        progress.show();
-
-        for (auto & selectedNode : selectedNodes)
-            selectedNode->determineContiguity();
-
-        g_assemblyGraph->m_contiguitySearchDone = true;
-        g_assemblyGraph->resetAllNodeColours();
-        g_graphicsView->viewport()->update();
-    }
-    else
+    if (selectedNodes.empty()) {
         QMessageBox::information(this, "No nodes selected", "Please select one or more nodes for which "
                                                             "contiguity is to be determined.");
+        return;
+    }
+
+    MyProgressDialog progress(this, "Determining contiguity...", false);
+    progress.setWindowModality(Qt::WindowModal);
+    progress.show();
+
+    for (auto *selectedNode : selectedNodes)
+        selectedNode->determineContiguity();
+
+    g_assemblyGraph->m_contiguitySearchDone = true;
+    resetAllNodeColours();
 }
 
 
@@ -1393,8 +1372,7 @@ void MainWindow::fontButtonPressed()
 
 
 
-void MainWindow::setNodeCustomColour()
-{
+void MainWindow::setNodeCustomColour() {
     std::vector<DeBruijnNode *> selectedNodes = m_scene->getSelectedNodes();
     if (selectedNodes.empty())
         return;
@@ -1404,26 +1382,25 @@ void MainWindow::setNodeCustomColour()
         dialogTitle += "s";
 
     QColor newColour = QColorDialog::getColor(g_assemblyGraph->getCustomColourForDisplay(selectedNodes[0]), this, dialogTitle);
-    if (newColour.isValid())
-    {
-        //If we are in single mode, apply the custom colour to both nodes in
-        //each complementary pair.
-        if (!g_settings->doubleMode)
-            selectedNodes = addComplementaryNodes(selectedNodes);
+    if (!newColour.isValid())
+        return;
 
-        //If the colouring scheme is not currently custom, change it to custom now
-        if (g_settings->nodeColourScheme != CUSTOM_COLOURS)
-            setNodeColourSchemeComboBox(CUSTOM_COLOURS);
+    // If we are in single mode, apply the custom colour to both nodes in
+    // each complementary pair.
+    if (!g_settings->doubleMode)
+        selectedNodes = addComplementaryNodes(selectedNodes);
 
-        for (auto & selectedNode : selectedNodes)
-        {
-            g_assemblyGraph->setCustomColour(selectedNode, newColour);
-            if (selectedNode->getGraphicsItemNode() != nullptr)
-                selectedNode->getGraphicsItemNode()->setNodeColour();
+    // If the colouring scheme is not currently custom, change it to custom now
+    g_settings->initializeColorer(CUSTOM_COLOURS);
+    ui->coloursComboBox->setCurrentIndex(g_settings->nodeColorer->scheme());
 
-        }
-        g_graphicsView->viewport()->update();
+    for (auto & selectedNode : selectedNodes) {
+        g_assemblyGraph->setCustomColour(selectedNode, newColour);
+        if (selectedNode->getGraphicsItemNode() != nullptr)
+            selectedNode->getGraphicsItemNode()->setNodeColour(newColour);
     }
+
+    g_graphicsView->viewport()->update();
 }
 
 void MainWindow::setNodeCustomLabel()
@@ -1464,51 +1441,19 @@ std::vector<DeBruijnNode *> MainWindow::addComplementaryNodes(std::vector<DeBrui
 }
 
 
-void MainWindow::openSettingsDialog()
-{
+void MainWindow::openSettingsDialog() {
     SettingsDialog settingsDialog(this);
     settingsDialog.setWidgetsFromSettings();
 
-    if (settingsDialog.exec()) //The user clicked OK
-    {
-        Settings settingsBefore = *g_settings;
+    if (!settingsDialog.exec()) //The user clicked OK
+        return;
 
-        settingsDialog.setSettingsFromWidgets();
+    settingsDialog.setSettingsFromWidgets();
 
-        //If the settings affecting node width was changed, reset the width on
-        //each GraphicsItemNode.
-        if (settingsBefore.depthEffectOnWidth != g_settings->depthEffectOnWidth ||
-                settingsBefore.depthPower != g_settings->depthPower)
-            g_assemblyGraph->recalculateAllNodeWidths();
+    g_assemblyGraph->recalculateAllNodeWidths();
+    g_graphicsView->setAntialiasing(g_settings->antialiasing);
 
-        //If any of the colours changed, reset the node colours now.
-        if (settingsBefore.uniformPositiveNodeColour != g_settings->uniformPositiveNodeColour ||
-                settingsBefore.uniformNegativeNodeColour != g_settings->uniformNegativeNodeColour ||
-                settingsBefore.uniformNodeSpecialColour != g_settings->uniformNodeSpecialColour ||
-                settingsBefore.autoDepthValue != g_settings->autoDepthValue ||
-                settingsBefore.lowDepthColour != g_settings->lowDepthColour ||
-                settingsBefore.highDepthColour != g_settings->highDepthColour ||
-                settingsBefore.lowDepthValue != g_settings->lowDepthValue ||
-                settingsBefore.highDepthValue != g_settings->highDepthValue ||
-                settingsBefore.grayColor != g_settings->grayColor ||
-                settingsBefore.contiguousStrandSpecificColour != g_settings->contiguousStrandSpecificColour ||
-                settingsBefore.contiguousEitherStrandColour != g_settings->contiguousEitherStrandColour ||
-                settingsBefore.notContiguousColour != g_settings->notContiguousColour ||
-                settingsBefore.maybeContiguousColour != g_settings->maybeContiguousColour ||
-                settingsBefore.contiguityStartingColour != g_settings->contiguityStartingColour ||
-                settingsBefore.randomColourPositiveOpacity != g_settings->randomColourPositiveOpacity ||
-                settingsBefore.randomColourNegativeOpacity != g_settings->randomColourNegativeOpacity ||
-                settingsBefore.randomColourPositiveSaturation != g_settings->randomColourPositiveSaturation ||
-                settingsBefore.randomColourNegativeSaturation != g_settings->randomColourNegativeSaturation ||
-                settingsBefore.randomColourPositiveLightness != g_settings->randomColourPositiveLightness ||
-                settingsBefore.randomColourNegativeLightness != g_settings->randomColourNegativeLightness)
-        {
-            g_assemblyGraph->resetAllNodeColours();
-        }
-
-        g_graphicsView->setAntialiasing(g_settings->antialiasing);
-        g_graphicsView->viewport()->update();
-    }
+    resetAllNodeColours();
 }
 
 void MainWindow::doSelectNodes(const std::vector<DeBruijnNode *> &nodesToSelect,
@@ -2186,7 +2131,7 @@ void MainWindow::setWidgetsFromSettings()
     ui->startingNodesExactMatchRadioButton->setChecked(g_settings->startingNodesExactMatch);
     ui->startingNodesPartialMatchRadioButton->setChecked(!g_settings->startingNodesExactMatch);
 
-    setNodeColourSchemeComboBox(g_settings->nodeColourScheme);
+    ui->coloursComboBox->setCurrentIndex(g_settings->nodeColorer->scheme());
 
     setGraphScopeComboBox(g_settings->graphScope);
     ui->nodeDistanceSpinBox->setValue(g_settings->nodeDistance);
@@ -2194,21 +2139,6 @@ void MainWindow::setWidgetsFromSettings()
 
     ui->minDepthSpinBox->setValue(g_settings->minDepthRange);
     ui->maxDepthSpinBox->setValue(g_settings->maxDepthRange);
-}
-
-
-
-void MainWindow::setNodeColourSchemeComboBox(NodeColourScheme nodeColourScheme)
-{
-    switch (nodeColourScheme)
-    {
-        case GRAY_COLOR: ui->coloursComboBox->setCurrentIndex(0); break;
-        case RANDOM_COLOURS: ui->coloursComboBox->setCurrentIndex(1); break;
-        case UNIFORM_COLOURS: ui->coloursComboBox->setCurrentIndex(2); break;
-        case DEPTH_COLOUR: ui->coloursComboBox->setCurrentIndex(3); break;
-        case CONTIGUITY_COLOUR: ui->coloursComboBox->setCurrentIndex(4); break;
-        case CUSTOM_COLOURS: ui->coloursComboBox->setCurrentIndex(5); break;
-    }
 }
 
 void MainWindow::setGraphScopeComboBox(GraphScope graphScope)
@@ -2438,10 +2368,12 @@ void MainWindow::removeSelection()
     g_assemblyGraph->determineGraphInfo();
     displayGraphDetails();
 
-    //Now that the graph has changed, we have to reset BLAST and contiguity
-    //stuff, as they may no longer apply.
+    // Now that the graph has changed, we have to reset BLAST and contiguity
+    // stuff, as they may no longer apply.
     cleanUpAllBlast();
+
     g_assemblyGraph->resetNodeContiguityStatus();
+    resetAllNodeColours();
 }
 
 
@@ -2472,10 +2404,11 @@ void MainWindow::duplicateSelectedNodes()
     g_assemblyGraph->determineGraphInfo();
     displayGraphDetails();
 
-    //Now that the graph has changed, we have to reset BLAST and contiguity
-    //stuff, as they may no longer apply.
+    // Now that the graph has changed, we have to reset BLAST and contiguity
+    // stuff, as they may no longer apply.
     cleanUpAllBlast();
     g_assemblyGraph->resetNodeContiguityStatus();
+    resetAllNodeColours();
 }
 
 void MainWindow::mergeSelectedNodes()
@@ -2516,10 +2449,11 @@ void MainWindow::mergeSelectedNodes()
     g_assemblyGraph->determineGraphInfo();
     displayGraphDetails();
 
-    //Now that the graph has changed, we have to reset BLAST and contiguity
-    //stuff, as they may no longer apply.
+    // Now that the graph has changed, we have to reset BLAST and contiguity
+    // stuff, as they may no longer apply.
     cleanUpAllBlast();
     g_assemblyGraph->resetNodeContiguityStatus();
+    resetAllNodeColours();
 }
 
 void MainWindow::mergeAllPossible()
@@ -2552,6 +2486,7 @@ void MainWindow::mergeAllPossible()
         //stuff, as they may no longer apply.
         cleanUpAllBlast();
         g_assemblyGraph->resetNodeContiguityStatus();
+        resetAllNodeColours();
     }
     else
         QMessageBox::information(this, "No possible merges", "The graph contains no nodes that can be merged.");

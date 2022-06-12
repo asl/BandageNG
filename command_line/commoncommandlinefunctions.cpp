@@ -501,7 +501,7 @@ void parseSettings(QStringList arguments)
         }
     }
 
-    g_settings->nodeColourScheme = getColourSchemeOption("--colour", &arguments);
+    g_settings->initializeColorer(getColourSchemeOption("--colour", &arguments));
 
     // For backward compatibility we allow setting blast annotation view to show from "--colour" option.
     // To be removed when we can set up annotations from CLI.
@@ -1038,9 +1038,9 @@ SciNot getSciNotOption(const QString& option, QStringList * arguments)
      return {arguments->at(sciNotIndex)};
 }
 
-NodeColourScheme getColourSchemeOption(const QString& option, QStringList * arguments)
+NodeColorScheme getColourSchemeOption(const QString& option, QStringList * arguments)
 {
-    NodeColourScheme defaultScheme = RANDOM_COLOURS;
+    NodeColorScheme defaultScheme = RANDOM_COLOURS;
 
     int optionIndex = arguments->indexOf(option);
     if (optionIndex == -1)

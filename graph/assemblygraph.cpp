@@ -314,22 +314,11 @@ double AssemblyGraph::getMeanDepth(const QList<DeBruijnNode *>& nodes)
 }
 
 
-void AssemblyGraph::resetNodeContiguityStatus()
-{
+void AssemblyGraph::resetNodeContiguityStatus() {
     for (auto &entry : m_deBruijnGraphNodes) {
         entry->resetContiguityStatus();
     }
     m_contiguitySearchDone = false;
-
-    resetAllNodeColours();
-}
-
-void AssemblyGraph::resetAllNodeColours()
-{
-    for (auto &entry : m_deBruijnGraphNodes) {
-        if (entry->getGraphicsItemNode() != nullptr)
-            entry->getGraphicsItemNode()->setNodeColour();
-    }
 }
 
 void AssemblyGraph::determineGraphInfo()
@@ -790,32 +779,37 @@ void AssemblyGraph::addGraphicsItemsToScene(MyGraphicsScene * scene)
 
     double meanDrawnDepth = getMeanDepth(true);
 
-    //First make the GraphicsItemNode objects
-    for (auto &entry : m_deBruijnGraphNodes) {
-        DeBruijnNode * node = entry;
+    // First make the GraphicsItemNode objects
+    for (auto *node : m_deBruijnGraphNodes) {
+        if (!node->isDrawn())
+            continue;
 
-        if (node->isDrawn())
-        {
-            if (meanDrawnDepth == 0)
-                node->setDepthRelativeToMeanDrawnDepth(1.0);
-            else
-                node->setDepthRelativeToMeanDrawnDepth(node->getDepth() / meanDrawnDepth);
-            auto * graphicsItemNode = new GraphicsItemNode(node, m_graphAttributes);
-            node->setGraphicsItemNode(graphicsItemNode);
-            graphicsItemNode->setFlag(QGraphicsItem::ItemIsSelectable);
-            graphicsItemNode->setFlag(QGraphicsItem::ItemIsMovable);
+        node->setDepthRelativeToMeanDrawnDepth(meanDrawnDepth== 0 ?
+                                               1.0 : node->getDepth() / meanDrawnDepth);
+        auto *graphicsItemNode = new GraphicsItemNode(node, m_graphAttributes);
+        node->setGraphicsItemNode(graphicsItemNode);
+        graphicsItemNode->setFlag(QGraphicsItem::ItemIsSelectable);
+        graphicsItemNode->setFlag(QGraphicsItem::ItemIsMovable);
+
+        bool colSet = false;
+        if (auto *rcNode = node->getReverseComplement()) {
+            if (auto *revCompGraphNode = rcNode->getGraphicsItemNode()) {
+                auto colPair = g_settings->nodeColorer->get(graphicsItemNode, revCompGraphNode);
+                graphicsItemNode->setNodeColour(colPair.first);
+                revCompGraphNode->setNodeColour(colPair.second);
+                colSet = true;
+            }
         }
+        if (!colSet)
+            graphicsItemNode->setNodeColour(g_settings->nodeColorer->get(graphicsItemNode));
     }
 
-    resetAllNodeColours();
-
-    //Then make the GraphicsItemEdge objects and add them to the scene first
-    //so they are drawn underneath
+    // Then make the GraphicsItemEdge objects and add them to the scene first,
+    // so they are drawn underneath
     for (auto &entry : m_deBruijnGraphEdges) {
         DeBruijnEdge * edge = entry.second;
 
-        if (edge->isDrawn())
-        {
+        if (edge->isDrawn()) {
             auto * graphicsItemEdge = new GraphicsItemEdge(edge);
             edge->setGraphicsItemEdge(graphicsItemEdge);
             graphicsItemEdge->setFlag(QGraphicsItem::ItemIsSelectable);
@@ -823,12 +817,12 @@ void AssemblyGraph::addGraphicsItemsToScene(MyGraphicsScene * scene)
         }
     }
 
-    //Now add the GraphicsItemNode objects to the scene so they are drawn
-    //on top
-    for (auto &entry : m_deBruijnGraphNodes) {
-        DeBruijnNode * node = entry;
-        if (node->hasGraphicsItem())
-            scene->addItem(node->getGraphicsItemNode());
+    // Now add the GraphicsItemNode objects to the scene, so they are drawn
+    // on top
+    for (auto *node : m_deBruijnGraphNodes) {
+        if (!node->hasGraphicsItem())
+            continue;
+        scene->addItem(node->getGraphicsItemNode());
     }
 }
 
@@ -1568,8 +1562,7 @@ void AssemblyGraph::duplicateGraphicsNode(DeBruijnNode * originalNode, DeBruijnN
     newGraphicsItemNode->shiftPointsRight();
     originalGraphicsItemNode->fixEdgePaths();
 
-    originalGraphicsItemNode->setNodeColour();
-    newGraphicsItemNode->setNodeColour();
+    newGraphicsItemNode->setNodeColour(originalGraphicsItemNode->m_colour);
 
     originalGraphicsItemNode->setWidth();
 
@@ -1825,8 +1818,7 @@ bool AssemblyGraph::mergeGraphicsNodes2(QList<DeBruijnNode *> * originalNodes,
         newNode->setGraphicsItemNode(newGraphicsItemNode);
         newGraphicsItemNode->setFlag(QGraphicsItem::ItemIsSelectable);
         newGraphicsItemNode->setFlag(QGraphicsItem::ItemIsMovable);
-
-        newGraphicsItemNode->setNodeColour();
+        newGraphicsItemNode->setNodeColour(g_settings->nodeColorer->get(newGraphicsItemNode));
 
         scene->addItem(newGraphicsItemNode);
 

@@ -111,8 +111,6 @@ public:
     static double getMeanDepth(std::vector<DeBruijnNode *> nodes);
     static double getMeanDepth(const QList<DeBruijnNode *>& nodes);
     void resetNodeContiguityStatus();
-    void resetAllNodeColours();
-    void clearAllBlastHitPointers();
     void determineGraphInfo();
     void clearGraphInfo();
     void recalculateAllDepthsRelativeToDrawnMean();

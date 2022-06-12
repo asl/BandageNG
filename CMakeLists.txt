@@ -71,7 +71,7 @@ set(LIB_SOURCES
         ui/tablewidgetitemname.cpp
         ui/tablewidgetitemshown.cpp
         ui/verticallabel.cpp
-        ui/verticalscrollarea.cpp)
+        ui/verticalscrollarea.cpp graph/nodecolorer.cpp graph/nodecolorer.h)
 
 set(FORMS
         ui/aboutdialog.ui
