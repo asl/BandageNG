@@ -459,8 +459,7 @@ bool AssemblyGraph::loadCSV(const QString& filename, QStringList * columns, QStr
     int unmatched_nodes = 0; // keep a counter for lines in file that can't be matched to nodes
 
     QStringList headers = utils::splitCsv(line, sep);
-    if (headers.size() < 2)
-    {
+    if (headers.size() < 2) {
         *errormsg = "Not enough CSV headers: at least two required.";
         return false;
     }
@@ -468,11 +467,9 @@ bool AssemblyGraph::loadCSV(const QString& filename, QStringList * columns, QStr
 
     //Check to see if any of the columns holds colour data.
     int colourCol = -1;
-    for (int i = 0; i < headers.size(); ++i)
-    {
+    for (size_t i = 0; i < headers.size(); ++i) {
         QString header = headers[i].toLower();
-        if (header == "colour" || header == "color")
-        {
+        if (header == "colour" || header == "color") {
             colourCol = i;
             *coloursLoaded = true;
             break;
@@ -480,55 +477,48 @@ bool AssemblyGraph::loadCSV(const QString& filename, QStringList * columns, QStr
     }
 
     *columns = m_csvHeaders = headers;
-    int columnCount = headers.size();
+    size_t columnCount = headers.size();
 
     QMap<QString, QColor> colourCategories;
     std::vector<QColor> presetColours = getPresetColours();
-    while (!in.atEnd())
-    {
+    while (!in.atEnd()) {
         QApplication::processEvents();
 
         QStringList cols = utils::splitCsv(in.readLine(), sep);
         QString nodeName = getNodeNameFromString(cols[0]);
 
-        //Get rid of the node name - no need to save that.
-        cols.pop_front();
-
-        //If one of the columns holds colour data, get the colour from that one.
-        //Acceptable colour formats: 6-digit hex colour (e.g. #FFB6C1), an 8-digit hex colour (e.g. #7FD2B48C) or a
-        //standard colour name (e.g. skyblue).
-        //If the colour value is something other than one of these, a colour will be assigned to the value.  That way
-        //categorical names can be used and automatically given colours.
-        QColor colour;
-        if (colourCol != -1 && cols.size() > colourCol)
-        {
-            QString colourString = cols[colourCol];
-            colour = QColor(colourString);
-            if (!colour.isValid())
-            {
-                if (!colourCategories.contains(colourString))
-                {
-                    int nextColourIndex = colourCategories.size();
-                    colourCategories[colourString] = presetColours[nextColourIndex];
-                }
-                colour = colourCategories[colourString];
-            }
+        auto node = m_deBruijnGraphNodes.find(nodeName.toStdString());
+        if (node == m_deBruijnGraphNodes.end()) {
+            unmatched_nodes += 1;
+            continue;
         }
 
-        //Get rid of any extra data that doesn't have a header.
-        while (cols.size() > columnCount)
-            cols.pop_back();
+        // Get rid of the node name - no need to save that.
+        cols.pop_front();
 
-        if (nodeName != "") {
-            auto node = m_deBruijnGraphNodes.find(nodeName.toStdString());
-            if (node != m_deBruijnGraphNodes.end()) {
-                setCsvData(*node, cols);
-                if (colour.isValid())
-                    setCustomColour(*node, colour);
-            } else
-                ++unmatched_nodes;
-        } else
-            ++unmatched_nodes;
+        // Get rid of any extra data that doesn't have a header.
+        cols.resize(columnCount);
+
+        setCsvData(*node, cols);
+
+        // If one of the columns holds colour data, get the colour from that one.
+        // Acceptable colour formats: 6-digit hex colour (e.g. #FFB6C1), an 8-digit hex colour (e.g. #7FD2B48C) or a
+        // standard colour name (e.g. skyblue).
+        // If the colour value is something other than one of these, a colour will be assigned to the value.  That way
+        // categorical names can be used and automatically given colours.
+        if (colourCol == -1 || cols.size() <= colourCol)
+            continue;
+
+        QString colourString = cols[colourCol];
+        QColor colour(colourString);
+        if (!colour.isValid()) {
+            QColor presetColor = presetColours[colourCategories.size() % presetColours.size()];
+            auto colorCat = colourCategories.insert(colourString, presetColor);
+            colour = colorCat.value();
+        }
+
+        if (colour.isValid())
+            setCustomColour(*node, colour);
     }
 
     if (unmatched_nodes)
