@@ -1,0 +1,17 @@
+S	v1	CTGAA	SN:Z:chr1	SS:i:0	SR:i:0
+S	v2	ACG	SN:Z:chr1	SS:i:5	SR:i:0
+S	v3	TGGC	SN:Z:chr1	SS:i:8	SR:i:0
+S	v4	TGTGA	SN:Z:chr1	SS:i:12	SR:i:0
+S	v5	TTTC	SN:Z:foo	SS:i:8	SR:i:1
+S	v6	CTGA	SN:Z:foo	SS:i:12	SR:i:1
+S	v7	GTTAC	SN:Z:bar	SS:i:5	SR:i:2
+L	v1	+	v2	+	0M	FO:Z:Foo
+L	v2	+	v3	+	0M
+L	v3	+	v4	+	0M
+L	v2	+	v5	+	0M
+L	v5	+	v6	+	0M
+L	v6	+	v4	+	0M
+L	v1	+	v7	+	0M
+L	v7	+	v6	+	0M
+W	foo	>v1>v2>v5>v6>v4	SM:Z:Bob
+W	bar	>v1>v7>v6>v4	SM:Z:Mary

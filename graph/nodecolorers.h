@@ -105,3 +105,21 @@ private:
     tsl::htrie_map<char, QColor> m_allTags;
     std::unordered_set<std::string> m_tagNames;
 };
+
+class CSVNodeColorer : public INodeColorer {
+public:
+    explicit CSVNodeColorer(NodeColorScheme scheme)
+            : INodeColorer(scheme) {
+        if (m_graph)
+            CSVNodeColorer::reset();
+    }
+    QColor get(const GraphicsItemNode *node) override;
+    void reset() override;
+    [[nodiscard]] const char* name() const override { return "Color by CSV columns"; };
+
+    void setColumnIdx(unsigned idx) { m_colIdx = idx; }
+
+private:
+    unsigned m_colIdx = 0;
+    std::vector<tsl::htrie_map<char, QColor>> m_colors;
+};

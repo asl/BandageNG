@@ -57,6 +57,8 @@ std::unique_ptr<INodeColorer> INodeColorer::create(NodeColorScheme scheme) {
             return std::make_unique<GCNodeColorer>(scheme);
         case TAG_VALUE:
             return std::make_unique<TagValueNodeColorer>(scheme);
+        case CSV_COLUMN:
+            return std::make_unique<CSVNodeColorer>(scheme);
     }
 
     return nullptr;
@@ -219,4 +221,48 @@ void TagValueNodeColorer::reset() {
 
     if (!m_tagNames.empty())
         m_tagName = *m_tagNames.begin();
+}
+
+QColor CSVNodeColorer::get(const GraphicsItemNode *node) {
+    const DeBruijnNode *deBruijnNode = node->m_deBruijnNode;
+
+    auto val = m_graph->getCsvLine(deBruijnNode, m_colIdx);
+    if (!val || m_colIdx >= m_colors.size())
+        return m_graph->getCustomColourForDisplay(deBruijnNode);
+
+    const auto &cols = m_colors[m_colIdx];
+    auto col = cols.find(val->toStdString());
+    if (col == cols.end())
+        return m_graph->getCustomColourForDisplay(deBruijnNode);
+
+    return *col;;
+}
+
+void CSVNodeColorer::reset() {
+    size_t columns = m_graph->m_csvHeaders.size();
+
+    m_colors.resize(columns);
+    // Store all unique values into a map
+    for (const auto &entry : m_graph->m_nodeCSVData) {
+        const auto &row = entry.second;
+        for (size_t i = 0; i < row.size() && i < columns; ++i) {
+            const auto &cell = row[i];
+            m_colors[i].insert(cell.toStdString(), QColor(cell));
+        }
+    }
+
+    // Assign all invalid colors according to colormap
+    for (auto &column : m_colors) {
+        size_t invalid = 0;
+        for (const auto &entry : column)
+            invalid += !entry.isValid();
+        size_t i = 0;
+        for (auto &entry : column) {
+            if (entry.isValid())
+                continue;
+            entry = tinycolormap::GetColor(double(i) / double(invalid),
+                                           colorMap(g_settings->colorMap)).ConvertToQColor();
+            i += 1;
+        }
+    }
 }

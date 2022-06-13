@@ -151,6 +151,7 @@ test_all "$bandagepath image abc.fastg test.png" 1 "" "Bandage-NG error: abc.fas
 test_all "$bandagepath image inputs/test.fastg test.abc" 1 "" "Bandage-NG error: the output filename must end in .png, .jpg or .svg"
 test_all "$bandagepath image inputs/test.csv tmp/test.png" 1 "" "Bandage-NG error: could not load inputs/test.csv"
 test_all "$bandagepath image inputs/test.fastg test.png --query abc.fasta" 1 "" "Bandage-NG error: --query must be followed by a valid filename"
+test_all "$bandagepath image inputs/test_rgfa.gfa test.png --colour gfa" 0 "" ""
 
 # BandageNG load  tests
 test_all "$bandagepath load abc.fastg" 1 "" "Bandage-NG error: abc.fastg does not exist"
@@ -190,8 +191,8 @@ test_all "$bandagepath --selcol" 1 "" "Bandage-NG error: --selcol must be follow
 test_all "$bandagepath --textcol" 1 "" "Bandage-NG error: --textcol must be followed by a 6-digit hex colour (e.g. #FFB6C1), an 8-digit hex colour (e.g. #7FD2B48C) or a standard colour name (e.g. skyblue)"
 test_all "$bandagepath --toutcol" 1 "" "Bandage-NG error: --toutcol must be followed by a 6-digit hex colour (e.g. #FFB6C1), an 8-digit hex colour (e.g. #7FD2B48C) or a standard colour name (e.g. skyblue)"
 test_all "$bandagepath --toutline" 1 "" "Bandage-NG error: --toutline must be followed by a number"
-test_all "$bandagepath --colour" 1 "" "Bandage-NG error: --colour must be followed by random, uniform, depth, blastsolid, blastrainbow or custom"
-test_all "$bandagepath --colour abc" 1 "" "Bandage-NG error: --colour must be followed by random, uniform, depth, blastsolid, blastrainbow or custom"
+test_all "$bandagepath --colour" 1 "" "Bandage-NG error: --colour must be followed by random, uniform, depth, blastsolid, blastrainbow, custom, gc or gfa"
+test_all "$bandagepath --colour abc" 1 "" "Bandage-NG error: --colour must be followed by random, uniform, depth, blastsolid, blastrainbow, custom, gc or gfa"
 test_all "$bandagepath --ransatpos" 1 "" "Bandage-NG error: --ransatpos must be followed by an integer"
 test_all "$bandagepath --ransatneg" 1 "" "Bandage-NG error: --ransatneg must be followed by an integer"
 test_all "$bandagepath --ranligpos" 1 "" "Bandage-NG error: --ranligpos must be followed by an integer"

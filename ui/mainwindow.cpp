@@ -302,22 +302,14 @@ void MainWindow::loadCSV(QString fullFileName)
         progress.show();
 
         bool coloursLoaded = false;
-        bool success = g_assemblyGraph->loadCSV(fullFileName, &columns, &errormsg, &coloursLoaded);
-
-        if (success)
-        {
+        QStringList columns;
+        if (g_assemblyGraph->loadCSV(fullFileName, &columns, &errormsg, &coloursLoaded)) {
             ui->csvCheckBox->setChecked(true);
             ui->csvComboBox->setEnabled(true);
             ui->csvComboBox->clear();
             ui->csvComboBox->addItems(columns);
             g_settings->displayNodeCsvDataCol = 0;
-            if (coloursLoaded)
-            {
-                if (ui->coloursComboBox->currentIndex() != 6)
-                    ui->coloursComboBox->setCurrentIndex(6);
-                else
-                    switchColourScheme();
-            }
+            switchColourScheme(coloursLoaded ? CUSTOM_COLOURS : CSV_COLUMN);
         }
     }
 
@@ -1129,8 +1121,16 @@ void MainWindow::resetAllNodeColours() {
 }
 
 void MainWindow::switchTagValue() {
-    auto *colorer = dynamic_cast<TagValueNodeColorer*>(&*g_settings->nodeColorer);
-    colorer->setTagName(ui->tagsComboBox->currentText().toStdString());
+    NodeColorScheme scheme = g_settings->nodeColorer->scheme();
+    if (scheme == TAG_VALUE) {
+        auto *colorer = dynamic_cast<TagValueNodeColorer *>(&*g_settings->nodeColorer);
+        if (ui->tagsComboBox->currentIndex() != -1)
+            colorer->setTagName(ui->tagsComboBox->currentText().toStdString());
+    } else if (scheme == CSV_COLUMN) {
+        auto *colorer = dynamic_cast<CSVNodeColorer *>(&*g_settings->nodeColorer);
+        if (ui->tagsComboBox->currentIndex() != -1)
+            colorer->setColumnIdx(ui->tagsComboBox->currentIndex());
+    }
 
     resetAllNodeColours();
 }
@@ -1152,7 +1152,15 @@ void MainWindow::switchColourScheme(int idx) {
         auto tagNames = colorer->tagNames();
         for (const auto &tag : tagNames)
             ui->tagsComboBox->addItem(tag.c_str());
-        colorer->setTagName(tagNames.front());
+        if (!tagNames.empty())
+            colorer->setTagName(tagNames.front());
+        ui->tagsComboBox->setVisible(true);
+    } else if (scheme == CSV_COLUMN) {
+        ui->tagsComboBox->clear();
+        auto *colorer = dynamic_cast<CSVNodeColorer*>(&*g_settings->nodeColorer);
+        ui->tagsComboBox->addItems(g_assemblyGraph->m_csvHeaders);
+        if (!g_assemblyGraph->m_csvHeaders.empty())
+            colorer->setColumnIdx(0);
         ui->tagsComboBox->setVisible(true);
     } else {
         ui->tagsComboBox->setVisible(false);

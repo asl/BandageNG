@@ -33,7 +33,8 @@ enum NodeColorScheme : int {
     CUSTOM_COLOURS = 5,
     GC_CONTENT = 6,
     TAG_VALUE = 7,
-    LAST_SCHEME = TAG_VALUE
+    CSV_COLUMN = 8,
+    LAST_SCHEME = CSV_COLUMN
 };
 
 class INodeColorer {

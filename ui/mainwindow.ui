@@ -58,9 +58,9 @@
        <property name="geometry">
         <rect>
          <x>0</x>
-         <y>-322</y>
+         <y>0</y>
          <width>283</width>
-         <height>1486</height>
+         <height>1526</height>
         </rect>
        </property>
        <property name="sizePolicy">
@@ -907,6 +907,11 @@
                 <item>
                  <property name="text">
                   <string>Colour by GFA tag</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Colour by CSV column</string>
                  </property>
                 </item>
                </widget>
