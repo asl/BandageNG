@@ -30,6 +30,7 @@
 #include "program/graphlayoutworker.h"
 #include "program/memory.h"
 #include "ui/myprogressdialog.h"
+#include "sequenceutils.h"
 
 #include <QApplication>
 #include <QFile>
@@ -420,43 +421,6 @@ void AssemblyGraph::clearGraphInfo()
     m_thirdQuartileDepth = 0.0;
 }
 
-/* Split a QString according to CSV rules
- *
- * @param line  line of a csv
- * @param sep   field separator to use
- * @result      list of fields with escaping removed
- *
- * Known Bugs: CSV (as per RFC4180) allows multi-line fields (\r\n between "..."), which
- *             can't be parsed line-by line an hence isn't supported.
- */
-QStringList AssemblyGraph::splitCsv(const QString& line, const QString& sep)
-{
-    // TODO: use libraries for parsing CSV
-    QRegularExpression rx(R"(("(?:[^"]|"")*"|[^)" + sep + "]*)(?:" + sep + "|$)");
-    QStringList list;
-
-    auto it = rx.globalMatch(line);
-    while (it.hasNext()) {
-        auto match = it.next();
-        QString field = match.captured().replace("\"\"", "\"");
-        if (field.endsWith(sep)) {
-            field.chop(sep.length());
-        }
-        if (!field.isEmpty() && field[0] == '"' && field[field.length() - 1] == '"') {
-            field = field.mid(1, field.length() - 2);
-        }
-        list << field;
-    }
-
-    // regexp always matches empty string at the end
-    // if string ends with separator then we need to store it
-    if (!line.endsWith(sep)) {
-        list.pop_back();
-    }
-
-    return list;
-}
-
 /* Load data from CSV and add to deBruijnGraphNodes
  *
  * @param filename  the full path of the file to be loaded
@@ -494,7 +458,7 @@ bool AssemblyGraph::loadCSV(const QString& filename, QStringList * columns, QStr
 
     int unmatched_nodes = 0; // keep a counter for lines in file that can't be matched to nodes
 
-    QStringList headers = splitCsv(line, sep);
+    QStringList headers = utils::splitCsv(line, sep);
     if (headers.size() < 2)
     {
         *errormsg = "Not enough CSV headers: at least two required.";
@@ -515,16 +479,16 @@ bool AssemblyGraph::loadCSV(const QString& filename, QStringList * columns, QStr
         }
     }
 
-    *columns = headers;
+    *columns = m_csvHeaders = headers;
     int columnCount = headers.size();
+
     QMap<QString, QColor> colourCategories;
     std::vector<QColor> presetColours = getPresetColours();
-
     while (!in.atEnd())
     {
         QApplication::processEvents();
 
-        QStringList cols = splitCsv(in.readLine(), sep);
+        QStringList cols = utils::splitCsv(in.readLine(), sep);
         QString nodeName = getNodeNameFromString(cols[0]);
 
         //Get rid of the node name - no need to save that.
@@ -1225,103 +1189,6 @@ QString AssemblyGraph::getOppositeNodeName(QString nodeName)
         return nodeName + "-";
 }
 
-
-void AssemblyGraph::readFastaOrFastqFile(const QString& filename, std::vector<QString> * names,
-                                         std::vector<QByteArray> * sequences) {
-    QChar firstChar = QChar(0);
-    QFile inputFile(filename);
-    if (inputFile.open(QIODevice::ReadOnly)) {
-        QTextStream in(&inputFile);
-        QString firstLine = in.readLine();
-        firstChar = firstLine.at(0);
-        inputFile.close();
-    }
-    if (firstChar == '>')
-        readFastaFile(filename, names, sequences);
-    else if (firstChar == '@')
-        readFastqFile(filename, names, sequences);
-}
-
-
-
-void AssemblyGraph::readFastaFile(const QString& filename, std::vector<QString> * names, std::vector<QByteArray> * sequences)
-{
-    QFile inputFile(filename);
-    if (inputFile.open(QIODevice::ReadOnly))
-    {
-        QString name = "";
-        QByteArray sequence = "";
-
-        QTextStream in(&inputFile);
-        while (!in.atEnd())
-        {
-            QApplication::processEvents();
-
-            QString line = in.readLine();
-
-            if (line.length() == 0)
-                continue;
-
-            if (line.at(0) == '>')
-            {
-                //If there is a current sequence, add it to the vectors now.
-                if (name.length() > 0)
-                {
-                    names->push_back(name);
-                    sequences->push_back(sequence);
-                }
-
-                line.remove(0, 1); //Remove '>' from start
-                name = line;
-                sequence = "";
-            }
-
-            else //It's a sequence line
-                sequence += line.simplified().toLatin1();
-        }
-
-        //Add the last target to the results now.
-        if (name.length() > 0)
-        {
-            names->push_back(name);
-            sequences->push_back(sequence);
-        }
-
-        inputFile.close();
-    }
-}
-
-
-void AssemblyGraph::readFastqFile(const QString& filename, std::vector<QString> * names, std::vector<QByteArray> * sequences)
-{
-    QFile inputFile(filename);
-    if (inputFile.open(QIODevice::ReadOnly))
-    {
-        QTextStream in(&inputFile);
-        while (!in.atEnd())
-        {
-            QApplication::processEvents();
-
-            QString name = in.readLine().simplified();
-            QByteArray sequence = in.readLine().simplified().toLocal8Bit();
-            in.readLine();  // separator
-            in.readLine();  // qualities
-
-            if (name.length() == 0)
-                continue;
-            if (sequence.length() == 0)
-                continue;
-            if (name.at(0) != '@')
-                continue;
-            name.remove(0, 1); //Remove '@' from start
-            names->push_back(name);
-            sequences->push_back(sequence);
-        }
-        inputFile.close();
-    }
-}
-
-
 QString AssemblyGraph::getUniqueNodeName(QString baseName) const {
     //If the base name is untaken, then that's it!
     if (!m_deBruijnGraphNodes.count((baseName + "+").toStdString()))
@@ -1362,15 +1229,6 @@ void AssemblyGraph::recalculateAllNodeWidths()
         GraphicsItemNode * graphicsItemNode = entry->getGraphicsItemNode();
         if (graphicsItemNode != nullptr)
             graphicsItemNode->setWidth();
-    }
-}
-
-
-
-void AssemblyGraph::clearAllCsvData()
-{
-    for (auto &entry : m_deBruijnGraphNodes) {
-        clearCsvData(entry);
     }
 }
 
@@ -2173,6 +2031,13 @@ void AssemblyGraph::setCustomLabel(const DeBruijnNode* node, QString newLabel) {
     m_nodeLabels[node] = newLabel;
 }
 
+void AssemblyGraph::clearAllCsvData() {
+    m_csvHeaders.clear();
+    for (auto &entry : m_deBruijnGraphNodes) {
+        clearCsvData(entry);
+    }
+}
+
 bool AssemblyGraph::hasCsvData(const DeBruijnNode* node) const {
     auto it = m_nodeCSVData.find(node);
     return it != m_nodeCSVData.end() && !it->second.isEmpty();
@@ -2183,7 +2048,7 @@ QStringList AssemblyGraph::getAllCsvData(const DeBruijnNode *node) const {
     return it == m_nodeCSVData.end() ? QStringList() : it->second;
 }
 
-QString AssemblyGraph::getCsvLine(const DeBruijnNode *node, int i) const {
+std::optional<QString> AssemblyGraph::getCsvLine(const DeBruijnNode *node, int i) const {
     auto it = m_nodeCSVData.find(node);
     if (it == m_nodeCSVData.end() ||
         i >= it->second.length())
@@ -2275,39 +2140,11 @@ void AssemblyGraph::changeNodeDepth(const std::vector<DeBruijnNode *> &nodes,
 }
 
 
-
-//This function is used when making FASTA outputs - it breaks a sequence into
-//separate lines.  The default interval is 70, as that seems to be what NCBI
-//uses.
-//The returned string always ends in a newline.
-QByteArray AssemblyGraph::addNewlinesToSequence(const QByteArray& sequence,
-                                                int interval)
-{
-    QByteArray output;
-
-    int charactersRemaining = sequence.length();
-    int currentIndex = 0;
-    while (charactersRemaining > interval)
-    {
-        output += sequence.mid(currentIndex, interval);
-        output += "\n";
-        charactersRemaining -= interval;
-        currentIndex += interval;
-    }
-    output += sequence.mid(currentIndex);
-    output += "\n";
-
-    return output;
-}
-
-
-
-
 //This function returns the number of dead ends in the graph.
 //It looks only at positive nodes, which can have 0, 1 or 2 dead ends each.
 //This value therefore varies between zero and twice the node count (specifically
 //the positive node count).
-int AssemblyGraph::getDeadEndCount() const
+unsigned AssemblyGraph::getDeadEndCount() const
 {
     int deadEndCount = 0;
 

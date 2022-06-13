@@ -1,4 +1,4 @@
-#include "annotationsmanager.hpp"
+#include "annotationsmanager.h"
 
 AnnotationGroup &AnnotationsManager::createAnnotationGroup(QString name) {
     if (name == g_settings->blastAnnotationGroupName) {

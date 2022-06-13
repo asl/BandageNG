@@ -9,7 +9,7 @@
 #include <QFormLayout>
 #include <QCheckBox>
 
-#include "graph/annotationsmanager.hpp"
+#include "graph/annotationsmanager.h"
 
 
 class AnnotationSettingsDialog : public QDialog {

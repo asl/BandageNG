@@ -22,7 +22,7 @@
 #include <cmath>
 #include "blast/blasthit.h"
 #include "assemblygraph.h"
-#include "sequenceutils.hpp"
+#include "sequenceutils.h"
 #include <set>
 #include <QApplication>
 #include <QSet>
@@ -332,7 +332,7 @@ bool DeBruijnNode::isNotOnlyPathInItsDirection(DeBruijnNode * connectedNode,
 
 QByteArray DeBruijnNode::getFasta(bool sign, bool newLines, bool evenIfEmpty) const
 {
-    QByteArray sequence = sequenceToQByteArray(getSequence());
+    QByteArray sequence = utils::sequenceToQByteArray(getSequence());
     if (sequence.isEmpty() && !evenIfEmpty)
         return {};
 
@@ -340,9 +340,8 @@ QByteArray DeBruijnNode::getFasta(bool sign, bool newLines, bool evenIfEmpty) co
     fasta += getNodeNameForFasta(sign).toLatin1();
     fasta += "\n";
     if (newLines)
-        fasta += AssemblyGraph::addNewlinesToSequence(sequence);
-    else
-    {
+        fasta += utils::addNewlinesToSequence(sequence);
+    else {
         fasta += sequence;
         fasta += "\n";
     }
@@ -358,7 +357,7 @@ QByteArray DeBruijnNode::getSequenceForGfa() const
     if (sequenceIsMissing())
         return {"*"};
 
-    QByteArray sequence = sequenceToQByteArray(getSequence());
+    QByteArray sequence = utils::sequenceToQByteArray(getSequence());
 
     if (g_assemblyGraph->m_graphFileType != LAST_GRAPH)
         return sequence;
@@ -371,7 +370,7 @@ QByteArray DeBruijnNode::getSequenceForGfa() const
     //deduced from the reverse complement node.
     if (getLength() >= extensionLength)
     {
-        QByteArray revCompSeq = sequenceToQByteArray(getReverseComplement()->getSequence());
+        QByteArray revCompSeq = utils::sequenceToQByteArray(getReverseComplement()->getSequence());
         QByteArray endOfRevCompSeq = revCompSeq.right(extensionLength);
         QByteArray extension = AssemblyGraph::getReverseComplement(endOfRevCompSeq);
         return extension + sequence;
@@ -402,7 +401,7 @@ QByteArray DeBruijnNode::getUpstreamSequence(int upstreamSequenceLength) const
 
     for (auto upstreamNode : upstreamNodes)
     {
-        QByteArray upstreamNodeFullSequence = sequenceToQByteArray(upstreamNode->getSequence());
+        QByteArray upstreamNodeFullSequence = utils::sequenceToQByteArray(upstreamNode->getSequence());
         QByteArray upstreamNodeSequence;
 
         //If the upstream node has enough sequence, great!

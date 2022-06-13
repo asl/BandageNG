@@ -23,7 +23,7 @@
 #include "program/memory.h"
 #include "graph/debruijnnode.h"
 #include "graph/debruijnedge.h"
-#include "graph/annotationsmanager.hpp"
+#include "graph/annotationsmanager.h"
 #include "program/globals.h"
 #include "command_line/commoncommandlinefunctions.h"
 

@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Bandage.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "gfa.hpp"
+#include "gfa.h"
 
 #include <lexy/action/parse.hpp> // lexy::parse
 #include <lexy/action/trace.hpp> // lexy::trace

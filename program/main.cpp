@@ -33,7 +33,7 @@
 #include "blast/blastsearch.h"
 
 #include "ui/mainwindow.h"
-#include "graph/annotationsmanager.hpp"
+#include "graph/annotationsmanager.h"
 #include "ui/mygraphicsview.h"
 
 #include <QApplication>

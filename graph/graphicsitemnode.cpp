@@ -22,7 +22,7 @@
 #include "debruijnedge.h"
 #include "ogdfnode.h"
 #include "assemblygraph.h"
-#include "annotationsmanager.hpp"
+#include "annotationsmanager.h"
 
 #include "program/globals.h"
 #include "program/memory.h"
@@ -700,9 +700,11 @@ QStringList GraphicsItemNode::getNodeText() const
         nodeText << formatIntForDisplay(m_deBruijnNode->getLength()) + " bp";
     if (g_settings->displayNodeDepth)
         nodeText << formatDepthForDisplay(m_deBruijnNode->getDepth());
-    if (g_settings->displayNodeCsvData && g_assemblyGraph->hasCsvData(m_deBruijnNode))
-        nodeText << g_assemblyGraph->getCsvLine(m_deBruijnNode, g_settings->displayNodeCsvDataCol);
-
+    if (g_settings->displayNodeCsvData) {
+        auto data = g_assemblyGraph->getCsvLine(m_deBruijnNode, g_settings->displayNodeCsvDataCol);
+        if (data)
+            nodeText << *data;
+    }
     return nodeText;
 }
 

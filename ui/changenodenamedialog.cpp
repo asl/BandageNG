@@ -1,7 +1,6 @@
 #include "changenodenamedialog.h"
 #include "ui_changenodenamedialog.h"
 
-#include "program/globals.h"
 #include "graph/assemblygraph.h"
 #include <QPushButton>
 #include <utility>
@@ -53,50 +52,35 @@ void ChangeNodeNameDialog::checkNodeNameValidity()
     }
 
     NodeNameStatus nodeNameStatus = g_assemblyGraph->checkNodeNameValidity(potentialName);
-
-    if (nodeNameStatus == NODE_NAME_OKAY)
-    {
-        ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(true);
-        ui->errorLabel->setText("");
-        return;
+    switch (nodeNameStatus) {
+        case NodeNameStatus::NODE_NAME_OKAY:
+            ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(true);
+            ui->errorLabel->setText("");
+            break;
+        case NodeNameStatus::NODE_NAME_TAKEN:
+            ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
+            ui->errorLabel->setText("Name already used");
+            break;
+        case NodeNameStatus::NODE_NAME_CONTAINS_TAB:
+            ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
+            ui->errorLabel->setText("Tab not allowed");
+            break;
+        case NodeNameStatus::NODE_NAME_CONTAINS_NEWLINE:
+            ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
+            ui->errorLabel->setText("Newline not allowed");
+            break;
+        case NodeNameStatus::NODE_NAME_CONTAINS_COMMA:
+            ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
+            ui->errorLabel->setText("Comma not allowed");
+            break;
+        case NodeNameStatus::NODE_NAME_CONTAINS_SPACE:
+            ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
+            ui->errorLabel->setText("Space not allowed");
+            break;
+        default:
+            //Catch any other error cases (shouldn't happen, but just in case)
+            ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
+            ui->errorLabel->setText("");
+            break;
     }
-
-    else if (nodeNameStatus == NODE_NAME_TAKEN)
-    {
-        ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
-        ui->errorLabel->setText("Name already used");
-        return;
-    }
-
-    else if (nodeNameStatus == NODE_NAME_CONTAINS_TAB)
-    {
-        ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
-        ui->errorLabel->setText("Tab not allowed");
-        return;
-    }
-
-    else if (nodeNameStatus == NODE_NAME_CONTAINS_NEWLINE)
-    {
-        ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
-        ui->errorLabel->setText("Newline not allowed");
-        return;
-    }
-
-    else if (nodeNameStatus == NODE_NAME_CONTAINS_COMMA)
-    {
-        ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
-        ui->errorLabel->setText("Comma not allowed");
-        return;
-    }
-
-    else if (nodeNameStatus == NODE_NAME_CONTAINS_SPACE)
-    {
-        ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
-        ui->errorLabel->setText("Space not allowed");
-        return;
-    }
-
-    //Catch any other error cases (shouldn't happen, but just in case)
-    ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
-    ui->errorLabel->setText("");
 }

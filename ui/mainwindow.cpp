@@ -64,7 +64,7 @@
 #include "changenodenamedialog.h"
 #include "changenodedepthdialog.h"
 #include "graphinfodialog.h"
-#include "graph/sequenceutils.hpp"
+#include "graph/sequenceutils.h"
 #include "graph/assemblygraphbuilder.h"
 #include "graph/nodecolorers.h"
 
@@ -295,8 +295,6 @@ void MainWindow::loadCSV(QString fullFileName)
         return; // user clicked on cancel
 
     QString errormsg;
-    QStringList columns;
-
     try
     {
         MyProgressDialog progress(this, "Loading CSV...", false);
@@ -1011,7 +1009,7 @@ void MainWindow::copySelectedSequencesToClipboard()
 
     for (size_t i = 0; i < selectedNodes.size(); ++i)
     {
-        clipboardText += sequenceToQByteArray(selectedNodes[i]->getSequence());
+        clipboardText += utils::sequenceToQByteArray(selectedNodes[i]->getSequence());
         if (i != selectedNodes.size() - 1)
             clipboardText += "\n";
     }

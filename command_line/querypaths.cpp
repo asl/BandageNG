@@ -20,6 +20,7 @@
 #include "commoncommandlinefunctions.h"
 #include "program/settings.h"
 #include "graph/assemblygraph.h"
+#include "graph/sequenceutils.h"
 #include "blast/blastsearch.h"
 #include <QDateTime>
 
@@ -229,7 +230,7 @@ int bandageQueryPaths(QStringList arguments)
         for (int i = 0; i < pathSequenceIDs.size(); ++i)
         {
             pathsOut << ">" + pathSequenceIDs[i] + "\n";
-            pathsOut << AssemblyGraph::addNewlinesToSequence(pathSequences[i]);
+            pathsOut << utils::addNewlinesToSequence(pathSequences[i]);
         }
     }
 
@@ -242,7 +243,7 @@ int bandageQueryPaths(QStringList arguments)
         for (int i = 0; i < hitSequenceIDs.size(); ++i)
         {
             hitsOut << ">" << hitSequenceIDs[i] << "\n";
-            hitsOut << AssemblyGraph::addNewlinesToSequence(hitSequences[i]);
+            hitsOut << utils::addNewlinesToSequence(hitSequences[i]);
         }
     }
 

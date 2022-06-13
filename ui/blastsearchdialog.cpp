@@ -49,7 +49,7 @@
 #include "querypathspushbutton.h"
 #include "querypathsdialog.h"
 #include "blasthitfiltersdialog.h"
-#include "graph/annotationsmanager.hpp"
+#include "graph/annotationsmanager.h"
 
 BlastSearchDialog::BlastSearchDialog(QWidget *parent, const QString& autoQuery) :
     QDialog(parent),

@@ -17,17 +17,20 @@
 
 
 #include "blastsearch.h"
-#include "graph/assemblygraph.h"
-#include <QDir>
-#include <QRegularExpression>
 #include "buildblastdatabaseworker.h"
 #include "runblastsearchworker.h"
+
 #include "program/settings.h"
-#include <QApplication>
-#include <utility>
+
+#include "graph/assemblygraph.h"
 #include "graph/debruijnnode.h"
+#include "graph/annotationsmanager.h"
+#include "graph/fileutils.h"
+
+#include <QDir>
+#include <QRegularExpression>
+#include <QApplication>
 #include <cmath>
-#include "graph/annotationsmanager.hpp"
 
 BlastSearch::BlastSearch() :
     m_blastQueries(), m_tempDirectory("bandage_temp/")
@@ -297,7 +300,7 @@ int BlastSearch::loadBlastQueriesFromFastaFile(QString fullFileName)
 
     std::vector<QString> queryNames;
     std::vector<QByteArray> querySequences;
-    AssemblyGraph::readFastaOrFastqFile(std::move(fullFileName), &queryNames, &querySequences);
+    utils::readFastaOrFastqFile(std::move(fullFileName), &queryNames, &querySequences);
 
     for (size_t i = 0; i < queryNames.size(); ++i)
     {

@@ -59,6 +59,12 @@ Bandage.app
 # CLion
 .idea
 
+# clangd
+.cache
+
+# build dir
+build
+
 # Misc
 *DS_Store*
 Bandage.pro.user*

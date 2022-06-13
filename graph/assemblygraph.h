@@ -20,7 +20,7 @@
 
 #pragma once
 
-#include "gfa.hpp"
+#include "gfa.h"
 #include "path.h"
 #include "annotation.hpp"
 
@@ -73,6 +73,7 @@ public:
     phmap::parallel_flat_hash_map<const DeBruijnNode*, QString> m_nodeLabels;
     // CSV data
     phmap::parallel_flat_hash_map<const DeBruijnNode*, QStringList> m_nodeCSVData;
+    QStringList m_csvHeaders;
     // Tags
     phmap::parallel_flat_hash_map<const DeBruijnNode*, std::vector<gfa::tag>> m_nodeTags;
     phmap::parallel_flat_hash_map<const DeBruijnEdge*, std::vector<gfa::tag>> m_edgeTags;
@@ -121,7 +122,6 @@ public:
                                          int nodeDistance);
     void addGraphicsItemsToScene(MyGraphicsScene * scene);
 
-    static QStringList splitCsv(const QString& line, const QString& sep=",");
     bool loadCSV(const QString& filename, QStringList * columns, QString * errormsg, bool * coloursLoaded);
     std::vector<DeBruijnNode *> getStartingNodes(QString * errorTitle,
                                                  QString * errorMessage,
@@ -140,13 +140,6 @@ public:
 
     void setAllEdgesExactOverlap(int overlap);
     void autoDetermineAllEdgesExactOverlap();
-
-    static void readFastaOrFastqFile(const QString& filename, std::vector<QString> * names,
-                                     std::vector<QByteArray> * sequences);
-    static void readFastaFile(const QString& filename, std::vector<QString> * names,
-                              std::vector<QByteArray> * sequences);
-    static void readFastqFile(const QString& filename, std::vector<QString> * names,
-                              std::vector<QByteArray> * sequences);
 
     int getDrawnNodeCount() const;
     void deleteNodes(const std::vector<DeBruijnNode *> &nodes);
@@ -172,8 +165,7 @@ public:
     void changeNodeDepth(const std::vector<DeBruijnNode *> &nodes,
                          double newDepth);
 
-    static QByteArray addNewlinesToSequence(const QByteArray& sequence, int interval = 70);
-    int getDeadEndCount() const;
+    unsigned int getDeadEndCount() const;
     void getNodeStats(int * n50, int * shortestNode, int * firstQuartile, int * median, int * thirdQuartile, int * longestNode) const;
     void getGraphComponentCountAndLargestComponentSize(int * componentCount, int * largestComponentLength) const;
     double getMedianDepthByBase() const;
@@ -181,7 +173,6 @@ public:
     long long getEstimatedSequenceLength(double medianDepthByBase) const;
     long long getTotalLengthMinusEdgeOverlaps() const;
     QPair<int, int> getOverlapRange() const;
-    bool attemptToLoadSequencesFromFasta();
     long long getTotalLengthOrphanedNodes() const;
     bool useLinearLayout() const;
 
@@ -194,7 +185,7 @@ public:
 
     bool hasCsvData(const DeBruijnNode* node) const;
     QStringList getAllCsvData(const DeBruijnNode *node) const;
-    QString getCsvLine(const DeBruijnNode *node, int i) const;
+    std::optional<QString> getCsvLine(const DeBruijnNode *node, int i) const;
     void setCsvData(const DeBruijnNode* node, QStringList csvData);
     void clearCsvData(const DeBruijnNode* node);
 
@@ -206,7 +197,6 @@ public:
     QString getUniqueNodeName(QString baseName) const;
 private:
     template<typename T> double getValueUsingFractionalIndex(std::vector<T> * v, double index) const;
-    QString convertNormalNumberStringToBandageNodeName(QString number);
     static QStringList removeNullStringsFromList(const QStringList& in);
     std::vector<DeBruijnNode *> getNodesFromListExact(const QStringList& nodesList, std::vector<QString> * nodesNotInGraph);
     std::vector<DeBruijnNode *> getNodesFromListPartial(const QStringList& nodesList, std::vector<QString> * nodesNotInGraph);
@@ -230,7 +220,6 @@ private:
     static void removeAllGraphicsEdgesFromNode(DeBruijnNode * node,
                                         bool reverseComplement,
                                         MyGraphicsScene * scene);
-    QString cleanNodeName(QString name);
     static double findDepthAtIndex(QList<DeBruijnNode *> * nodeList, long long targetIndex) ;
 
 signals:

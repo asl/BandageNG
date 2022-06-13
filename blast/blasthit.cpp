@@ -21,7 +21,7 @@
 #include "graph/debruijnnode.h"
 #include "blastquery.h"
 #include "program/globals.h"
-#include "graph/sequenceutils.hpp"
+#include "graph/sequenceutils.h"
 #include <cmath>
 
 BlastHit::BlastHit(BlastQuery * query, DeBruijnNode * node,
@@ -79,5 +79,5 @@ GraphLocation BlastHit::getHitEnd() const
 //This function returns the node sequence for this hit.
 QByteArray BlastHit::getNodeSequence() const
 {
-    return sequenceToQByteArray(m_node->getSequence().Subseq(m_nodeStart-1, m_nodeEnd));
+    return utils::sequenceToQByteArray(m_node->getSequence().Subseq(m_nodeStart-1, m_nodeEnd));
 }

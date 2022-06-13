@@ -17,11 +17,12 @@
 
 #include "assemblygraphbuilder.h"
 #include "path.h"
-#include "gfa.hpp"
+#include "gfa.h"
 
 #include "graph/assemblygraph.h"
 #include "graph/debruijnedge.h"
 #include "graph/debruijnnode.h"
+#include "graph/fileutils.h"
 
 #include "seq/sequence.hpp"
 
@@ -169,8 +170,7 @@ static bool attemptToLoadSequencesFromFasta(AssemblyGraph &graph) {
     bool atLeastOneNodeSequenceLoaded = false;
     std::vector<QString> names;
     std::vector<QByteArray> sequences;
-    // FIXME: this does not belong here
-    AssemblyGraph::readFastaFile(fastaName, &names, &sequences);
+    utils::readFastaFile(fastaName, &names, &sequences);
 
     for (size_t i = 0; i < names.size(); ++i) {
         QString name = names[i];
@@ -522,7 +522,7 @@ class FastaAssemblyGraphBuilder : public AssemblyGraphBuilder {
 
         std::vector<QString> names;
         std::vector<QByteArray> sequences;
-        AssemblyGraph::readFastaFile(fileName_, &names, &sequences);
+        utils::readFastaFile(fileName_, &names, &sequences);
 
         std::vector<QString> circularNodeNames;
         for (size_t i = 0; i < names.size(); ++i) {
@@ -884,7 +884,7 @@ class TrinityAssemblyGraphBuilder : public AssemblyGraphBuilder {
 
         std::vector<QString> names;
         std::vector<QByteArray> sequences;
-        AssemblyGraph::readFastaFile(fileName_, &names, &sequences);
+        utils::readFastaFile(fileName_, &names, &sequences);
 
         std::vector<QString> edgeStartingNodeNames;
         std::vector<QString> edgeEndingNodeNames;

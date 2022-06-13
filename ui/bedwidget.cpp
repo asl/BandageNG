@@ -8,7 +8,7 @@
 
 #include "program/memory.h"
 #include "graph/bedloader.hpp"
-#include "graph/annotationsmanager.hpp"
+#include "graph/annotationsmanager.h"
 #include "graph/assemblygraph.h"
 
 
