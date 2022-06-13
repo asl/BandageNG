@@ -430,13 +430,11 @@ void AssemblyGraph::clearGraphInfo()
  *                  or other information
  * @returns         true/false if loading data worked
  */
-bool AssemblyGraph::loadCSV(const QString& filename, QStringList * columns, QString * errormsg, bool * coloursLoaded)
-{
+bool AssemblyGraph::loadCSV(const QString &filename, QStringList *columns, QString *errormsg, bool *coloursLoaded) {
     clearAllCsvData();
 
     QFile inputFile(filename);
-    if (!inputFile.open(QIODevice::ReadOnly))
-    {
+    if (!inputFile.open(QIODevice::ReadOnly)) {
         *errormsg = "Unable to read from specified file.";
         return false;
     }
@@ -446,17 +444,15 @@ bool AssemblyGraph::loadCSV(const QString& filename, QStringList * columns, QStr
     // guess at separator; this assumes that any tab in the first line means
     // we have a tab separated file
     QString sep = "\t";
-    if (line.split(sep).length() == 1)
-    {
+    if (line.split(sep).length() == 1) {
         sep = ",";
-        if (line.split(sep).length() == 1)
-        {
+        if (line.split(sep).length() == 1) {
             *errormsg = "Neither tab nor comma in first line. Please check file format.";
             return false;
         }
     }
 
-    int unmatched_nodes = 0; // keep a counter for lines in file that can't be matched to nodes
+    unsigned unmatchedNodes = 0; // keep a counter for lines in file that can't be matched to nodes
 
     QStringList headers = utils::splitCsv(line, sep);
     if (headers.size() < 2) {
@@ -485,11 +481,32 @@ bool AssemblyGraph::loadCSV(const QString& filename, QStringList * columns, QStr
         QApplication::processEvents();
 
         QStringList cols = utils::splitCsv(in.readLine(), sep);
-        QString nodeName = getNodeNameFromString(cols[0]);
+        QString nodeName(cols[0]);
+        
+        std::vector<DeBruijnNode *> nodes;
+        // See if this is a path name
+        {
+            auto pathIt = m_deBruijnGraphPaths.equal_prefix_range(nodeName.toStdString());
+            for (; pathIt.first != pathIt.second; ++pathIt.first) {
+                const auto &pathNodes = (*pathIt.first)->getNodes();
 
-        auto node = m_deBruijnGraphNodes.find(nodeName.toStdString());
-        if (node == m_deBruijnGraphNodes.end()) {
-            unmatched_nodes += 1;
+                for (auto *node: pathNodes) {
+                    nodes.emplace_back(node);
+                    if (!g_settings->doubleMode)
+                        nodes.emplace_back(node->getReverseComplement());
+                }
+            }
+        }
+
+        // Just node name
+        if (nodes.empty()) {
+            auto nodeIt = m_deBruijnGraphNodes.find(getNodeNameFromString(nodeName).toStdString());
+            if (nodeIt != m_deBruijnGraphNodes.end())
+                nodes.emplace_back(*nodeIt);
+        }
+
+        if (nodes.empty()) {
+            unmatchedNodes += 1;
             continue;
         }
 
@@ -499,7 +516,8 @@ bool AssemblyGraph::loadCSV(const QString& filename, QStringList * columns, QStr
         // Get rid of any extra data that doesn't have a header.
         cols.resize(columnCount);
 
-        setCsvData(*node, cols);
+        for (auto *node: nodes)
+            setCsvData(node, cols);
 
         // If one of the columns holds colour data, get the colour from that one.
         // Acceptable colour formats: 6-digit hex colour (e.g. #FFB6C1), an 8-digit hex colour (e.g. #7FD2B48C) or a
@@ -517,12 +535,12 @@ bool AssemblyGraph::loadCSV(const QString& filename, QStringList * columns, QStr
             colour = colorCat.value();
         }
 
-        if (colour.isValid())
-            setCustomColour(*node, colour);
+        for (auto *node: nodes)
+            setCustomColour(node, colour);
     }
 
-    if (unmatched_nodes)
-        *errormsg = "There were " + QString::number(unmatched_nodes) + " unmatched entries in the CSV.";
+    if (unmatchedNodes)
+        *errormsg = "There were " + QString::number(unmatchedNodes) + " unmatched entries in the CSV.";
 
     return true;
 }

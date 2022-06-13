@@ -281,6 +281,8 @@ void MainWindow::cleanUp()
     ui->csvComboBox->clear();
     ui->csvComboBox->setEnabled(false);
     g_settings->displayNodeCsvDataCol = 0;
+
+    switchColourScheme(RANDOM_COLOURS);
 }
 
 void MainWindow::loadCSV(QString fullFileName)
@@ -1481,6 +1483,7 @@ void MainWindow::openSettingsDialog() {
 
     g_assemblyGraph->recalculateAllNodeWidths();
     g_graphicsView->setAntialiasing(g_settings->antialiasing);
+    g_settings->nodeColorer->reset();
 
     resetAllNodeColours();
 }

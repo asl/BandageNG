@@ -239,8 +239,9 @@ QColor CSVNodeColorer::get(const GraphicsItemNode *node) {
 }
 
 void CSVNodeColorer::reset() {
-    size_t columns = m_graph->m_csvHeaders.size();
+    m_colors.clear();
 
+    size_t columns = m_graph->m_csvHeaders.size();
     m_colors.resize(columns);
     // Store all unique values into a map
     for (const auto &entry : m_graph->m_nodeCSVData) {
