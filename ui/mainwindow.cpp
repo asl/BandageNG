@@ -390,12 +390,8 @@ void MainWindow::loadGraph(QString fullFileName)
               customLabels = builder->hasCustomLables();
 
         // If the graph has custom colours, automatically switch the colour scheme to custom colours.
-        if (customColours) {
-            if (ui->coloursComboBox->currentIndex() != CUSTOM_COLOURS)
-                ui->coloursComboBox->setCurrentIndex(CUSTOM_COLOURS);
-            else
-                switchColourScheme();
-        }
+        if (customColours)
+            switchColourScheme(CUSTOM_COLOURS);
 
         // If the graph doesn't have custom colours, but the colour scheme is on 'Custom', automatically switch it back
         // to the default of 'Random colours'.
@@ -1139,8 +1135,12 @@ void MainWindow::switchTagValue() {
     resetAllNodeColours();
 }
 
-void MainWindow::switchColourScheme()
-{
+void MainWindow::switchColourScheme(int idx) {
+    if (idx != -1) {
+        if (ui->coloursComboBox->currentIndex() != idx)
+            ui->coloursComboBox->setCurrentIndex(idx);
+    }
+
     NodeColorScheme scheme = (NodeColorScheme)ui->coloursComboBox->currentIndex();
     g_settings->initializeColorer(scheme);
     ui->contiguityButton->setVisible(scheme == CONTIGUITY_COLOUR);

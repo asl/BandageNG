@@ -101,7 +101,7 @@ public:
     }
 
 private:
-    std::string m_tagName;
+    std::string m_tagName = "";
     tsl::htrie_map<char, QColor> m_allTags;
     std::unordered_set<std::string> m_tagNames;
 };

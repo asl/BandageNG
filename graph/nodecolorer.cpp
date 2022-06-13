@@ -178,8 +178,8 @@ QColor GCNodeColorer::get(const GraphicsItemNode *node) {
 QColor TagValueNodeColorer::get(const GraphicsItemNode *node) {
     const DeBruijnNode *deBruijnNode = node->m_deBruijnNode;
 
-    auto tags = g_assemblyGraph->m_nodeTags.find(deBruijnNode);
-    if (tags != g_assemblyGraph->m_nodeTags.end()) {
+    auto tags = m_graph->m_nodeTags.find(deBruijnNode);
+    if (tags != m_graph->m_nodeTags.end()) {
         if (auto tag = gfa::getTag(m_tagName.c_str(), tags->second)) {
             std::stringstream stream;
             stream << *tag;
@@ -187,7 +187,7 @@ QColor TagValueNodeColorer::get(const GraphicsItemNode *node) {
         }
     }
 
-    return {};
+    return m_graph->getCustomColourForDisplay(deBruijnNode);
 }
 
 void TagValueNodeColorer::reset() {
@@ -195,7 +195,7 @@ void TagValueNodeColorer::reset() {
     m_tagNames.clear();
 
     // Collect all tags and their corresponding values
-    for (const auto &entry : g_assemblyGraph->m_nodeTags) {
+    for (const auto &entry : m_graph->m_nodeTags) {
         for (const auto &tag: entry.second) {
             std::stringstream stream;
             stream << tag;
