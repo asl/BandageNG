@@ -18,6 +18,7 @@
 
 #include "graphlayoutworker.h"
 #include "ogdf/basic/geometry.h"
+#include "ogdf/energybased/fmmm/FMMMOptions.h"
 
 #include <QLineF>
 #include <ctime>
@@ -36,17 +37,17 @@ void GraphLayoutWorker::layoutGraph()
 {
     m_fmmm->randSeed(clock());
     m_fmmm->useHighLevelOptions(false);
-    m_fmmm->initialPlacementForces(ogdf::FMMMLayout::ipfRandomRandIterNr);
+    m_fmmm->initialPlacementForces(ogdf::FMMMOptions::InitialPlacementForces::RandomRandIterNr);
     m_fmmm->unitEdgeLength(1.0);
-    m_fmmm->allowedPositions(ogdf::FMMMLayout::apAll);
+    m_fmmm->allowedPositions(ogdf::FMMMOptions::AllowedPositions::All);
     m_fmmm->pageRatio(m_aspectRatio);
     m_fmmm->minDistCC(m_graphLayoutComponentSeparation);
     m_fmmm->stepsForRotatingComponents(50); // Helps to make linear graph components more horizontal.
 
     if (m_linearLayout)
-        m_fmmm->initialPlacementForces(ogdf::FMMMLayout::ipfKeepPositions);
+        m_fmmm->initialPlacementForces(ogdf::FMMMOptions::InitialPlacementForces::KeepPositions);
     else
-        m_fmmm->initialPlacementForces(ogdf::FMMMLayout::ipfRandomTime);
+        m_fmmm->initialPlacementForces(ogdf::FMMMOptions::InitialPlacementForces::RandomTime);
 
     switch (m_graphLayoutQuality)
     {

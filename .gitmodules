@@ -1,0 +1,3 @@
+[submodule "thirdparty/ogdf"]
+	path = thirdparty/ogdf
+	url = https://github.com/ogdf/ogdf

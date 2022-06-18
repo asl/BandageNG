@@ -101,11 +101,11 @@ FetchContent_MakeAvailable(lexy)
 
 # FIXME: Untagle this
 add_library(BandageLib STATIC ${LIB_SOURCES} ${FORMS})
-target_link_libraries(BandageLib PRIVATE ogdf Qt6::Widgets Qt6::Svg foonathan::lexy ZLIB::ZLIB)
+target_link_libraries(BandageLib PRIVATE OGDF Qt6::Widgets Qt6::Svg foonathan::lexy ZLIB::ZLIB)
 target_include_directories(BandageLib INTERFACE ".")
 
 add_executable(BandageNG program/main.cpp ${RESOURCES})
-target_link_libraries(BandageNG BandageLib Qt6::Core Qt6::Widgets ZLIB::ZLIB)
+target_link_libraries(BandageNG BandageLib OGDF Qt6::Core Qt6::Widgets ZLIB::ZLIB)
 
 if (APPLE)
   set_target_properties(BandageNG PROPERTIES
