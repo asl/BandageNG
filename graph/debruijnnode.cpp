@@ -18,11 +18,13 @@
 
 #include "debruijnnode.h"
 #include "debruijnedge.h"
-#include "ogdfnode.h"
-#include <cmath>
-#include "blast/blasthit.h"
 #include "assemblygraph.h"
 #include "sequenceutils.h"
+
+#include "blast/blasthit.h"
+
+#include <cmath>
+
 #include <set>
 #include <QApplication>
 #include <QSet>
@@ -38,7 +40,6 @@ DeBruijnNode::DeBruijnNode(QString name, double depth, const Sequence& sequence,
     m_length(sequence.size()),
     m_contiguityStatus(NOT_CONTIGUOUS),
     m_reverseComplement(nullptr),
-    m_ogdfNode(nullptr),
     m_graphicsItemNode(nullptr),
     m_specialNode(false),
     m_drawn(false),
@@ -47,13 +48,6 @@ DeBruijnNode::DeBruijnNode(QString name, double depth, const Sequence& sequence,
     if (length > 0)
         m_length = length;
 }
-
-
-DeBruijnNode::~DeBruijnNode()
-{
-    delete m_ogdfNode;
-}
-
 
 
 //This function adds an edge to the Node, but only if the edge hasn't already
@@ -76,8 +70,7 @@ void DeBruijnNode::removeEdge(DeBruijnEdge * edge)
 //file was loaded - no contiguity status and no OGDF nodes.
 void DeBruijnNode::resetNode()
 {
-    delete m_ogdfNode;
-    m_ogdfNode = nullptr;
+    m_ogdfNodes.clear();
     m_graphicsItemNode = nullptr;
     resetContiguityStatus();
     setAsNotDrawn();
@@ -94,9 +87,6 @@ void DeBruijnNode::addToOgdfGraph(ogdf::Graph * ogdfGraph, ogdf::GraphAttributes
     if (thisOrReverseComplementInOgdf())
         return;
 
-    //Create the OgdfNode object
-    m_ogdfNode = new OgdfNode();
-
     //Each node in the Velvet sense is made up of multiple nodes in the
     //OGDF sense.  This way, Velvet nodes appear as lines whose length
     //corresponds to the sequence length.
@@ -110,7 +100,7 @@ void DeBruijnNode::addToOgdfGraph(ogdf::Graph * ogdfGraph, ogdf::GraphAttributes
     for (int i = 0; i < numberOfGraphNodes; ++i)
     {
         newNode = ogdfGraph->newNode();
-        m_ogdfNode->addOgdfNode(newNode);
+        m_ogdfNodes.push_back(newNode);
 
         if (g_assemblyGraph->useLinearLayout()) {
             graphAttributes->x(newNode) = xPos;

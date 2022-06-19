@@ -20,7 +20,6 @@
 #include "graphicsitemedge.h"
 #include "debruijnnode.h"
 #include "debruijnedge.h"
-#include "ogdfnode.h"
 #include "assemblygraph.h"
 #include "annotationsmanager.h"
 
@@ -53,24 +52,14 @@ GraphicsItemNode::GraphicsItemNode(DeBruijnNode * deBruijnNode,
 {
     setWidth();
 
-    OgdfNode * pathOgdfNode = deBruijnNode->getOgdfNode();
-    if (pathOgdfNode != nullptr)
-    {
-        for (auto *ogdfNode : pathOgdfNode->m_ogdfNodes)
-        {
-            QPointF point(graphAttributes->x(ogdfNode), graphAttributes->y(ogdfNode));
-            m_linePoints.push_back(point);
-        }
-    }
-    else
-    {
-        pathOgdfNode = deBruijnNode->getReverseComplement()->getOgdfNode();
-        for (int i = int(pathOgdfNode->m_ogdfNodes.size()) - 1; i >= 0; --i)
-        {
-            ogdf::node ogdfNode = pathOgdfNode->m_ogdfNodes[i];
-            QPointF point(graphAttributes->x(ogdfNode), graphAttributes->y(ogdfNode));
-            m_linePoints.push_back(point);
-        }
+    const auto &pathOgdfNode = deBruijnNode->getOgdfNode();
+    if (!pathOgdfNode.empty()) {
+        for (auto ogdfNode : pathOgdfNode)
+            m_linePoints.emplace_back(graphAttributes->x(ogdfNode), graphAttributes->y(ogdfNode));
+    } else {
+        const auto &rcPathOgdfNode = deBruijnNode->getReverseComplement()->getOgdfNode();
+        for (auto it = rcPathOgdfNode.rbegin(); it != rcPathOgdfNode.rend(); ++it)
+            m_linePoints.emplace_back(graphAttributes->x(*it), graphAttributes->y(*it));
     }
 
     //If we are in double mode and this node's complement is also drawn,
@@ -129,9 +118,9 @@ void GraphicsItemNode::paint(QPainter * painter, const QStyleOptionGraphicsItem 
     //If the node has an arrow, then it's necessary to use the outline
     //as a clipping path so the colours don't extend past the edge of the
     //node.
-    if (m_hasArrow) {
+    if (m_hasArrow)
         painter->setClipPath(outlinePath);
-    }
+
     for (const auto &annotationGroup : g_annotationsManager->getGroups()) {
         auto annotationSettings = g_settings->annotationsSettings[annotationGroup->id];
 
@@ -167,15 +156,13 @@ void GraphicsItemNode::paint(QPainter * painter, const QStyleOptionGraphicsItem 
     }
 
 
-    //Draw the path highlighting outline, if appropriate
+    // raw the path highlighting outline, if appropriate
     if (g_memory->pathDialogIsVisible)
         exactPathHighlightNode(painter);
 
-
-    //Draw the query path, if appropriate
+    // Draw the query path, if appropriate
     if (g_memory->queryPathDialogIsVisible)
         queryPathHighlightNode(painter);
-
 
     //Draw node labels if there are any to display.
     if (anyNodeDisplayText())
@@ -206,9 +193,8 @@ void GraphicsItemNode::paint(QPainter * painter, const QStyleOptionGraphicsItem 
 
     //Draw BLAST hit labels, if appropriate.
     for (const auto &annotationGroup : g_annotationsManager->getGroups()) {
-        if (!g_settings->annotationsSettings[annotationGroup->id].showText) {
+        if (!g_settings->annotationsSettings[annotationGroup->id].showText)
             continue;
-        }
 
         const auto &annotations = annotationGroup->getAnnotations(m_deBruijnNode);
         const auto &revCompAnnotations = g_settings->doubleMode
@@ -266,9 +252,8 @@ QPainterPath GraphicsItemNode::shape() const
     //width, then the arrow head will not be made with 45 degree
     //angles, but rather whatever angle is made by going from the
     //end to the back corners (the final node will be a triangle).
-    if (m_hasArrow
-            && m_linePoints.size() == 2
-            && distance(getLast(), getSecondLast()) < m_width / 2.0)
+    if (m_hasArrow && m_linePoints.size() == 2 &&
+        distance(getLast(), getSecondLast()) < m_width / 2.0)
     {
         QLineF backline = QLineF(getSecondLast(), getLast()).normalVector();
         backline.setLength(m_width / 2.0);

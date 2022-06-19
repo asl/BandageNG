@@ -16,10 +16,9 @@
 //along with Bandage.  If not, see <http://www.gnu.org/licenses/>.
 
 
-#ifndef DEBRUIJNEDGE_H
-#define DEBRUIJNEDGE_H
+#pragma once
 
-#include "ogdf/basic/Graph.h"
+#include "ogdf/basic/EdgeArray.h"
 #include "debruijnnode.h"
 
 class GraphicsItemEdge;
@@ -66,8 +65,8 @@ public:
     void setReverseComplement(DeBruijnEdge * rc) {m_reverseComplement = rc;}
     void setOverlap(int ol) {m_overlap = ol;}
     void setOverlapType(EdgeOverlapType olt) {m_overlapType = olt;}
-    void reset() {m_graphicsItemEdge = 0; m_drawn = false;}
-    void determineIfDrawn() {m_drawn = edgeIsVisible();}
+    void reset() {m_graphicsItemEdge = nullptr; m_drawn = false;}
+    bool determineIfDrawn() { return (m_drawn = edgeIsVisible());}
     void setExactOverlap(int overlap) {m_overlap = overlap; m_overlapType = EXACT_OVERLAP;}
     void autoDetermineExactOverlap();
     void addToOgdfGraph(ogdf::Graph * ogdfGraph, ogdf::EdgeArray<double> * edgeArray) const;
@@ -86,5 +85,3 @@ private:
     static std::vector<DeBruijnEdge *> findNextEdgesInPath(DeBruijnNode * nextNode,
                                                     bool forward) ;
 };
-
-#endif // DEBRUIJNEDGE_H

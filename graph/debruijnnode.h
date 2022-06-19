@@ -44,7 +44,7 @@ class DeBruijnNode
 public:
     //CREATORS
     DeBruijnNode(QString name, double depth, const Sequence &sequence, int length = 0);
-    ~DeBruijnNode();
+    ~DeBruijnNode() = default;
 
     //ACCESSORS
     QString getName() const {return m_name;}
@@ -67,7 +67,7 @@ public:
     char getBaseAt(int i) const {if (i >= 0 && i < m_sequence.size()) return m_sequence[i]; else return '\0';} // NOTE
     ContiguityStatus getContiguityStatus() const {return m_contiguityStatus;}
     DeBruijnNode * getReverseComplement() const {return m_reverseComplement;}
-    OgdfNode * getOgdfNode() const {return m_ogdfNode;}
+    const auto& getOgdfNode() const {return m_ogdfNodes;}
     GraphicsItemNode * getGraphicsItemNode() const {return m_graphicsItemNode;}
     bool hasGraphicsItem() const {return m_graphicsItemNode != nullptr;}
 
@@ -89,8 +89,7 @@ public:
     bool isNotDrawn() const {return !m_drawn;}
     bool isPositiveNode() const;
     bool isNegativeNode() const;
-    bool inOgdf() const {return m_ogdfNode != nullptr;}
-    bool notInOgdf() const {return m_ogdfNode == nullptr;}
+    bool inOgdf() const {return !m_ogdfNodes.empty();}
     bool thisOrReverseComplementInOgdf() const {return (inOgdf() || getReverseComplement()->inOgdf());}
     bool thisOrReverseComplementNotInOgdf() const {return !thisOrReverseComplementInOgdf();}
     bool isNodeConnected(DeBruijnNode * node) const;
@@ -133,7 +132,7 @@ private:
     DeBruijnNode * m_reverseComplement;
     adt::SmallPODVector<DeBruijnEdge *> m_edges;
 
-    OgdfNode * m_ogdfNode;
+    adt::SmallPODVector<ogdf::node> m_ogdfNodes;
     GraphicsItemNode * m_graphicsItemNode;
 
     int m_length;

@@ -51,7 +51,7 @@ public:
     double m_width;
     bool m_hasArrow;
     std::vector<QPointF> m_linePoints;
-    size_t m_grabIndex;
+    size_t m_grabIndex = 0;
     QColor m_colour;
     QPainterPath m_path;
 

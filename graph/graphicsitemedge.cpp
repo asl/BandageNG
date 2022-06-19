@@ -20,7 +20,6 @@
 #include "graphicsitemnode.h"
 #include "debruijnedge.h"
 #include "debruijnnode.h"
-#include "ogdfnode.h"
 #include "graphicsitemnode.h"
 
 #include "graph/assemblygraph.h"

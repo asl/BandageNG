@@ -18,19 +18,17 @@
 
 #include "assemblygraph.h"
 #include "debruijnedge.h"
-#include "ogdfnode.h"
 #include "path.h"
 #include "assemblygraphbuilder.h"
+#include "graphicsitemedge.h"
+#include "graphicsitemnode.h"
+#include "sequenceutils.h"
 
 #include "blast/blastsearch.h"
-#include "graph/graphicsitemedge.h"
-#include "graph/graphicsitemnode.h"
-#include "ogdf/energybased/FMMMLayout.h"
 #include "program/globals.h"
 #include "program/graphlayoutworker.h"
 #include "program/memory.h"
 #include "ui/myprogressdialog.h"
-#include "sequenceutils.h"
 
 #include <QApplication>
 #include <QFile>
@@ -50,8 +48,8 @@ AssemblyGraph::AssemblyGraph() :
 {
     m_ogdfGraph = new ogdf::Graph();
     m_edgeArray = new ogdf::EdgeArray<double>(*m_ogdfGraph);
-    m_graphAttributes = new ogdf::GraphAttributes(*m_ogdfGraph, ogdf::GraphAttributes::nodeGraphics |
-                                                  ogdf::GraphAttributes::edgeGraphics);
+    m_graphAttributes = new ogdf::GraphAttributes(*m_ogdfGraph,
+                                                  ogdf::GraphAttributes::nodeGraphics | ogdf::GraphAttributes::edgeGraphics);
     clearGraphInfo();
 }
 
@@ -165,7 +163,7 @@ void AssemblyGraph::createDeBruijnEdge(const QString& node1Name, const QString& 
 void AssemblyGraph::clearOgdfGraphAndResetNodes()
 {
     for (auto &entry : m_deBruijnGraphNodes) {
-        entry ->resetNode();
+        entry->resetNode();
     }
 
     m_ogdfGraph->clear();
@@ -708,7 +706,7 @@ void AssemblyGraph::buildOgdfGraphFromNodesAndEdges(const std::vector<DeBruijnNo
                 DeBruijnNode * upstreamNode = upstreamNodes[j];
                 if (!upstreamNode->inOgdf())
                     continue;
-                ogdf::node upstreamEnd = upstreamNode->getOgdfNode()->getLast();
+                ogdf::node upstreamEnd = upstreamNode->getOgdfNode().back();
                 double upstreamEndPos = m_graphAttributes->x(upstreamEnd);
                 if (j == 0)
                     lastXPos = upstreamEndPos;
@@ -725,7 +723,7 @@ void AssemblyGraph::buildOgdfGraphFromNodesAndEdges(const std::vector<DeBruijnNo
             }
             node->addToOgdfGraph(m_ogdfGraph, m_graphAttributes, m_edgeArray, xPos, yPos);
             usedStartPositions.insert(QPair<long long, long long>(intXPos, intYPos));
-            lastXPos = m_graphAttributes->x(node->getOgdfNode()->getLast());
+            lastXPos = m_graphAttributes->x(node->getOgdfNode().back());
         }
     }
 
@@ -741,9 +739,10 @@ void AssemblyGraph::buildOgdfGraphFromNodesAndEdges(const std::vector<DeBruijnNo
     //Then loop through each edge determining its drawn status and adding it to OGDF if it is drawn.
     for (auto &entry : m_deBruijnGraphEdges) {
         DeBruijnEdge * edge = entry.second;
-        edge->determineIfDrawn();
-        if (edge->isDrawn())
-            edge->addToOgdfGraph(m_ogdfGraph, m_edgeArray);
+        if (!edge->determineIfDrawn())
+            continue;
+
+        edge->addToOgdfGraph(m_ogdfGraph, m_edgeArray);
     }
 }
 

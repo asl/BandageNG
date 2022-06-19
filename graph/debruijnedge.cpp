@@ -17,9 +17,9 @@
 
 
 #include "debruijnedge.h"
-#include "ogdfnode.h"
-#include "program/globals.h"
 #include "assemblygraph.h"
+
+#include "program/globals.h"
 
 #include <cmath>
 #include <QApplication>
@@ -101,16 +101,16 @@ void DeBruijnEdge::addToOgdfGraph(ogdf::Graph * ogdfGraph, ogdf::EdgeArray<doubl
     ogdf::node secondEdgeOgdfNode;
 
     if (m_startingNode->inOgdf())
-        firstEdgeOgdfNode = m_startingNode->getOgdfNode()->getLast();
+        firstEdgeOgdfNode = m_startingNode->getOgdfNode().back();
     else if (m_startingNode->getReverseComplement()->inOgdf())
-        firstEdgeOgdfNode = m_startingNode->getReverseComplement()->getOgdfNode()->getFirst();
+        firstEdgeOgdfNode = m_startingNode->getReverseComplement()->getOgdfNode().front();
     else
         return; //Ending node or its reverse complement isn't in OGDF
 
     if (m_endingNode->inOgdf())
-        secondEdgeOgdfNode = m_endingNode->getOgdfNode()->getFirst();
+        secondEdgeOgdfNode = m_endingNode->getOgdfNode().front();
     else if (m_endingNode->getReverseComplement()->inOgdf())
-        secondEdgeOgdfNode = m_endingNode->getReverseComplement()->getOgdfNode()->getLast();
+        secondEdgeOgdfNode = m_endingNode->getReverseComplement()->getOgdfNode().back();
     else
         return; //Ending node or its reverse complement isn't in OGDF
 
