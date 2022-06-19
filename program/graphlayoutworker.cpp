@@ -21,8 +21,13 @@
 #include "graph/debruijnnode.h"
 #include "graph/debruijnedge.h"
 
+#include "ogdf/basic/GraphCopy.h"
+#include "ogdf/basic/simple_graph_alg.h"
 #include "ogdf/energybased/FMMMLayout.h"
+#include "ogdf/energybased/FastMultipoleEmbedder.h"
 #include "ogdf/energybased/fmmm/FMMMOptions.h"
+#include "ogdf/graphalg/ConvexHull.h"
+#include "ogdf/packing/TileToRowsCCPacker.h"
 
 #include <ctime>
 
@@ -30,6 +35,7 @@ GraphLayoutWorker::GraphLayoutWorker(AssemblyGraph &graph,
                                      int graphLayoutQuality, bool useLinearLayout,
                                      double graphLayoutComponentSeparation, double aspectRatio)
         : m_layout(new ogdf::FMMMLayout),
+          m_packer(new ogdf::TileToRowsCCPacker),
           m_graph(graph),
           m_graphLayoutQuality(graphLayoutQuality),
           m_useLinearLayout(useLinearLayout),
@@ -75,7 +81,7 @@ static void addToOgdfGraph(DeBruijnNode *node,
     int numberOfGraphNodes = numberOfGraphEdges + 1;
     double drawnLengthPerEdge = drawnNodeLength / numberOfGraphEdges;
 
-    ogdf::node newNode = nullptr;
+    ogdf::node newNode;
     ogdf::node previousNode = nullptr;
     for (int i = 0; i < numberOfGraphNodes; ++i) {
         newNode = ogdfGraph.newNode();
@@ -229,9 +235,7 @@ void GraphLayoutWorker::buildGraph() {
     }
 }
 
-void GraphLayoutWorker::layoutGraph() {
-    buildGraph();
-
+void GraphLayoutWorker::initLayout() {
     m_layout->randSeed(clock());
     m_layout->useHighLevelOptions(false);
     m_layout->unitEdgeLength(1.0);
@@ -271,17 +275,240 @@ void GraphLayoutWorker::layoutGraph() {
             m_layout->nmPrecision(8);
             break;
     }
-
-    m_layout->call(m_graph.m_ogdfGraphAttributes, m_graph.m_ogdfEdgeLengths);
 }
 
-void GraphLayoutWorker::cancelLayout() {
+static void reassembleDrawings(ogdf::GraphAttributes &GA,
+                               double graphLayoutComponentSeparation, double aspectRatio,
+                               ogdf::CCLayoutPackModule &packer,
+                               const ogdf::Array<ogdf::List<ogdf::node> > &nodesInCC) {
+    int numberOfComponents = nodesInCC.size();
+
+    ogdf::Array<ogdf::IPoint> box;
+    ogdf::Array<ogdf::IPoint> offset;
+    ogdf::Array<ogdf::DPoint> oldOffset;
+    ogdf::Array<double> rotation;
+    ogdf::ConvexHull CH;
+
+    // rotate components and create bounding rectangles
+
+    //iterate through all components and compute convex hull
+    for (int j = 0; j < numberOfComponents; j++) {
+        //todo: should not use std::vector, but in order not
+        //to have to change all interfaces, we do it anyway
+        std::vector<ogdf::DPoint> points;
+
+        //collect node positions and at the same time center average
+        // at origin
+        double avg_x = 0.0;
+        double avg_y = 0.0;
+        for (ogdf::node v: nodesInCC[j]) {
+            ogdf::DPoint dp(GA.x(v), GA.y(v));
+            avg_x += dp.m_x;
+            avg_y += dp.m_y;
+            points.push_back(dp);
+        }
+        avg_x /= nodesInCC[j].size();
+        avg_y /= nodesInCC[j].size();
+
+        //adapt positions to origin
+        int count = 0;
+        //assume same order of vertices and positions
+        for (ogdf::node v: nodesInCC[j]) {
+            GA.x(v) = GA.x(v) - avg_x;
+            GA.y(v) = GA.y(v) - avg_y;
+            points.at(count).m_x -= avg_x;
+            points.at(count).m_y -= avg_y;
+
+            count++;
+        }
+
+        // calculate convex hull
+        ogdf::DPolygon hull = CH.call(points);
+
+        double best_area = std::numeric_limits<double>::max();
+        ogdf::DPoint best_normal;
+        double best_width = 0.0;
+        double best_height = 0.0;
+
+        // find best rotation by using every face as rectangle border once.
+        for (ogdf::DPolygon::iterator iter = hull.begin(); iter != hull.end(); ++iter) {
+            ogdf::DPolygon::iterator k = hull.cyclicSucc(iter);
+
+            double dist = 0.0;
+            ogdf::DPoint norm = CH.calcNormal(*k, *iter);
+            for (const ogdf::DPoint &z: hull) {
+                double d = CH.leftOfLine(norm, z, *k);
+                if (d > dist) {
+                    dist = d;
+                }
+            }
+
+            double left = 0.0;
+            double right = 0.0;
+            norm = CH.calcNormal(ogdf::DPoint(0, 0), norm);
+            for (const ogdf::DPoint &z: hull) {
+                double d = CH.leftOfLine(norm, z, *k);
+                if (d > left) {
+                    left = d;
+                } else if (d < right) {
+                    right = d;
+                }
+            }
+            double width = left - right;
+
+            ogdf::Math::updateMax(dist, 1.0);
+            ogdf::Math::updateMax(width, 1.0);
+
+            double area = dist * width;
+
+            if (area <= best_area) {
+                best_height = dist;
+                best_width = width;
+                best_area = area;
+                best_normal = CH.calcNormal(*k, *iter);
+            }
+        }
+
+        if (hull.size() <= 1) {
+            best_height = 1.0;
+            best_width = 1.0;
+            best_normal = ogdf::DPoint(1.0, 1.0);
+        }
+
+        double angle = -atan2(best_normal.m_y, best_normal.m_x) + 1.5 * ogdf::Math::pi;
+        if (best_width < best_height) {
+            angle += 0.5f * ogdf::Math::pi;
+            double temp = best_height;
+            best_height = best_width;
+            best_width = temp;
+        }
+        rotation.grow(1, angle);
+        double left = hull.front().m_x;
+        double top = hull.front().m_y;
+        double bottom = hull.front().m_y;
+        // apply rotation to hull and calc offset
+        for (ogdf::DPoint tempP: hull) {
+            double ang = atan2(tempP.m_y, tempP.m_x);
+            double len = sqrt(tempP.m_x * tempP.m_x + tempP.m_y * tempP.m_y);
+            ang += angle;
+            tempP.m_x = cos(ang) * len;
+            tempP.m_y = sin(ang) * len;
+
+            if (tempP.m_x < left) {
+                left = tempP.m_x;
+            }
+            if (tempP.m_y < top) {
+                top = tempP.m_y;
+            }
+            if (tempP.m_y > bottom) {
+                bottom = tempP.m_y;
+            }
+        }
+        oldOffset.grow(1, ogdf::DPoint(left + 0.5 * graphLayoutComponentSeparation,
+                                       -1.0 * best_height + 1.0 * bottom + 0.0 * top +
+                                       0.5 * graphLayoutComponentSeparation));
+
+        // save rect
+        int w = static_cast<int>(best_width);
+        int h = static_cast<int>(best_height);
+        box.grow(1, ogdf::IPoint(w + graphLayoutComponentSeparation, h + graphLayoutComponentSeparation));
+    }
+
+    offset.init(box.size());
+
+    // call packer
+    packer.call(box, offset, aspectRatio);
+
+    int index = 0;
+    // Apply offset and rebuild Graph
+    for (int j = 0; j < numberOfComponents; j++) {
+        double angle = rotation[index];
+        // apply rotation and offset to all nodes
+
+        for (ogdf::node v: nodesInCC[j]) {
+            double x = GA.x(v);
+            double y = GA.y(v);
+            double ang = atan2(y, x);
+            double len = sqrt(x * x + y * y);
+            ang += angle;
+            x = cos(ang) * len;
+            y = sin(ang) * len;
+
+            x += static_cast<double>(offset[index].m_x);
+            y += static_cast<double>(offset[index].m_y);
+
+            x -= oldOffset[index].m_x;
+            y -= oldOffset[index].m_y;
+
+            GA.x(v) = x;
+            GA.y(v) = y;
+        }
+
+        index++;
+    }
+}
+
+
+void GraphLayoutWorker::layoutGraph() {
+    buildGraph();
+    initLayout();
+
+    //first we split the graph into its components
+    ogdf::GraphAttributes &GA = m_graph.m_ogdfGraphAttributes;
+    const ogdf::Graph& G = GA.constGraph();
+    const ogdf::EdgeArray<double> &EL = m_graph.m_ogdfEdgeLengths;
+
+    ogdf::NodeArray<int> componentNumber(G);
+    int numberOfComponents = connectedComponents(G, componentNumber);
+    if (numberOfComponents == 0)
+        return;
+
+    ogdf::Array<ogdf::List<ogdf::node> > nodesInCC(numberOfComponents);
+    for (auto v : G.nodes)
+        nodesInCC[componentNumber[v]].pushBack(v);
+
+    ogdf::EdgeArray<ogdf::edge> auxCopy(G);
+    for (int i = 0; i < numberOfComponents; i++) {
+        ogdf::GraphCopy GC;
+        ogdf::EdgeArray<double> edgeLengths(GC);
+        ogdf::NodeArray<float> nodeSizes(GC);
+
+        GC.createEmpty(G);
+
+        GC.initByNodes(nodesInCC[i],auxCopy);
+        ogdf::GraphAttributes cGA(GC, GA.attributes());
+        for (ogdf::node v : GC.nodes) {
+            cGA.x(v) = GA.x(GC.original(v));
+            cGA.y(v) = GA.y(GC.original(v));
+            nodeSizes(v) = 1;
+        }
+
+        for (ogdf::edge e : GC.edges)
+            edgeLengths(e) = EL(GC.original(e));
+
+        m_layout->call(cGA, edgeLengths);
+
+        for (ogdf::node v : GC.nodes) {
+            ogdf::node w = GC.original(v);
+            if (w == nullptr)
+                continue;
+
+            GA.x(w) = cGA.x(v);
+            GA.y(w) = cGA.y(v);
+        }
+    }
+
+    reassembleDrawings(GA,
+                       m_graphLayoutComponentSeparation, m_aspectRatio,
+                       *m_packer, nodesInCC);
+}
+
+[[maybe_unused]] void GraphLayoutWorker::cancelLayout() {
     m_layout->fixedIterations(0);
     m_layout->fineTuningIterations(0);
     m_layout->threshold(std::numeric_limits<double>::max());
 }
 
 GraphLayoutWorker::~GraphLayoutWorker() {
-    delete m_layout;
 }
 

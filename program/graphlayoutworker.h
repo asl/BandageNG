@@ -21,6 +21,7 @@
 
 namespace ogdf {
     class FMMMLayout;
+    class CCLayoutPackModule;
 }
 
 class AssemblyGraph;
@@ -40,8 +41,10 @@ public:
 private:
     void buildGraph();
     void determineLinearNodePositions();
+    void initLayout();
 
-    ogdf::FMMMLayout *m_layout = nullptr;
+    std::unique_ptr<ogdf::FMMMLayout> m_layout;
+    std::unique_ptr<ogdf::CCLayoutPackModule> m_packer;
     AssemblyGraph &m_graph;
     int m_graphLayoutQuality;
     bool m_useLinearLayout;
@@ -50,5 +53,6 @@ private:
 
 public slots:
     void layoutGraph();
-    void cancelLayout();
+
+    [[maybe_unused]] void cancelLayout();
 };
