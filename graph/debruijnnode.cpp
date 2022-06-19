@@ -78,48 +78,6 @@ void DeBruijnNode::resetNode()
     m_highestDistanceInNeighbourSearch = 0;
 }
 
-
-void DeBruijnNode::addToOgdfGraph(ogdf::Graph &ogdfGraph, ogdf::GraphAttributes &graphAttributes,
-                                  ogdf::EdgeArray<double> &edgeLengths, double xPos, double yPos)
-{
-    //If this node or its reverse complement is already in OGDF, then
-    //it's not necessary to make the node.
-    if (thisOrReverseComplementInOgdf())
-        return;
-
-    //Each node in the Velvet sense is made up of multiple nodes in the
-    //OGDF sense.  This way, Velvet nodes appear as lines whose length
-    //corresponds to the sequence length.
-    double drawnNodeLength = getDrawnNodeLength();
-    int numberOfGraphEdges = getNumberOfOgdfGraphEdges(drawnNodeLength);
-    int numberOfGraphNodes = numberOfGraphEdges + 1;
-    double drawnLengthPerEdge = drawnNodeLength / numberOfGraphEdges;
-
-    ogdf::node newNode = nullptr;
-    ogdf::node previousNode = nullptr;
-    for (int i = 0; i < numberOfGraphNodes; ++i)
-    {
-        newNode = ogdfGraph.newNode();
-        m_ogdfNodes.push_back(newNode);
-
-        if (g_settings->linearLayout) {
-            graphAttributes.x(newNode) = xPos;
-            graphAttributes.y(newNode) = yPos;
-            xPos += g_settings->nodeSegmentLength;
-        }
-
-        if (i > 0)
-        {
-            ogdf::edge newEdge = ogdfGraph.newEdge(previousNode, newNode);
-            edgeLengths[newEdge] = drawnLengthPerEdge;
-        }
-
-        previousNode = newNode;
-    }
-}
-
-
-
 double DeBruijnNode::getDrawnNodeLength() const
 {
     double drawnNodeLength = getNodeLengthPerMegabase() * double(getLength()) / 1000000.0;

@@ -816,7 +816,7 @@ void MainWindow::drawGraph()
     }
 
     resetScene();
-    g_assemblyGraph->buildOgdfGraphFromNodesAndEdges(startingNodes, g_settings->nodeDistance);
+    g_assemblyGraph->markNodesToDraw(startingNodes, g_settings->nodeDistance);
     layoutGraph();
 }
 

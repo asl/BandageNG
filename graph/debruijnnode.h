@@ -68,6 +68,7 @@ public:
     ContiguityStatus getContiguityStatus() const {return m_contiguityStatus;}
     DeBruijnNode * getReverseComplement() const {return m_reverseComplement;}
     const auto& getOgdfNode() const {return m_ogdfNodes;}
+    auto& getOgdfNode() {return m_ogdfNodes;}
     GraphicsItemNode * getGraphicsItemNode() const {return m_graphicsItemNode;}
     bool hasGraphicsItem() const {return m_graphicsItemNode != nullptr;}
 
@@ -117,8 +118,6 @@ public:
     void resetNode();
     void addEdge(DeBruijnEdge * edge);
     void removeEdge(DeBruijnEdge * edge);
-    void addToOgdfGraph(ogdf::Graph &ogdfGraph, ogdf::GraphAttributes &graphAttributes,
-                        ogdf::EdgeArray<double> &edgeLengths, double xPos, double yPos);
     void determineContiguity();
     void labelNeighbouringNodesAsDrawn(int nodeDistance, DeBruijnNode * callingNode);
     void setDepth(double newDepth) {m_depth = newDepth;}

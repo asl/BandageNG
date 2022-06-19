@@ -95,45 +95,6 @@ bool DeBruijnEdge::isPositiveEdge() const
 }
 
 
-void DeBruijnEdge::addToOgdfGraph(ogdf::Graph &ogdfGraph, ogdf::EdgeArray<double> &edgeArray) const
-{
-    ogdf::node firstEdgeOgdfNode;
-    ogdf::node secondEdgeOgdfNode;
-
-    if (m_startingNode->inOgdf())
-        firstEdgeOgdfNode = m_startingNode->getOgdfNode().back();
-    else if (m_startingNode->getReverseComplement()->inOgdf())
-        firstEdgeOgdfNode = m_startingNode->getReverseComplement()->getOgdfNode().front();
-    else
-        return; //Ending node or its reverse complement isn't in OGDF
-
-    if (m_endingNode->inOgdf())
-        secondEdgeOgdfNode = m_endingNode->getOgdfNode().front();
-    else if (m_endingNode->getReverseComplement()->inOgdf())
-        secondEdgeOgdfNode = m_endingNode->getReverseComplement()->getOgdfNode().back();
-    else
-        return; //Ending node or its reverse complement isn't in OGDF
-
-    //If this in an edge connected a single-segment node to itself, then we
-    //don't want to put it in the OGDF graph, because it would be redundant
-    //with the node segment (and created conflict with the node/edge length).
-    if (m_startingNode == m_endingNode)
-    {
-        if (DeBruijnNode::getNumberOfOgdfGraphEdges(m_startingNode->getDrawnNodeLength()) == 1)
-            return;
-    }
-
-    ogdf::edge newEdge = ogdfGraph.newEdge(firstEdgeOgdfNode, secondEdgeOgdfNode);
-    edgeArray[newEdge] = g_settings->edgeLength;
-}
-
-
-
-
-
-
-
-
 //This function traces all possible paths from this edge.
 //It proceeds a number of steps, as determined by a setting.
 //If forward is true, it looks in a forward direction (starting nodes to

@@ -38,6 +38,9 @@ public:
     ~GraphLayoutWorker() override;
 
 private:
+    void buildGraph();
+    void determineLinearNodePositions();
+
     ogdf::FMMMLayout *m_layout = nullptr;
     AssemblyGraph &m_graph;
     int m_graphLayoutQuality;

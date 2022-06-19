@@ -614,7 +614,7 @@ bool AssemblyGraph::loadGraphFromFile(const QString& filename) {
 
 //The startingNodes and nodeDistance parameters are only used if the graph scope
 //is not WHOLE_GRAPH.
-void AssemblyGraph::buildOgdfGraphFromNodesAndEdges(const std::vector<DeBruijnNode *>& startingNodes, int nodeDistance)
+void AssemblyGraph::markNodesToDraw(const std::vector<DeBruijnNode *>& startingNodes, int nodeDistance)
 {
     if (g_settings->graphScope == WHOLE_GRAPH)
     {
@@ -632,7 +632,7 @@ void AssemblyGraph::buildOgdfGraphFromNodesAndEdges(const std::vector<DeBruijnNo
         if (g_settings->graphScope == DEPTH_RANGE)
             nodeDistance = 0;
 
-        for (auto node : startingNodes)
+        for (auto *node : startingNodes)
         {
             //If we are in single mode, make sure that each node is positive.
             if (!g_settings->doubleMode && node->isNegativeNode())
@@ -642,92 +642,6 @@ void AssemblyGraph::buildOgdfGraphFromNodesAndEdges(const std::vector<DeBruijnNo
             node->setAsSpecial();
             node->labelNeighbouringNodesAsDrawn(nodeDistance, nullptr);
         }
-    }
-
-    // If performing a linear layout, we first sort the drawn nodes and add them left-to-right.
-    if (g_settings->linearLayout) {
-        QList<DeBruijnNode *> sortedDrawnNodes;
-
-        // We first try to sort the nodes numerically.
-        QList<QPair<int, DeBruijnNode *>> numericallySortedDrawnNodes;
-        bool successfulIntConversion = true;
-        for (auto &entry : m_deBruijnGraphNodes) {
-            DeBruijnNode * node = entry;
-            if (node->isDrawn() && node->thisOrReverseComplementNotInOgdf()) {
-                int nodeInt = node->getNameWithoutSign().toInt(&successfulIntConversion);
-                if (!successfulIntConversion)
-                    break;
-                numericallySortedDrawnNodes.push_back(QPair<int, DeBruijnNode*>(nodeInt, node));
-            }
-        }
-        if (successfulIntConversion) {
-            std::sort(numericallySortedDrawnNodes.begin(), numericallySortedDrawnNodes.end(),
-                [](const QPair<int, DeBruijnNode *> & a, const QPair<int, DeBruijnNode *> & b) {return a.first < b.first;});
-            for (int i = 0; i < numericallySortedDrawnNodes.size(); ++i) {
-                sortedDrawnNodes.reserve(numericallySortedDrawnNodes.size());
-                sortedDrawnNodes.push_back(numericallySortedDrawnNodes[i].second);
-            }
-        }
-
-        // If any of the conversions from node name to integer failed, then we instead sort the nodes alphabetically.
-        else {
-            for (auto &entry : m_deBruijnGraphNodes) {
-                DeBruijnNode * node = entry;
-                if (node->isDrawn())
-                    sortedDrawnNodes.push_back(node);
-            }
-            std::sort(sortedDrawnNodes.begin(), sortedDrawnNodes.end(),
-                [](DeBruijnNode * a, DeBruijnNode * b) {return QString::localeAwareCompare(a->getNameWithoutSign().toUpper(), b->getNameWithoutSign().toUpper()) < 0;});
-        }
-
-        // Now we add the drawn nodes to the OGDF graph, given them initial positions based on their sort order.
-        QSet<QPair<long long, long long> > usedStartPositions;
-        double lastXPos = 0.0;
-        for (auto node : sortedDrawnNodes) {
-            if (node->thisOrReverseComplementInOgdf())
-                continue;
-            std::vector<DeBruijnNode *> upstreamNodes = node->getUpstreamNodes();
-            for (size_t j = 0; j < upstreamNodes.size(); ++j) {
-                DeBruijnNode * upstreamNode = upstreamNodes[j];
-                if (!upstreamNode->inOgdf())
-                    continue;
-                ogdf::node upstreamEnd = upstreamNode->getOgdfNode().back();
-                double upstreamEndPos = m_ogdfGraphAttributes.x(upstreamEnd);
-                if (j == 0)
-                    lastXPos = upstreamEndPos;
-                else
-                    lastXPos = std::max(lastXPos, upstreamEndPos);
-            }
-            double xPos = lastXPos + g_settings->edgeLength;
-            double yPos = 0.0;
-            long long intXPos = (long long)(xPos * 100.0);
-            long long intYPos = (long long)(yPos * 100.0);
-            while (usedStartPositions.contains(QPair<long long, long long>(intXPos, intYPos))) {
-                yPos += g_settings->edgeLength;
-                intYPos = (long long)(yPos * 100.0);
-            }
-            node->addToOgdfGraph(m_ogdfGraph, m_ogdfGraphAttributes, m_ogdfEdgeLengths, xPos, yPos);
-            usedStartPositions.insert(QPair<long long, long long>(intXPos, intYPos));
-            lastXPos = m_ogdfGraphAttributes.x(node->getOgdfNode().back());
-        }
-    }
-
-    // If the layout isn't linear, then we don't worry about the initial positions because they'll be randomised anyway.
-    else {
-        for (auto &entry : m_deBruijnGraphNodes) {
-            DeBruijnNode * node = entry;
-            if (node->isDrawn() && node->thisOrReverseComplementNotInOgdf())
-                node->addToOgdfGraph(m_ogdfGraph, m_ogdfGraphAttributes, m_ogdfEdgeLengths, 0.0, 0.0);
-        }
-    }
-
-    //Then loop through each edge determining its drawn status and adding it to OGDF if it is drawn.
-    for (auto &entry : m_deBruijnGraphEdges) {
-        DeBruijnEdge * edge = entry.second;
-        if (!edge->determineIfDrawn())
-            continue;
-
-        edge->addToOgdfGraph(m_ogdfGraph, m_ogdfEdgeLengths);
     }
 }
 

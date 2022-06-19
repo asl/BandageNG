@@ -69,7 +69,6 @@ public:
     bool determineIfDrawn() { return (m_drawn = edgeIsVisible());}
     void setExactOverlap(int overlap) {m_overlap = overlap; m_overlapType = EXACT_OVERLAP;}
     void autoDetermineExactOverlap();
-    void addToOgdfGraph(ogdf::Graph &ogdfGraph, ogdf::EdgeArray<double> &edgeArray) const;
 
 private:
     DeBruijnNode * m_startingNode;

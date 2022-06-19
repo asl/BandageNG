@@ -125,8 +125,8 @@ public:
     void recalculateAllNodeWidths();
 
     bool loadGraphFromFile(const QString& filename);
-    void buildOgdfGraphFromNodesAndEdges(const std::vector<DeBruijnNode *>& startingNodes,
-                                         int nodeDistance);
+    void markNodesToDraw(const std::vector<DeBruijnNode *>& startingNodes,
+                         int nodeDistance);
     void addGraphicsItemsToScene(MyGraphicsScene * scene);
 
     bool loadCSV(const QString& filename, QStringList * columns, QString * errormsg, bool * coloursLoaded);

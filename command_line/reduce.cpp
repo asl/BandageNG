@@ -113,7 +113,7 @@ int bandageReduce(QStringList arguments)
         return 1;
     }
 
-    g_assemblyGraph->buildOgdfGraphFromNodesAndEdges(startingNodes, g_settings->nodeDistance);
+    g_assemblyGraph->markNodesToDraw(startingNodes, g_settings->nodeDistance);
 
     bool success = g_assemblyGraph->saveVisibleGraphToGfa(outputFilename);
     if (!success)

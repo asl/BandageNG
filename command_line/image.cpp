@@ -160,7 +160,7 @@ int bandageImage(QStringList arguments)
         return 1;
     }
 
-    g_assemblyGraph->buildOgdfGraphFromNodesAndEdges(startingNodes, g_settings->nodeDistance);
+    g_assemblyGraph->markNodesToDraw(startingNodes, g_settings->nodeDistance);
     g_assemblyGraph->layoutGraph();
 
     MyGraphicsScene scene;
