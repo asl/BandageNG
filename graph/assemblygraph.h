@@ -181,7 +181,6 @@ public:
     long long getTotalLengthMinusEdgeOverlaps() const;
     QPair<int, int> getOverlapRange() const;
     long long getTotalLengthOrphanedNodes() const;
-    bool useLinearLayout() const;
 
     bool hasCustomColour(const DeBruijnNode* node) const;
     bool hasCustomColour(const DeBruijnEdge* edge) const;

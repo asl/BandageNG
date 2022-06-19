@@ -24,11 +24,12 @@
 #include <ctime>
 
 GraphLayoutWorker::GraphLayoutWorker(AssemblyGraph &graph,
-                                     int graphLayoutQuality,
+                                     int graphLayoutQuality, bool useLinearLayout,
                                      double graphLayoutComponentSeparation, double aspectRatio)
         : m_layout(new ogdf::FMMMLayout),
           m_graph(graph),
           m_graphLayoutQuality(graphLayoutQuality),
+          m_useLinearLayout(useLinearLayout),
           m_graphLayoutComponentSeparation(graphLayoutComponentSeparation),
           m_aspectRatio(aspectRatio) {}
 
@@ -41,7 +42,7 @@ void GraphLayoutWorker::layoutGraph() {
     m_layout->minDistCC(m_graphLayoutComponentSeparation);
     m_layout->stepsForRotatingComponents(50); // Helps to make linear graph components more horizontal.
 
-    m_layout->initialPlacementForces(m_graph.useLinearLayout() ?
+    m_layout->initialPlacementForces(m_useLinearLayout ?
                                      ogdf::FMMMOptions::InitialPlacementForces::KeepPositions :
                                      ogdf::FMMMOptions::InitialPlacementForces::RandomTime);
 

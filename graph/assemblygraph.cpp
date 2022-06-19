@@ -1080,6 +1080,7 @@ void AssemblyGraph::layoutGraph()
 {
     GraphLayoutWorker(*this,
                       g_settings->graphLayoutQuality,
+                      g_settings->linearLayout,
                       g_settings->componentSeparation).layoutGraph();
 }
 
@@ -2431,16 +2432,6 @@ long long AssemblyGraph::getTotalLengthOrphanedNodes() const {
     }
     return total;
 }
-
-
-bool AssemblyGraph::useLinearLayout() const {
-    // If the graph has no edges, then we use a linear layout. Otherwise check the setting.
-    if (m_edgeCount == 0)
-        return true;
-    else
-        return g_settings->linearLayout;
-}
-
 
 QStringList AssemblyGraph::getCustomLabelForDisplay(const DeBruijnNode *node) const {
     QStringList customLabelLines;

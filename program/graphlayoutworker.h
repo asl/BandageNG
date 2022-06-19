@@ -31,7 +31,9 @@ class GraphLayoutWorker : public QObject
 
 public:
     GraphLayoutWorker(AssemblyGraph &graph,
-                      int graphLayoutQuality, double graphLayoutComponentSeparation,
+                      int graphLayoutQuality,
+                      bool useLinearLayout,
+                      double graphLayoutComponentSeparation,
                       double aspectRatio = 1.333333);
     ~GraphLayoutWorker() override;
 
@@ -39,6 +41,7 @@ private:
     ogdf::FMMMLayout *m_layout = nullptr;
     AssemblyGraph &m_graph;
     int m_graphLayoutQuality;
+    bool m_useLinearLayout;
     double m_graphLayoutComponentSeparation;
     double m_aspectRatio;
 

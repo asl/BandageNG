@@ -102,7 +102,7 @@ void DeBruijnNode::addToOgdfGraph(ogdf::Graph * ogdfGraph, ogdf::GraphAttributes
         newNode = ogdfGraph->newNode();
         m_ogdfNodes.push_back(newNode);
 
-        if (g_assemblyGraph->useLinearLayout()) {
+        if (g_settings->linearLayout) {
             graphAttributes->x(newNode) = xPos;
             graphAttributes->y(newNode) = yPos;
             xPos += g_settings->nodeSegmentLength;

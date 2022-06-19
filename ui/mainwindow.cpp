@@ -882,6 +882,7 @@ void MainWindow::layoutGraph()
     double aspectRatio = double(g_graphicsView->width()) / g_graphicsView->height();
     auto *graphLayoutWorker = new GraphLayoutWorker(*g_assemblyGraph,
                                                     g_settings->graphLayoutQuality,
+                                                    g_settings->linearLayout,
                                                     g_settings->componentSeparation, aspectRatio);
     graphLayoutWorker->moveToThread(m_layoutThread);
 
