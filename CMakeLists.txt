@@ -10,7 +10,7 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Widgets Svg Test)
+find_package(Qt6 REQUIRED COMPONENTS Widgets Svg Test Concurrent)
 find_package(ZLIB REQUIRED)
 
 set(LIB_SOURCES
@@ -101,11 +101,11 @@ FetchContent_MakeAvailable(lexy)
 
 # FIXME: Untagle this
 add_library(BandageLib STATIC ${LIB_SOURCES} ${FORMS})
-target_link_libraries(BandageLib PRIVATE OGDF Qt6::Widgets Qt6::Svg foonathan::lexy ZLIB::ZLIB)
+target_link_libraries(BandageLib PRIVATE OGDF Qt6::Concurrent Qt6::Widgets Qt6::Svg foonathan::lexy ZLIB::ZLIB)
 target_include_directories(BandageLib INTERFACE ".")
 
 add_executable(BandageNG program/main.cpp ${RESOURCES})
-target_link_libraries(BandageNG BandageLib OGDF Qt6::Core Qt6::Widgets ZLIB::ZLIB)
+target_link_libraries(BandageNG BandageLib OGDF Qt6::Core Qt6::Widgets Qt6::Concurrent ZLIB::ZLIB)
 
 if (APPLE)
   set_target_properties(BandageNG PROPERTIES

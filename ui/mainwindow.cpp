@@ -66,6 +66,7 @@
 #include <QSvgGenerator>
 #include <QCompleter>
 #include <QStringListModel>
+#include <QtConcurrent>
 
 #include <iterator>
 #include <algorithm>
@@ -77,7 +78,7 @@
 
 MainWindow::MainWindow(QString fileToLoadOnStartup, bool drawGraphAfterLoad) :
     QMainWindow(nullptr),
-    ui(new Ui::MainWindow), m_layoutThread(nullptr), m_imageFilter("PNG (*.png)"),
+    ui(new Ui::MainWindow), m_imageFilter("PNG (*.png)"),
     m_fileToLoadOnStartup(fileToLoadOnStartup), m_drawGraphAfterLoad(drawGraphAfterLoad),
     m_uiState(NO_GRAPH_LOADED), m_blastSearchDialog(nullptr), m_alreadyShown(false)
 {
@@ -821,7 +822,6 @@ void MainWindow::drawGraph()
 
 void MainWindow::graphLayoutFinished()
 {
-    m_layoutThread = nullptr;
     g_assemblyGraph->addGraphicsItemsToScene(m_scene);
     m_scene->setSceneRectangle();
     zoomToFitScene();
@@ -878,22 +878,18 @@ void MainWindow::layoutGraph()
     progress->setWindowModality(Qt::WindowModal);
     progress->show();
 
-    m_layoutThread = new QThread;
     double aspectRatio = double(g_graphicsView->width()) / g_graphicsView->height();
     auto *graphLayoutWorker = new GraphLayoutWorker(*g_assemblyGraph,
                                                     g_settings->graphLayoutQuality,
                                                     g_settings->linearLayout,
                                                     g_settings->componentSeparation, aspectRatio);
-    graphLayoutWorker->moveToThread(m_layoutThread);
 
     connect(progress, SIGNAL(halt()), graphLayoutWorker, SLOT(cancelLayout()));
-    connect(m_layoutThread, SIGNAL(started()), graphLayoutWorker, SLOT(layoutGraph()));
-    connect(graphLayoutWorker, SIGNAL(finishedLayout()), m_layoutThread, SLOT(quit()));
     connect(graphLayoutWorker, SIGNAL(finishedLayout()), graphLayoutWorker, SLOT(deleteLater()));
     connect(graphLayoutWorker, SIGNAL(finishedLayout()), this, SLOT(graphLayoutFinished()));
-    connect(m_layoutThread, SIGNAL(finished()), m_layoutThread, SLOT(deleteLater()));
-    connect(m_layoutThread, SIGNAL(finished()), progress, SLOT(deleteLater()));
-    m_layoutThread->start();
+    connect(graphLayoutWorker, SIGNAL(finishedLayout()), progress, SLOT(deleteLater()));
+
+    QtConcurrent::run(&GraphLayoutWorker::layoutGraph, graphLayoutWorker).waitForFinished();
 }
 
 

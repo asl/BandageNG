@@ -58,7 +58,6 @@ private:
 
     GraphicsViewZoom * m_graphicsViewZoom;
     double m_previousZoomSpinBoxValue;
-    QThread * m_layoutThread;
     QString m_imageFilter;
     QString m_fileToLoadOnStartup;
     bool m_drawGraphAfterLoad;
