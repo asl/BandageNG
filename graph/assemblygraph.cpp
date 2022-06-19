@@ -1076,15 +1076,12 @@ QStringList AssemblyGraph::removeNullStringsFromList(const QStringList& in)
 }
 
 
-//Unlike the equivalent function in MainWindow, this does the graph layout in the main thread.
-void AssemblyGraph::layoutGraph() const
+// Unlike the equivalent function in MainWindow, this does the graph layout in the main thread.
+void AssemblyGraph::layoutGraph()
 {
-    ogdf::FMMMLayout fmmm;
-    auto *graphLayoutWorker = new GraphLayoutWorker(&fmmm, m_graphAttributes, m_edgeArray,
-                                                    g_settings->graphLayoutQuality,
-                                                    useLinearLayout(),
-                                                    g_settings->componentSeparation);
-    graphLayoutWorker->layoutGraph();
+    GraphLayoutWorker(*this,
+                      g_settings->graphLayoutQuality,
+                      g_settings->componentSeparation).layoutGraph();
 }
 
 

@@ -15,37 +15,37 @@
 //You should have received a copy of the GNU General Public License
 //along with Bandage.  If not, see <http://www.gnu.org/licenses/>.
 
-
-#ifndef GRAPHLAYOUTWORKER_H
-#define GRAPHLAYOUTWORKER_H
+#pragma once
 
 #include <QObject>
-#include "ogdf/energybased/FMMMLayout.h"
-#include "ogdf/basic/GraphAttributes.h"
 
+namespace ogdf {
+    class FMMMLayout;
+}
+
+class AssemblyGraph;
 
 class GraphLayoutWorker : public QObject
 {
     Q_OBJECT
 
 public:
-    GraphLayoutWorker(ogdf::FMMMLayout * fmmm, ogdf::GraphAttributes * graphAttributes,
-                      ogdf::EdgeArray<double> * edgeArray, int graphLayoutQuality, bool linearLayout,
-                      double graphLayoutComponentSeparation, double aspectRatio = 1.333333);
+    GraphLayoutWorker(AssemblyGraph &graph,
+                      int graphLayoutQuality, double graphLayoutComponentSeparation,
+                      double aspectRatio = 1.333333);
+    ~GraphLayoutWorker() override;
 
-    ogdf::FMMMLayout * m_fmmm;
-    ogdf::GraphAttributes * m_graphAttributes;
-    ogdf::EdgeArray<double> * m_edgeArray;
+private:
+    ogdf::FMMMLayout *m_layout = nullptr;
+    AssemblyGraph &m_graph;
     int m_graphLayoutQuality;
-    bool m_linearLayout;
     double m_graphLayoutComponentSeparation;
     double m_aspectRatio;
 
 public slots:
     void layoutGraph();
+    void cancelLayout();
 
 signals:
     void finishedLayout();
 };
-
-#endif // GRAPHLAYOUTWORKER_H

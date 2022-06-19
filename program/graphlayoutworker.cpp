@@ -17,69 +17,74 @@
 
 
 #include "graphlayoutworker.h"
-#include "ogdf/basic/geometry.h"
+#include "graph/assemblygraph.h"
+#include "ogdf/energybased/FMMMLayout.h"
 #include "ogdf/energybased/fmmm/FMMMOptions.h"
 
-#include <QLineF>
 #include <ctime>
 
-GraphLayoutWorker::GraphLayoutWorker(ogdf::FMMMLayout * fmmm, ogdf::GraphAttributes * graphAttributes,
-                                     ogdf::EdgeArray<double> * edgeArray, int graphLayoutQuality, bool linearLayout,
-                                     double graphLayoutComponentSeparation, double aspectRatio) :
-    m_fmmm(fmmm), m_graphAttributes(graphAttributes), m_edgeArray(edgeArray), m_graphLayoutQuality(graphLayoutQuality),
-    m_linearLayout(linearLayout), m_graphLayoutComponentSeparation(graphLayoutComponentSeparation),
-    m_aspectRatio(aspectRatio)
-{
-}
+GraphLayoutWorker::GraphLayoutWorker(AssemblyGraph &graph,
+                                     int graphLayoutQuality,
+                                     double graphLayoutComponentSeparation, double aspectRatio)
+        : m_layout(new ogdf::FMMMLayout),
+          m_graph(graph),
+          m_graphLayoutQuality(graphLayoutQuality),
+          m_graphLayoutComponentSeparation(graphLayoutComponentSeparation),
+          m_aspectRatio(aspectRatio) {}
 
+void GraphLayoutWorker::layoutGraph() {
+    m_layout->randSeed(clock());
+    m_layout->useHighLevelOptions(false);
+    m_layout->unitEdgeLength(1.0);
+    m_layout->allowedPositions(ogdf::FMMMOptions::AllowedPositions::All);
+    m_layout->pageRatio(m_aspectRatio);
+    m_layout->minDistCC(m_graphLayoutComponentSeparation);
+    m_layout->stepsForRotatingComponents(50); // Helps to make linear graph components more horizontal.
 
-void GraphLayoutWorker::layoutGraph()
-{
-    m_fmmm->randSeed(clock());
-    m_fmmm->useHighLevelOptions(false);
-    m_fmmm->initialPlacementForces(ogdf::FMMMOptions::InitialPlacementForces::RandomRandIterNr);
-    m_fmmm->unitEdgeLength(1.0);
-    m_fmmm->allowedPositions(ogdf::FMMMOptions::AllowedPositions::All);
-    m_fmmm->pageRatio(m_aspectRatio);
-    m_fmmm->minDistCC(m_graphLayoutComponentSeparation);
-    m_fmmm->stepsForRotatingComponents(50); // Helps to make linear graph components more horizontal.
+    m_layout->initialPlacementForces(m_graph.useLinearLayout() ?
+                                     ogdf::FMMMOptions::InitialPlacementForces::KeepPositions :
+                                     ogdf::FMMMOptions::InitialPlacementForces::RandomTime);
 
-    if (m_linearLayout)
-        m_fmmm->initialPlacementForces(ogdf::FMMMOptions::InitialPlacementForces::KeepPositions);
-    else
-        m_fmmm->initialPlacementForces(ogdf::FMMMOptions::InitialPlacementForces::RandomTime);
-
-    switch (m_graphLayoutQuality)
-    {
-    case 0:
-        m_fmmm->fixedIterations(3);
-        m_fmmm->fineTuningIterations(1);
-        m_fmmm->nmPrecision(2);
-        break;
-    case 1:
-        m_fmmm->fixedIterations(12);
-        m_fmmm->fineTuningIterations(8);
-        m_fmmm->nmPrecision(2);
-        break;
-    case 2:
-        m_fmmm->fixedIterations(30);
-        m_fmmm->fineTuningIterations(20);
-        m_fmmm->nmPrecision(4);
-        break;
-    case 3:
-        m_fmmm->fixedIterations(60);
-        m_fmmm->fineTuningIterations(20);
-        m_fmmm->nmPrecision(6);
-        break;
-    case 4:
-        m_fmmm->fixedIterations(120);
-        m_fmmm->fineTuningIterations(20);
-        m_fmmm->nmPrecision(8);
-        break;
+    switch (m_graphLayoutQuality) {
+        case 0:
+            m_layout->fixedIterations(3);
+            m_layout->fineTuningIterations(1);
+            m_layout->nmPrecision(2);
+            break;
+        case 1:
+            m_layout->fixedIterations(15);
+            m_layout->fineTuningIterations(10);
+            m_layout->nmPrecision(2);
+            break;
+        case 2:
+            m_layout->fixedIterations(30);
+            m_layout->fineTuningIterations(20);
+            m_layout->nmPrecision(4);
+            break;
+        case 3:
+            m_layout->fixedIterations(60);
+            m_layout->fineTuningIterations(40);
+            m_layout->nmPrecision(6);
+            break;
+        case 4:
+            m_layout->fixedIterations(120);
+            m_layout->fineTuningIterations(60);
+            m_layout->nmPrecision(8);
+            break;
     }
 
-    m_fmmm->call(*m_graphAttributes, *m_edgeArray);
+    m_layout->call(*m_graph.m_graphAttributes, *m_graph.m_edgeArray);
 
     emit finishedLayout();
+}
+
+void GraphLayoutWorker::cancelLayout() {
+    m_layout->fixedIterations(0);
+    m_layout->fineTuningIterations(0);
+    m_layout->threshold(std::numeric_limits<double>::max());
+}
+
+GraphLayoutWorker::~GraphLayoutWorker() {
+    delete m_layout;
 }
 

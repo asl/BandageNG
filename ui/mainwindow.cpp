@@ -72,7 +72,7 @@ MainWindow::MainWindow(QString fileToLoadOnStartup, bool drawGraphAfterLoad) :
     QMainWindow(nullptr),
     ui(new Ui::MainWindow), m_layoutThread(nullptr), m_imageFilter("PNG (*.png)"),
     m_fileToLoadOnStartup(fileToLoadOnStartup), m_drawGraphAfterLoad(drawGraphAfterLoad),
-    m_uiState(NO_GRAPH_LOADED), m_blastSearchDialog(nullptr), m_alreadyShown(false), m_fmmm(nullptr)
+    m_uiState(NO_GRAPH_LOADED), m_blastSearchDialog(nullptr), m_alreadyShown(false)
 {
     ui->setupUi(this);
 
@@ -813,7 +813,6 @@ void MainWindow::drawGraph()
 
 void MainWindow::graphLayoutFinished()
 {
-    delete m_fmmm;
     m_layoutThread = nullptr;
     g_assemblyGraph->addGraphicsItemsToScene(m_scene);
     m_scene->setSceneRectangle();
@@ -824,14 +823,6 @@ void MainWindow::graphLayoutFinished()
 
     //Move the focus to the view so the user can use keyboard controls to navigate.
     g_graphicsView->setFocus();
-}
-
-
-void MainWindow::graphLayoutCancelled()
-{
-    m_fmmm->fixedIterations(0);
-    m_fmmm->fineTuningIterations(0);
-    m_fmmm->threshold(std::numeric_limits<double>::max());
 }
 
 
@@ -879,18 +870,14 @@ void MainWindow::layoutGraph()
     progress->setWindowModality(Qt::WindowModal);
     progress->show();
 
-    m_fmmm = new ogdf::FMMMLayout();
-
     m_layoutThread = new QThread;
     double aspectRatio = double(g_graphicsView->width()) / g_graphicsView->height();
-    auto *graphLayoutWorker = new GraphLayoutWorker(m_fmmm, g_assemblyGraph->m_graphAttributes,
-                                                    g_assemblyGraph->m_edgeArray,
+    auto *graphLayoutWorker = new GraphLayoutWorker(*g_assemblyGraph,
                                                     g_settings->graphLayoutQuality,
-                                                    g_assemblyGraph->useLinearLayout(),
                                                     g_settings->componentSeparation, aspectRatio);
     graphLayoutWorker->moveToThread(m_layoutThread);
 
-    connect(progress, SIGNAL(halt()), this, SLOT(graphLayoutCancelled()));
+    connect(progress, SIGNAL(halt()), graphLayoutWorker, SLOT(cancelLayout()));
     connect(m_layoutThread, SIGNAL(started()), graphLayoutWorker, SLOT(layoutGraph()));
     connect(graphLayoutWorker, SIGNAL(finishedLayout()), m_layoutThread, SLOT(quit()));
     connect(graphLayoutWorker, SIGNAL(finishedLayout()), graphLayoutWorker, SLOT(deleteLater()));

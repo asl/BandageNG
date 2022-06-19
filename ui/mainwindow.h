@@ -59,7 +59,6 @@ private:
     GraphicsViewZoom * m_graphicsViewZoom;
     double m_previousZoomSpinBoxValue;
     QThread * m_layoutThread;
-    ogdf::FMMMLayout * m_fmmm;
     QString m_imageFilter;
     QString m_fileToLoadOnStartup;
     bool m_drawGraphAfterLoad;
@@ -136,7 +135,6 @@ private slots:
     void blastChanged();
     void blastQueryChanged();
     void showHidePanels();
-    void graphLayoutCancelled();
     void bringSelectedNodesToFront();
     void selectNodesWithBlastHits();
     void selectNodesWithDeadEnds();
