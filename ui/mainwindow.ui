@@ -2291,6 +2291,7 @@
     <addaction name="separator"/>
     <addaction name="actionSave_image_current_view"/>
     <addaction name="actionSave_image_entire_scene"/>
+    <addaction name="actionExport_layout"/>
     <addaction name="separator"/>
     <addaction name="actionExit"/>
    </widget>
@@ -2734,6 +2735,15 @@
   <action name="actionSelect_nodes_with_dead_ends">
    <property name="text">
     <string>Select nodes with dead ends</string>
+   </property>
+  </action>
+  <action name="actionExport_layout">
+   <property name="icon">
+    <iconset resource="../images/images.qrc">
+     <normaloff>:/icons/save-256.png</normaloff>:/icons/save-256.png</iconset>
+   </property>
+   <property name="text">
+    <string>Export layout</string>
    </property>
   </action>
  </widget>

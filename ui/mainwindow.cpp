@@ -15,58 +15,65 @@
 
 
 #include "mainwindow.h"
-#include "program/globals.h"
 #include "ui_mainwindow.h"
-#include <QFileDialog>
-#include <QLatin1String>
-#include <QTextStream>
-#include "ogdf/energybased/FMMMLayout.h"
-#include <iterator>
-#include "program/settings.h"
-#include <QClipboard>
-#include <QTransform>
-#include <QFontDialog>
-#include <QColorDialog>
-#include <algorithm>
-#include <QFile>
-#include <QScrollBar>
+
 #include "settingsdialog.h"
-#include <sstream>
-#include <stdexcept>
-#include <cstdlib>
-#include <ctime>
-#include <QThread>
-#include "program/graphlayoutworker.h"
-#include <QMessageBox>
-#include <QInputDialog>
-#include <QShortcut>
 #include "aboutdialog.h"
-#include <QMainWindow>
 #include "blastsearchdialog.h"
-#include "graph/assemblygraph.h"
 #include "mygraphicsview.h"
 #include "graphicsviewzoom.h"
 #include "mygraphicsscene.h"
+#include "myprogressdialog.h"
+#include "pathspecifydialog.h"
+#include "changenodenamedialog.h"
+#include "changenodedepthdialog.h"
+#include "graphinfodialog.h"
+
 #include "blast/blastsearch.h"
+
+#include "graph/assemblygraph.h"
 #include "graph/debruijnnode.h"
 #include "graph/debruijnedge.h"
 #include "graph/graphicsitemnode.h"
 #include "graph/graphicsitemedge.h"
-#include "myprogressdialog.h"
-#include <limits>
+#include "graph/path.h"
+#include "graph/sequenceutils.h"
+#include "graph/assemblygraphbuilder.h"
+#include "graph/nodecolorers.h"
+
+#include "program/globals.h"
+#include "program/settings.h"
+#include "program/graphlayoutworker.h"
+#include "program/memory.h"
+
+#include <ogdf/fileformats/GraphIO.h>
+
+#include <QFileDialog>
+#include <QLatin1String>
+#include <QTextStream>
+#include <QClipboard>
+#include <QTransform>
+#include <QFontDialog>
+#include <QColorDialog>
+#include <QFile>
+#include <QScrollBar>
+#include <QThread>
+#include <QMessageBox>
+#include <QInputDialog>
+#include <QShortcut>
+#include <QMainWindow>
 #include <QDesktopServices>
 #include <QSvgGenerator>
 #include <QCompleter>
 #include <QStringListModel>
-#include "graph/path.h"
-#include "pathspecifydialog.h"
-#include "program/memory.h"
-#include "changenodenamedialog.h"
-#include "changenodedepthdialog.h"
-#include "graphinfodialog.h"
-#include "graph/sequenceutils.h"
-#include "graph/assemblygraphbuilder.h"
-#include "graph/nodecolorers.h"
+
+#include <iterator>
+#include <algorithm>
+#include <sstream>
+#include <stdexcept>
+#include <limits>
+#include <cstdlib>
+#include <ctime>
 
 MainWindow::MainWindow(QString fileToLoadOnStartup, bool drawGraphAfterLoad) :
     QMainWindow(nullptr),
@@ -148,6 +155,7 @@ MainWindow::MainWindow(QString fileToLoadOnStartup, bool drawGraphAfterLoad) :
     connect(ui->tagsComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(switchTagValue()));
     connect(ui->actionSave_image_current_view, SIGNAL(triggered()), this, SLOT(saveImageCurrentView()));
     connect(ui->actionSave_image_entire_scene, SIGNAL(triggered()), this, SLOT(saveImageEntireScene()));
+    connect(ui->actionExport_layout, SIGNAL(triggered()), this, SLOT(exportGraphLayout()));
     connect(ui->nodeCustomLabelsCheckBox, SIGNAL(toggled(bool)), this, SLOT(setTextDisplaySettings()));
     connect(ui->nodeNamesCheckBox, SIGNAL(toggled(bool)), this, SLOT(setTextDisplaySettings()));
     connect(ui->nodeLengthsCheckBox, SIGNAL(toggled(bool)), this, SLOT(setTextDisplaySettings()));
@@ -1825,6 +1833,7 @@ void MainWindow::setUiState(UiState uiState)
 {
     m_uiState = uiState;
 
+    // FIXME: simplify the code below!
     switch (uiState)
     {
     case NO_GRAPH_LOADED:
@@ -1837,6 +1846,7 @@ void MainWindow::setUiState(UiState uiState)
         ui->annotationSelectorWidget->setEnabled(false);
         ui->selectionScrollAreaWidgetContents->setEnabled(false);
         ui->actionLoad_CSV->setEnabled(false);
+        ui->actionExport_layout->setEnabled(false);
         break;
     case GRAPH_LOADED:
         ui->graphDetailsWidget->setEnabled(true);
@@ -1848,6 +1858,7 @@ void MainWindow::setUiState(UiState uiState)
         ui->annotationSelectorWidget->setEnabled(true);
         ui->selectionScrollAreaWidgetContents->setEnabled(false);
         ui->actionLoad_CSV->setEnabled(true);
+        ui->actionExport_layout->setEnabled(false);
         break;
     case GRAPH_DRAWN:
         ui->graphDetailsWidget->setEnabled(true);
@@ -1860,6 +1871,7 @@ void MainWindow::setUiState(UiState uiState)
         ui->selectionScrollAreaWidgetContents->setEnabled(true);
         ui->actionZoom_to_selection->setEnabled(true);
         ui->actionLoad_CSV->setEnabled(true);
+        ui->actionExport_layout->setEnabled(true);
         break;
     }
 }
@@ -2587,4 +2599,15 @@ void MainWindow::openGraphInfoDialog()
 {
     GraphInfoDialog graphInfoDialog(this);
     graphInfoDialog.exec();
+}
+
+void MainWindow::exportGraphLayout() {
+    QString fullFileName = QFileDialog::getSaveFileName(this, "Save graph layout",
+                                                        "",
+                                                        "GML (*.gml);;GraphML (*.graphml)");
+
+    if (fullFileName.isEmpty())
+        return;
+
+    ogdf::GraphIO::write(*g_assemblyGraph->m_graphAttributes, fullFileName.toStdString());
 }

@@ -165,6 +165,7 @@ private slots:
     void changeNodeName();
     void changeNodeDepth();
     void openGraphInfoDialog();
+    void exportGraphLayout();
 
 protected:
       void showEvent(QShowEvent *ev) override;
