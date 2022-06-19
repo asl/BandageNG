@@ -15,9 +15,7 @@
 //You should have received a copy of the GNU General Public License
 //along with Bandage.  If not, see <http://www.gnu.org/licenses/>.
 
-
-#ifndef DEBRUIJNNODE_H
-#define DEBRUIJNNODE_H
+#pragma once
 
 #include "program/globals.h"
 #include "program/settings.h"
@@ -100,8 +98,6 @@ public:
     bool sequenceIsMissing() const;
     DeBruijnEdge *getSelfLoopingEdge() const;
     int getDeadEndCount() const;
-    static int getNumberOfOgdfGraphEdges(double drawnNodeLength) ;
-    double getDrawnNodeLength() const;
 
     //MODIFERS
     void setDepthRelativeToMeanDrawnDepth(double newVal) {m_depthRelativeToMeanDrawnDepth = newVal;}
@@ -143,16 +139,10 @@ private:
     QString getNodeNameForFasta(bool sign) const;
     QByteArray getUpstreamSequence(int upstreamSequenceLength) const;
 
-    static double getNodeLengthPerMegabase() ;
     static bool isOnlyPathInItsDirection(DeBruijnNode * connectedNode,
                                   std::vector<DeBruijnNode *> * incomingNodes,
-                                  std::vector<DeBruijnNode *> * outgoingNodes) ;
-    static bool isNotOnlyPathInItsDirection(DeBruijnNode * connectedNode,
-                                     std::vector<DeBruijnNode *> * incomingNodes,
-                                     std::vector<DeBruijnNode *> * outgoingNodes) ;
+                                  std::vector<DeBruijnNode *> * outgoingNodes);
     static std::vector<DeBruijnNode *> getNodesCommonToAllPaths(std::vector< std::vector <DeBruijnNode *> > * paths,
                                                          bool includeReverseComplements) ;
     bool doesPathLeadOnlyToNode(DeBruijnNode * node, bool includeReverseComplement);
 };
-
-#endif // DEBRUIJNNODE_H

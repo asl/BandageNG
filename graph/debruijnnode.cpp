@@ -78,24 +78,6 @@ void DeBruijnNode::resetNode()
     m_highestDistanceInNeighbourSearch = 0;
 }
 
-double DeBruijnNode::getDrawnNodeLength() const
-{
-    double drawnNodeLength = getNodeLengthPerMegabase() * double(getLength()) / 1000000.0;
-    if (drawnNodeLength < g_settings->minimumNodeLength)
-        drawnNodeLength = g_settings->minimumNodeLength;
-    return drawnNodeLength;
-}
-
-int DeBruijnNode::getNumberOfOgdfGraphEdges(double drawnNodeLength)
-{
-    int numberOfGraphEdges = ceil(drawnNodeLength / g_settings->nodeSegmentLength);
-    if (numberOfGraphEdges <= 0)
-        numberOfGraphEdges = 1;
-    return numberOfGraphEdges;
-}
-
-
-
 //This function determines the contiguity of nodes relative to this one.
 //It has two steps:
 // -First, for each edge leaving this node, all paths outward are found.
@@ -270,13 +252,6 @@ bool DeBruijnNode::isOnlyPathInItsDirection(DeBruijnNode * connectedNode,
 
     return (container->size() == 1 && (*container)[0] == connectedNode);
 }
-bool DeBruijnNode::isNotOnlyPathInItsDirection(DeBruijnNode * connectedNode,
-                                 std::vector<DeBruijnNode *> * incomingNodes,
-                                 std::vector<DeBruijnNode *> * outgoingNodes)
-{
-    return !isOnlyPathInItsDirection(connectedNode, incomingNodes, outgoingNodes);
-}
-
 
 QByteArray DeBruijnNode::getFasta(bool sign, bool newLines, bool evenIfEmpty) const
 {
@@ -565,18 +540,6 @@ std::vector<DeBruijnNode *> DeBruijnNode::getUpstreamNodes() const
 
     return returnVector;
 }
-
-
-
-double DeBruijnNode::getNodeLengthPerMegabase()
-{
-    if (g_settings->nodeLengthMode == AUTO_NODE_LENGTH)
-        return g_settings->autoNodeLengthPerMegabase;
-    else
-        return g_settings->manualNodeLengthPerMegabase;
-}
-
-
 
 bool DeBruijnNode::isInDepthRange(double min, double max) const
 {

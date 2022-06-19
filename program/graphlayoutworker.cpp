@@ -36,6 +36,29 @@ GraphLayoutWorker::GraphLayoutWorker(AssemblyGraph &graph,
           m_graphLayoutComponentSeparation(graphLayoutComponentSeparation),
           m_aspectRatio(aspectRatio) {}
 
+// FIXME: move to settings
+static double getNodeLengthPerMegabase() {
+    if (g_settings->nodeLengthMode == AUTO_NODE_LENGTH)
+        return g_settings->autoNodeLengthPerMegabase;
+
+
+    return g_settings->manualNodeLengthPerMegabase;
+}
+
+static double getDrawnNodeLength(const DeBruijnNode *node) {
+    double drawnNodeLength = getNodeLengthPerMegabase() * double(node->getLength()) / 1000000.0;
+    if (drawnNodeLength < g_settings->minimumNodeLength)
+        drawnNodeLength = g_settings->minimumNodeLength;
+    return drawnNodeLength;
+}
+
+static int getNumberOfOgdfGraphEdges(double drawnNodeLength) {
+    int numberOfGraphEdges = ceil(drawnNodeLength / g_settings->nodeSegmentLength);
+    if (numberOfGraphEdges <= 0)
+        numberOfGraphEdges = 1;
+    return numberOfGraphEdges;
+}
+
 static void addToOgdfGraph(DeBruijnNode *node,
                            ogdf::Graph &ogdfGraph, ogdf::GraphAttributes &graphAttributes,
                            ogdf::EdgeArray<double> &edgeLengths, double xPos, double yPos) {
@@ -47,8 +70,8 @@ static void addToOgdfGraph(DeBruijnNode *node,
     // Each node in the graph sense is made up of multiple nodes in the
     // OGDF sense.  This way, Velvet nodes appear as lines whose length
     // corresponds to the sequence length.
-    double drawnNodeLength = node->getDrawnNodeLength();
-    int numberOfGraphEdges = DeBruijnNode::getNumberOfOgdfGraphEdges(drawnNodeLength);
+    double drawnNodeLength = getDrawnNodeLength(node);
+    int numberOfGraphEdges = getNumberOfOgdfGraphEdges(drawnNodeLength);
     int numberOfGraphNodes = numberOfGraphEdges + 1;
     double drawnLengthPerEdge = drawnNodeLength / numberOfGraphEdges;
 
@@ -98,7 +121,7 @@ static void addToOgdfGraph(DeBruijnEdge *edge,
     // don't want to put it in the OGDF graph, because it would be redundant
     // with the node segment (and created conflict with the node/edge length).
     if (startingNode == endingNode) {
-        if (DeBruijnNode::getNumberOfOgdfGraphEdges(startingNode->getDrawnNodeLength()) == 1)
+        if (getNumberOfOgdfGraphEdges(getDrawnNodeLength(startingNode)) == 1)
             return;
     }
 
