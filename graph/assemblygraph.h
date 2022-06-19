@@ -87,9 +87,9 @@ public:
 
     tsl::htrie_map<char, Path*> m_deBruijnGraphPaths;
 
-    ogdf::Graph * m_ogdfGraph;
-    ogdf::EdgeArray<double> * m_edgeArray;
-    ogdf::GraphAttributes * m_graphAttributes;
+    ogdf::Graph m_ogdfGraph;
+    ogdf::EdgeArray<double> m_ogdfEdgeLengths;
+    ogdf::GraphAttributes m_ogdfGraphAttributes;
 
     int m_kmer;
     int m_nodeCount;

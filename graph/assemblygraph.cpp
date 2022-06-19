@@ -42,23 +42,17 @@
 #include <cmath>
 #include <utility>
 
-AssemblyGraph::AssemblyGraph() :
-    m_kmer(0), m_contiguitySearchDone(false),
-    m_sequencesLoadedFromFasta(NOT_READY)
+AssemblyGraph::AssemblyGraph()
+        : m_kmer(0), m_contiguitySearchDone(false),
+          m_sequencesLoadedFromFasta(NOT_READY),
+          m_ogdfGraph(), m_ogdfEdgeLengths(m_ogdfGraph),
+          m_ogdfGraphAttributes(m_ogdfGraph,
+                                ogdf::GraphAttributes::nodeGraphics | ogdf::GraphAttributes::edgeGraphics)
 {
-    m_ogdfGraph = new ogdf::Graph();
-    m_edgeArray = new ogdf::EdgeArray<double>(*m_ogdfGraph);
-    m_graphAttributes = new ogdf::GraphAttributes(*m_ogdfGraph,
-                                                  ogdf::GraphAttributes::nodeGraphics | ogdf::GraphAttributes::edgeGraphics);
     clearGraphInfo();
 }
 
-AssemblyGraph::~AssemblyGraph()
-{
-    delete m_graphAttributes;
-    delete m_edgeArray;
-    delete m_ogdfGraph;
-}
+AssemblyGraph::~AssemblyGraph() {}
 
 
 void AssemblyGraph::cleanUp()
@@ -157,23 +151,14 @@ void AssemblyGraph::createDeBruijnEdge(const QString& node1Name, const QString& 
     (*negNode2)->addEdge(backwardEdge);
 }
 
-
-
-
 void AssemblyGraph::clearOgdfGraphAndResetNodes()
 {
-    for (auto &entry : m_deBruijnGraphNodes) {
+    for (auto &entry : m_deBruijnGraphNodes)
         entry->resetNode();
-    }
 
-    m_ogdfGraph->clear();
-    m_edgeArray->init(*m_ogdfGraph);
+    m_ogdfGraph.clear();
+    m_ogdfEdgeLengths.init(m_ogdfGraph);
 }
-
-
-
-
-
 
 //http://www.code10.info/index.php?option=com_content&view=article&id=62:articledna-reverse-complement&catid=49:cat_coding_algorithms_bioinformatics&Itemid=74
 QByteArray AssemblyGraph::getReverseComplement(const QByteArray& forwardSequence)
@@ -707,7 +692,7 @@ void AssemblyGraph::buildOgdfGraphFromNodesAndEdges(const std::vector<DeBruijnNo
                 if (!upstreamNode->inOgdf())
                     continue;
                 ogdf::node upstreamEnd = upstreamNode->getOgdfNode().back();
-                double upstreamEndPos = m_graphAttributes->x(upstreamEnd);
+                double upstreamEndPos = m_ogdfGraphAttributes.x(upstreamEnd);
                 if (j == 0)
                     lastXPos = upstreamEndPos;
                 else
@@ -721,9 +706,9 @@ void AssemblyGraph::buildOgdfGraphFromNodesAndEdges(const std::vector<DeBruijnNo
                 yPos += g_settings->edgeLength;
                 intYPos = (long long)(yPos * 100.0);
             }
-            node->addToOgdfGraph(m_ogdfGraph, m_graphAttributes, m_edgeArray, xPos, yPos);
+            node->addToOgdfGraph(m_ogdfGraph, m_ogdfGraphAttributes, m_ogdfEdgeLengths, xPos, yPos);
             usedStartPositions.insert(QPair<long long, long long>(intXPos, intYPos));
-            lastXPos = m_graphAttributes->x(node->getOgdfNode().back());
+            lastXPos = m_ogdfGraphAttributes.x(node->getOgdfNode().back());
         }
     }
 
@@ -732,7 +717,7 @@ void AssemblyGraph::buildOgdfGraphFromNodesAndEdges(const std::vector<DeBruijnNo
         for (auto &entry : m_deBruijnGraphNodes) {
             DeBruijnNode * node = entry;
             if (node->isDrawn() && node->thisOrReverseComplementNotInOgdf())
-                node->addToOgdfGraph(m_ogdfGraph, m_graphAttributes, m_edgeArray, 0.0, 0.0);
+                node->addToOgdfGraph(m_ogdfGraph, m_ogdfGraphAttributes, m_ogdfEdgeLengths, 0.0, 0.0);
         }
     }
 
@@ -742,7 +727,7 @@ void AssemblyGraph::buildOgdfGraphFromNodesAndEdges(const std::vector<DeBruijnNo
         if (!edge->determineIfDrawn())
             continue;
 
-        edge->addToOgdfGraph(m_ogdfGraph, m_edgeArray);
+        edge->addToOgdfGraph(m_ogdfGraph, m_ogdfEdgeLengths);
     }
 }
 
@@ -761,7 +746,7 @@ void AssemblyGraph::addGraphicsItemsToScene(MyGraphicsScene * scene)
 
         node->setDepthRelativeToMeanDrawnDepth(meanDrawnDepth== 0 ?
                                                1.0 : node->getDepth() / meanDrawnDepth);
-        auto *graphicsItemNode = new GraphicsItemNode(node, m_graphAttributes);
+        auto *graphicsItemNode = new GraphicsItemNode(node, m_ogdfGraphAttributes);
         node->setGraphicsItemNode(graphicsItemNode);
         graphicsItemNode->setFlag(QGraphicsItem::ItemIsSelectable);
         graphicsItemNode->setFlag(QGraphicsItem::ItemIsMovable);

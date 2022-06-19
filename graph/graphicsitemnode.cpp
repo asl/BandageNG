@@ -45,7 +45,7 @@
 #include <cstdlib>
 
 GraphicsItemNode::GraphicsItemNode(DeBruijnNode * deBruijnNode,
-                                   ogdf::GraphAttributes * graphAttributes, QGraphicsItem * parent) :
+                                   const ogdf::GraphAttributes &graphAttributes, QGraphicsItem * parent) :
     QGraphicsItem(parent), m_deBruijnNode(deBruijnNode),
     m_hasArrow(g_settings->doubleMode || g_settings->arrowheadsInSingleMode)
 
@@ -55,11 +55,11 @@ GraphicsItemNode::GraphicsItemNode(DeBruijnNode * deBruijnNode,
     const auto &pathOgdfNode = deBruijnNode->getOgdfNode();
     if (!pathOgdfNode.empty()) {
         for (auto ogdfNode : pathOgdfNode)
-            m_linePoints.emplace_back(graphAttributes->x(ogdfNode), graphAttributes->y(ogdfNode));
+            m_linePoints.emplace_back(graphAttributes.x(ogdfNode), graphAttributes.y(ogdfNode));
     } else {
         const auto &rcPathOgdfNode = deBruijnNode->getReverseComplement()->getOgdfNode();
         for (auto it = rcPathOgdfNode.rbegin(); it != rcPathOgdfNode.rend(); ++it)
-            m_linePoints.emplace_back(graphAttributes->x(*it), graphAttributes->y(*it));
+            m_linePoints.emplace_back(graphAttributes.x(*it), graphAttributes.y(*it));
     }
 
     //If we are in double mode and this node's complement is also drawn,

@@ -95,7 +95,7 @@ bool DeBruijnEdge::isPositiveEdge() const
 }
 
 
-void DeBruijnEdge::addToOgdfGraph(ogdf::Graph * ogdfGraph, ogdf::EdgeArray<double> * edgeArray) const
+void DeBruijnEdge::addToOgdfGraph(ogdf::Graph &ogdfGraph, ogdf::EdgeArray<double> &edgeArray) const
 {
     ogdf::node firstEdgeOgdfNode;
     ogdf::node secondEdgeOgdfNode;
@@ -123,8 +123,8 @@ void DeBruijnEdge::addToOgdfGraph(ogdf::Graph * ogdfGraph, ogdf::EdgeArray<doubl
             return;
     }
 
-    ogdf::edge newEdge = ogdfGraph->newEdge(firstEdgeOgdfNode, secondEdgeOgdfNode);
-    (*edgeArray)[newEdge] = g_settings->edgeLength;
+    ogdf::edge newEdge = ogdfGraph.newEdge(firstEdgeOgdfNode, secondEdgeOgdfNode);
+    edgeArray[newEdge] = g_settings->edgeLength;
 }
 
 

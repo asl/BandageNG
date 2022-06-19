@@ -38,7 +38,7 @@ class GraphicsItemNode : public QGraphicsItem
 {
 public:
     GraphicsItemNode(DeBruijnNode * deBruijnNode,
-                     ogdf::GraphAttributes * graphAttributes,
+                     const ogdf::GraphAttributes &graphAttributes,
                      QGraphicsItem * parent = nullptr);
     GraphicsItemNode(DeBruijnNode * deBruijnNode,
                      GraphicsItemNode * toCopy,

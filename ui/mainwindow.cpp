@@ -2606,5 +2606,5 @@ void MainWindow::exportGraphLayout() {
     if (fullFileName.isEmpty())
         return;
 
-    ogdf::GraphIO::write(*g_assemblyGraph->m_graphAttributes, fullFileName.toStdString());
+    ogdf::GraphIO::write(g_assemblyGraph->m_ogdfGraphAttributes, fullFileName.toStdString());
 }

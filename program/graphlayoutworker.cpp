@@ -74,7 +74,7 @@ void GraphLayoutWorker::layoutGraph() {
             break;
     }
 
-    m_layout->call(*m_graph.m_graphAttributes, *m_graph.m_edgeArray);
+    m_layout->call(m_graph.m_ogdfGraphAttributes, m_graph.m_ogdfEdgeLengths);
 
     emit finishedLayout();
 }

@@ -117,8 +117,8 @@ public:
     void resetNode();
     void addEdge(DeBruijnEdge * edge);
     void removeEdge(DeBruijnEdge * edge);
-    void addToOgdfGraph(ogdf::Graph * ogdfGraph, ogdf::GraphAttributes * graphAttributes,
-                        ogdf::EdgeArray<double> * edgeArray, double xPos, double yPos);
+    void addToOgdfGraph(ogdf::Graph &ogdfGraph, ogdf::GraphAttributes &graphAttributes,
+                        ogdf::EdgeArray<double> &edgeLengths, double xPos, double yPos);
     void determineContiguity();
     void labelNeighbouringNodesAsDrawn(int nodeDistance, DeBruijnNode * callingNode);
     void setDepth(double newDepth) {m_depth = newDepth;}
