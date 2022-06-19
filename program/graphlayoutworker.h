@@ -48,7 +48,4 @@ private:
 public slots:
     void layoutGraph();
     void cancelLayout();
-
-signals:
-    void finishedLayout();
 };

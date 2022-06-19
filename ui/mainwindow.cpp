@@ -67,6 +67,7 @@
 #include <QCompleter>
 #include <QStringListModel>
 #include <QtConcurrent>
+#include <QFutureWatcher>
 
 #include <iterator>
 #include <algorithm>
@@ -885,11 +886,15 @@ void MainWindow::layoutGraph()
                                                     g_settings->componentSeparation, aspectRatio);
 
     connect(progress, SIGNAL(halt()), graphLayoutWorker, SLOT(cancelLayout()));
-    connect(graphLayoutWorker, SIGNAL(finishedLayout()), graphLayoutWorker, SLOT(deleteLater()));
-    connect(graphLayoutWorker, SIGNAL(finishedLayout()), this, SLOT(graphLayoutFinished()));
-    connect(graphLayoutWorker, SIGNAL(finishedLayout()), progress, SLOT(deleteLater()));
 
-    QtConcurrent::run(&GraphLayoutWorker::layoutGraph, graphLayoutWorker).waitForFinished();
+    auto *watcher = new QFutureWatcher<void>;
+    connect(watcher, SIGNAL(finished()), graphLayoutWorker, SLOT(deleteLater()));
+    connect(watcher, SIGNAL(finished()), this, SLOT(graphLayoutFinished()));
+    connect(watcher, SIGNAL(finished()), progress, SLOT(deleteLater()));
+    connect(watcher, SIGNAL(finished()), watcher, SLOT(deleteLater()));
+
+    auto res = QtConcurrent::run(&GraphLayoutWorker::layoutGraph, graphLayoutWorker);
+    watcher->setFuture(res);
 }
 
 
