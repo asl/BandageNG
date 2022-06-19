@@ -41,7 +41,7 @@ void GraphLayoutWorker::layoutGraph() {
     m_layout->pageRatio(m_aspectRatio);
     m_layout->minDistCC(m_graphLayoutComponentSeparation);
     m_layout->stepsForRotatingComponents(50); // Helps to make linear graph components more horizontal.
-
+    m_layout->edgeLengthMeasurement(ogdf::FMMMOptions::EdgeLengthMeasurement::Midpoint);
     m_layout->initialPlacementForces(m_useLinearLayout ?
                                      ogdf::FMMMOptions::InitialPlacementForces::KeepPositions :
                                      ogdf::FMMMOptions::InitialPlacementForces::RandomTime);
