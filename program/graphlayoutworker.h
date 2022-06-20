@@ -17,11 +17,13 @@
 
 #pragma once
 
+#include "ogdf/energybased/FMMMLayout.h"
+
 #include <QObject>
+#include <QFutureSynchronizer>
 
 namespace ogdf {
     class FMMMLayout;
-    class CCLayoutPackModule;
 }
 
 class AssemblyGraph;
@@ -36,15 +38,15 @@ public:
                       bool useLinearLayout,
                       double graphLayoutComponentSeparation,
                       double aspectRatio = 1.333333);
-    ~GraphLayoutWorker() override;
+    ~GraphLayoutWorker() = default;
 
 private:
     void buildGraph();
     void determineLinearNodePositions();
-    void initLayout();
+    void initLayout(ogdf::FMMMLayout &layout) const;
 
-    std::unique_ptr<ogdf::FMMMLayout> m_layout;
-    std::unique_ptr<ogdf::CCLayoutPackModule> m_packer;
+    QFutureSynchronizer<void> m_taskSynchronizer;
+    std::vector<ogdf::FMMMLayout> m_layout;
     AssemblyGraph &m_graph;
     int m_graphLayoutQuality;
     bool m_useLinearLayout;

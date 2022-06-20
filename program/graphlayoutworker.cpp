@@ -29,14 +29,15 @@
 #include "ogdf/graphalg/ConvexHull.h"
 #include "ogdf/packing/TileToRowsCCPacker.h"
 
+#include <QFutureSynchronizer>
+#include <QtConcurrent>
+
 #include <ctime>
 
 GraphLayoutWorker::GraphLayoutWorker(AssemblyGraph &graph,
                                      int graphLayoutQuality, bool useLinearLayout,
                                      double graphLayoutComponentSeparation, double aspectRatio)
-        : m_layout(new ogdf::FMMMLayout),
-          m_packer(new ogdf::TileToRowsCCPacker),
-          m_graph(graph),
+        : m_graph(graph),
           m_graphLayoutQuality(graphLayoutQuality),
           m_useLinearLayout(useLinearLayout),
           m_graphLayoutComponentSeparation(graphLayoutComponentSeparation),
@@ -235,52 +236,52 @@ void GraphLayoutWorker::buildGraph() {
     }
 }
 
-void GraphLayoutWorker::initLayout() {
-    m_layout->randSeed(clock());
-    m_layout->useHighLevelOptions(false);
-    m_layout->unitEdgeLength(1.0);
-    m_layout->allowedPositions(ogdf::FMMMOptions::AllowedPositions::All);
-    m_layout->pageRatio(m_aspectRatio);
-    m_layout->minDistCC(m_graphLayoutComponentSeparation);
-    m_layout->stepsForRotatingComponents(50); // Helps to make linear graph components more horizontal.
-    m_layout->edgeLengthMeasurement(ogdf::FMMMOptions::EdgeLengthMeasurement::Midpoint);
-    m_layout->initialPlacementForces(m_useLinearLayout ?
+void GraphLayoutWorker::initLayout(ogdf::FMMMLayout &layout) const {
+    layout.randSeed(clock());
+    layout.useHighLevelOptions(false);
+    layout.unitEdgeLength(1.0);
+    layout.allowedPositions(ogdf::FMMMOptions::AllowedPositions::All);
+    layout.pageRatio(m_aspectRatio);
+    layout.minDistCC(m_graphLayoutComponentSeparation);
+    layout.stepsForRotatingComponents(50); // Helps to make linear graph components more horizontal.
+    layout.edgeLengthMeasurement(ogdf::FMMMOptions::EdgeLengthMeasurement::Midpoint);
+    layout.initialPlacementForces(m_useLinearLayout ?
                                      ogdf::FMMMOptions::InitialPlacementForces::KeepPositions :
                                      ogdf::FMMMOptions::InitialPlacementForces::RandomTime);
 
     switch (m_graphLayoutQuality) {
         case 0:
-            m_layout->fixedIterations(3);
-            m_layout->fineTuningIterations(1);
-            m_layout->nmPrecision(2);
+            layout.fixedIterations(3);
+            layout.fineTuningIterations(1);
+            layout.nmPrecision(2);
             break;
         case 1:
-            m_layout->fixedIterations(15);
-            m_layout->fineTuningIterations(10);
-            m_layout->nmPrecision(2);
+            layout.fixedIterations(15);
+            layout.fineTuningIterations(10);
+            layout.nmPrecision(2);
             break;
         case 2:
-            m_layout->fixedIterations(30);
-            m_layout->fineTuningIterations(20);
-            m_layout->nmPrecision(4);
+            layout.fixedIterations(30);
+            layout.fineTuningIterations(20);
+            layout.nmPrecision(4);
             break;
         case 3:
-            m_layout->fixedIterations(60);
-            m_layout->fineTuningIterations(40);
-            m_layout->nmPrecision(6);
+            layout.fixedIterations(60);
+            layout.fineTuningIterations(40);
+            layout.nmPrecision(6);
             break;
         case 4:
-            m_layout->fixedIterations(120);
-            m_layout->fineTuningIterations(60);
-            m_layout->nmPrecision(8);
+            layout.fixedIterations(120);
+            layout.fineTuningIterations(60);
+            layout.nmPrecision(8);
             break;
     }
 }
 
 static void reassembleDrawings(ogdf::GraphAttributes &GA,
                                double graphLayoutComponentSeparation, double aspectRatio,
-                               ogdf::CCLayoutPackModule &packer,
                                const ogdf::Array<ogdf::List<ogdf::node> > &nodesInCC) {
+    ogdf::TileToRowsCCPacker packer;
     int numberOfComponents = nodesInCC.size();
 
     ogdf::Array<ogdf::IPoint> box;
@@ -293,8 +294,6 @@ static void reassembleDrawings(ogdf::GraphAttributes &GA,
 
     //iterate through all components and compute convex hull
     for (int j = 0; j < numberOfComponents; j++) {
-        //todo: should not use std::vector, but in order not
-        //to have to change all interfaces, we do it anyway
         std::vector<ogdf::DPoint> points;
 
         //collect node positions and at the same time center average
@@ -451,7 +450,6 @@ static void reassembleDrawings(ogdf::GraphAttributes &GA,
 
 void GraphLayoutWorker::layoutGraph() {
     buildGraph();
-    initLayout();
 
     //first we split the graph into its components
     ogdf::GraphAttributes &GA = m_graph.m_ogdfGraphAttributes;
@@ -467,48 +465,58 @@ void GraphLayoutWorker::layoutGraph() {
     for (auto v : G.nodes)
         nodesInCC[componentNumber[v]].pushBack(v);
 
-    ogdf::EdgeArray<ogdf::edge> auxCopy(G);
+    m_layout.resize(numberOfComponents);
     for (int i = 0; i < numberOfComponents; i++) {
-        ogdf::GraphCopy GC;
-        ogdf::EdgeArray<double> edgeLengths(GC);
-        ogdf::NodeArray<float> nodeSizes(GC);
-
-        GC.createEmpty(G);
-
-        GC.initByNodes(nodesInCC[i],auxCopy);
-        ogdf::GraphAttributes cGA(GC, GA.attributes());
-        for (ogdf::node v : GC.nodes) {
-            cGA.x(v) = GA.x(GC.original(v));
-            cGA.y(v) = GA.y(GC.original(v));
-            nodeSizes(v) = 1;
-        }
-
-        for (ogdf::edge e : GC.edges)
-            edgeLengths(e) = EL(GC.original(e));
-
-        m_layout->call(cGA, edgeLengths);
-
-        for (ogdf::node v : GC.nodes) {
-            ogdf::node w = GC.original(v);
-            if (w == nullptr)
-                continue;
-
-            GA.x(w) = cGA.x(v);
-            GA.y(w) = cGA.y(v);
-        }
+        initLayout(m_layout[i]);
     }
+
+    for (int i = 0; i < numberOfComponents; i++) {
+        m_taskSynchronizer.addFuture(
+                QtConcurrent::run([&](ogdf::FMMMLayout *layout,
+                        const ogdf::List<ogdf::node> &nodesInCC) {
+
+                    ogdf::GraphCopy GC;
+                    ogdf::EdgeArray<double> edgeLengths(GC);
+                    ogdf::EdgeArray<ogdf::edge> auxCopy(G);
+
+                    GC.createEmpty(G);
+
+                    GC.initByNodes(nodesInCC, auxCopy);
+                    ogdf::GraphAttributes cGA(GC, GA.attributes());
+                    for (ogdf::node v : GC.nodes) {
+                        cGA.x(v) = GA.x(GC.original(v));
+                        cGA.y(v) = GA.y(GC.original(v));
+                    }
+
+                    for (ogdf::edge e : GC.edges)
+                        edgeLengths(e) = EL(GC.original(e));
+
+                    layout->call(cGA, edgeLengths);
+
+                    for (ogdf::node v : GC.nodes) {
+                        ogdf::node w = GC.original(v);
+                        if (w == nullptr)
+                            continue;
+
+                        GA.x(w) = cGA.x(v);
+                        GA.y(w) = cGA.y(v);
+                    }
+
+                }, &m_layout[i], nodesInCC[i]));
+    }
+    m_taskSynchronizer.waitForFinished();
 
     reassembleDrawings(GA,
                        m_graphLayoutComponentSeparation, m_aspectRatio,
-                       *m_packer, nodesInCC);
+                       nodesInCC);
 }
 
 [[maybe_unused]] void GraphLayoutWorker::cancelLayout() {
-    m_layout->fixedIterations(0);
-    m_layout->fineTuningIterations(0);
-    m_layout->threshold(std::numeric_limits<double>::max());
+    for (auto & layout : m_layout) {
+        layout.fixedIterations(0);
+        layout.fineTuningIterations(0);
+        layout.threshold(std::numeric_limits<double>::max());
+    }
+    for (auto & future : m_taskSynchronizer.futures())
+        future.cancel();
 }
-
-GraphLayoutWorker::~GraphLayoutWorker() {
-}
-
