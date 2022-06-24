@@ -140,13 +140,16 @@ struct cigar_string {
             LEXY_CHAR_CLASS("CIGAR opcode",
                             LEXY_LIT("M") / LEXY_LIT("I") / LEXY_LIT("D") /
                             LEXY_LIT("N") / LEXY_LIT("S") / LEXY_LIT("H") /
-                            LEXY_LIT("P") / LEXY_LIT("X") / LEXY_LIT("="));
+                            LEXY_LIT("P") / LEXY_LIT("X") / LEXY_LIT("=")) / LEXY_LIT("J");
 
     struct cigarop : lexy::transparent_production {
         static constexpr auto name = "CIGAR operation";
 
-        static constexpr auto rule = dsl::integer<std::uint32_t> >> dsl::capture(cigaropcode);
+        static constexpr auto rule =
+                dsl::period |
+                dsl::integer<std::uint32_t> >> dsl::capture(cigaropcode);
         static constexpr auto value = lexy::callback<gfa::cigarop>(
+            []() { return gfa::cigarop{0, 0}; },
             [](std::uint32_t cnt, auto lexeme) {
                 return gfa::cigarop{cnt, lexeme[0]};
             });
@@ -254,7 +257,7 @@ struct path {
     static constexpr auto name = "GFA path record";
 
     struct segments {
-        static constexpr auto rule = dsl::list(dsl::p<oriented_segment>, dsl::sep(dsl::comma));
+        static constexpr auto rule = dsl::list(dsl::p<oriented_segment>, dsl::sep(dsl::comma | dsl::semicolon));
         static constexpr auto value = lexy::as_list<std::vector<std::string_view>>;
     };
 
