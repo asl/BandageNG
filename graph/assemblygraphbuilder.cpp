@@ -366,6 +366,51 @@ class GFAAssemblyGraphBuilder : public AssemblyGraphBuilder {
         return nodePtr;
     }
 
+    auto addLink(const std::string &fromNode,
+                 const std::string &toNode,
+                 const std::vector<gfa::tag> &tags,
+                 AssemblyGraph &graph) {
+        // Get source / dest nodes (or create placeholders to fill in)
+        DeBruijnNode *fromNodePtr = getNode(fromNode, graph);
+        DeBruijnNode *toNodePtr = getNode(toNode, graph);
+
+        DeBruijnEdge *edgePtr = nullptr, *rcEdgePtr = nullptr;
+
+        // Ignore dups, hifiasm seems to create them
+        if (graph.m_deBruijnGraphEdges.count({fromNodePtr, toNodePtr}))
+            return std::make_pair(edgePtr, rcEdgePtr);
+
+        edgePtr = new DeBruijnEdge(fromNodePtr, toNodePtr);
+
+        bool isOwnPair = fromNodePtr == toNodePtr->getReverseComplement() &&
+                         toNodePtr == fromNodePtr->getReverseComplement();
+        graph.m_deBruijnGraphEdges[{fromNodePtr, toNodePtr}] = edgePtr;
+        fromNodePtr->addEdge(edgePtr);
+        toNodePtr->addEdge(edgePtr);
+
+        if (isOwnPair) {
+            edgePtr->setReverseComplement(edgePtr);
+        } else {
+            auto *rcFromNodePtr = fromNodePtr->getReverseComplement();
+            auto *rcToNodePtr = toNodePtr->getReverseComplement();
+            rcEdgePtr = new DeBruijnEdge(rcToNodePtr, rcFromNodePtr);
+            rcFromNodePtr->addEdge(rcEdgePtr);
+            rcToNodePtr->addEdge(rcEdgePtr);
+            edgePtr->setReverseComplement(rcEdgePtr);
+            rcEdgePtr->setReverseComplement(edgePtr);
+            graph.m_deBruijnGraphEdges[{rcToNodePtr, rcFromNodePtr}] = rcEdgePtr;
+        }
+
+        hasCustomColours_ |= maybeAddCustomColor(edgePtr, tags, "CB", graph);
+        hasCustomColours_ |= maybeAddCustomColor(rcEdgePtr, tags, "C2", graph);
+
+        maybeAddTags(edgePtr, graph.m_edgeTags, tags);
+        if (rcEdgePtr)
+            maybeAddTags(rcEdgePtr, graph.m_edgeTags, tags);
+
+        return std::make_pair(edgePtr, rcEdgePtr);
+    }
+
     void handleLink(const gfa::link &record,
                     AssemblyGraph &graph) {
         std::string fromNode{record.lhs};
@@ -373,16 +418,11 @@ class GFAAssemblyGraphBuilder : public AssemblyGraphBuilder {
         std::string toNode{record.rhs};
         toNode.push_back(record.rhs_revcomp ? '-' : '+');
 
-        // Get source / dest nodes (or create placeholders to fill in)
-        DeBruijnNode *fromNodePtr = getNode(fromNode, graph);
-        DeBruijnNode *toNodePtr = getNode(toNode, graph);
-
-        // Ignore dups, hifiasm seems to create them
-        if (graph.m_deBruijnGraphEdges.count({fromNodePtr, toNodePtr}))
+        auto [edgePtr, rcEdgePtr] =
+                addLink(fromNode, toNode, record.tags, graph);
+        if (!edgePtr)
             return;
 
-        DeBruijnEdge *edgePtr = new DeBruijnEdge(fromNodePtr, toNodePtr);
-        DeBruijnEdge *rcEdgePtr = nullptr;
         const auto &overlap = record.overlap;
         size_t overlapLength = 0;
         if (overlap.size() > 1 ||
@@ -394,34 +434,10 @@ class GFAAssemblyGraphBuilder : public AssemblyGraphBuilder {
 
         edgePtr->setOverlap(static_cast<int>(overlapLength));
         edgePtr->setOverlapType(EXACT_OVERLAP);
-
-        bool isOwnPair = fromNodePtr == toNodePtr->getReverseComplement() &&
-                         toNodePtr == fromNodePtr->getReverseComplement();
-        graph.m_deBruijnGraphEdges[{fromNodePtr, toNodePtr}] = edgePtr;
-        fromNodePtr->addEdge(edgePtr);
-        toNodePtr->addEdge(edgePtr);
-
-        if (isOwnPair) {
-            edgePtr->setReverseComplement(edgePtr);
-        } else {
-            auto *rcFromNodePtr = fromNodePtr->getReverseComplement();
-            auto *rcToNodePtr = toNodePtr->getReverseComplement();
-            rcEdgePtr = new DeBruijnEdge(rcToNodePtr, rcFromNodePtr);
+        if (rcEdgePtr) {
             rcEdgePtr->setOverlap(edgePtr->getOverlap());
             rcEdgePtr->setOverlapType(edgePtr->getOverlapType());
-            rcFromNodePtr->addEdge(rcEdgePtr);
-            rcToNodePtr->addEdge(rcEdgePtr);
-            edgePtr->setReverseComplement(rcEdgePtr);
-            rcEdgePtr->setReverseComplement(edgePtr);
-            graph.m_deBruijnGraphEdges[{rcToNodePtr, rcFromNodePtr}] = rcEdgePtr;
         }
-
-        hasCustomColours_ |= maybeAddCustomColor(edgePtr, record.tags, "CB", graph);
-        hasCustomColours_ |= maybeAddCustomColor(rcEdgePtr, record.tags, "C2", graph);
-
-        maybeAddTags(edgePtr, graph.m_edgeTags, record.tags);
-        if (rcEdgePtr)
-            maybeAddTags(rcEdgePtr, graph.m_edgeTags, record.tags);
     }
 
     void handleGapLink(const gfa::gaplink &record,
@@ -432,48 +448,26 @@ class GFAAssemblyGraphBuilder : public AssemblyGraphBuilder {
         std::string toNode{record.rhs};
         toNode.push_back(record.rhs_revcomp ? '-' : '+');
 
-        // Get source / dest nodes (or create placeholders to fill in)
-        DeBruijnNode *fromNodePtr = getNode(fromNode, graph);
-        DeBruijnNode *toNodePtr = getNode(toNode, graph);
-
-        auto edgePtr = new DeBruijnEdge(fromNodePtr, toNodePtr);
-        DeBruijnEdge *rcEdgePtr = nullptr;
+        auto [edgePtr, rcEdgePtr] =
+                addLink(fromNode, toNode, record.tags, graph);
+        if (!edgePtr)
+            return;
 
         edgePtr->setOverlap(0);
         edgePtr->setOverlapType(NO_OVERLAP);
-
-        bool isOwnPair = fromNodePtr == toNodePtr->getReverseComplement() &&
-                         toNodePtr == fromNodePtr->getReverseComplement();
-        graph.m_deBruijnGraphEdges[{fromNodePtr, toNodePtr}] = edgePtr;
-        fromNodePtr->addEdge(edgePtr);
-        toNodePtr->addEdge(edgePtr);
-
-        if (isOwnPair) {
-            edgePtr->setReverseComplement(edgePtr);
-        } else {
-            auto *rcFromNodePtr = fromNodePtr->getReverseComplement();
-            auto *rcToNodePtr = toNodePtr->getReverseComplement();
-            rcEdgePtr = new DeBruijnEdge(rcToNodePtr, rcFromNodePtr);
+        if (rcEdgePtr) {
             rcEdgePtr->setOverlap(edgePtr->getOverlap());
             rcEdgePtr->setOverlapType(edgePtr->getOverlapType());
-            rcFromNodePtr->addEdge(rcEdgePtr);
-            rcToNodePtr->addEdge(rcEdgePtr);
-            edgePtr->setReverseComplement(rcEdgePtr);
-            rcEdgePtr->setReverseComplement(edgePtr);
-            graph.m_deBruijnGraphEdges[{rcToNodePtr, rcFromNodePtr}] = rcEdgePtr;
         }
 
-        graph.setCustomColour(edgePtr, "red");
-        graph.setCustomColour(rcEdgePtr, "red");
-        graph.setCustomStyle(edgePtr, Qt::DashLine);
-        graph.setCustomStyle(rcEdgePtr, Qt::DashLine);
-
-        hasCustomColours_ |= maybeAddCustomColor(edgePtr, record.tags, "CB", graph);
-        hasCustomColours_ |= maybeAddCustomColor(rcEdgePtr, record.tags, "C2", graph);
-
-        maybeAddTags(edgePtr, graph.m_edgeTags, record.tags);
-        if (rcEdgePtr)
-            maybeAddTags(rcEdgePtr, graph.m_edgeTags, record.tags);
+        if (!graph.hasCustomColour(edgePtr))
+            graph.setCustomColour(edgePtr, "red");
+        if (!graph.hasCustomColour(rcEdgePtr))
+            graph.setCustomColour(rcEdgePtr, "red");
+        if (!graph.hasCustomStyle(edgePtr))
+            graph.setCustomStyle(edgePtr, Qt::DashLine);
+        if (!graph.hasCustomStyle(rcEdgePtr))
+            graph.setCustomStyle(rcEdgePtr, Qt::DashLine);
     }
 
     void handlePath(const gfa::path &record,

@@ -2020,6 +2020,15 @@ bool AssemblyGraph::hasCustomColour(const DeBruijnNode* node) const {
     return it != m_nodeColors.end() && it->second.isValid();
 }
 
+bool AssemblyGraph::hasCustomColour(const DeBruijnEdge* edge) const {
+    auto it = m_edgeColors.find(edge);
+    return it != m_edgeColors.end() && it->second.isValid();
+}
+
+bool AssemblyGraph::hasCustomStyle(const DeBruijnEdge* edge) const {
+    return m_edgeStyles.contains(edge);
+}
+
 QColor AssemblyGraph::getCustomColour(const DeBruijnNode* node) const {
     auto it = m_nodeColors.find(node);
     return it == m_nodeColors.end() ? QColor() : it->second;

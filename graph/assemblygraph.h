@@ -184,6 +184,7 @@ public:
     bool useLinearLayout() const;
 
     bool hasCustomColour(const DeBruijnNode* node) const;
+    bool hasCustomColour(const DeBruijnEdge* edge) const;
     QColor getCustomColour(const DeBruijnNode* node) const;
     QColor getCustomColour(const DeBruijnEdge* edge) const;
     void setCustomColour(const DeBruijnNode* node, QColor color);
@@ -191,6 +192,7 @@ public:
 
     Qt::PenStyle getCustomStyle(const DeBruijnEdge* edge) const;
     void setCustomStyle(const DeBruijnEdge* edge, Qt::PenStyle style);
+    bool hasCustomStyle(const DeBruijnEdge* edge) const;
 
     QString getCustomLabel(const DeBruijnNode* node) const;
     void setCustomLabel(const DeBruijnNode* node, QString newLabel);
