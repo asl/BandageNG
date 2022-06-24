@@ -94,6 +94,7 @@ private slots:
 
     void loadFastg();
     void loadGFAWithPlaceholders();
+    void loadGFA12();
     void loadLastGraph();
     void loadTrinity();
     void pathFunctionsOnLastGraph();
@@ -169,6 +170,19 @@ void BandageTests::loadGFAWithPlaceholders()
     QCOMPARE(node1->getLength(), 19);
     QCOMPARE(node2->getLength(), 1);
     QCOMPARE(node4->getLength(), 0);
+}
+
+void BandageTests::loadGFA12()
+{
+    bool gfaGraphLoaded = g_assemblyGraph->loadGraphFromFile(testFile("test_gfa12.gfa"));
+
+    //Check that the graph loaded properly.
+    QCOMPARE(gfaGraphLoaded, true);
+
+    //Check that the appropriate number of nodes/edges/paths are present.
+    QCOMPARE(g_assemblyGraph->m_deBruijnGraphNodes.size(), 12);
+    QCOMPARE(g_assemblyGraph->m_deBruijnGraphEdges.size(), 16);
+    QCOMPARE(g_assemblyGraph->m_deBruijnGraphPaths.size(), 5);
 }
 
 
