@@ -26,6 +26,7 @@ class GraphicsItemEdge;
 
 class DeBruijnEdge
 {
+    static constexpr unsigned OVERLAP_BITS = 29;
 public:
     //CREATORS
     DeBruijnEdge(DeBruijnNode * startingNode, DeBruijnNode * endingNode);
@@ -37,7 +38,10 @@ public:
     GraphicsItemEdge * getGraphicsItemEdge() const {return m_graphicsItemEdge;}
     DeBruijnEdge * getReverseComplement() const {return m_reverseComplement;}
     bool isDrawn() const {return m_drawn;}
-    int getOverlap() const {return m_overlap;}
+    int getOverlap() const {
+        unsigned m = CHAR_BIT * sizeof(decltype(m_overlap)) - OVERLAP_BITS;
+        return (m_overlap << m) >> m;
+    }
     EdgeOverlapType getOverlapType() const {return m_overlapType;}
     DeBruijnNode * getOtherNode(const DeBruijnNode * node) const;
     bool testExactOverlap(int overlap) const;
@@ -75,7 +79,7 @@ private:
     DeBruijnEdge * m_reverseComplement;
     bool m_drawn : 1;
     EdgeOverlapType m_overlapType : 2;
-    int m_overlap : 29;
+    int m_overlap : OVERLAP_BITS;
 
     bool edgeIsVisible() const;
     static int timesNodeInPath(DeBruijnNode * node, std::vector<DeBruijnNode *> * path) ;

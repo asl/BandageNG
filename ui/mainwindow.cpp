@@ -559,10 +559,14 @@ QString MainWindow::getSelectedEdgeListText()
         edgeText += selectedEdges[i]->getStartingNode()->getName();
         edgeText += " to ";
         edgeText += selectedEdges[i]->getEndingNode()->getName();
+        int overlap = selectedEdges[i]->getOverlap();
         if (selectedEdges[i]->getOverlapType() != EdgeOverlapType::NO_OVERLAP)
-            edgeText += QString(" (%1bp)").arg(selectedEdges[i]->getOverlap());
-        else
-            edgeText += " (gap link)";
+            edgeText += QString(" (%1bp)").arg(overlap);
+        else {
+            edgeText += " (jump link" +
+                        (overlap ? QString(" %1bp)").arg(overlap)
+                                 : ")");
+        }
         if (i != selectedEdges.size() - 1)
             edgeText += ", ";
     }
