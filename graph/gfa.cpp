@@ -117,6 +117,12 @@ struct segment_orientation {
     static constexpr auto value = lexy::as_string<std::string_view>;
 };
 
+struct segment_distance {
+    static constexpr auto rule =
+            dsl::sign + dsl::integer<std::int64_t>(dsl::digits<>.no_leading_zero());
+    static constexpr auto value = lexy::as_integer<std::int64_t>;
+};
+
 struct oriented_segment {
     // Apparently we cannot use segment_name + segment_orientation as GFA grammar is context-dependent
     // Parse as full segment name and deal with possible invalid input later
@@ -212,7 +218,7 @@ struct link {
     static constexpr auto value = lexy::construct<gfa::link>;
 };
 
-// Gap link line
+// Jump line
 // =============
 // Required fields:
 // Column   Field        Type        Regexp                   Description
@@ -221,9 +227,9 @@ struct link {
 // 3        FromOrient   String      +|-                      Orientation of From segment
 // 4        To           String      [!-)+-<>-~][!-~]*        Name of segment
 // 5        ToOrient     String      +|-                      Orientation of To segment
-// 6        Overlap      String      [0-9]+                   Overlap
+// 6        Distance     String      \*|[-+]?[0-9]+           Optional estimated distance between the segments
 struct gaplink {
-    static constexpr auto name = "GFA gap link line";
+    static constexpr auto name = "GFA jump line";
 
     static constexpr auto rule =
             LEXY_LIT("J") >>
@@ -231,7 +237,7 @@ struct gaplink {
             tab + dsl::p<segment_orientation> +
             tab + dsl::p<segment_name> +
             tab + dsl::p<segment_orientation> +
-            tab + (LEXY_LIT("*") | dsl::identifier(dsl::ascii::alpha)) +
+            tab + (LEXY_LIT("*") | (dsl::else_ >> dsl::p<segment_distance>)) +
             dsl::p<opt_tags>;
     static constexpr auto value = lexy::construct<gfa::gaplink>;
 };

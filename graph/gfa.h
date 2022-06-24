@@ -50,16 +50,16 @@ struct tag {
     }
 
   private:
-    void _print(int64_t val) const {
-        std::fprintf(stdout, "%c:%" PRId64, type, val);
+    void _print(int64_t i) const {
+        std::fprintf(stdout, "%c:%" PRId64, type, i);
     }
 
     void _print(const std::string &str) const {
         std::fprintf(stdout, "%c:%s", type, str.c_str());
     }
 
-    void _print(float val) const {
-        std::fprintf(stdout, "%c:%g", type, val);
+    void _print(float f) const {
+        std::fprintf(stdout, "%c:%g", type, f);
     }
 };
 
@@ -86,11 +86,11 @@ struct segment {
     std::vector<gfa::tag> tags;
 
     explicit segment(std::string_view n, std::vector<gfa::tag> t)
-            : name{std::move(n)}, tags(std::move(t)) {}
+            : name{n}, tags(std::move(t)) {}
 
     template<typename Seq>
     explicit segment(std::string_view n, Seq s, std::vector<gfa::tag> t)
-            : name{std::move(n)}, seq{s.data(), s.size()}, tags(std::move(t)) {}
+            : name{n}, seq{s.data(), s.size()}, tags(std::move(t)) {}
 
     void print() const {
         std::fputs("S", stdout);
@@ -124,13 +124,13 @@ struct link {
 
     explicit link(std::string_view l, std::string_view lr, std::string_view r, std::string_view rr,
                   std::vector<gfa::tag> t)
-            : lhs{std::move(l)}, lhs_revcomp(lr.front() == '-'), rhs{std::move(r)}, rhs_revcomp(rr.front() == '-'),
+            : lhs{l}, lhs_revcomp(lr.front() == '-'), rhs{r}, rhs_revcomp(rr.front() == '-'),
               tags(std::move(t)) {}
 
     explicit link(std::string_view l, std::string_view lr, std::string_view r, std::string_view rr,
                   cigar_string o,
                   std::vector<gfa::tag> t)
-            : lhs{std::move(l)}, lhs_revcomp(lr.front() == '-'), rhs{std::move(r)}, rhs_revcomp(rr.front() == '-'),
+            : lhs{l}, lhs_revcomp(lr.front() == '-'), rhs{r}, rhs_revcomp(rr.front() == '-'),
               overlap(std::move(o)), tags(std::move(t)) {}
 
     void print() const {
@@ -158,30 +158,29 @@ struct gaplink {
     bool lhs_revcomp;
     std::string_view rhs;
     bool rhs_revcomp;
-    std::string_view overlap;
+    int64_t distance;
     std::vector<gfa::tag> tags;
 
-    template<typename Seq>
     explicit gaplink(std::string_view l, std::string_view lr, std::string_view r, std::string_view rr,
-                     Seq o,
+                     int64_t d,
                      std::vector<gfa::tag> t)
-            : lhs{std::move(l)}, lhs_revcomp(lr.front() == '-'),
-              rhs{std::move(r)}, rhs_revcomp(rr.front() == '-'),
-              overlap{o.data(), o.size()},
+            : lhs{l}, lhs_revcomp(lr.front() == '-'),
+              rhs{r}, rhs_revcomp(rr.front() == '-'),
+              distance{d},
               tags(std::move(t)) {}
 
     explicit gaplink(std::string_view l, std::string_view lr, std::string_view r, std::string_view rr,
                      std::vector<gfa::tag> t)
-            : lhs{std::move(l)}, lhs_revcomp(lr.front() == '-'),
-              rhs{std::move(r)}, rhs_revcomp(rr.front() == '-'),
-              overlap{"*"},
+            : lhs{l}, lhs_revcomp(lr.front() == '-'),
+              rhs{r}, rhs_revcomp(rr.front() == '-'),
+              distance{std::numeric_limits<int64_t>::min()},
               tags(std::move(t)) {}
 
     void print() const {
         std::fputs("J", stdout);
         std::fprintf(stdout, "\t%s\t%c", std::string(lhs).c_str(), lhs_revcomp ? '-' : '+');
         std::fprintf(stdout, "\t%s\t%c", std::string(rhs).c_str(), rhs_revcomp ? '-' : '+');
-        std::fprintf(stdout, "\t%s", std::string(overlap).c_str());
+        std::fprintf(stdout, "\t%" PRId64, distance);
 
         for (const auto &tag : tags) {
             fputs("\t", stdout);
@@ -197,10 +196,10 @@ struct path {
     std::vector<gfa::tag> tags;
 
     explicit path(std::string_view n, std::vector<std::string_view> s, std::vector<gfa::tag> t)
-            : name{std::move(n)}, segments(std::move(s)),  tags(std::move(t)) {}
+            : name{n}, segments(std::move(s)),  tags(std::move(t)) {}
 
     explicit path(std::string_view n, std::vector<std::string_view> s, std::vector<cigar_string> o, std::vector<gfa::tag> t)
-            : name{std::move(n)}, segments(std::move(s)), overlaps(std::move(o)), tags(std::move(t)) {}
+            : name{n}, segments(std::move(s)), overlaps(std::move(o)), tags(std::move(t)) {}
 
     void print() const {
         std::fputc('P', stdout);
