@@ -255,6 +255,41 @@ class GFAAssemblyGraphBuilder : public AssemblyGraphBuilder {
         return std::make_pair(nodePtr, oppositeNodePtr);
     }
 
+    // Add placeholder
+    static auto
+    addSegmentPair(const std::string &nodeName,
+                   AssemblyGraph &graph) {
+        return addSegmentPair(nodeName, 0, Sequence(), graph);
+    }
+
+    template<class Container, class Key>
+    static void maybeAddTags(Key k, Container &c,
+                             const std::vector<gfa::tag> &tags) {
+        bool tagsInserted = false;
+        for (const auto& tag : tags) {
+            if (isStandardTag(tag.name))
+                continue;
+            c[k].push_back(tag);
+            tagsInserted = true;
+        }
+
+        if (tagsInserted)
+            c[k].shrink_to_fit();
+    }
+
+    template<class Entity>
+    static bool maybeAddCustomColor(const Entity *e,
+                                    const std::vector<gfa::tag> &tags,
+                                    const char *tag,
+                                    AssemblyGraph &graph) {
+        if (auto cb = getTag<std::string>(tag, tags)) {
+            graph.setCustomColour(e, cb->c_str());
+            return true;
+        }
+
+        return false;
+    }
+
     bool handleSegment(const gfa::segment &record,
                        AssemblyGraph &graph) {
         bool sequencesAreMissing = false;
@@ -309,26 +344,26 @@ class GFAAssemblyGraphBuilder : public AssemblyGraphBuilder {
         if (lb) graph.setCustomLabel(nodePtr, lb->c_str());
         if (l2) graph.setCustomLabel(oppositeNodePtr, l2->c_str());
 
-        auto cb = getTag<std::string>("CB", record.tags);
-        auto c2 = getTag<std::string>("C2", record.tags);
-        hasCustomColours_ = hasCustomColours_ || cb || c2;
-        if (cb) graph.setCustomColour(nodePtr, cb->c_str());
-        if (c2) graph.setCustomColour(oppositeNodePtr, c2->c_str());
+        hasCustomColours_ |= maybeAddCustomColor(nodePtr, record.tags, "CB", graph);
+        hasCustomColours_ |= maybeAddCustomColor(oppositeNodePtr, record.tags, "C2", graph);
 
-        bool tagsInserted = false;
-        for (const auto& tag : record.tags) {
-            if (isStandardTag(tag.name))
-                continue;
-            graph.m_nodeTags[nodePtr].push_back(tag);
-            graph.m_nodeTags[oppositeNodePtr].push_back(tag);
-            tagsInserted = true;
-        }
-        if (tagsInserted) {
-            graph.m_nodeTags[nodePtr].shrink_to_fit();
-            graph.m_nodeTags[oppositeNodePtr].shrink_to_fit();
-        }
+        maybeAddTags(nodePtr, graph.m_nodeTags, record.tags);
+        maybeAddTags(oppositeNodePtr, graph.m_nodeTags, record.tags);
 
         return sequencesAreMissing;
+    }
+
+    static DeBruijnNode *getNode(const std::string &name,
+                                 AssemblyGraph &graph) {
+        auto nodeIt = graph.m_deBruijnGraphNodes.find(name);
+        if (nodeIt != graph.m_deBruijnGraphNodes.end())
+            return *nodeIt;
+
+        // Add placeholder
+        DeBruijnNode *nodePtr, *oppositeNodePtr;
+        std::tie(nodePtr, oppositeNodePtr) = addSegmentPair(name, graph);
+
+        return nodePtr;
     }
 
     void handleLink(const gfa::link &record,
@@ -338,24 +373,9 @@ class GFAAssemblyGraphBuilder : public AssemblyGraphBuilder {
         std::string toNode{record.rhs};
         toNode.push_back(record.rhs_revcomp ? '-' : '+');
 
-        DeBruijnNode *fromNodePtr = nullptr;
-        DeBruijnNode *toNodePtr = nullptr;
-
-        auto fromNodeIt = graph.m_deBruijnGraphNodes.find(fromNode);
-        if (fromNodeIt== graph.m_deBruijnGraphNodes.end()) {
-            // Add placeholder
-            DeBruijnNode *oppositeNodePtr;
-            std::tie(fromNodePtr, oppositeNodePtr) = addSegmentPair(fromNode, 0, Sequence(), graph);
-        } else
-            fromNodePtr = *fromNodeIt;
-
-        auto toNodeIt = graph.m_deBruijnGraphNodes.find(toNode);
-        if (toNodeIt== graph.m_deBruijnGraphNodes.end()) {
-            // Add placeholder
-            DeBruijnNode *oppositeNodePtr;
-            std::tie(toNodePtr, oppositeNodePtr) = addSegmentPair(toNode, 0, Sequence(), graph);
-        } else
-            toNodePtr = *toNodeIt;
+        // Get source / dest nodes (or create placeholders to fill in)
+        DeBruijnNode *fromNodePtr = getNode(fromNode, graph);
+        DeBruijnNode *toNodePtr = getNode(toNode, graph);
 
         // Ignore dups, hifiasm seems to create them
         if (graph.m_deBruijnGraphEdges.count({fromNodePtr, toNodePtr}))
@@ -396,26 +416,12 @@ class GFAAssemblyGraphBuilder : public AssemblyGraphBuilder {
             graph.m_deBruijnGraphEdges[{rcToNodePtr, rcFromNodePtr}] = rcEdgePtr;
         }
 
-        auto cb = getTag<std::string>("CB", record.tags);
-        auto c2 = getTag<std::string>("C2", record.tags);
-        hasCustomColours_ |= cb || c2;
-        if (cb) graph.setCustomColour(edgePtr, cb->c_str());
-        if (c2 && rcEdgePtr) graph.setCustomColour(rcEdgePtr, c2->c_str());
+        hasCustomColours_ |= maybeAddCustomColor(edgePtr, record.tags, "CB", graph);
+        hasCustomColours_ |= maybeAddCustomColor(rcEdgePtr, record.tags, "C2", graph);
 
-        bool tagsInserted = false;
-        for (const auto& tag : record.tags) {
-            if (isStandardTag(tag.name))
-                continue;
-            graph.m_edgeTags[edgePtr].push_back(tag);
-            if (rcEdgePtr)
-                graph.m_edgeTags[rcEdgePtr].push_back(tag);
-            tagsInserted = true;
-        }
-        if (tagsInserted) {
-            graph.m_edgeTags[edgePtr].shrink_to_fit();
-            if (rcEdgePtr)
-                graph.m_edgeTags[rcEdgePtr].shrink_to_fit();
-        }
+        maybeAddTags(edgePtr, graph.m_edgeTags, record.tags);
+        if (rcEdgePtr)
+            maybeAddTags(rcEdgePtr, graph.m_edgeTags, record.tags);
     }
 
     void handleGapLink(const gfa::gaplink &record,
@@ -426,24 +432,9 @@ class GFAAssemblyGraphBuilder : public AssemblyGraphBuilder {
         std::string toNode{record.rhs};
         toNode.push_back(record.rhs_revcomp ? '-' : '+');
 
-        DeBruijnNode *fromNodePtr = nullptr;
-        DeBruijnNode *toNodePtr = nullptr;
-
-        auto fromNodeIt = graph.m_deBruijnGraphNodes.find(fromNode);
-        if (fromNodeIt== graph.m_deBruijnGraphNodes.end()) {
-            // Add placeholder
-            DeBruijnNode *oppositeNodePtr;
-            std::tie(fromNodePtr, oppositeNodePtr) = addSegmentPair(fromNode, 0, Sequence(), graph);
-        } else
-            fromNodePtr = *fromNodeIt;
-
-        auto toNodeIt = graph.m_deBruijnGraphNodes.find(toNode);
-        if (toNodeIt== graph.m_deBruijnGraphNodes.end()) {
-            // Add placeholder
-            DeBruijnNode *oppositeNodePtr;
-            std::tie(toNodePtr, oppositeNodePtr) = addSegmentPair(toNode, 0, Sequence(), graph);
-        } else
-            toNodePtr = *toNodeIt;
+        // Get source / dest nodes (or create placeholders to fill in)
+        DeBruijnNode *fromNodePtr = getNode(fromNode, graph);
+        DeBruijnNode *toNodePtr = getNode(toNode, graph);
 
         auto edgePtr = new DeBruijnEdge(fromNodePtr, toNodePtr);
         DeBruijnEdge *rcEdgePtr = nullptr;
@@ -473,30 +464,16 @@ class GFAAssemblyGraphBuilder : public AssemblyGraphBuilder {
         }
 
         graph.setCustomColour(edgePtr, "red");
-        if (rcEdgePtr) graph.setCustomColour(rcEdgePtr, "red");
+        graph.setCustomColour(rcEdgePtr, "red");
         graph.setCustomStyle(edgePtr, Qt::DashLine);
-        if (rcEdgePtr) graph.setCustomStyle(rcEdgePtr, Qt::DashLine);
+        graph.setCustomStyle(rcEdgePtr, Qt::DashLine);
 
-        auto cb = getTag<std::string>("CB", record.tags);
-        auto c2 = getTag<std::string>("C2", record.tags);
-        hasCustomColours_ |= cb || c2;
-        if (cb) graph.setCustomColour(edgePtr, cb->c_str());
-        if (c2 && rcEdgePtr) graph.setCustomColour(rcEdgePtr, c2->c_str());
+        hasCustomColours_ |= maybeAddCustomColor(edgePtr, record.tags, "CB", graph);
+        hasCustomColours_ |= maybeAddCustomColor(rcEdgePtr, record.tags, "C2", graph);
 
-        bool tagsInserted = false;
-        for (const auto& tag : record.tags) {
-            if (isStandardTag(tag.name))
-                continue;
-            graph.m_edgeTags[edgePtr].push_back(tag);
-            if (rcEdgePtr)
-                graph.m_edgeTags[rcEdgePtr].push_back(tag);
-            tagsInserted = true;
-        }
-        if (tagsInserted) {
-            graph.m_edgeTags[edgePtr].shrink_to_fit();
-            if (rcEdgePtr)
-                graph.m_edgeTags[rcEdgePtr].shrink_to_fit();
-        }
+        maybeAddTags(edgePtr, graph.m_edgeTags, record.tags);
+        if (rcEdgePtr)
+            maybeAddTags(rcEdgePtr, graph.m_edgeTags, record.tags);
     }
 
     void handlePath(const gfa::path &record,

@@ -2040,10 +2040,16 @@ void AssemblyGraph::setCustomColour(const DeBruijnNode* node, QColor color) {
 }
 
 void AssemblyGraph::setCustomColour(const DeBruijnEdge* edge, QColor color) {
+    // To simplify upstream code we ignore null edges
+    if (edge == nullptr)
+        return;
     m_edgeColors[edge] = color;
 }
 
 void AssemblyGraph::setCustomStyle(const DeBruijnEdge* edge, Qt::PenStyle style) {
+    // To simplify upstream code we ignore null edges
+    if (edge == nullptr)
+        return;
     m_edgeStyles[edge] = style;
 }
 
