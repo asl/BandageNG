@@ -232,6 +232,9 @@ void GraphLayoutWorker::buildGraph() {
         if (!edge->determineIfDrawn())
             continue;
 
+        if (edge->getOverlapType() == JUMP)
+            continue;
+
         addToOgdfGraph(edge,ogdfGraph, ogdfEdgeLengths);
     }
 }
