@@ -67,7 +67,7 @@ static int getNumberOfOgdfGraphEdges(double drawnNodeLength) {
 }
 
 static void addToOgdfGraph(DeBruijnNode *node,
-                           ogdf::Graph &ogdfGraph, ogdf::GraphAttributes &graphAttributes,
+                           ogdf::Graph &ogdfGraph, ogdf::GraphAttributes &GA,
                            ogdf::EdgeArray<double> &edgeLengths, double xPos, double yPos) {
     // If this node or its reverse complement is already in OGDF, then
     // it's not necessary to make the node.
@@ -89,10 +89,13 @@ static void addToOgdfGraph(DeBruijnNode *node,
         node->getOgdfNode().push_back(newNode);
 
         if (g_settings->linearLayout) {
-            graphAttributes.x(newNode) = xPos;
-            graphAttributes.y(newNode) = yPos;
+            GA.x(newNode) = xPos;
+            GA.y(newNode) = yPos;
             xPos += g_settings->nodeSegmentLength;
         }
+
+        GA.width(newNode) = g_settings->edgeLength;
+        GA.height(newNode) = g_settings->edgeLength;
 
         if (i > 0) {
             ogdf::edge newEdge = ogdfGraph.newEdge(previousNode, newNode);
@@ -247,7 +250,6 @@ void GraphLayoutWorker::initLayout(ogdf::FMMMLayout &layout) const {
     layout.pageRatio(m_aspectRatio);
     layout.minDistCC(m_graphLayoutComponentSeparation);
     layout.stepsForRotatingComponents(50); // Helps to make linear graph components more horizontal.
-    layout.edgeLengthMeasurement(ogdf::FMMMOptions::EdgeLengthMeasurement::Midpoint);
     layout.initialPlacementForces(m_useLinearLayout ?
                                      ogdf::FMMMOptions::InitialPlacementForces::KeepPositions :
                                      ogdf::FMMMOptions::InitialPlacementForces::RandomTime);
@@ -489,6 +491,8 @@ void GraphLayoutWorker::layoutGraph() {
                     for (ogdf::node v : GC.nodes) {
                         cGA.x(v) = GA.x(GC.original(v));
                         cGA.y(v) = GA.y(GC.original(v));
+                        cGA.width(v) = GA.width(GC.original(v));
+                        cGA.height(v) = GA.height(GC.original(v));
                     }
 
                     for (ogdf::edge e : GC.edges)
