@@ -264,10 +264,11 @@ class GFAAssemblyGraphBuilder : public AssemblyGraphBuilder {
 
     template<class Container, class Key>
     static void maybeAddTags(Key k, Container &c,
-                             const std::vector<gfa::tag> &tags) {
+                             const std::vector<gfa::tag> &tags,
+                             bool ignoreStandard = true) {
         bool tagsInserted = false;
         for (const auto& tag : tags) {
-            if (isStandardTag(tag.name))
+            if (ignoreStandard && isStandardTag(tag.name))
                 continue;
             c[k].push_back(tag);
             tagsInserted = true;
@@ -404,9 +405,11 @@ class GFAAssemblyGraphBuilder : public AssemblyGraphBuilder {
         hasCustomColours_ |= maybeAddCustomColor(edgePtr, tags, "CB", graph);
         hasCustomColours_ |= maybeAddCustomColor(rcEdgePtr, tags, "C2", graph);
 
-        maybeAddTags(edgePtr, graph.m_edgeTags, tags);
+        maybeAddTags(edgePtr, graph.m_edgeTags, tags,
+                     false);
         if (rcEdgePtr)
-            maybeAddTags(rcEdgePtr, graph.m_edgeTags, tags);
+            maybeAddTags(rcEdgePtr, graph.m_edgeTags, tags,
+                         false);
 
         return std::make_pair(edgePtr, rcEdgePtr);
     }
