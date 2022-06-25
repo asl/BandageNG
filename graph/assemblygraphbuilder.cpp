@@ -454,7 +454,7 @@ class GFAAssemblyGraphBuilder : public AssemblyGraphBuilder {
             return;
 
         edgePtr->setOverlap(record.distance == std::numeric_limits<int64_t>::min() ? 0 : record.distance);
-        edgePtr->setOverlapType(NO_OVERLAP);
+        edgePtr->setOverlapType(JUMP);
         if (rcEdgePtr) {
             rcEdgePtr->setOverlap(edgePtr->getOverlap());
             rcEdgePtr->setOverlapType(edgePtr->getOverlapType());
