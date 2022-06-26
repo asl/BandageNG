@@ -42,7 +42,6 @@
 #include "graph/nodecolorers.h"
 
 #include "program/globals.h"
-#include "program/settings.h"
 #include "program/graphlayoutworker.h"
 #include "program/memory.h"
 
@@ -57,7 +56,6 @@
 #include <QColorDialog>
 #include <QFile>
 #include <QScrollBar>
-#include <QThread>
 #include <QMessageBox>
 #include <QInputDialog>
 #include <QShortcut>
@@ -2604,12 +2602,31 @@ void MainWindow::openGraphInfoDialog()
 }
 
 void MainWindow::exportGraphLayout() {
-    QString fullFileName = QFileDialog::getSaveFileName(this, "Save graph layout",
+    QString filter = "TSV (*.tsv)";
+    QString fullFileName = QFileDialog::getSaveFileName(this, "Export graph layout",
                                                         "",
-                                                        "GML (*.gml);;GraphML (*.graphml)");
+                                                        "TSV (*.tsv);;",
+                                                        &filter);
 
     if (fullFileName.isEmpty())
         return;
 
-    ogdf::GraphIO::write(g_assemblyGraph->m_ogdfGraphAttributes, fullFileName.toStdString());
+    QFile file(fullFileName);
+    file.open(QIODevice::WriteOnly | QIODevice::Text);
+    QTextStream out(&file);
+
+    for (auto *node : g_assemblyGraph->m_deBruijnGraphNodes) {
+        if (node->isNotDrawn())
+            continue;
+        if (!node->hasGraphicsItem())
+            continue;
+
+        const auto &segments = node->getGraphicsItemNode()->m_linePoints;
+        if (segments.empty())
+            continue;
+
+        size_t idx = (segments.size() - 1) / 2;
+        QPointF pos = segments[idx];
+        out << node->getName() << '\t' << pos.x() << '\t' << pos.y() << '\n';
+    }
 }
