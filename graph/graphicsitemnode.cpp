@@ -489,6 +489,11 @@ void GraphicsItemNode::remakePath()
     m_path = path;
 }
 
+static QPointF findIntermediatePoint(QPointF p1, QPointF p2, double p1Value, double p2Value, double targetValue) {
+    QPointF difference = p2 - p1;
+    double fraction = (targetValue - p1Value) / (p2Value - p1Value);
+    return difference * fraction + p1;
+}
 
 QPainterPath GraphicsItemNode::makePartialPath(double startFraction, double endFraction)
 {
@@ -551,7 +556,6 @@ double GraphicsItemNode::getNodePathLength()
     return totalLength;
 }
 
-
 //This function will find the point that is a certain fraction of the way along the node's path.
 QPointF GraphicsItemNode::findLocationOnPath(double fraction)
 {
@@ -582,19 +586,10 @@ QPointF GraphicsItemNode::findLocationOnPath(double fraction)
     return {};
 }
 
-QPointF GraphicsItemNode::findIntermediatePoint(QPointF p1, QPointF p2, double p1Value, double p2Value, double targetValue)
-{
-    QPointF difference = p2 - p1;
-    double fraction = (targetValue - p1Value) / (p2Value - p1Value);
-    return difference * fraction + p1;
-}
-
 bool GraphicsItemNode::usePositiveNodeColour() const
 {
     return !m_hasArrow || m_deBruijnNode->isPositiveNode();
 }
-
-
 
 
 //This function returns the nodes' visible centres.  If the entire node is visible,

@@ -56,8 +56,6 @@ public:
     QPainterPath m_path;
 
     static QSize getNodeTextSize(const QString& text);
-    static QPointF findIntermediatePoint(QPointF p1, QPointF p2, double p1Value,
-                                         double p2Value, double targetValue);
     static double getNodeWidth(double depthRelativeToMeanDrawnDepth,
                                double depthPower,
                                double depthEffectOnWidth,
