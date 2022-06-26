@@ -130,10 +130,9 @@ static void addToOgdfGraph(DeBruijnEdge *edge,
     // If this in an edge connected a single-segment node to itself, then we
     // don't want to put it in the OGDF graph, because it would be redundant
     // with the node segment (and created conflict with the node/edge length).
-    if (startingNode == endingNode) {
-        if (getNumberOfOgdfGraphEdges(getDrawnNodeLength(startingNode)) == 1)
-            return;
-    }
+    if (startingNode == endingNode &&
+        getNumberOfOgdfGraphEdges(getDrawnNodeLength(startingNode)) == 1)
+        return;
 
     ogdf::edge newEdge = ogdfGraph.newEdge(firstEdgeOgdfNode, secondEdgeOgdfNode);
     edgeArray[newEdge] = g_settings->edgeLength;
@@ -149,28 +148,28 @@ void GraphLayoutWorker::determineLinearNodePositions() {
     // We first try to sort the nodes numerically.
     QList<QPair<int, DeBruijnNode *>> numericallySortedDrawnNodes;
     bool successfulIntConversion = true;
-    for (auto &entry : m_graph.m_deBruijnGraphNodes) {
-        DeBruijnNode * node = entry;
-        if (node->isDrawn() && node->thisOrReverseComplementNotInOgdf()) {
-            int nodeInt = node->getNameWithoutSign().toInt(&successfulIntConversion);
-            if (!successfulIntConversion)
-                break;
-            numericallySortedDrawnNodes.push_back(QPair<int, DeBruijnNode*>(nodeInt, node));
-        }
+    for (auto *node : m_graph.m_deBruijnGraphNodes) {
+        if (!node->isDrawn())
+            continue;
+
+        int nodeInt = node->getNameWithoutSign().toInt(&successfulIntConversion);
+        if (!successfulIntConversion)
+            break;
+        numericallySortedDrawnNodes.emplace_back(nodeInt, node);
     }
+
     if (successfulIntConversion) {
         std::sort(numericallySortedDrawnNodes.begin(), numericallySortedDrawnNodes.end(),
                   [](const auto &a, const auto &b) {return a.first < b.first;});
-        for (int i = 0; i < numericallySortedDrawnNodes.size(); ++i) {
-            sortedDrawnNodes.reserve(numericallySortedDrawnNodes.size());
-            sortedDrawnNodes.push_back(numericallySortedDrawnNodes[i].second);
-        }
+        sortedDrawnNodes.reserve(numericallySortedDrawnNodes.size());
+        for (const auto &entry : numericallySortedDrawnNodes)
+            sortedDrawnNodes.push_back(entry.second);
     } // If any of the conversions from node name to integer failed, then we instead sort the nodes alphabetically.
     else {
-        for (auto &entry : m_graph.m_deBruijnGraphNodes) {
-            DeBruijnNode * node = entry;
-            if (node->isDrawn())
-                sortedDrawnNodes.push_back(node);
+        for (auto *node : m_graph.m_deBruijnGraphNodes) {
+            if (!node->isDrawn())
+                continue;
+            sortedDrawnNodes.push_back(node);
         }
         std::sort(sortedDrawnNodes.begin(), sortedDrawnNodes.end(),
                   [](const DeBruijnNode *a, const DeBruijnNode *b) {
@@ -199,7 +198,7 @@ void GraphLayoutWorker::determineLinearNodePositions() {
         double yPos = 0.0;
         long long intXPos = (long long)(xPos * 100.0);
         long long intYPos = (long long)(yPos * 100.0);
-        while (usedStartPositions.contains(QPair<long long, long long>(intXPos, intYPos))) {
+        while (usedStartPositions.contains({intXPos, intYPos})) {
             yPos += g_settings->edgeLength;
             intYPos = (long long)(yPos * 100.0);
         }
