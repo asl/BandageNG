@@ -665,7 +665,25 @@ void AssemblyGraph::addGraphicsItemsToScene(MyGraphicsScene * scene)
 
         node->setDepthRelativeToMeanDrawnDepth(meanDrawnDepth== 0 ?
                                                1.0 : node->getDepth() / meanDrawnDepth);
-        auto *graphicsItemNode = new GraphicsItemNode(node, m_ogdfGraphAttributes);
+
+        std::vector<QPointF> nodeSegment;
+        const auto &pathOgdfNode = node->getOgdfNode();
+        if (!pathOgdfNode.empty()) {
+            for (auto ogdfNode : pathOgdfNode)
+                nodeSegment.emplace_back(m_ogdfGraphAttributes.x(ogdfNode), m_ogdfGraphAttributes.y(ogdfNode));
+        } else {
+            const auto &rcPathOgdfNode = node->getReverseComplement()->getOgdfNode();
+            for (auto it = rcPathOgdfNode.rbegin(); it != rcPathOgdfNode.rend(); ++it)
+                nodeSegment.emplace_back(m_ogdfGraphAttributes.x(*it), m_ogdfGraphAttributes.y(*it));
+        }
+
+        auto *graphicsItemNode = new GraphicsItemNode(node, nodeSegment);
+        // If we are in double mode and this node's complement is also drawn,
+        // then we should shift the points so the two nodes are not drawn directly
+        // on top of each other.
+        if (g_settings->doubleMode && node->getReverseComplement()->isDrawn())
+            graphicsItemNode->shiftPointsLeft();
+
         node->setGraphicsItemNode(graphicsItemNode);
         graphicsItemNode->setFlag(QGraphicsItem::ItemIsSelectable);
         graphicsItemNode->setFlag(QGraphicsItem::ItemIsMovable);

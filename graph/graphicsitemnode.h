@@ -18,7 +18,6 @@
 
 #pragma once
 
-#include "ogdf/basic/GraphAttributes.h"
 #include "small_vector/small_pod_vector.hpp"
 
 #include <QPointF>
@@ -38,9 +37,6 @@ class Path;
 class GraphicsItemNode : public QGraphicsItem
 {
 public:
-    GraphicsItemNode(DeBruijnNode * deBruijnNode,
-                     const ogdf::GraphAttributes &graphAttributes,
-                     QGraphicsItem * parent = nullptr);
     GraphicsItemNode(DeBruijnNode * deBruijnNode,
                      GraphicsItemNode * toCopy,
                      QGraphicsItem * parent = nullptr);
