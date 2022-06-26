@@ -33,11 +33,6 @@ Memory::Memory()
     userSpecifiedPathString = "";
     userSpecifiedPathCircular = false;
 
-    distancePathSearchQuery1 = "";
-    distancePathSearchQuery2 = "";
-    distancePathSearchQuery1Path = "";
-    distancePathSearchQuery2Path = "";
-
     terminalWidth = 80;
 }
 
@@ -50,11 +45,5 @@ void Memory::clearGraphSpecificMemory()
     userSpecifiedPath = Path();
     userSpecifiedPathString = "";
     userSpecifiedPathCircular = false;
-
-    distanceSearchResults.clear();
-    distancePathSearchQuery1 = "";
-    distancePathSearchQuery2 = "";
-    distancePathSearchQuery1Path = "";
-    distancePathSearchQuery2Path = "";
 }
 
