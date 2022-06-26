@@ -28,6 +28,13 @@
 #include <limits>
 #include <utility>
 
+
+Path::Path(GraphLocation startLocation) {
+    addNode(startLocation.getNode(), true, false);
+    // addNode sets location from the start of the node, we need to overwrite the position
+    m_startLocation = startLocation;
+}
+
 //These will try to produce a path using the given nodes.
 //They will only succeed if the nodes produce one and only one path.
 //If they are disconnected, branching or ambiguous, they will fail
@@ -581,9 +588,9 @@ bool Path::isCircular() const
     if (m_nodes.size() != m_edges.size())
         return false;
 
-    DeBruijnEdge * lastEdge = m_edges.back();
-    DeBruijnNode * firstNode = m_nodes.front();
-    DeBruijnNode * lastNode = m_nodes.back();
+    const DeBruijnEdge * lastEdge = m_edges.back();
+    const DeBruijnNode * firstNode = m_nodes.front();
+    const DeBruijnNode * lastNode = m_nodes.back();
 
     return (lastEdge->getStartingNode() == lastNode &&
             lastEdge->getEndingNode() == firstNode);
@@ -648,64 +655,6 @@ bool Path::canNodeFitAtStart(DeBruijnNode * node, Path * extendedPath) const
 
     return false;
 }
-
-
-//This function builds all possible paths between the given start and end,
-//within the given restrictions.
-QList<Path> Path::getAllPossiblePaths(GraphLocation startLocation,
-                                      GraphLocation endLocation,
-                                      int nodeSearchDepth,
-                                      int minDistance, int maxDistance)
-{
-    QList<Path> finishedPaths;
-    QList<Path> unfinishedPaths;
-
-    Path startPath;
-    startPath.addNode(startLocation.getNode(), true, false);
-    startPath.m_startLocation = startLocation;
-    startPath.m_endLocation = GraphLocation::endOfNode(startLocation.getNode());
-    unfinishedPaths.push_back(startPath);
-
-    for (int i = 0; i <= nodeSearchDepth; ++i)
-    {
-        QApplication::processEvents();
-
-        //Look at each of the unfinished paths to see if they end with the end
-        //node.  If so, see if it has the appropriate length.
-        //If it does, it will go into the final returned list.
-        //If it doesn't and it's over length, then it will be removed.
-        QList<Path>::iterator j = unfinishedPaths.begin();
-        while (j != unfinishedPaths.end())
-        {
-            DeBruijnNode * lastNode = (*j).m_nodes.back();
-            if (lastNode == endLocation.getNode())
-            {
-                Path potentialFinishedPath = *j;
-                potentialFinishedPath.m_endLocation = endLocation;
-                int length = potentialFinishedPath.getLength();
-                if (length >= minDistance && length <= maxDistance)
-                    finishedPaths.push_back(potentialFinishedPath);
-                ++j;
-            }
-            else
-            {
-                if ((*j).getLength() > maxDistance)
-                    j = unfinishedPaths.erase(j);
-                else
-                    ++j;
-            }
-        }
-
-        //Make new unfinished paths by extending each of the paths.
-        QList<Path> newUnfinishedPaths;
-        for (auto & unfinishedPath : unfinishedPaths)
-            newUnfinishedPaths.append(unfinishedPath.extendPathInAllPossibleWays());
-        unfinishedPaths = newUnfinishedPaths;
-    }
-
-    return finishedPaths;
-}
-
 
 //This function takes the current path and extends it in all possible ways by
 //adding one more node, then returning a list of the new paths.  How many paths
@@ -785,6 +734,57 @@ bool Path::hasNodeSubset(const Path& other) const
     return false;
 }
 
+//This function builds all possible paths between the given start and end,
+//within the given restrictions.
+QList<Path> Path::getAllPossiblePaths(GraphLocation startLocation,
+                                      GraphLocation endLocation,
+                                      int nodeSearchDepth,
+                                      int minDistance, int maxDistance)
+{
+    QList<Path> finishedPaths;
+    QList<Path> unfinishedPaths;
+
+    unfinishedPaths.emplace_back(startLocation);
+
+    for (int i = 0; i <= nodeSearchDepth; ++i)
+    {
+        QApplication::processEvents();
+
+        //Look at each of the unfinished paths to see if they end with the end
+        //node.  If so, see if it has the appropriate length.
+        //If it does, it will go into the final returned list.
+        //If it doesn't and it's over length, then it will be removed.
+        QList<Path>::iterator j = unfinishedPaths.begin();
+        while (j != unfinishedPaths.end())
+        {
+            DeBruijnNode * lastNode = (*j).m_nodes.back();
+            if (lastNode == endLocation.getNode())
+            {
+                Path potentialFinishedPath = *j;
+                potentialFinishedPath.m_endLocation = endLocation;
+                int length = potentialFinishedPath.getLength();
+                if (length >= minDistance && length <= maxDistance)
+                    finishedPaths.push_back(potentialFinishedPath);
+                ++j;
+            }
+            else
+            {
+                if ((*j).getLength() > maxDistance)
+                    j = unfinishedPaths.erase(j);
+                else
+                    ++j;
+            }
+        }
+
+        //Make new unfinished paths by extending each of the paths.
+        QList<Path> newUnfinishedPaths;
+        for (auto & unfinishedPath : unfinishedPaths)
+            newUnfinishedPaths.append(unfinishedPath.extendPathInAllPossibleWays());
+        unfinishedPaths = newUnfinishedPaths;
+    }
+
+    return finishedPaths;
+}
 
 
 void Path::extendPathToIncludeEntirityOfNodes()
@@ -797,12 +797,12 @@ void Path::extendPathToIncludeEntirityOfNodes()
 }
 
 
-bool Path::containsNode(DeBruijnNode * node) const
+bool Path::containsNode(const DeBruijnNode * node) const
 {
     return m_nodes.contains(node);
 }
 
-bool Path::containsEntireNode(DeBruijnNode * node) const
+bool Path::containsEntireNode(const DeBruijnNode * node) const
 {
     if (m_nodes.empty())
         return false;
@@ -831,7 +831,7 @@ bool Path::containsEntireNode(DeBruijnNode * node) const
 
 
 
-bool Path::isInMiddleOfPath(DeBruijnNode * node) const
+bool Path::isInMiddleOfPath(const DeBruijnNode * node) const
 {
     return containsNode(node) && !isStartingNode(node) && !isEndingNode(node);
 }
@@ -839,29 +839,21 @@ bool Path::isInMiddleOfPath(DeBruijnNode * node) const
 
 //This function counts the number of times the node is in the path, not
 //counting the first or last nodes.
-int Path::numberOfOccurrencesInMiddleOfPath(DeBruijnNode * node) const
+unsigned Path::numberOfOccurrencesInMiddleOfPath(const DeBruijnNode * node) const
 {
-    int count = 0;
+    unsigned count = 0;
     for (int i = 1; i < m_nodes.size() - 1; ++i)
-    {
-        if (m_nodes[i] == node)
-            ++count;
-    }
+        count += (m_nodes[i] == node);
+
     return count;
 }
 
-bool Path::isStartingNode(DeBruijnNode * node) const
-{
-    if (m_nodes.empty())
-        return false;
-    return m_nodes.front() == node;
+bool Path::isStartingNode(const DeBruijnNode * node) const {
+    return (!m_nodes.empty() && m_nodes.front() == node);
 }
 
-bool Path::isEndingNode(DeBruijnNode * node) const
-{
-    if (m_nodes.empty())
-        return false;
-    return m_nodes.back() == node;
+bool Path::isEndingNode(const DeBruijnNode * node) const {
+    return (!m_nodes.empty() && m_nodes.back() == node);
 }
 
 
@@ -887,10 +879,4 @@ double Path::getEndFraction() const
         return 1.0;
 
     return double(m_endLocation.getPosition()) / lastNodeLength;
-}
-
-
-int Path::getNodeCount() const
-{
-    return m_nodes.size();
 }

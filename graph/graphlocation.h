@@ -16,9 +16,7 @@
 //along with Bandage.  If not, see <http://www.gnu.org/licenses/>.
 
 
-#ifndef GRAPHLOCATION_H
-#define GRAPHLOCATION_H
-
+#pragma once
 
 class DeBruijnNode;
 
@@ -36,8 +34,8 @@ public:
     DeBruijnNode * getNode() const {return m_node;}
     int getPosition() const {return m_position;}
     bool isValid() const;
-    bool isNull() const;
-    GraphLocation reverseComplementLocation() const;
+    bool isNull() const { return (m_node == nullptr || m_position == 0); }
+    [[nodiscard]] GraphLocation reverseComplementLocation() const;
     char getBase() const;
     bool isAtStartOfNode() const;
     bool isAtEndOfNode() const;
@@ -46,12 +44,10 @@ public:
     //MODIFERS
     void moveLocation(int change);
 
-
 private:
-    DeBruijnNode * m_node;
-    int m_position;
     void moveForward(int change);
     void moveBackward(int change);
-};
 
-#endif // GRAPHLOCATION_H
+    DeBruijnNode * m_node;
+    int m_position;
+};

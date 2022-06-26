@@ -19,13 +19,15 @@
 #ifndef PATH_H
 #define PATH_H
 
+#include "graphlocation.h"
+#include "program/globals.h"
+
 #include <QByteArray>
 #include <QList>
-#include <vector>
 #include <QString>
 #include <QStringList>
-#include "program/globals.h"
-#include "graphlocation.h"
+
+#include <vector>
 
 class DeBruijnNode;
 class DeBruijnEdge;
@@ -35,6 +37,7 @@ class Path
 public:
     //CREATORS
     Path() {}
+    Path(GraphLocation location);
     static Path makeFromUnorderedNodes(QList<DeBruijnNode *> nodes,
                                        bool strandSpecific);
     static Path makeFromUnorderedNodes(const std::vector<DeBruijnNode *>& nodes,
@@ -45,8 +48,8 @@ public:
                                QString * pathStringFailure);
 
     //ACCESSORS
-    QList<DeBruijnNode *> getNodes() const {return m_nodes;}
-    QList<DeBruijnEdge *> getEdges() const {return m_edges;}
+    const QList<DeBruijnNode *>& getNodes() const {return m_nodes;}
+    const QList<DeBruijnEdge *>& getEdges() const {return m_edges;}
     bool isEmpty() const {return m_nodes.empty();}
     bool isCircular() const;
     bool haveSameNodes(const Path& other) const;
@@ -59,17 +62,17 @@ public:
     bool canNodeFitOnEnd(DeBruijnNode * node, Path * extendedPath) const;
     bool canNodeFitAtStart(DeBruijnNode * node, Path * extendedPath) const;
 
-    bool containsNode(DeBruijnNode * node) const;
-    bool containsEntireNode(DeBruijnNode * node) const;
-    bool isInMiddleOfPath(DeBruijnNode * node) const;
-    int numberOfOccurrencesInMiddleOfPath(DeBruijnNode * node) const;
-    bool isStartingNode(DeBruijnNode * node) const;
-    bool isEndingNode(DeBruijnNode * node) const;
+    bool containsNode(const DeBruijnNode * node) const;
+    bool containsEntireNode(const DeBruijnNode * node) const;
+    bool isInMiddleOfPath(const DeBruijnNode * node) const;
+    unsigned int numberOfOccurrencesInMiddleOfPath(const DeBruijnNode * node) const;
+    bool isStartingNode(const DeBruijnNode * node) const;
+    bool isEndingNode(const DeBruijnNode * node) const;
     double getStartFraction() const;
     double getEndFraction() const;
-    int getNodeCount() const;
-    GraphLocation getStartLocation() const {return m_startLocation;}
-    GraphLocation getEndLocation() const {return m_endLocation;}
+    size_t getNodeCount() const { return m_nodes.size(); }
+    [[nodiscard]] GraphLocation getStartLocation() const {return m_startLocation;}
+    [[nodiscard]] GraphLocation getEndLocation() const {return m_endLocation;}
     bool operator==(Path const &other) const;
 
     //MODIFERS

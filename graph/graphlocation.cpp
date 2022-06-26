@@ -23,18 +23,12 @@
 #include "program/globals.h"
 
 
+GraphLocation::GraphLocation()
+        : m_node(nullptr), m_position(0) { }
 
-GraphLocation::GraphLocation() :
-    m_node(nullptr), m_position(0)
-{
 
-}
-
-GraphLocation::GraphLocation(DeBruijnNode * node, int position) :
-    m_node(node), m_position(position)
-{
-}
-
+GraphLocation::GraphLocation(DeBruijnNode *node, int position)
+        : m_node(node), m_position(position) { }
 
 GraphLocation GraphLocation::startOfNode(DeBruijnNode * node)
 {
@@ -74,13 +68,6 @@ bool GraphLocation::isValid() const
     return m_position <= m_node->getLength();
 }
 
-
-bool GraphLocation::isNull() const
-{
-    return (m_node == nullptr || m_position == 0);
-}
-
-
 GraphLocation GraphLocation::reverseComplementLocation() const
 {
     int newPos = m_node->getLength() - m_position + 1;
@@ -119,10 +106,9 @@ void GraphLocation::moveForward(int change)
         return;
     }
 
-    //If there aren't enough bases left, then we recursively try with the
-    //next nodes.
-    std::vector<DeBruijnNode *> downstreamNodes = m_node->getDownstreamNodes();
-    for (auto node : downstreamNodes)
+    // If there aren't enough bases left, then we recursively try with the
+    // next nodes.
+    for (auto *node : m_node->getDownstreamNodes())
     {
         GraphLocation nextNodeLocation = GraphLocation::startOfNode(node);
         nextNodeLocation.moveForward(change - basesLeftInNode - 1);
@@ -154,8 +140,7 @@ void GraphLocation::moveBackward(int change)
 
     //If there aren't enough bases left, then we recursively try with the
     //next nodes.
-    std::vector<DeBruijnNode *> upstreamNodes = m_node->getUpstreamNodes();
-    for (auto node : upstreamNodes)
+    for (auto *node : m_node->getUpstreamNodes())
     {
         GraphLocation nextNodeLocation = GraphLocation::endOfNode(node);
         nextNodeLocation.moveBackward(change - basesLeftInNode - 1);
