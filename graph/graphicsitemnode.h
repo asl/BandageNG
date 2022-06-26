@@ -55,7 +55,6 @@ public:
     QColor m_colour;
     QPainterPath m_path;
 
-    static double distance(QPointF p1, QPointF p2);
     static QSize getNodeTextSize(const QString& text);
     static QPointF findIntermediatePoint(QPointF p1, QPointF p2, double p1Value,
                                          double p2Value, double targetValue);
@@ -77,7 +76,6 @@ public:
     QPointF getLast() const {return m_linePoints[m_linePoints.size()-1];}
     QPointF getSecondLast() const {return m_linePoints[m_linePoints.size()-2];}
     std::vector<QPointF> getCentres() const;
-    QPointF getCentre(std::vector<QPointF> linePoints) const;
     void setNodeColour(QColor color) { m_colour = color; }
     QStringList getNodeText() const;
     void setWidth();

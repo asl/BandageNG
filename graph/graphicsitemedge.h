@@ -21,10 +21,6 @@
 
 #include <QGraphicsPathItem>
 #include <QPainterPath>
-
-
-#include "ogdf/basic/Graph.h"
-#include "ogdf/basic/GraphAttributes.h"
 #include <QPointF>
 
 class DeBruijnEdge;
@@ -32,7 +28,7 @@ class DeBruijnEdge;
 class GraphicsItemEdge : public QGraphicsPathItem
 {
 public:
-    GraphicsItemEdge(DeBruijnEdge * deBruijnEdge, QGraphicsItem * parent = 0);
+    explicit GraphicsItemEdge(DeBruijnEdge * deBruijnEdge, QGraphicsItem * parent = nullptr);
 
     DeBruijnEdge * m_deBruijnEdge;
     QPointF m_startingLocation;
@@ -44,9 +40,8 @@ public:
     QColor m_edgeColor;
     Qt::PenStyle m_penStyle;
 
-    void paint(QPainter * painter, const QStyleOptionGraphicsItem *, QWidget *);
-    QPainterPath shape() const;
-    static QPointF extendLine(QPointF start, QPointF end, double extensionLength);
+    void paint(QPainter * painter, const QStyleOptionGraphicsItem *, QWidget *) override;
+    QPainterPath shape() const override;
     void calculateAndSetPath();
     void setControlPointLocations();
     void setStartingPoints(QPointF startingLocation, QPointF beforeStartingLocation) {m_startingLocation = startingLocation; m_beforeStartingLocation = beforeStartingLocation;}

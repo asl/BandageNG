@@ -20,10 +20,8 @@
 #include "graphicsitemnode.h"
 #include "debruijnedge.h"
 #include "debruijnnode.h"
-#include "graphicsitemnode.h"
 
 #include "graph/assemblygraph.h"
-
 #include "program/globals.h"
 
 #include <QPainterPathStroker>
@@ -31,10 +29,8 @@
 #include <QPen>
 #include <QLineF>
 
-GraphicsItemEdge::GraphicsItemEdge(DeBruijnEdge * deBruijnEdge, QGraphicsItem * parent) :
-    QGraphicsPathItem(parent), m_deBruijnEdge(deBruijnEdge)
-
-{
+GraphicsItemEdge::GraphicsItemEdge(DeBruijnEdge * deBruijnEdge, QGraphicsItem * parent)
+    : QGraphicsPathItem(parent), m_deBruijnEdge(deBruijnEdge) {
     m_edgeColor = g_assemblyGraph->getCustomColour(deBruijnEdge);
     m_penStyle = g_assemblyGraph->getCustomStyle(deBruijnEdge);
 
@@ -42,8 +38,7 @@ GraphicsItemEdge::GraphicsItemEdge(DeBruijnEdge * deBruijnEdge, QGraphicsItem * 
 }
 
 
-
-QPointF GraphicsItemEdge::extendLine(QPointF start, QPointF end, double extensionLength)
+static QPointF extendLine(QPointF start, QPointF end, double extensionLength)
 {
     double extensionRatio = extensionLength / QLineF(start, end).length();
     QPointF difference = end - start;

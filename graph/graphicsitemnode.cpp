@@ -98,6 +98,48 @@ GraphicsItemNode::GraphicsItemNode(DeBruijnNode * deBruijnNode,
     remakePath();
 }
 
+static double distance(QPointF p1, QPointF p2) {
+    auto xDiff = p1.x() - p2.x();
+    auto yDiff = p1.y() - p2.y();
+    return sqrt(xDiff * xDiff + yDiff * yDiff);
+}
+
+// This function finds the centre point on the path defined by linePoints.
+static QPointF getCentre(const std::vector<QPointF> &linePoints) {
+    if (linePoints.empty())
+        return {};
+    if (linePoints.size() == 1)
+        return linePoints[0];
+
+    double pathLength = 0.0;
+    for (size_t i = 0; i < linePoints.size() - 1; ++i)
+        pathLength += distance(linePoints[i], linePoints[i+1]);
+
+    double endToCentre = pathLength / 2.0;
+
+    double lengthSoFar = 0.0;
+    for (size_t i = 0; i < linePoints.size() - 1; ++i)
+    {
+        QPointF a = linePoints[i];
+        QPointF b = linePoints[i+1];
+        double segmentLength = distance(a, b);
+
+        //If this segment will push the distance over halfway, then it
+        //contains the centre point.
+        if (lengthSoFar + segmentLength >= endToCentre)
+        {
+            double additionalLengthNeeded = endToCentre - lengthSoFar;
+            double fractionOfCurrentSegment = additionalLengthNeeded / segmentLength;
+            return (b - a) * fractionOfCurrentSegment + a;
+        }
+
+        lengthSoFar += segmentLength;
+    }
+
+    //Code should never get here.
+    return {};
+}
+
 
 void GraphicsItemNode::paint(QPainter * painter, const QStyleOptionGraphicsItem *, QWidget *)
 {
@@ -547,14 +589,6 @@ QPointF GraphicsItemNode::findIntermediatePoint(QPointF p1, QPointF p2, double p
     return difference * fraction + p1;
 }
 
-double GraphicsItemNode::distance(QPointF p1, QPointF p2)
-{
-    double xDiff = p1.x() - p2.x();
-    double yDiff = p1.y() - p2.y();
-    return sqrt(xDiff * xDiff + yDiff * yDiff);
-}
-
-
 bool GraphicsItemNode::usePositiveNodeColour() const
 {
     return !m_hasArrow || m_deBruijnNode->isPositiveNode();
@@ -627,45 +661,6 @@ std::vector<QPointF> GraphicsItemNode::getCentres() const
         centres.push_back(getCentre(currentRun));
 
     return centres;
-}
-
-
-
-//This function finds the centre point on the path defined by linePoints.
-QPointF GraphicsItemNode::getCentre(std::vector<QPointF> linePoints) const
-{
-    if (linePoints.empty())
-        return {};
-    if (linePoints.size() == 1)
-        return linePoints[0];
-
-    double pathLength = 0.0;
-    for (size_t i = 0; i < linePoints.size() - 1; ++i)
-        pathLength += distance(linePoints[i], linePoints[i+1]);
-
-    double endToCentre = pathLength / 2.0;
-
-    double lengthSoFar = 0.0;
-    for (size_t i = 0; i < linePoints.size() - 1; ++i)
-    {
-        QPointF a = linePoints[i];
-        QPointF b = linePoints[i+1];
-        double segmentLength = distance(a, b);
-
-        //If this segment will push the distance over halfway, then it
-        //contains the centre point.
-        if (lengthSoFar + segmentLength >= endToCentre)
-        {
-            double additionalLengthNeeded = endToCentre - lengthSoFar;
-            double fractionOfCurrentSegment = additionalLengthNeeded / segmentLength;
-            return (b - a) * fractionOfCurrentSegment + a;
-        }
-
-        lengthSoFar += segmentLength;
-    }
-
-    //Code should never get here.
-    return {};
 }
 
 QStringList GraphicsItemNode::getNodeText() const
