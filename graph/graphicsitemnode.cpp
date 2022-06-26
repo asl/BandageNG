@@ -46,7 +46,7 @@
 
 GraphicsItemNode::GraphicsItemNode(DeBruijnNode * deBruijnNode,
                                    const ogdf::GraphAttributes &graphAttributes, QGraphicsItem * parent) :
-    QGraphicsItem(parent), m_deBruijnNode(deBruijnNode),
+    QGraphicsItem(parent), m_deBruijnNode(deBruijnNode), m_grabIndex(0),
     m_hasArrow(g_settings->doubleMode || g_settings->arrowheadsInSingleMode)
 
 {
@@ -78,6 +78,7 @@ GraphicsItemNode::GraphicsItemNode(DeBruijnNode * deBruijnNode,
                                    GraphicsItemNode * toCopy,
                                    QGraphicsItem * parent) :
     QGraphicsItem(parent), m_deBruijnNode(deBruijnNode),
+    m_grabIndex(toCopy->m_grabIndex),
     m_hasArrow(toCopy->m_hasArrow),
     m_linePoints(toCopy->m_linePoints)
 {
@@ -88,12 +89,13 @@ GraphicsItemNode::GraphicsItemNode(DeBruijnNode * deBruijnNode,
 //This constructor makes a new GraphicsItemNode with a specific collection of
 //line points.
 GraphicsItemNode::GraphicsItemNode(DeBruijnNode * deBruijnNode,
-                                   std::vector<QPointF> linePoints,
+                                   const std::vector<QPointF> &linePoints,
                                    QGraphicsItem * parent) :
     QGraphicsItem(parent), m_deBruijnNode(deBruijnNode),
     m_hasArrow(g_settings->doubleMode),
-    m_linePoints(std::move(linePoints))
+    m_grabIndex(0)
 {
+    m_linePoints.assign(linePoints.begin(), linePoints.end());
     setWidth();
     remakePath();
 }
@@ -105,7 +107,8 @@ static double distance(QPointF p1, QPointF p2) {
 }
 
 // This function finds the centre point on the path defined by linePoints.
-static QPointF getCentre(const std::vector<QPointF> &linePoints) {
+template<class Container>
+static QPointF getCentre(const Container &linePoints) {
     if (linePoints.empty())
         return {};
     if (linePoints.size() == 1)

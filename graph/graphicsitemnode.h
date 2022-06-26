@@ -19,6 +19,7 @@
 #pragma once
 
 #include "ogdf/basic/GraphAttributes.h"
+#include "small_vector/small_pod_vector.hpp"
 
 #include <QPointF>
 #include <QColor>
@@ -44,16 +45,16 @@ public:
                      GraphicsItemNode * toCopy,
                      QGraphicsItem * parent = nullptr);
     GraphicsItemNode(DeBruijnNode * deBruijnNode,
-                     std::vector<QPointF> linePoints,
+                     const std::vector<QPointF> &linePoints,
                      QGraphicsItem * parent = nullptr);
 
     DeBruijnNode * m_deBruijnNode;
-    double m_width;
-    bool m_hasArrow;
-    std::vector<QPointF> m_linePoints;
-    size_t m_grabIndex = 0;
+    adt::SmallPODVector<QPointF> m_linePoints;
     QColor m_colour;
     QPainterPath m_path;
+    float m_width;
+    size_t m_grabIndex : 31;
+    bool m_hasArrow : 1;
 
     static QSize getNodeTextSize(const QString& text);
     static double getNodeWidth(double depthRelativeToMeanDrawnDepth,

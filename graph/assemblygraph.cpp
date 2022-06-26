@@ -1528,7 +1528,7 @@ static bool mergeGraphicsNodes2(QList<DeBruijnNode *> * originalNodes,
             break;
         }
 
-        std::vector<QPointF> originalLinePoints = originalGraphicsItemNode->m_linePoints;
+        const auto& originalLinePoints = originalGraphicsItemNode->m_linePoints;
 
         //Add the original line points to the new line point collection.  If we
         //are working with an opposite node, then we need to reverse the order.
