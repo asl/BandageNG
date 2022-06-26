@@ -52,8 +52,29 @@ AssemblyGraph::AssemblyGraph()
     clearGraphInfo();
 }
 
-AssemblyGraph::~AssemblyGraph() {}
+AssemblyGraph::~AssemblyGraph() = default;
 
+
+template<typename T> double getValueUsingFractionalIndex(const std::vector<T> &v, double index) {
+    if (v.size() == 0)
+        return 0.0;
+    if (v.size() == 1)
+        return double(v.front());
+
+    int wholePart = floor(index);
+
+    if (wholePart < 0)
+        return double(v.front());
+    if (wholePart >= int(v.size()) - 1)
+        return double(v.back());
+
+    double fractionalPart = index - wholePart;
+
+    double piece1 = double(v[wholePart]);
+    double piece2 = double(v[wholePart+1]);
+
+    return piece1 * (1.0 - fractionalPart) + piece2 * fractionalPart;
+}
 
 void AssemblyGraph::cleanUp()
 {
@@ -90,9 +111,17 @@ void AssemblyGraph::cleanUp()
     clearGraphInfo();
 }
 
+//The function returns a node name, replacing "+" at the end with "-" or
+//vice-versa.
+static QString getOppositeNodeName(QString nodeName) {
+    QChar lastChar = nodeName.at(nodeName.size() - 1);
+    nodeName.chop(1);
 
-
-
+    if (lastChar == '-')
+        return nodeName + "+";
+    else
+        return nodeName + "-";
+}
 
 //This function makes a double edge: in one direction for the given nodes
 //and the opposite direction for their reverse complements.  It adds the
@@ -352,9 +381,9 @@ void AssemblyGraph::determineGraphInfo()
     double medianIndex = (nodeDepths.size() - 1) / 2.0;
     double thirdQuartileIndex = (nodeDepths.size() - 1) * 3.0 / 4.0;
 
-    m_firstQuartileDepth = getValueUsingFractionalIndex(&nodeDepths, firstQuartileIndex);
-    m_medianDepth = getValueUsingFractionalIndex(&nodeDepths, medianIndex);
-    m_thirdQuartileDepth = getValueUsingFractionalIndex(&nodeDepths, thirdQuartileIndex);
+    m_firstQuartileDepth = getValueUsingFractionalIndex(nodeDepths, firstQuartileIndex);
+    m_medianDepth = getValueUsingFractionalIndex(nodeDepths, medianIndex);
+    m_thirdQuartileDepth = getValueUsingFractionalIndex(nodeDepths, thirdQuartileIndex);
 
     //Set the auto node length setting. This is determined by aiming for a
     //target average node length. But if the graph is small, the value will be
@@ -367,30 +396,6 @@ void AssemblyGraph::determineGraphInfo()
     else
         g_settings->autoNodeLengthPerMegabase = 10000.0;
 }
-
-template<typename T> double AssemblyGraph::getValueUsingFractionalIndex(std::vector<T> * v, double index) const
-{
-    if (v->size() == 0)
-        return 0.0;
-    if (v->size() == 1)
-        return double((*v)[0]);
-
-    int wholePart = floor(index);
-
-    if (wholePart < 0)
-        return double((*v)[0]);
-    if (wholePart >= int(v->size()) - 1)
-        return double((*v)[v->size() - 1]);
-
-    double fractionalPart = index - wholePart;
-
-    double piece1 = double((*v)[wholePart]);
-    double piece2 = double((*v)[wholePart+1]);
-
-    return piece1 * (1.0 - fractionalPart) + piece2 * fractionalPart;
-}
-
-
 
 void AssemblyGraph::clearGraphInfo()
 {
@@ -701,8 +706,39 @@ void AssemblyGraph::addGraphicsItemsToScene(MyGraphicsScene * scene)
 }
 
 
+// FIXME: this does not belong here
+static std::vector<DeBruijnNode *> getNodesFromBlastHits(const QString& queryName)
+{
+    std::vector<DeBruijnNode *> returnVector;
+
+    if (g_blastSearch->m_blastQueries.m_queries.empty())
+        return returnVector;
+
+    std::vector<BlastQuery *> queries;
+
+    //If "all" is selected, then we'll display nodes with hits from any query
+    if (queryName == "all")
+        queries = g_blastSearch->m_blastQueries.m_queries;
+
+        //If only one query is selected, then we just display nodes with hits from that query
+    else
+        queries.push_back(g_blastSearch->m_blastQueries.getQueryFromName(queryName));
+
+    //Add pointers to nodes that have a hit for the selected target(s).
+    for (auto currentQuery : queries)
+    {
+        for (auto & m_allHit : g_blastSearch->m_allHits)
+        {
+            if (m_allHit->m_query == currentQuery)
+                returnVector.push_back(m_allHit->m_node);
+        }
+    }
+
+    return returnVector;
+}
 
 
+// FIXME: This does not belong here!
 std::vector<DeBruijnNode *> AssemblyGraph::getStartingNodes(QString * errorTitle, QString * errorMessage, bool doubleMode,
                                                             const QString& nodesList, const QString& blastQueryName, const QString& pathName)
 {
@@ -794,6 +830,16 @@ std::vector<DeBruijnNode *> AssemblyGraph::getStartingNodes(QString * errorTitle
     return startingNodes;
 }
 
+static QStringList removeNullStringsFromList(const QStringList& in) {
+    QStringList out;
+
+    for (const auto& string : in)
+    {
+        if (string.length() > 0)
+            out.push_back(string);
+    }
+    return out;
+}
 
 bool AssemblyGraph::checkIfStringHasNodes(QString nodesString)
 {
@@ -917,36 +963,6 @@ std::vector<DeBruijnNode *> AssemblyGraph::getNodesFromListPartial(const QString
     return returnVector;
 }
 
-std::vector<DeBruijnNode *> AssemblyGraph::getNodesFromBlastHits(const QString& queryName)
-{
-    std::vector<DeBruijnNode *> returnVector;
-
-    if (g_blastSearch->m_blastQueries.m_queries.empty())
-        return returnVector;
-
-    std::vector<BlastQuery *> queries;
-
-    //If "all" is selected, then we'll display nodes with hits from any query
-    if (queryName == "all")
-        queries = g_blastSearch->m_blastQueries.m_queries;
-
-    //If only one query is selected, then we just display nodes with hits from that query
-    else
-        queries.push_back(g_blastSearch->m_blastQueries.getQueryFromName(queryName));
-
-    //Add pointers to nodes that have a hit for the selected target(s).
-    for (auto currentQuery : queries)
-    {
-        for (auto & m_allHit : g_blastSearch->m_allHits)
-        {
-            if (m_allHit->m_query == currentQuery)
-                returnVector.push_back(m_allHit->m_node);
-        }
-    }
-
-    return returnVector;
-}
-
 std::vector<DeBruijnNode *> AssemblyGraph::getNodesInDepthRange(double min, double max)
 {
     std::vector<DeBruijnNode *> returnVector;
@@ -959,20 +975,6 @@ std::vector<DeBruijnNode *> AssemblyGraph::getNodesInDepthRange(double min, doub
     }
     return returnVector;
 }
-
-
-QStringList AssemblyGraph::removeNullStringsFromList(const QStringList& in)
-{
-    QStringList out;
-
-    for (const auto& string : in)
-    {
-        if (string.length() > 0)
-            out.push_back(string);
-    }
-    return out;
-}
-
 
 // Unlike the equivalent function in MainWindow, this does the graph layout in the main thread.
 void AssemblyGraph::layoutGraph()
@@ -1077,20 +1079,6 @@ std::vector<int> AssemblyGraph::makeOverlapCountVector()
     }
 
     return overlapCounts;
-}
-
-
-//The function returns a node name, replacing "+" at the end with "-" or
-//vice-versa.
-QString AssemblyGraph::getOppositeNodeName(QString nodeName)
-{
-    QChar lastChar = nodeName.at(nodeName.size() - 1);
-    nodeName.chop(1);
-
-    if (lastChar == '-')
-        return nodeName + "+";
-    else
-        return nodeName + "-";
 }
 
 QString AssemblyGraph::getUniqueNodeName(QString baseName) const {
@@ -1226,6 +1214,36 @@ void AssemblyGraph::deleteEdges(const std::vector<DeBruijnEdge *> &edges)
     }
 }
 
+static void duplicateGraphicsNode(DeBruijnNode * originalNode, DeBruijnNode * newNode, MyGraphicsScene * scene)
+{
+    GraphicsItemNode * originalGraphicsItemNode = originalNode->getGraphicsItemNode();
+    if (originalGraphicsItemNode == nullptr)
+        return;
+
+    auto * newGraphicsItemNode = new GraphicsItemNode(newNode, originalGraphicsItemNode);
+
+    newNode->setGraphicsItemNode(newGraphicsItemNode);
+    newGraphicsItemNode->setFlag(QGraphicsItem::ItemIsSelectable);
+    newGraphicsItemNode->setFlag(QGraphicsItem::ItemIsMovable);
+
+    originalGraphicsItemNode->shiftPointsLeft();
+    newGraphicsItemNode->shiftPointsRight();
+    originalGraphicsItemNode->fixEdgePaths();
+
+    newGraphicsItemNode->setNodeColour(originalGraphicsItemNode->m_colour);
+
+    originalGraphicsItemNode->setWidth();
+
+    scene->addItem(newGraphicsItemNode);
+
+    for (auto *newEdge : newNode->edges()) {
+        auto * graphicsItemEdge = new GraphicsItemEdge(newEdge);
+        graphicsItemEdge->setZValue(-1.0);
+        newEdge->setGraphicsItemEdge(graphicsItemEdge);
+        graphicsItemEdge->setFlag(QGraphicsItem::ItemIsSelectable);
+        scene->addItem(graphicsItemEdge);
+    }
+}
 
 
 //This function assumes it is receiving a positive node.  It will duplicate both
@@ -1311,38 +1329,35 @@ QString AssemblyGraph::getNewNodeName(QString oldNodeName) const
     return newNodeName;
 }
 
-
-void AssemblyGraph::duplicateGraphicsNode(DeBruijnNode * originalNode, DeBruijnNode * newNode, MyGraphicsScene * scene)
+static bool canAddNodeToStartOfMergeList(QList<DeBruijnNode *> * mergeList,
+                                         DeBruijnNode * potentialNode)
 {
-    GraphicsItemNode * originalGraphicsItemNode = originalNode->getGraphicsItemNode();
-    if (originalGraphicsItemNode == nullptr)
-        return;
-
-    auto * newGraphicsItemNode = new GraphicsItemNode(newNode, originalGraphicsItemNode);
-
-    newNode->setGraphicsItemNode(newGraphicsItemNode);
-    newGraphicsItemNode->setFlag(QGraphicsItem::ItemIsSelectable);
-    newGraphicsItemNode->setFlag(QGraphicsItem::ItemIsMovable);
-
-    originalGraphicsItemNode->shiftPointsLeft();
-    newGraphicsItemNode->shiftPointsRight();
-    originalGraphicsItemNode->fixEdgePaths();
-
-    newGraphicsItemNode->setNodeColour(originalGraphicsItemNode->m_colour);
-
-    originalGraphicsItemNode->setWidth();
-
-    scene->addItem(newGraphicsItemNode);
-
-    for (auto *newEdge : newNode->edges()) {
-        auto * graphicsItemEdge = new GraphicsItemEdge(newEdge);
-        graphicsItemEdge->setZValue(-1.0);
-        newEdge->setGraphicsItemEdge(graphicsItemEdge);
-        graphicsItemEdge->setFlag(QGraphicsItem::ItemIsSelectable);
-        scene->addItem(graphicsItemEdge);
-    }
+    DeBruijnNode * firstNode = mergeList->front();
+    std::vector<DeBruijnEdge *> edgesEnteringFirstNode = firstNode->getEnteringEdges();
+    std::vector<DeBruijnEdge *> edgesLeavingPotentialNode = potentialNode->getLeavingEdges();
+    return (edgesEnteringFirstNode.size() == 1 &&
+            edgesLeavingPotentialNode.size() == 1 &&
+            edgesEnteringFirstNode[0]->getStartingNode() == potentialNode &&
+            edgesLeavingPotentialNode[0]->getEndingNode() == firstNode);
 }
 
+
+static bool canAddNodeToEndOfMergeList(QList<DeBruijnNode *> * mergeList,
+                                       DeBruijnNode * potentialNode)
+{
+    DeBruijnNode * lastNode = mergeList->back();
+    std::vector<DeBruijnEdge *> edgesLeavingLastNode = lastNode->getLeavingEdges();
+    std::vector<DeBruijnEdge *> edgesEnteringPotentialNode = potentialNode->getEnteringEdges();
+    return (edgesLeavingLastNode.size() == 1 &&
+            edgesEnteringPotentialNode.size() == 1 &&
+            edgesLeavingLastNode[0]->getEndingNode() == potentialNode &&
+            edgesEnteringPotentialNode[0]->getStartingNode() == lastNode);
+}
+
+static void mergeGraphicsNodes(QList<DeBruijnNode *> * originalNodes,
+                               QList<DeBruijnNode *> * revCompOriginalNodes,
+                               DeBruijnNode * newNode,
+                               MyGraphicsScene * scene);
 
 //This function will merge the given nodes, if possible.  Nodes can only be
 //merged if they are in a simple, unbranching path with no extra edges.  If the
@@ -1488,57 +1503,9 @@ bool AssemblyGraph::mergeNodes(QList<DeBruijnNode *> nodes, MyGraphicsScene * sc
 }
 
 
-bool AssemblyGraph::canAddNodeToStartOfMergeList(QList<DeBruijnNode *> * mergeList,
-                                                 DeBruijnNode * potentialNode)
-{
-    DeBruijnNode * firstNode = mergeList->front();
-    std::vector<DeBruijnEdge *> edgesEnteringFirstNode = firstNode->getEnteringEdges();
-    std::vector<DeBruijnEdge *> edgesLeavingPotentialNode = potentialNode->getLeavingEdges();
-    return (edgesEnteringFirstNode.size() == 1 &&
-            edgesLeavingPotentialNode.size() == 1 &&
-            edgesEnteringFirstNode[0]->getStartingNode() == potentialNode &&
-            edgesLeavingPotentialNode[0]->getEndingNode() == firstNode);
-}
-
-
-bool AssemblyGraph::canAddNodeToEndOfMergeList(QList<DeBruijnNode *> * mergeList,
-                                               DeBruijnNode * potentialNode)
-{
-    DeBruijnNode * lastNode = mergeList->back();
-    std::vector<DeBruijnEdge *> edgesLeavingLastNode = lastNode->getLeavingEdges();
-    std::vector<DeBruijnEdge *> edgesEnteringPotentialNode = potentialNode->getEnteringEdges();
-    return (edgesLeavingLastNode.size() == 1 &&
-            edgesEnteringPotentialNode.size() == 1 &&
-            edgesLeavingLastNode[0]->getEndingNode() == potentialNode &&
-            edgesEnteringPotentialNode[0]->getStartingNode() == lastNode);
-}
-
-void AssemblyGraph::mergeGraphicsNodes(QList<DeBruijnNode *> * originalNodes,
-                                       QList<DeBruijnNode *> * revCompOriginalNodes,
-                                       DeBruijnNode * newNode,
-                                       MyGraphicsScene * scene)
-{
-    bool success = mergeGraphicsNodes2(originalNodes, newNode, scene);
-    if (success)
-        newNode->setAsDrawn();
-
-    if (g_settings->doubleMode) {
-        DeBruijnNode * newRevComp = newNode->getReverseComplement();
-        bool revCompSuccess = mergeGraphicsNodes2(revCompOriginalNodes, newRevComp, scene);
-        if (revCompSuccess)
-            newRevComp->setAsDrawn();
-    }
-
-    std::vector<DeBruijnNode *> nodesToRemove;
-    for (auto & originalNode : *originalNodes)
-        nodesToRemove.push_back(originalNode);
-    removeGraphicsItemNodes(nodesToRemove, true, scene);
-}
-
-
-bool AssemblyGraph::mergeGraphicsNodes2(QList<DeBruijnNode *> * originalNodes,
-                                        DeBruijnNode * newNode,
-                                        MyGraphicsScene * scene)
+static bool mergeGraphicsNodes2(QList<DeBruijnNode *> * originalNodes,
+                                DeBruijnNode * newNode,
+                                MyGraphicsScene * scene)
 {
     bool success = true;
     std::vector<QPointF> linePoints;
@@ -1599,6 +1566,73 @@ bool AssemblyGraph::mergeGraphicsNodes2(QList<DeBruijnNode *> * originalNodes,
     return success;
 }
 
+void AssemblyGraph::removeGraphicsItemEdges(const std::vector<DeBruijnEdge *> &edges,
+                                    bool reverseComplement,
+                                    MyGraphicsScene * scene)
+{
+    QSet<GraphicsItemEdge *> graphicsItemEdgesToDelete;
+    for (auto edge : edges)
+    {
+        GraphicsItemEdge * graphicsItemEdge = edge->getGraphicsItemEdge();
+        if (graphicsItemEdge != nullptr && !graphicsItemEdgesToDelete.contains(graphicsItemEdge))
+            graphicsItemEdgesToDelete.insert(graphicsItemEdge);
+        edge->setGraphicsItemEdge(nullptr);
+
+        if (reverseComplement)
+        {
+            DeBruijnEdge * rcEdge = edge->getReverseComplement();
+            GraphicsItemEdge * rcGraphicsItemEdge = rcEdge->getGraphicsItemEdge();
+            if (rcGraphicsItemEdge != nullptr && !graphicsItemEdgesToDelete.contains(rcGraphicsItemEdge))
+                graphicsItemEdgesToDelete.insert(rcGraphicsItemEdge);
+            rcEdge->setGraphicsItemEdge(nullptr);
+        }
+    }
+
+    if (scene != nullptr)
+        scene->blockSignals(true);
+    QSetIterator<GraphicsItemEdge *> i(graphicsItemEdgesToDelete);
+    while (i.hasNext())
+    {
+        GraphicsItemEdge * graphicsItemEdge = i.next();
+        if (graphicsItemEdge != nullptr)
+        {
+            if (scene != nullptr)
+                scene->removeItem(graphicsItemEdge);
+            delete graphicsItemEdge;
+        }
+    }
+    if (scene != nullptr)
+        scene->blockSignals(false);
+}
+
+static void removeAllGraphicsEdgesFromNode(DeBruijnNode * node, bool reverseComplement,
+                                           MyGraphicsScene * scene)
+{
+    std::vector<DeBruijnEdge*> edges(node->edgeBegin(), node->edgeEnd());
+    AssemblyGraph::removeGraphicsItemEdges(edges, reverseComplement, scene);
+}
+
+static void mergeGraphicsNodes(QList<DeBruijnNode *> * originalNodes,
+                                       QList<DeBruijnNode *> * revCompOriginalNodes,
+                                       DeBruijnNode * newNode,
+                                       MyGraphicsScene * scene)
+{
+    bool success = mergeGraphicsNodes2(originalNodes, newNode, scene);
+    if (success)
+        newNode->setAsDrawn();
+
+    if (g_settings->doubleMode) {
+        DeBruijnNode * newRevComp = newNode->getReverseComplement();
+        bool revCompSuccess = mergeGraphicsNodes2(revCompOriginalNodes, newRevComp, scene);
+        if (revCompSuccess)
+            newRevComp->setAsDrawn();
+    }
+
+    std::vector<DeBruijnNode *> nodesToRemove;
+    for (auto & originalNode : *originalNodes)
+        nodesToRemove.push_back(originalNode);
+    AssemblyGraph::removeGraphicsItemNodes(nodesToRemove, true, scene);
+}
 
 
 //If reverseComplement is true, this function will also remove the graphics items for reverse complements of the nodes.
@@ -1643,52 +1677,6 @@ void AssemblyGraph::removeGraphicsItemNodes(const std::vector<DeBruijnNode *> &n
         scene->blockSignals(false);
 }
 
-
-void AssemblyGraph::removeAllGraphicsEdgesFromNode(DeBruijnNode * node, bool reverseComplement,
-                                                   MyGraphicsScene * scene)
-{
-    std::vector<DeBruijnEdge*> edges(node->edgeBegin(), node->edgeEnd());
-    removeGraphicsItemEdges(edges, reverseComplement, scene);
-}
-
-void AssemblyGraph::removeGraphicsItemEdges(const std::vector<DeBruijnEdge *> &edges,
-                                            bool reverseComplement,
-                                            MyGraphicsScene * scene)
-{
-    QSet<GraphicsItemEdge *> graphicsItemEdgesToDelete;
-    for (auto edge : edges)
-    {
-        GraphicsItemEdge * graphicsItemEdge = edge->getGraphicsItemEdge();
-        if (graphicsItemEdge != nullptr && !graphicsItemEdgesToDelete.contains(graphicsItemEdge))
-            graphicsItemEdgesToDelete.insert(graphicsItemEdge);
-        edge->setGraphicsItemEdge(nullptr);
-
-        if (reverseComplement)
-        {
-            DeBruijnEdge * rcEdge = edge->getReverseComplement();
-            GraphicsItemEdge * rcGraphicsItemEdge = rcEdge->getGraphicsItemEdge();
-            if (rcGraphicsItemEdge != nullptr && !graphicsItemEdgesToDelete.contains(rcGraphicsItemEdge))
-                graphicsItemEdgesToDelete.insert(rcGraphicsItemEdge);
-            rcEdge->setGraphicsItemEdge(nullptr);
-        }
-    }
-
-    if (scene != nullptr)
-        scene->blockSignals(true);
-    QSetIterator<GraphicsItemEdge *> i(graphicsItemEdgesToDelete);
-    while (i.hasNext())
-    {
-        GraphicsItemEdge * graphicsItemEdge = i.next();
-        if (graphicsItemEdge != nullptr)
-        {
-            if (scene != nullptr)
-                scene->removeItem(graphicsItemEdge);
-            delete graphicsItemEdge;
-        }
-    }
-    if (scene != nullptr)
-        scene->blockSignals(false);
-}
 
 
 //This function simplifies the graph by merging all possible nodes in a simple
@@ -2120,9 +2108,9 @@ void AssemblyGraph::getNodeStats(int * n50, int * shortestNode, int * firstQuart
     double medianIndex = (nodeLengths.size() - 1) / 2.0;
     double thirdQuartileIndex = (nodeLengths.size() - 1) * 3.0 / 4.0;
 
-    *firstQuartile = round(getValueUsingFractionalIndex(&nodeLengths, firstQuartileIndex));
-    *median = round(getValueUsingFractionalIndex(&nodeLengths, medianIndex));
-    *thirdQuartile = round(getValueUsingFractionalIndex(&nodeLengths, thirdQuartileIndex));
+    *firstQuartile = round(getValueUsingFractionalIndex(nodeLengths, firstQuartileIndex));
+    *median = round(getValueUsingFractionalIndex(nodeLengths, medianIndex));
+    *thirdQuartile = round(getValueUsingFractionalIndex(nodeLengths, thirdQuartileIndex));
 
     double halfTotalLength = m_totalLength / 2.0;
     long long totalSoFar = 0;
@@ -2199,6 +2187,21 @@ void AssemblyGraph::getGraphComponentCountAndLargestComponentSize(int * componen
 
 bool compareNodeDepth(DeBruijnNode * a, DeBruijnNode * b) {return (a->getDepth() < b->getDepth());}
 
+//This function takes a node list sorted by depth and a target index (in terms of
+//the whole sequence length).  It returns the depth at that index.
+static double findDepthAtIndex(QList<DeBruijnNode *> * nodeList, long long targetIndex)
+{
+    long long lengthSoFar = 0;
+    for (auto node : *nodeList)
+    {
+        lengthSoFar += node->getLength();
+        long long currentIndex = lengthSoFar - 1;
+
+        if (currentIndex >= targetIndex)
+            return node->getDepth();
+    }
+    return 0.0;
+}
 
 
 double AssemblyGraph::getMedianDepthByBase() const
@@ -2238,24 +2241,6 @@ double AssemblyGraph::getMedianDepthByBase() const
         long long medianIndex = (totalLength - 1) / 2;
         return findDepthAtIndex(&nodeList, medianIndex);
     }
-}
-
-
-
-//This function takes a node list sorted by depth and a target index (in terms of
-//the whole sequence length).  It returns the depth at that index.
-double AssemblyGraph::findDepthAtIndex(QList<DeBruijnNode *> * nodeList, long long targetIndex)
-{
-    long long lengthSoFar = 0;
-    for (auto node : *nodeList)
-    {
-        lengthSoFar += node->getLength();
-        long long currentIndex = lengthSoFar - 1;
-
-        if (currentIndex >= targetIndex)
-            return node->getDepth();
-    }
-    return 0.0;
 }
 
 

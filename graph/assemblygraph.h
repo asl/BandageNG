@@ -210,30 +210,12 @@ public:
     QString getUniqueNodeName(QString baseName) const;
     QString getNodeNameFromString(QString string) const;
 private:
-    template<typename T> double getValueUsingFractionalIndex(std::vector<T> * v, double index) const;
-    static QStringList removeNullStringsFromList(const QStringList& in);
     std::vector<DeBruijnNode *> getNodesFromListExact(const QStringList& nodesList, std::vector<QString> * nodesNotInGraph);
     std::vector<DeBruijnNode *> getNodesFromListPartial(const QStringList& nodesList, std::vector<QString> * nodesNotInGraph);
-    static std::vector<DeBruijnNode *> getNodesFromBlastHits(const QString& queryName);
     std::vector<DeBruijnNode *> getNodesInDepthRange(double min, double max);
     std::vector<int> makeOverlapCountVector();
-    static QString getOppositeNodeName(QString nodeName) ;
     void clearAllCsvData();
     QString getNewNodeName(QString oldNodeName) const;
-    static void duplicateGraphicsNode(DeBruijnNode * originalNode, DeBruijnNode * newNode, MyGraphicsScene * scene);
-    static bool canAddNodeToStartOfMergeList(QList<DeBruijnNode *> * mergeList,
-                                      DeBruijnNode * potentialNode);
-    static bool canAddNodeToEndOfMergeList(QList<DeBruijnNode *> * mergeList,
-                                    DeBruijnNode * potentialNode);
-    static void mergeGraphicsNodes(QList<DeBruijnNode *> * originalNodes,
-                            QList<DeBruijnNode *> * revCompOriginalNodes,
-                            DeBruijnNode * newNode, MyGraphicsScene * scene);
-    static bool mergeGraphicsNodes2(QList<DeBruijnNode *> * originalNodes,
-                             DeBruijnNode * newNode, MyGraphicsScene * scene);
-    static void removeAllGraphicsEdgesFromNode(DeBruijnNode * node,
-                                        bool reverseComplement,
-                                        MyGraphicsScene * scene);
-    static double findDepthAtIndex(QList<DeBruijnNode *> * nodeList, long long targetIndex) ;
 
 signals:
     void setMergeTotalCount(int totalCount);
