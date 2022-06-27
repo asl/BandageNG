@@ -39,7 +39,6 @@ set(LIB_SOURCES
         graph/graphlocation.cpp
         graph/path.cpp
         program/globals.cpp
-        program/graphlayoutworker.cpp
         program/memory.cpp
         program/scinot.cpp
         program/settings.cpp
@@ -71,7 +70,10 @@ set(LIB_SOURCES
         ui/tablewidgetitemname.cpp
         ui/tablewidgetitemshown.cpp
         ui/verticallabel.cpp
-        ui/verticalscrollarea.cpp graph/nodecolorer.cpp graph/nodecolorer.h graph/nodecolorers.h graph/sequenceutils.cpp graph/fileutils.cpp graph/fileutils.h)
+        ui/verticalscrollarea.cpp
+        graph/nodecolorer.cpp
+        graph/sequenceutils.cpp
+        graph/fileutils.cpp)
 
 set(FORMS
         ui/aboutdialog.ui
@@ -100,12 +102,15 @@ FetchContent_Declare(lexy URL https://lexy.foonathan.net/download/lexy-src.zip)
 FetchContent_MakeAvailable(lexy)
 
 # FIXME: Untagle this
+add_library(BandageLayout STATIC layout/graphlayoutworker.cpp)
+target_link_libraries(BandageLayout PRIVATE OGDF Qt6::Concurrent Qt6::Gui Qt6::Widgets)
+
 add_library(BandageLib STATIC ${LIB_SOURCES} ${FORMS})
-target_link_libraries(BandageLib PRIVATE OGDF Qt6::Concurrent Qt6::Widgets Qt6::Svg foonathan::lexy ZLIB::ZLIB)
+target_link_libraries(BandageLib PRIVATE BandageLayout Qt6::Concurrent Qt6::Widgets Qt6::Svg foonathan::lexy ZLIB::ZLIB)
 target_include_directories(BandageLib INTERFACE ".")
 
 add_executable(BandageNG program/main.cpp ${RESOURCES})
-target_link_libraries(BandageNG BandageLib OGDF Qt6::Core Qt6::Widgets Qt6::Concurrent ZLIB::ZLIB)
+target_link_libraries(BandageNG BandageLib Qt6::Core Qt6::Widgets Qt6::Concurrent ZLIB::ZLIB)
 
 if (APPLE)
   set_target_properties(BandageNG PROPERTIES

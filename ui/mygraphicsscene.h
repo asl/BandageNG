@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "program/graphlayout.h"
+#include "layout/graphlayout.h"
 #include <QGraphicsScene>
 #include <vector>
 
@@ -45,4 +45,11 @@ public:
     void setSceneRectangle();
     void possiblyExpandSceneRectangle(std::vector<GraphicsItemNode *> * movedNodes);
 
+    void removeGraphicsItemEdges(const std::vector<DeBruijnEdge *> &edges,
+                                 bool reverseComplement);
+    void removeGraphicsItemNodes(const std::vector<DeBruijnNode *> &nodes,
+                                 bool reverseComplement);
+
+private:
+    void removeAllGraphicsEdgesFromNode(DeBruijnNode * node, bool reverseComplement);
 };

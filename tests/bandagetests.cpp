@@ -17,20 +17,24 @@
 
 
 #include "graph/assemblygraph.h"
-#include "program/settings.h"
-#include "blast/blastsearch.h"
-#include "ui/mygraphicsview.h"
-#include "program/memory.h"
 #include "graph/debruijnnode.h"
 #include "graph/debruijnedge.h"
 #include "graph/annotationsmanager.h"
+
+#include "layout/graphlayoutworker.h"
+
+#include "program/settings.h"
+#include "program/memory.h"
 #include "program/globals.h"
 #include "command_line/commoncommandlinefunctions.h"
-#include "program/graphlayoutworker.h"
+
+#include "blast/blastsearch.h"
 
 #include <QtTest/QtTest>
 #include <QDebug>
 #include <QTemporaryDir>
+
+#include <iostream>
 
 class BandageTests : public QObject
 {
@@ -80,7 +84,6 @@ private slots:
         g_memory.reset(new Memory());
         g_blastSearch.reset(new BlastSearch());
         g_assemblyGraph.reset(new AssemblyGraph());
-        g_graphicsView = new MyGraphicsView();
         g_annotationsManager = std::make_shared<AnnotationsManager>();
     }
 

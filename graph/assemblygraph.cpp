@@ -26,7 +26,7 @@
 
 #include "blast/blastsearch.h"
 #include "program/globals.h"
-#include "program/graphlayoutworker.h"
+#include "layout/graphlayoutworker.h"
 #include "program/memory.h"
 #include "ui/myprogressdialog.h"
 
@@ -1494,56 +1494,10 @@ static bool mergeGraphicsNodes2(QList<DeBruijnNode *> * originalNodes,
     return success;
 }
 
-void AssemblyGraph::removeGraphicsItemEdges(const std::vector<DeBruijnEdge *> &edges,
-                                    bool reverseComplement,
-                                    MyGraphicsScene * scene)
-{
-    QSet<GraphicsItemEdge *> graphicsItemEdgesToDelete;
-    for (auto edge : edges)
-    {
-        GraphicsItemEdge * graphicsItemEdge = edge->getGraphicsItemEdge();
-        if (graphicsItemEdge != nullptr && !graphicsItemEdgesToDelete.contains(graphicsItemEdge))
-            graphicsItemEdgesToDelete.insert(graphicsItemEdge);
-        edge->setGraphicsItemEdge(nullptr);
-
-        if (reverseComplement)
-        {
-            DeBruijnEdge * rcEdge = edge->getReverseComplement();
-            GraphicsItemEdge * rcGraphicsItemEdge = rcEdge->getGraphicsItemEdge();
-            if (rcGraphicsItemEdge != nullptr && !graphicsItemEdgesToDelete.contains(rcGraphicsItemEdge))
-                graphicsItemEdgesToDelete.insert(rcGraphicsItemEdge);
-            rcEdge->setGraphicsItemEdge(nullptr);
-        }
-    }
-
-    if (scene != nullptr)
-        scene->blockSignals(true);
-    QSetIterator<GraphicsItemEdge *> i(graphicsItemEdgesToDelete);
-    while (i.hasNext())
-    {
-        GraphicsItemEdge * graphicsItemEdge = i.next();
-        if (graphicsItemEdge != nullptr)
-        {
-            if (scene != nullptr)
-                scene->removeItem(graphicsItemEdge);
-            delete graphicsItemEdge;
-        }
-    }
-    if (scene != nullptr)
-        scene->blockSignals(false);
-}
-
-static void removeAllGraphicsEdgesFromNode(DeBruijnNode * node, bool reverseComplement,
-                                           MyGraphicsScene * scene)
-{
-    std::vector<DeBruijnEdge*> edges(node->edgeBegin(), node->edgeEnd());
-    AssemblyGraph::removeGraphicsItemEdges(edges, reverseComplement, scene);
-}
-
 static void mergeGraphicsNodes(QList<DeBruijnNode *> * originalNodes,
-                                       QList<DeBruijnNode *> * revCompOriginalNodes,
-                                       DeBruijnNode * newNode,
-                                       MyGraphicsScene * scene)
+                               QList<DeBruijnNode *> * revCompOriginalNodes,
+                               DeBruijnNode * newNode,
+                               MyGraphicsScene * scene)
 {
     bool success = mergeGraphicsNodes2(originalNodes, newNode, scene);
     if (success)
@@ -1559,53 +1513,8 @@ static void mergeGraphicsNodes(QList<DeBruijnNode *> * originalNodes,
     std::vector<DeBruijnNode *> nodesToRemove;
     for (auto & originalNode : *originalNodes)
         nodesToRemove.push_back(originalNode);
-    AssemblyGraph::removeGraphicsItemNodes(nodesToRemove, true, scene);
+    scene->removeGraphicsItemNodes(nodesToRemove, true);
 }
-
-
-//If reverseComplement is true, this function will also remove the graphics items for reverse complements of the nodes.
-void AssemblyGraph::removeGraphicsItemNodes(const std::vector<DeBruijnNode *> &nodes,
-                                            bool reverseComplement,
-                                            MyGraphicsScene * scene)
-{
-    QSet<GraphicsItemNode *> graphicsItemNodesToDelete;
-    for (auto node : nodes)
-    {
-        removeAllGraphicsEdgesFromNode(node, reverseComplement, scene);
-
-        GraphicsItemNode * graphicsItemNode = node->getGraphicsItemNode();
-        if (graphicsItemNode != nullptr && !graphicsItemNodesToDelete.contains(graphicsItemNode))
-            graphicsItemNodesToDelete.insert(graphicsItemNode);
-        node->setGraphicsItemNode(nullptr);
-
-        if (reverseComplement)
-        {
-            DeBruijnNode * rcNode = node->getReverseComplement();
-            GraphicsItemNode * rcGraphicsItemNode = rcNode->getGraphicsItemNode();
-            if (rcGraphicsItemNode != nullptr && !graphicsItemNodesToDelete.contains(rcGraphicsItemNode))
-                graphicsItemNodesToDelete.insert(rcGraphicsItemNode);
-            rcNode->setGraphicsItemNode(nullptr);
-        }
-    }
-
-    if (scene != nullptr)
-        scene->blockSignals(true);
-    QSetIterator<GraphicsItemNode *> i(graphicsItemNodesToDelete);
-    while (i.hasNext())
-    {
-        GraphicsItemNode * graphicsItemNode = i.next();
-        if (graphicsItemNode != nullptr)
-        {
-            if (scene != nullptr)
-                scene->removeItem(graphicsItemNode);
-            delete graphicsItemNode;
-        }
-    }
-    if (scene != nullptr)
-        scene->blockSignals(false);
-}
-
-
 
 //This function simplifies the graph by merging all possible nodes in a simple
 //line.  It returns the number of merges that it did.

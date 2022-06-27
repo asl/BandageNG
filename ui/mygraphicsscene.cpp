@@ -22,7 +22,7 @@
 #include "graph/debruijnedge.h"
 #include "graph/graphicsitemnode.h"
 #include "graph/graphicsitemedge.h"
-#include "program/graphlayout.h"
+#include "layout/graphlayout.h"
 
 MyGraphicsScene::MyGraphicsScene(QObject *parent) :
     QGraphicsScene(parent)
@@ -308,4 +308,69 @@ void MyGraphicsScene::addGraphicsItemsToScene(AssemblyGraph &graph,
 
         addItem(node->getGraphicsItemNode());
     }
+}
+
+void MyGraphicsScene::removeAllGraphicsEdgesFromNode(DeBruijnNode * node, bool reverseComplement) {
+    std::vector<DeBruijnEdge*> edges(node->edgeBegin(), node->edgeEnd());
+    removeGraphicsItemEdges(edges, reverseComplement);
+}
+
+void MyGraphicsScene::removeGraphicsItemEdges(const std::vector<DeBruijnEdge *> &edges,
+                                              bool reverseComplement) {
+    QSet<GraphicsItemEdge *> graphicsItemEdgesToDelete;
+    for (auto *edge : edges) {
+        graphicsItemEdgesToDelete.insert(edge->getGraphicsItemEdge());
+        edge->setGraphicsItemEdge(nullptr);
+
+        if (reverseComplement) {
+            DeBruijnEdge * rcEdge = edge->getReverseComplement();
+            graphicsItemEdgesToDelete.insert(rcEdge->getGraphicsItemEdge());
+            rcEdge->setGraphicsItemEdge(nullptr);
+        }
+    }
+
+    blockSignals(true);
+
+    QSetIterator<GraphicsItemEdge *> i(graphicsItemEdgesToDelete);
+    while (i.hasNext()) {
+        GraphicsItemEdge * graphicsItemEdge = i.next();
+        if (graphicsItemEdge == nullptr)
+            continue;
+
+        removeItem(graphicsItemEdge);
+        delete graphicsItemEdge;
+    }
+
+    blockSignals(false);
+}
+
+// If reverseComplement is true, this function will also remove the graphics items for reverse complements of the nodes.
+void MyGraphicsScene::removeGraphicsItemNodes(const std::vector<DeBruijnNode *> &nodes,
+                                              bool reverseComplement) {
+    QSet<GraphicsItemNode *> graphicsItemNodesToDelete;
+    for (auto *node : nodes) {
+        removeAllGraphicsEdgesFromNode(node, reverseComplement);
+
+        graphicsItemNodesToDelete.insert(node->getGraphicsItemNode());
+        node->setGraphicsItemNode(nullptr);
+
+        if (reverseComplement) {
+            DeBruijnNode * rcNode = node->getReverseComplement();
+            graphicsItemNodesToDelete.insert(rcNode->getGraphicsItemNode());
+            rcNode->setGraphicsItemNode(nullptr);
+        }
+    }
+
+    blockSignals(true);
+    QSetIterator<GraphicsItemNode *> i(graphicsItemNodesToDelete);
+    while (i.hasNext()) {
+        GraphicsItemNode * graphicsItemNode = i.next();
+        if (graphicsItemNode == nullptr)
+            continue;
+
+        removeItem(graphicsItemNode);
+        delete graphicsItemNode;
+    }
+
+    blockSignals(false);
 }

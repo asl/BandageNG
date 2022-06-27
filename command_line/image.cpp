@@ -25,8 +25,8 @@
 
 #include "program/globals.h"
 #include "program/settings.h"
-#include "program/graphlayout.h"
-#include "program/graphlayoutworker.h"
+#include "layout/graphlayout.h"
+#include "layout/graphlayoutworker.h"
 
 #include "ui/mygraphicsscene.h"
 #include "ui/mygraphicsview.h"

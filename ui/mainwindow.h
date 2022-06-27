@@ -20,7 +20,7 @@
 #define MAINWINDOW_H
 
 #include "program/globals.h"
-#include "program//graphlayout.h"
+#include "layout/graphlayout.h"
 #include "graph/nodecolorer.h"
 
 #include <QMainWindow>

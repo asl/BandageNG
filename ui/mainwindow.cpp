@@ -41,11 +41,10 @@
 #include "graph/assemblygraphbuilder.h"
 #include "graph/nodecolorers.h"
 
-#include "program/globals.h"
-#include "program/graphlayoutworker.h"
-#include "program/memory.h"
+#include "layout/graphlayoutworker.h"
 
-#include <ogdf/fileformats/GraphIO.h>
+#include "program/globals.h"
+#include "program/memory.h"
 
 #include <QFileDialog>
 #include <QLatin1String>
@@ -69,11 +68,11 @@
 
 #include <iterator>
 #include <algorithm>
-#include <sstream>
 #include <stdexcept>
 #include <limits>
 #include <cstdlib>
 #include <ctime>
+#include <iostream>
 
 MainWindow::MainWindow(QString fileToLoadOnStartup, bool drawGraphAfterLoad) :
     QMainWindow(nullptr),
@@ -2393,7 +2392,7 @@ QByteArray MainWindow::makeStringUrlSafe(QByteArray s)
 void MainWindow::hideNodes()
 {
     std::vector<DeBruijnNode *> selectedNodes = m_scene->getSelectedNodes();
-    g_assemblyGraph->removeGraphicsItemNodes(selectedNodes, !g_settings->doubleMode, m_scene);
+    m_scene->removeGraphicsItemNodes(selectedNodes, !g_settings->doubleMode);
 }
 
 
@@ -2403,8 +2402,8 @@ void MainWindow::removeSelection()
     std::vector<DeBruijnEdge *> selectedEdges = m_scene->getSelectedEdges();
     std::vector<DeBruijnNode *> selectedNodes = m_scene->getSelectedNodes();
 
-    g_assemblyGraph->removeGraphicsItemEdges(selectedEdges, true, m_scene);
-    g_assemblyGraph->removeGraphicsItemNodes(selectedNodes, true, m_scene);
+    m_scene->removeGraphicsItemEdges(selectedEdges, true);
+    m_scene->removeGraphicsItemNodes(selectedNodes, true);
 
     g_assemblyGraph->deleteEdges(selectedEdges);
     g_assemblyGraph->deleteNodes(selectedNodes);

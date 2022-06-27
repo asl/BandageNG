@@ -120,7 +120,6 @@ public:
     bool loadGraphFromFile(const QString& filename);
     void markNodesToDraw(const std::vector<DeBruijnNode *>& startingNodes,
                          int nodeDistance);
-    void addGraphicsItemsToScene(MyGraphicsScene * scene);
 
     bool loadCSV(const QString& filename, QStringList * columns, QString * errormsg, bool * coloursLoaded);
     std::vector<DeBruijnNode *> getStartingNodes(QString * errorTitle,
@@ -146,12 +145,7 @@ public:
     void duplicateNodePair(DeBruijnNode * node, MyGraphicsScene * scene);
     bool mergeNodes(QList<DeBruijnNode *> nodes, MyGraphicsScene * scene,
                     bool recalulateDepth);
-    static void removeGraphicsItemEdges(const std::vector<DeBruijnEdge *> &edges,
-                                 bool reverseComplement,
-                                 MyGraphicsScene * scene);
-    static void removeGraphicsItemNodes(const std::vector<DeBruijnNode *> &nodes,
-                                 bool reverseComplement,
-                                 MyGraphicsScene * scene);
+
     int mergeAllPossible(MyGraphicsScene * scene = 0,
                          MyProgressDialog * progressDialog = 0);
 

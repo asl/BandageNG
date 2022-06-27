@@ -18,7 +18,6 @@
 
 #pragma once
 
-#include "ogdf/basic/EdgeArray.h"
 #include "debruijnnode.h"
 
 class GraphicsItemEdge;
