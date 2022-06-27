@@ -17,19 +17,36 @@
 
 #pragma once
 
-#include "ogdf/energybased/FMMMLayout.h"
-
 #include <QObject>
 #include <QFutureSynchronizer>
 
 namespace ogdf {
-    class FMMMLayout;
+    class GraphAttributes;
+    template<class T>
+    class EdgeArray;
 }
 
 class AssemblyGraph;
 
-class GraphLayoutWorker : public QObject
-{
+class GraphLayouter {
+public:
+    GraphLayouter(int graphLayoutQuality,
+                  bool useLinearLayout,
+                  double graphLayoutComponentSeparation,
+                  double aspectRatio = 1.333333);
+    virtual ~GraphLayouter() {}
+    virtual void init() = 0;
+    virtual void cancel() = 0;
+    virtual void run(ogdf::GraphAttributes &GA, const ogdf::EdgeArray<double> &edges) = 0;
+
+protected:
+    int m_graphLayoutQuality;
+    bool m_useLinearLayout;
+    double m_graphLayoutComponentSeparation;
+    double m_aspectRatio;
+};
+
+class GraphLayoutWorker : public QObject {
     Q_OBJECT
 
 public:
@@ -38,15 +55,14 @@ public:
                       bool useLinearLayout,
                       double graphLayoutComponentSeparation,
                       double aspectRatio = 1.333333);
-    ~GraphLayoutWorker() = default;
+    ~GraphLayoutWorker() override = default;
 
 private:
     void buildGraph();
     void determineLinearNodePositions();
-    void initLayout(ogdf::FMMMLayout &layout) const;
 
     QFutureSynchronizer<void> m_taskSynchronizer;
-    std::vector<ogdf::FMMMLayout> m_layout;
+    std::vector<std::unique_ptr<GraphLayouter>> m_state;
     AssemblyGraph &m_graph;
     int m_graphLayoutQuality;
     bool m_useLinearLayout;

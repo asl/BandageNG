@@ -34,6 +34,77 @@
 
 #include <ctime>
 
+GraphLayouter::GraphLayouter(int graphLayoutQuality, bool useLinearLayout,
+                             double graphLayoutComponentSeparation, double aspectRatio)
+        :   m_graphLayoutQuality(graphLayoutQuality),
+            m_useLinearLayout(useLinearLayout),
+            m_graphLayoutComponentSeparation(graphLayoutComponentSeparation),
+            m_aspectRatio(aspectRatio)
+{}
+
+class FMMGraphLayout : public GraphLayouter {
+public:
+    using GraphLayouter::GraphLayouter;
+
+    void init() override {
+        init(m_layout);
+    }
+
+    void cancel() override {
+        m_layout.fixedIterations(0);
+        m_layout.fineTuningIterations(0);
+        m_layout.threshold(std::numeric_limits<double>::max());
+    }
+
+    void run(ogdf::GraphAttributes &GA, const ogdf::EdgeArray<double> &edges) override {
+        m_layout.call(GA, edges);
+    }
+
+private:
+    void init(ogdf::FMMMLayout &layout) const {
+        layout.randSeed(clock());
+        layout.useHighLevelOptions(false);
+        layout.unitEdgeLength(1.0);
+        layout.allowedPositions(ogdf::FMMMOptions::AllowedPositions::All);
+        layout.pageRatio(m_aspectRatio);
+        layout.minDistCC(m_graphLayoutComponentSeparation);
+        layout.stepsForRotatingComponents(50); // Helps to make linear graph components more horizontal.
+        layout.initialPlacementForces(m_useLinearLayout ?
+                                      ogdf::FMMMOptions::InitialPlacementForces::KeepPositions :
+                                      ogdf::FMMMOptions::InitialPlacementForces::RandomTime);
+
+        switch (m_graphLayoutQuality) {
+            case 0:
+                layout.fixedIterations(3);
+                layout.fineTuningIterations(1);
+                layout.nmPrecision(2);
+                break;
+            case 1:
+                layout.fixedIterations(15);
+                layout.fineTuningIterations(10);
+                layout.nmPrecision(2);
+                break;
+            case 2:
+                layout.fixedIterations(30);
+                layout.fineTuningIterations(20);
+                layout.nmPrecision(4);
+                break;
+            case 3:
+                layout.fixedIterations(60);
+                layout.fineTuningIterations(40);
+                layout.nmPrecision(6);
+                break;
+            case 4:
+                layout.fixedIterations(120);
+                layout.fineTuningIterations(60);
+                layout.nmPrecision(8);
+                break;
+        }
+    }
+
+    ogdf::FMMMLayout m_layout;
+};
+
 GraphLayoutWorker::GraphLayoutWorker(AssemblyGraph &graph,
                                      int graphLayoutQuality, bool useLinearLayout,
                                      double graphLayoutComponentSeparation, double aspectRatio)
@@ -241,47 +312,6 @@ void GraphLayoutWorker::buildGraph() {
     }
 }
 
-void GraphLayoutWorker::initLayout(ogdf::FMMMLayout &layout) const {
-    layout.randSeed(clock());
-    layout.useHighLevelOptions(false);
-    layout.unitEdgeLength(1.0);
-    layout.allowedPositions(ogdf::FMMMOptions::AllowedPositions::All);
-    layout.pageRatio(m_aspectRatio);
-    layout.minDistCC(m_graphLayoutComponentSeparation);
-    layout.stepsForRotatingComponents(50); // Helps to make linear graph components more horizontal.
-    layout.initialPlacementForces(m_useLinearLayout ?
-                                     ogdf::FMMMOptions::InitialPlacementForces::KeepPositions :
-                                     ogdf::FMMMOptions::InitialPlacementForces::RandomTime);
-
-    switch (m_graphLayoutQuality) {
-        case 0:
-            layout.fixedIterations(3);
-            layout.fineTuningIterations(1);
-            layout.nmPrecision(2);
-            break;
-        case 1:
-            layout.fixedIterations(15);
-            layout.fineTuningIterations(10);
-            layout.nmPrecision(2);
-            break;
-        case 2:
-            layout.fixedIterations(30);
-            layout.fineTuningIterations(20);
-            layout.nmPrecision(4);
-            break;
-        case 3:
-            layout.fixedIterations(60);
-            layout.fineTuningIterations(40);
-            layout.nmPrecision(6);
-            break;
-        case 4:
-            layout.fixedIterations(120);
-            layout.fineTuningIterations(60);
-            layout.nmPrecision(8);
-            break;
-    }
-}
-
 static void reassembleDrawings(ogdf::GraphAttributes &GA,
                                double graphLayoutComponentSeparation, double aspectRatio,
                                const ogdf::Array<ogdf::List<ogdf::node> > &nodesInCC) {
@@ -469,14 +499,17 @@ void GraphLayoutWorker::layoutGraph() {
     for (auto v : G.nodes)
         nodesInCC[componentNumber[v]].pushBack(v);
 
-    m_layout.resize(numberOfComponents);
-    for (int i = 0; i < numberOfComponents; i++) {
-        initLayout(m_layout[i]);
+    for (size_t i= 0; i < numberOfComponents; ++i) {
+        m_state.emplace_back(new FMMGraphLayout(m_graphLayoutQuality,
+                                               m_useLinearLayout,
+                                               m_graphLayoutComponentSeparation,
+                                               m_aspectRatio));
+        m_state.back()->init();
     }
 
     for (int i = 0; i < numberOfComponents; i++) {
         m_taskSynchronizer.addFuture(
-                QtConcurrent::run([&](ogdf::FMMMLayout *layout,
+                QtConcurrent::run([&](GraphLayouter *layout,
                         const ogdf::List<ogdf::node> &nodesInCC) {
 
                     ogdf::GraphCopy GC;
@@ -497,7 +530,7 @@ void GraphLayoutWorker::layoutGraph() {
                     for (ogdf::edge e : GC.edges)
                         edgeLengths(e) = EL(GC.original(e));
 
-                    layout->call(cGA, edgeLengths);
+                    layout->run(cGA, edgeLengths);
 
                     for (ogdf::node v : GC.nodes) {
                         ogdf::node w = GC.original(v);
@@ -508,7 +541,7 @@ void GraphLayoutWorker::layoutGraph() {
                         GA.y(w) = cGA.y(v);
                     }
 
-                }, &m_layout[i], nodesInCC[i]));
+                }, m_state[i].get(), nodesInCC[i]));
     }
     m_taskSynchronizer.waitForFinished();
 
@@ -518,11 +551,8 @@ void GraphLayoutWorker::layoutGraph() {
 }
 
 [[maybe_unused]] void GraphLayoutWorker::cancelLayout() {
-    for (auto & layout : m_layout) {
-        layout.fixedIterations(0);
-        layout.fineTuningIterations(0);
-        layout.threshold(std::numeric_limits<double>::max());
-    }
+    for (auto &layouter : m_state)
+        layouter->cancel();
     for (auto & future : m_taskSynchronizer.futures())
         future.cancel();
 }
