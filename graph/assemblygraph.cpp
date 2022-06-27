@@ -905,9 +905,7 @@ std::vector<DeBruijnNode *> AssemblyGraph::getNodesInDepthRange(double min, doub
 {
     std::vector<DeBruijnNode *> returnVector;
 
-    for (auto &entry : m_deBruijnGraphNodes) {
-        DeBruijnNode * node = entry;
-
+    for (auto *node : m_deBruijnGraphNodes) {
         if (node->isInDepthRange(min, max))
             returnVector.push_back(node);
     }
@@ -1029,9 +1027,7 @@ QString AssemblyGraph::getUniqueNodeName(QString baseName) const {
 void AssemblyGraph::recalculateAllDepthsRelativeToDrawnMean()
 {
     double meanDrawnDepth = getMeanDepth(true);
-    for (auto &entry : m_deBruijnGraphNodes) {
-        DeBruijnNode * node = entry;
-
+    for (auto *node : m_deBruijnGraphNodes) {
         double depthRelativeToMeanDrawnDepth;
         if (meanDrawnDepth == 0)
             depthRelativeToMeanDrawnDepth = 1.0;
@@ -1046,8 +1042,7 @@ void AssemblyGraph::recalculateAllDepthsRelativeToDrawnMean()
 void AssemblyGraph::recalculateAllNodeWidths()
 {
     for (auto &entry : m_deBruijnGraphNodes) {
-        GraphicsItemNode * graphicsItemNode = entry->getGraphicsItemNode();
-        if (graphicsItemNode != nullptr)
+        if (GraphicsItemNode * graphicsItemNode = entry->getGraphicsItemNode())
             graphicsItemNode->setWidth();
     }
 }
@@ -1056,13 +1051,8 @@ void AssemblyGraph::recalculateAllNodeWidths()
 int AssemblyGraph::getDrawnNodeCount() const
 {
     int nodeCount = 0;
-
-    for (auto &entry : m_deBruijnGraphNodes) {
-        DeBruijnNode * node = entry;
-
-        if (node->isDrawn())
-            ++nodeCount;
-    }
+    for (auto *node : m_deBruijnGraphNodes)
+        nodeCount += node->isDrawn();
 
     return nodeCount;
 }
@@ -1513,7 +1503,8 @@ static void mergeGraphicsNodes(QList<DeBruijnNode *> * originalNodes,
     std::vector<DeBruijnNode *> nodesToRemove;
     for (auto & originalNode : *originalNodes)
         nodesToRemove.push_back(originalNode);
-    scene->removeGraphicsItemNodes(nodesToRemove, true);
+    if (scene)
+        scene->removeGraphicsItemNodes(nodesToRemove, true);
 }
 
 //This function simplifies the graph by merging all possible nodes in a simple
