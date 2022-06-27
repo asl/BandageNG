@@ -43,6 +43,9 @@ public:
     GraphicsItemNode(DeBruijnNode * deBruijnNode,
                      const std::vector<QPointF> &linePoints,
                      QGraphicsItem * parent = nullptr);
+    GraphicsItemNode(DeBruijnNode * deBruijnNode,
+                     const adt::SmallPODVector<QPointF> &linePoints,
+                     QGraphicsItem * parent = nullptr);
 
     DeBruijnNode * m_deBruijnNode;
     adt::SmallPODVector<QPointF> m_linePoints;

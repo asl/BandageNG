@@ -70,7 +70,6 @@ void DeBruijnNode::removeEdge(DeBruijnEdge * edge)
 //file was loaded - no contiguity status and no OGDF nodes.
 void DeBruijnNode::resetNode()
 {
-    m_ogdfNodes.clear();
     m_graphicsItemNode = nullptr;
     resetContiguityStatus();
     setAsNotDrawn();

@@ -15,22 +15,25 @@
 //You should have received a copy of the GNU General Public License
 //along with Bandage.  If not, see <http://www.gnu.org/licenses/>.
 
+#pragma once
 
-#ifndef MYGRAPHICSSCENE_H
-#define MYGRAPHICSSCENE_H
-
+#include "program/graphlayout.h"
 #include <QGraphicsScene>
 #include <vector>
 
 class DeBruijnNode;
 class DeBruijnEdge;
 class GraphicsItemNode;
+class AssemblyGraph;
 
 class MyGraphicsScene : public QGraphicsScene
 {
     Q_OBJECT
 public:
     explicit MyGraphicsScene(QObject *parent = nullptr);
+    void addGraphicsItemsToScene(AssemblyGraph &graph,
+                                 const GraphLayout &layout);
+
     std::vector<DeBruijnNode *> getSelectedNodes();
     std::vector<DeBruijnNode *> getSelectedPositiveNodes();
     std::vector<GraphicsItemNode *> getSelectedGraphicsItemNodes();
@@ -43,5 +46,3 @@ public:
     void possiblyExpandSceneRectangle(std::vector<GraphicsItemNode *> * movedNodes);
 
 };
-
-#endif // MYGRAPHICSSCENE_H

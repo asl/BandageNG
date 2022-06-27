@@ -17,13 +17,15 @@
 
 #pragma once
 
+#include "graphlayout.h"
+
 #include <QObject>
 #include <QFutureSynchronizer>
 
 namespace ogdf {
+    class Graph;
     class GraphAttributes;
-    template<class T>
-    class EdgeArray;
+    template<class T> class EdgeArray;
 }
 
 class AssemblyGraph;
@@ -50,27 +52,22 @@ class GraphLayoutWorker : public QObject {
     Q_OBJECT
 
 public:
-    GraphLayoutWorker(AssemblyGraph &graph,
-                      int graphLayoutQuality,
+    GraphLayoutWorker(int graphLayoutQuality,
                       bool useLinearLayout,
                       double graphLayoutComponentSeparation,
                       double aspectRatio = 1.333333);
     ~GraphLayoutWorker() override = default;
 
-private:
-    void buildGraph();
-    void determineLinearNodePositions();
+    GraphLayout layoutGraph(const AssemblyGraph &graph);
 
+private:
     QFutureSynchronizer<void> m_taskSynchronizer;
     std::vector<std::unique_ptr<GraphLayouter>> m_state;
-    AssemblyGraph &m_graph;
     int m_graphLayoutQuality;
     bool m_useLinearLayout;
     double m_graphLayoutComponentSeparation;
     double m_aspectRatio;
 
 public slots:
-    void layoutGraph();
-
     [[maybe_unused]] void cancelLayout();
 };

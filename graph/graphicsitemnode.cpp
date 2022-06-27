@@ -41,6 +41,7 @@
 
 #include <cmath>
 #include <cstdlib>
+#include <utility>
 
 //This constructor makes a new GraphicsItemNode by copying the line points of
 //the given node.
@@ -64,6 +65,18 @@ GraphicsItemNode::GraphicsItemNode(DeBruijnNode * deBruijnNode,
     QGraphicsItem(parent), m_deBruijnNode(deBruijnNode),
     m_hasArrow(g_settings->doubleMode),
     m_grabIndex(0)
+{
+    m_linePoints.assign(linePoints.begin(), linePoints.end());
+    setWidth();
+    remakePath();
+}
+
+GraphicsItemNode::GraphicsItemNode(DeBruijnNode * deBruijnNode,
+                                   const adt::SmallPODVector<QPointF> &linePoints,
+                                   QGraphicsItem * parent) :
+        QGraphicsItem(parent), m_deBruijnNode(deBruijnNode),
+        m_hasArrow(g_settings->doubleMode),
+        m_grabIndex(0)
 {
     m_linePoints.assign(linePoints.begin(), linePoints.end());
     setWidth();

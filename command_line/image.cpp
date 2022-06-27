@@ -18,16 +18,23 @@
 
 #include "image.h"
 #include "commoncommandlinefunctions.h"
+
+#include "graph/assemblygraph.h"
+
+#include "blast/blastsearch.h"
+
 #include "program/globals.h"
+#include "program/settings.h"
+#include "program/graphlayout.h"
+#include "program/graphlayoutworker.h"
+
 #include "ui/mygraphicsscene.h"
 #include "ui/mygraphicsview.h"
-#include "graph/assemblygraph.h"
+
 #include <vector>
-#include "program/settings.h"
 #include <QPainter>
 #include <QSvgGenerator>
 #include <QDir>
-#include "blast/blastsearch.h"
 
 int bandageImage(QStringList arguments)
 {
@@ -161,11 +168,16 @@ int bandageImage(QStringList arguments)
     }
 
     g_assemblyGraph->markNodesToDraw(startingNodes, g_settings->nodeDistance);
-    g_assemblyGraph->layoutGraph();
-
     MyGraphicsScene scene;
-    g_assemblyGraph->addGraphicsItemsToScene(&scene);
-    scene.setSceneRectangle();
+    {
+        GraphLayoutStorage layout =
+                GraphLayoutWorker(g_settings->graphLayoutQuality,
+                                  g_settings->linearLayout,
+                                  g_settings->componentSeparation).layoutGraph(*g_assemblyGraph);
+
+        scene.addGraphicsItemsToScene(*g_assemblyGraph, layout);
+        scene.setSceneRectangle();
+    }
     double sceneRectAspectRatio = scene.sceneRect().width() / scene.sceneRect().height();
 
     //Determine image size

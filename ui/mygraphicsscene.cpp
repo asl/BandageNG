@@ -17,10 +17,12 @@
 
 
 #include "mygraphicsscene.h"
+#include "graph/assemblygraph.h"
 #include "graph/debruijnnode.h"
 #include "graph/debruijnedge.h"
 #include "graph/graphicsitemnode.h"
 #include "graph/graphicsitemedge.h"
+#include "program/graphlayout.h"
 
 MyGraphicsScene::MyGraphicsScene(QObject *parent) :
     QGraphicsScene(parent)
@@ -243,4 +245,67 @@ void MyGraphicsScene::possiblyExpandSceneRectangle(std::vector<GraphicsItemNode 
 
     if (newSceneRect != currentSceneRect)
         setSceneRect(newSceneRect);
+}
+
+void MyGraphicsScene::addGraphicsItemsToScene(AssemblyGraph &graph,
+                                              const GraphLayout &layout) {
+    clear();
+
+    double meanDrawnDepth = graph.getMeanDepth(true);
+
+    // First make the GraphicsItemNode objects
+    for (auto &entry : layout) {
+        DeBruijnNode *node = entry.first;
+        if (!node->isDrawn())
+            continue;
+
+        // FIXME: it does not seem to belong here!
+        node->setDepthRelativeToMeanDrawnDepth(meanDrawnDepth== 0 ?
+                                               1.0 : node->getDepth() / meanDrawnDepth);
+
+        auto *graphicsItemNode = new GraphicsItemNode(node, entry.second);
+        // If we are in double mode and this node's complement is also drawn,
+        // then we should shift the points so the two nodes are not drawn directly
+        // on top of each other.
+        if (g_settings->doubleMode && node->getReverseComplement()->isDrawn())
+            graphicsItemNode->shiftPointsLeft();
+
+        node->setGraphicsItemNode(graphicsItemNode);
+        graphicsItemNode->setFlag(QGraphicsItem::ItemIsSelectable);
+        graphicsItemNode->setFlag(QGraphicsItem::ItemIsMovable);
+
+        bool colSet = false;
+        if (auto *rcNode = node->getReverseComplement()) {
+            if (auto *revCompGraphNode = rcNode->getGraphicsItemNode()) {
+                auto colPair = g_settings->nodeColorer->get(graphicsItemNode, revCompGraphNode);
+                graphicsItemNode->setNodeColour(colPair.first);
+                revCompGraphNode->setNodeColour(colPair.second);
+                colSet = true;
+            }
+        }
+        if (!colSet)
+            graphicsItemNode->setNodeColour(g_settings->nodeColorer->get(graphicsItemNode));
+    }
+
+    // Then make the GraphicsItemEdge objects and add them to the scene first,
+    // so they are drawn underneath
+    for (auto &entry : graph.m_deBruijnGraphEdges) {
+        DeBruijnEdge * edge = entry.second;
+        if (!edge->isDrawn())
+            continue;
+
+        auto * graphicsItemEdge = new GraphicsItemEdge(edge);
+        edge->setGraphicsItemEdge(graphicsItemEdge);
+        graphicsItemEdge->setFlag(QGraphicsItem::ItemIsSelectable);
+        addItem(graphicsItemEdge);
+    }
+
+    // Now add the GraphicsItemNode objects to the scene, so they are drawn
+    // on top
+    for (auto *node : graph.m_deBruijnGraphNodes) {
+        if (!node->hasGraphicsItem())
+            continue;
+
+        addItem(node->getGraphicsItemNode());
+    }
 }

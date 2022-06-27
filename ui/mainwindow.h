@@ -20,8 +20,8 @@
 #define MAINWINDOW_H
 
 #include "program/globals.h"
+#include "program//graphlayout.h"
 #include "graph/nodecolorer.h"
-#include "ogdf/energybased/FMMMLayout.h"
 
 #include <QMainWindow>
 #include <QGraphicsScene>
@@ -129,7 +129,7 @@ private slots:
                        bool recolor = false);
     void selectPathNodes();
     void selectUserSpecifiedNodes();
-    void graphLayoutFinished();
+    void graphLayoutFinished(const GraphLayout &layout);
     void openBlastSearchDialog();
     void blastChanged();
     void blastQueryChanged();

@@ -21,9 +21,6 @@
 #include "program/settings.h"
 #include "blast/blasthitpart.h"
 
-#include "ogdf/basic/Graph.h"
-#include "ogdf/basic/GraphAttributes.h"
-
 #include "llvm/ADT/iterator_range.h"
 #include "seq/sequence.hpp"
 #include "small_vector/small_pod_vector.hpp"
@@ -65,8 +62,7 @@ public:
     char getBaseAt(int i) const {if (i >= 0 && i < m_sequence.size()) return m_sequence[i]; else return '\0';} // NOTE
     ContiguityStatus getContiguityStatus() const {return m_contiguityStatus;}
     DeBruijnNode * getReverseComplement() const {return m_reverseComplement;}
-    const auto& getOgdfNode() const {return m_ogdfNodes;}
-    auto& getOgdfNode() {return m_ogdfNodes;}
+
     GraphicsItemNode * getGraphicsItemNode() const {return m_graphicsItemNode;}
     bool hasGraphicsItem() const {return m_graphicsItemNode != nullptr;}
 
@@ -88,9 +84,7 @@ public:
     bool isNotDrawn() const {return !m_drawn;}
     bool isPositiveNode() const;
     bool isNegativeNode() const;
-    bool inOgdf() const {return !m_ogdfNodes.empty();}
-    bool thisOrReverseComplementInOgdf() const {return (inOgdf() || getReverseComplement()->inOgdf());}
-    bool thisOrReverseComplementNotInOgdf() const {return !thisOrReverseComplementInOgdf();}
+
     bool isNodeConnected(DeBruijnNode * node) const;
     DeBruijnEdge * doesNodeLeadIn(DeBruijnNode * node) const;
     DeBruijnEdge * doesNodeLeadAway(DeBruijnNode * node) const;
@@ -127,7 +121,6 @@ private:
     DeBruijnNode * m_reverseComplement;
     adt::SmallPODVector<DeBruijnEdge *> m_edges;
 
-    adt::SmallPODVector<ogdf::node> m_ogdfNodes;
     GraphicsItemNode * m_graphicsItemNode;
 
     int m_length;

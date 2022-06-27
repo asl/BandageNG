@@ -819,9 +819,9 @@ void MainWindow::drawGraph()
 }
 
 
-void MainWindow::graphLayoutFinished()
+void MainWindow::graphLayoutFinished(const GraphLayout &layout)
 {
-    g_assemblyGraph->addGraphicsItemsToScene(m_scene);
+    m_scene->addGraphicsItemsToScene(*g_assemblyGraph, layout);
     m_scene->setSceneRectangle();
     zoomToFitScene();
     selectionChanged();
@@ -878,20 +878,21 @@ void MainWindow::layoutGraph()
     progress->show();
 
     double aspectRatio = double(g_graphicsView->width()) / g_graphicsView->height();
-    auto *graphLayoutWorker = new GraphLayoutWorker(*g_assemblyGraph,
-                                                    g_settings->graphLayoutQuality,
+    auto *graphLayoutWorker = new GraphLayoutWorker(g_settings->graphLayoutQuality,
                                                     g_settings->linearLayout,
                                                     g_settings->componentSeparation, aspectRatio);
 
     connect(progress, SIGNAL(halt()), graphLayoutWorker, SLOT(cancelLayout()));
 
-    auto *watcher = new QFutureWatcher<void>;
+    auto *watcher = new QFutureWatcher<GraphLayout>;
+
+    connect(watcher, &QFutureWatcher<GraphLayout>::finished,
+            this, [=]() { this->graphLayoutFinished(watcher->future().result()); });
     connect(watcher, SIGNAL(finished()), graphLayoutWorker, SLOT(deleteLater()));
-    connect(watcher, SIGNAL(finished()), this, SLOT(graphLayoutFinished()));
     connect(watcher, SIGNAL(finished()), progress, SLOT(deleteLater()));
     connect(watcher, SIGNAL(finished()), watcher, SLOT(deleteLater()));
 
-    auto res = QtConcurrent::run(&GraphLayoutWorker::layoutGraph, graphLayoutWorker);
+    auto res = QtConcurrent::run(&GraphLayoutWorker::layoutGraph, graphLayoutWorker, std::cref(*g_assemblyGraph));
     watcher->setFuture(res);
 }
 

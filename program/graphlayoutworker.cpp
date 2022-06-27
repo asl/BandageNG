@@ -105,11 +105,9 @@ private:
     ogdf::FMMMLayout m_layout;
 };
 
-GraphLayoutWorker::GraphLayoutWorker(AssemblyGraph &graph,
-                                     int graphLayoutQuality, bool useLinearLayout,
+GraphLayoutWorker::GraphLayoutWorker(int graphLayoutQuality, bool useLinearLayout,
                                      double graphLayoutComponentSeparation, double aspectRatio)
-        : m_graph(graph),
-          m_graphLayoutQuality(graphLayoutQuality),
+        : m_graphLayoutQuality(graphLayoutQuality),
           m_useLinearLayout(useLinearLayout),
           m_graphLayoutComponentSeparation(graphLayoutComponentSeparation),
           m_aspectRatio(aspectRatio) {}
@@ -137,12 +135,16 @@ static int getNumberOfOgdfGraphEdges(double drawnNodeLength) {
     return numberOfGraphEdges;
 }
 
+using OGDFGraphLayout = GraphLayoutStorage<ogdf::node>;
+
 static void addToOgdfGraph(DeBruijnNode *node,
                            ogdf::Graph &ogdfGraph, ogdf::GraphAttributes &GA,
-                           ogdf::EdgeArray<double> &edgeLengths, double xPos, double yPos) {
+                           ogdf::EdgeArray<double> &edgeLengths,
+                           OGDFGraphLayout &layout,
+                           double xPos, double yPos, bool linearLayout) {
     // If this node or its reverse complement is already in OGDF, then
     // it's not necessary to make the node.
-    if (node->thisOrReverseComplementInOgdf())
+    if (layout.contains(node) || layout.contains(node->getReverseComplement()))
         return;
 
     // Each node in the graph sense is made up of multiple nodes in the
@@ -157,9 +159,9 @@ static void addToOgdfGraph(DeBruijnNode *node,
     ogdf::node previousNode = nullptr;
     for (int i = 0; i < numberOfGraphNodes; ++i) {
         newNode = ogdfGraph.newNode();
-        node->getOgdfNode().push_back(newNode);
+        layout.add(node, newNode);
 
-        if (g_settings->linearLayout) {
+        if (linearLayout) {
             GA.x(newNode) = xPos;
             GA.y(newNode) = yPos;
             xPos += g_settings->nodeSegmentLength;
@@ -178,23 +180,24 @@ static void addToOgdfGraph(DeBruijnNode *node,
 }
 
 static void addToOgdfGraph(DeBruijnEdge *edge,
-                           ogdf::Graph &ogdfGraph, ogdf::EdgeArray<double> &edgeArray) {
+                           ogdf::Graph &ogdfGraph, ogdf::EdgeArray<double> &edgeArray,
+                           const OGDFGraphLayout &layout) {
     ogdf::node firstEdgeOgdfNode;
     ogdf::node secondEdgeOgdfNode;
 
     const auto *startingNode = edge->getStartingNode();
-    if (startingNode->inOgdf())
-        firstEdgeOgdfNode = startingNode->getOgdfNode().back();
-    else if (startingNode->getReverseComplement()->inOgdf())
-        firstEdgeOgdfNode = startingNode->getReverseComplement()->getOgdfNode().front();
+    if (layout.contains(startingNode))
+        firstEdgeOgdfNode = layout.segments(startingNode).back();
+    else if (layout.contains(startingNode->getReverseComplement()))
+        firstEdgeOgdfNode = layout.segments(startingNode->getReverseComplement()).front();
     else
         return; //Ending node or its reverse complement isn't in OGDF
 
     const auto *endingNode = edge->getEndingNode();
-    if (endingNode->inOgdf())
-        secondEdgeOgdfNode = endingNode->getOgdfNode().front();
-    else if (endingNode->getReverseComplement()->inOgdf())
-        secondEdgeOgdfNode = endingNode->getReverseComplement()->getOgdfNode().back();
+    if (layout.contains(endingNode))
+        secondEdgeOgdfNode = layout.segments(endingNode).front();
+    else if (layout.contains(endingNode->getReverseComplement()))
+        secondEdgeOgdfNode = layout.segments(endingNode->getReverseComplement()).back();
     else
         return; //Ending node or its reverse complement isn't in OGDF
 
@@ -209,17 +212,17 @@ static void addToOgdfGraph(DeBruijnEdge *edge,
     edgeArray[newEdge] = g_settings->edgeLength;
 }
 
-void GraphLayoutWorker::determineLinearNodePositions() {
-    auto &ogdfGraph = m_graph.m_ogdfGraph;
-    auto &ogdfGraphAttributes = m_graph.m_ogdfGraphAttributes;
-    auto &ogdfEdgeLengths = m_graph.m_ogdfEdgeLengths;
-
+void determineLinearNodePositions(const AssemblyGraph &graph,
+                                  ogdf::Graph &ogdfGraph,
+                                  ogdf::GraphAttributes &ogdfGraphAttributes,
+                                  ogdf::EdgeArray<double> &ogdfEdgeLengths,
+                                  OGDFGraphLayout &layout) {
     QList<DeBruijnNode *> sortedDrawnNodes;
 
     // We first try to sort the nodes numerically.
     QList<QPair<int, DeBruijnNode *>> numericallySortedDrawnNodes;
     bool successfulIntConversion = true;
-    for (auto *node : m_graph.m_deBruijnGraphNodes) {
+    for (auto *node : graph.m_deBruijnGraphNodes) {
         if (!node->isDrawn())
             continue;
 
@@ -237,7 +240,7 @@ void GraphLayoutWorker::determineLinearNodePositions() {
             sortedDrawnNodes.push_back(entry.second);
     } // If any of the conversions from node name to integer failed, then we instead sort the nodes alphabetically.
     else {
-        for (auto *node : m_graph.m_deBruijnGraphNodes) {
+        for (auto *node : graph.m_deBruijnGraphNodes) {
             if (!node->isDrawn())
                 continue;
             sortedDrawnNodes.push_back(node);
@@ -250,15 +253,16 @@ void GraphLayoutWorker::determineLinearNodePositions() {
     // Now we add the drawn nodes to the OGDF graph, given them initial positions based on their sort order.
     QSet<QPair<long long, long long> > usedStartPositions;
     double lastXPos = 0.0;
-    for (auto node : sortedDrawnNodes) {
-        if (node->thisOrReverseComplementInOgdf())
+    for (auto *node : sortedDrawnNodes) {
+        if (layout.contains(node) || layout.contains(node->getReverseComplement()))
             continue;
         std::vector<DeBruijnNode *> upstreamNodes = node->getUpstreamNodes();
         for (size_t j = 0; j < upstreamNodes.size(); ++j) {
             DeBruijnNode * upstreamNode = upstreamNodes[j];
-            if (!upstreamNode->inOgdf())
+            if (!layout.contains(upstreamNode))
                 continue;
-            ogdf::node upstreamEnd = upstreamNode->getOgdfNode().back();
+
+            ogdf::node upstreamEnd = layout.segments(upstreamNode).back();
             double upstreamEndPos = ogdfGraphAttributes.x(upstreamEnd);
             if (j == 0)
                 lastXPos = upstreamEndPos;
@@ -273,34 +277,38 @@ void GraphLayoutWorker::determineLinearNodePositions() {
             yPos += g_settings->edgeLength;
             intYPos = (long long)(yPos * 100.0);
         }
-        addToOgdfGraph(node, ogdfGraph, ogdfGraphAttributes, ogdfEdgeLengths, xPos, yPos);
+        addToOgdfGraph(node, ogdfGraph, ogdfGraphAttributes, ogdfEdgeLengths, layout, xPos, yPos, true);
         usedStartPositions.insert(QPair<long long, long long>(intXPos, intYPos));
-        lastXPos = ogdfGraphAttributes.x(node->getOgdfNode().back());
+        lastXPos = ogdfGraphAttributes.x(layout.segments(node).back());
     }
 }
 
-void GraphLayoutWorker::buildGraph() {
-    auto &ogdfGraph = m_graph.m_ogdfGraph;
-    auto &ogdfGraphAttributes = m_graph.m_ogdfGraphAttributes;
-    auto &ogdfEdgeLengths = m_graph.m_ogdfEdgeLengths;
-
+static void buildGraph(const AssemblyGraph &graph,
+                       ogdf::Graph &ogdfGraph,
+                       ogdf::GraphAttributes &ogdfGraphAttributes,
+                       ogdf::EdgeArray<double> &ogdfEdgeLengths,
+                       OGDFGraphLayout &layout,
+                       bool useLinearLayout) {
     // If performing a linear layout, we first sort the drawn nodes and add them left-to-right.
-    if (m_useLinearLayout) {
-        determineLinearNodePositions();
+    if (useLinearLayout) {
+        determineLinearNodePositions(graph,
+                                     ogdfGraph, ogdfGraphAttributes, ogdfEdgeLengths,
+                                     layout);
         // If the layout isn't linear, then we don't worry about the initial positions because they'll be randomised anyway.
     } else {
-        for (auto &entry : m_graph.m_deBruijnGraphNodes) {
-            DeBruijnNode * node = entry;
-            if (!node->isDrawn() || node->thisOrReverseComplementInOgdf())
+        for (auto *node : graph.m_deBruijnGraphNodes) {
+            if (!node->isDrawn() ||
+                layout.contains(node) || layout.contains(node->getReverseComplement()))
                 continue;
 
-            addToOgdfGraph(node, ogdfGraph, ogdfGraphAttributes, ogdfEdgeLengths,
-                           0.0, 0.0);
+            addToOgdfGraph(node,
+                           ogdfGraph, ogdfGraphAttributes, ogdfEdgeLengths, layout,
+                           0.0, 0.0, false);
         }
     }
 
     //Then loop through each edge determining its drawn status and adding it to OGDF if it is drawn.
-    for (auto &entry : m_graph.m_deBruijnGraphEdges) {
+    for (auto &entry : graph.m_deBruijnGraphEdges) {
         DeBruijnEdge *edge = entry.second;
         if (!edge->determineIfDrawn())
             continue;
@@ -308,7 +316,7 @@ void GraphLayoutWorker::buildGraph() {
         if (edge->getOverlapType() == JUMP)
             continue;
 
-        addToOgdfGraph(edge,ogdfGraph, ogdfEdgeLengths);
+        addToOgdfGraph(edge,ogdfGraph, ogdfEdgeLengths, layout);
     }
 }
 
@@ -482,18 +490,19 @@ static void reassembleDrawings(ogdf::GraphAttributes &GA,
 }
 
 
-void GraphLayoutWorker::layoutGraph() {
-    buildGraph();
+GraphLayout GraphLayoutWorker::layoutGraph(const AssemblyGraph &graph) {
+    ogdf::Graph G;
+    ogdf::EdgeArray<double> edgeLengths(G);
+    ogdf::GraphAttributes GA(G,
+                             ogdf::GraphAttributes::nodeGraphics | ogdf::GraphAttributes::edgeGraphics);
+    OGDFGraphLayout layout;
+    buildGraph(graph, G, GA, edgeLengths, layout, m_useLinearLayout);
 
     //first we split the graph into its components
-    ogdf::GraphAttributes &GA = m_graph.m_ogdfGraphAttributes;
-    const ogdf::Graph& G = GA.constGraph();
-    const ogdf::EdgeArray<double> &EL = m_graph.m_ogdfEdgeLengths;
-
     ogdf::NodeArray<int> componentNumber(G);
     int numberOfComponents = connectedComponents(G, componentNumber);
     if (numberOfComponents == 0)
-        return;
+        return {};
 
     ogdf::Array<ogdf::List<ogdf::node> > nodesInCC(numberOfComponents);
     for (auto v : G.nodes)
@@ -513,7 +522,7 @@ void GraphLayoutWorker::layoutGraph() {
                         const ogdf::List<ogdf::node> &nodesInCC) {
 
                     ogdf::GraphCopy GC;
-                    ogdf::EdgeArray<double> edgeLengths(GC);
+                    ogdf::EdgeArray<double> cedgeLengths(GC);
                     ogdf::EdgeArray<ogdf::edge> auxCopy(G);
 
                     GC.createEmpty(G);
@@ -528,9 +537,9 @@ void GraphLayoutWorker::layoutGraph() {
                     }
 
                     for (ogdf::edge e : GC.edges)
-                        edgeLengths(e) = EL(GC.original(e));
+                        cedgeLengths(e) = edgeLengths(GC.original(e));
 
-                    layout->run(cGA, edgeLengths);
+                    layout->run(cGA, cedgeLengths);
 
                     for (ogdf::node v : GC.nodes) {
                         ogdf::node w = GC.original(v);
@@ -548,6 +557,15 @@ void GraphLayoutWorker::layoutGraph() {
     reassembleDrawings(GA,
                        m_graphLayoutComponentSeparation, m_aspectRatio,
                        nodesInCC);
+
+    GraphLayout res;
+    for (const auto & entry : layout) {
+        for (ogdf::node node : entry.second) {
+            res.add(entry.first, { GA.x(node), GA.y(node) });
+        }
+    }
+
+    return res;
 }
 
 [[maybe_unused]] void GraphLayoutWorker::cancelLayout() {

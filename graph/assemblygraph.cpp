@@ -44,10 +44,7 @@
 
 AssemblyGraph::AssemblyGraph()
         : m_kmer(0), m_contiguitySearchDone(false),
-          m_sequencesLoadedFromFasta(NOT_READY),
-          m_ogdfGraph(), m_ogdfEdgeLengths(m_ogdfGraph),
-          m_ogdfGraphAttributes(m_ogdfGraph,
-                                ogdf::GraphAttributes::nodeGraphics | ogdf::GraphAttributes::edgeGraphics)
+          m_sequencesLoadedFromFasta(NOT_READY)
 {
     clearGraphInfo();
 }
@@ -180,13 +177,10 @@ void AssemblyGraph::createDeBruijnEdge(const QString& node1Name, const QString& 
     (*negNode2)->addEdge(backwardEdge);
 }
 
-void AssemblyGraph::clearOgdfGraphAndResetNodes()
+void AssemblyGraph::resetNodes()
 {
     for (auto &entry : m_deBruijnGraphNodes)
         entry->resetNode();
-
-    m_ogdfGraph.clear();
-    m_ogdfEdgeLengths.init(m_ogdfGraph);
 }
 
 //http://www.code10.info/index.php?option=com_content&view=article&id=62:articledna-reverse-complement&catid=49:cat_coding_algorithms_bioinformatics&Itemid=74
@@ -650,80 +644,6 @@ void AssemblyGraph::markNodesToDraw(const std::vector<DeBruijnNode *>& startingN
     }
 }
 
-
-
-void AssemblyGraph::addGraphicsItemsToScene(MyGraphicsScene * scene)
-{
-    scene->clear();
-
-    double meanDrawnDepth = getMeanDepth(true);
-
-    // First make the GraphicsItemNode objects
-    for (auto *node : m_deBruijnGraphNodes) {
-        if (!node->isDrawn())
-            continue;
-
-        node->setDepthRelativeToMeanDrawnDepth(meanDrawnDepth== 0 ?
-                                               1.0 : node->getDepth() / meanDrawnDepth);
-
-        std::vector<QPointF> nodeSegment;
-        const auto &pathOgdfNode = node->getOgdfNode();
-        if (!pathOgdfNode.empty()) {
-            for (auto ogdfNode : pathOgdfNode)
-                nodeSegment.emplace_back(m_ogdfGraphAttributes.x(ogdfNode), m_ogdfGraphAttributes.y(ogdfNode));
-        } else {
-            const auto &rcPathOgdfNode = node->getReverseComplement()->getOgdfNode();
-            for (auto it = rcPathOgdfNode.rbegin(); it != rcPathOgdfNode.rend(); ++it)
-                nodeSegment.emplace_back(m_ogdfGraphAttributes.x(*it), m_ogdfGraphAttributes.y(*it));
-        }
-
-        auto *graphicsItemNode = new GraphicsItemNode(node, nodeSegment);
-        // If we are in double mode and this node's complement is also drawn,
-        // then we should shift the points so the two nodes are not drawn directly
-        // on top of each other.
-        if (g_settings->doubleMode && node->getReverseComplement()->isDrawn())
-            graphicsItemNode->shiftPointsLeft();
-
-        node->setGraphicsItemNode(graphicsItemNode);
-        graphicsItemNode->setFlag(QGraphicsItem::ItemIsSelectable);
-        graphicsItemNode->setFlag(QGraphicsItem::ItemIsMovable);
-
-        bool colSet = false;
-        if (auto *rcNode = node->getReverseComplement()) {
-            if (auto *revCompGraphNode = rcNode->getGraphicsItemNode()) {
-                auto colPair = g_settings->nodeColorer->get(graphicsItemNode, revCompGraphNode);
-                graphicsItemNode->setNodeColour(colPair.first);
-                revCompGraphNode->setNodeColour(colPair.second);
-                colSet = true;
-            }
-        }
-        if (!colSet)
-            graphicsItemNode->setNodeColour(g_settings->nodeColorer->get(graphicsItemNode));
-    }
-
-    // Then make the GraphicsItemEdge objects and add them to the scene first,
-    // so they are drawn underneath
-    for (auto &entry : m_deBruijnGraphEdges) {
-        DeBruijnEdge * edge = entry.second;
-
-        if (edge->isDrawn()) {
-            auto * graphicsItemEdge = new GraphicsItemEdge(edge);
-            edge->setGraphicsItemEdge(graphicsItemEdge);
-            graphicsItemEdge->setFlag(QGraphicsItem::ItemIsSelectable);
-            scene->addItem(graphicsItemEdge);
-        }
-    }
-
-    // Now add the GraphicsItemNode objects to the scene, so they are drawn
-    // on top
-    for (auto *node : m_deBruijnGraphNodes) {
-        if (!node->hasGraphicsItem())
-            continue;
-        scene->addItem(node->getGraphicsItemNode());
-    }
-}
-
-
 // FIXME: this does not belong here
 static std::vector<DeBruijnNode *> getNodesFromBlastHits(const QString& queryName)
 {
@@ -829,7 +749,7 @@ std::vector<DeBruijnNode *> AssemblyGraph::getStartingNodes(QString * errorTitle
     }
 
     g_settings->doubleMode = doubleMode;
-    clearOgdfGraphAndResetNodes();
+    resetNodes();
 
     if (g_settings->graphScope == AROUND_NODE)
         startingNodes = getNodesFromString(nodesList, g_settings->startingNodesExactMatch);
@@ -993,16 +913,6 @@ std::vector<DeBruijnNode *> AssemblyGraph::getNodesInDepthRange(double min, doub
     }
     return returnVector;
 }
-
-// Unlike the equivalent function in MainWindow, this does the graph layout in the main thread.
-void AssemblyGraph::layoutGraph()
-{
-    GraphLayoutWorker(*this,
-                      g_settings->graphLayoutQuality,
-                      g_settings->linearLayout,
-                      g_settings->componentSeparation).layoutGraph();
-}
-
 
 void AssemblyGraph::setAllEdgesExactOverlap(int overlap)
 {

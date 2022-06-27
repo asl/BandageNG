@@ -30,9 +30,6 @@
 #include "parallel_hashmap/phmap.h"
 #include "tsl/htrie_map.h"
 
-#include "ogdf/basic/Graph.h"
-#include "ogdf/basic/GraphAttributes.h"
-
 #include <QString>
 #include <QPair>
 #include <QObject>
@@ -87,10 +84,6 @@ public:
 
     tsl::htrie_map<char, Path*> m_deBruijnGraphPaths;
 
-    ogdf::Graph m_ogdfGraph;
-    ogdf::EdgeArray<double> m_ogdfEdgeLengths;
-    ogdf::GraphAttributes m_ogdfGraphAttributes;
-
     int m_kmer;
     int m_nodeCount;
     int m_edgeCount;
@@ -112,7 +105,7 @@ public:
     void createDeBruijnEdge(const QString& node1Name, const QString& node2Name,
                             int overlap = 0,
                             EdgeOverlapType overlapType = UNKNOWN_OVERLAP);
-    void clearOgdfGraphAndResetNodes();
+    void resetNodes();
     static QByteArray getReverseComplement(const QByteArray& forwardSequence);
     void resetEdges();
     double getMeanDepth(bool drawnNodesOnly = false);
@@ -143,7 +136,6 @@ public:
     std::vector<DeBruijnNode *> getNodesFromString(QString nodeNamesString,
                                                    bool exactMatch,
                                                    std::vector<QString> * nodesNotInGraph = 0);
-    void layoutGraph();
 
     void setAllEdgesExactOverlap(int overlap);
     void autoDetermineAllEdgesExactOverlap();
