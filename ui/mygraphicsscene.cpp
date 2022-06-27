@@ -374,3 +374,33 @@ void MyGraphicsScene::removeGraphicsItemNodes(const std::vector<DeBruijnNode *> 
 
     blockSignals(false);
 }
+
+void MyGraphicsScene::duplicateGraphicsNode(DeBruijnNode * originalNode, DeBruijnNode * newNode) {
+    GraphicsItemNode * originalGraphicsItemNode = originalNode->getGraphicsItemNode();
+    if (originalGraphicsItemNode == nullptr)
+        return;
+
+    auto * newGraphicsItemNode = new GraphicsItemNode(newNode, originalGraphicsItemNode);
+
+    newNode->setGraphicsItemNode(newGraphicsItemNode);
+    newGraphicsItemNode->setFlag(QGraphicsItem::ItemIsSelectable);
+    newGraphicsItemNode->setFlag(QGraphicsItem::ItemIsMovable);
+
+    originalGraphicsItemNode->shiftPointsLeft();
+    newGraphicsItemNode->shiftPointsRight();
+    originalGraphicsItemNode->fixEdgePaths();
+
+    newGraphicsItemNode->setNodeColour(originalGraphicsItemNode->m_colour);
+
+    originalGraphicsItemNode->setWidth();
+
+    addItem(newGraphicsItemNode);
+
+    for (auto *newEdge : newNode->edges()) {
+        auto * graphicsItemEdge = new GraphicsItemEdge(newEdge);
+        graphicsItemEdge->setZValue(-1.0);
+        newEdge->setGraphicsItemEdge(graphicsItemEdge);
+        graphicsItemEdge->setFlag(QGraphicsItem::ItemIsSelectable);
+        addItem(graphicsItemEdge);
+    }
+}

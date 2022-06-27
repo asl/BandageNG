@@ -1061,21 +1061,15 @@ int AssemblyGraph::getDrawnNodeCount() const
 void AssemblyGraph::deleteNodes(const std::vector<DeBruijnNode *> &nodes)
 {
     //Build a list of nodes to delete.
-    QList<DeBruijnNode *> nodesToDelete;
-    for (auto node : nodes)
-    {
-        DeBruijnNode * rcNode = node->getReverseComplement();
-
-        if (!nodesToDelete.contains(node))
-            nodesToDelete.push_back(node);
-        if (!nodesToDelete.contains(rcNode))
-            nodesToDelete.push_back(rcNode);
+    QSet<DeBruijnNode *> nodesToDelete;
+    for (auto *node : nodes) {
+        nodesToDelete.insert(node);
+        nodesToDelete.insert(node->getReverseComplement());
     }
 
     //Build a list of edges to delete.
     std::vector<DeBruijnEdge *> edgesToDelete;
-    for (auto node : nodesToDelete)
-    {
+    for (auto *node : nodesToDelete) {
         for (auto *edge : node->edges()) {
             bool alreadyAdded = std::find(edgesToDelete.begin(), edgesToDelete.end(), edge) != edgesToDelete.end();
             if (!alreadyAdded)
@@ -1083,44 +1077,28 @@ void AssemblyGraph::deleteNodes(const std::vector<DeBruijnNode *> &nodes)
         }
     }
 
-    //Build a list of node names to delete.
-    QStringList nodesNamesToDelete;
-    for (auto node : nodesToDelete)
-    {
-        nodesNamesToDelete.push_back(node->getName());
-    }
-
-    //Remove the edges from the graph,
+    // Remove the edges from the graph,
     deleteEdges(edgesToDelete);
 
-    //Remove the nodes from the graph.
-    for (const auto& nodeName : nodesNamesToDelete)
-    {
-        m_deBruijnGraphNodes.erase(nodeName.toStdString());
-    }
-    for (auto node : nodesToDelete)
-    {
+    // Remove the nodes from the graph.
+    for (auto *node : nodesToDelete)
+        m_deBruijnGraphNodes.erase(node->getName().toStdString());
+
+    for (auto *node : nodesToDelete)
         delete node;
-    }
 }
 
 void AssemblyGraph::deleteEdges(const std::vector<DeBruijnEdge *> &edges)
 {
     //Build a list of edges to delete.
-    QList<DeBruijnEdge *> edgesToDelete;
-    for (auto edge : edges)
-    {
-        DeBruijnEdge * rcEdge = edge->getReverseComplement();
-
-        if (!edgesToDelete.contains(edge))
-            edgesToDelete.push_back(edge);
-        if (!edgesToDelete.contains(rcEdge))
-            edgesToDelete.push_back(rcEdge);
+    QSet<DeBruijnEdge *> edgesToDelete;
+    for (auto *edge : edges) {
+        edgesToDelete.insert(edge);
+        edgesToDelete.insert(edge->getReverseComplement());
     }
 
     //Remove the edges from the graph,
-    for (auto edge : edgesToDelete)
-    {
+    for (auto edge : edgesToDelete) {
         DeBruijnNode * startingNode = edge->getStartingNode();
         DeBruijnNode * endingNode = edge->getEndingNode();
 
@@ -1131,38 +1109,6 @@ void AssemblyGraph::deleteEdges(const std::vector<DeBruijnEdge *> &edges)
         delete edge;
     }
 }
-
-static void duplicateGraphicsNode(DeBruijnNode * originalNode, DeBruijnNode * newNode, MyGraphicsScene * scene)
-{
-    GraphicsItemNode * originalGraphicsItemNode = originalNode->getGraphicsItemNode();
-    if (originalGraphicsItemNode == nullptr)
-        return;
-
-    auto * newGraphicsItemNode = new GraphicsItemNode(newNode, originalGraphicsItemNode);
-
-    newNode->setGraphicsItemNode(newGraphicsItemNode);
-    newGraphicsItemNode->setFlag(QGraphicsItem::ItemIsSelectable);
-    newGraphicsItemNode->setFlag(QGraphicsItem::ItemIsMovable);
-
-    originalGraphicsItemNode->shiftPointsLeft();
-    newGraphicsItemNode->shiftPointsRight();
-    originalGraphicsItemNode->fixEdgePaths();
-
-    newGraphicsItemNode->setNodeColour(originalGraphicsItemNode->m_colour);
-
-    originalGraphicsItemNode->setWidth();
-
-    scene->addItem(newGraphicsItemNode);
-
-    for (auto *newEdge : newNode->edges()) {
-        auto * graphicsItemEdge = new GraphicsItemEdge(newEdge);
-        graphicsItemEdge->setZValue(-1.0);
-        newEdge->setGraphicsItemEdge(graphicsItemEdge);
-        graphicsItemEdge->setFlag(QGraphicsItem::ItemIsSelectable);
-        scene->addItem(graphicsItemEdge);
-    }
-}
-
 
 //This function assumes it is receiving a positive node.  It will duplicate both
 //the positive and negative node in the pair.  It divided their depth in
@@ -1196,16 +1142,14 @@ void AssemblyGraph::duplicateNodePair(DeBruijnNode * node, MyGraphicsScene * sce
     m_deBruijnGraphNodes.emplace(newNegNodeName.toStdString(), newNegNode);
 
     std::vector<DeBruijnEdge *> leavingEdges = originalPosNode->getLeavingEdges();
-    for (auto edge : leavingEdges)
-    {
+    for (auto *edge : leavingEdges) {
         DeBruijnNode * downstreamNode = edge->getEndingNode();
         createDeBruijnEdge(newPosNodeName, downstreamNode->getName(),
                            edge->getOverlap(), edge->getOverlapType());
     }
 
     std::vector<DeBruijnEdge *> enteringEdges = originalPosNode->getEnteringEdges();
-    for (auto edge : enteringEdges)
-    {
+    for (auto *edge : enteringEdges) {
         DeBruijnNode * upstreamNode = edge->getStartingNode();
         createDeBruijnEdge(upstreamNode->getName(), newPosNodeName,
                            edge->getOverlap(), edge->getOverlapType());
@@ -1226,8 +1170,8 @@ void AssemblyGraph::duplicateNodePair(DeBruijnNode * node, MyGraphicsScene * sce
     newPosNode->setDepthRelativeToMeanDrawnDepth(depthRelativeToMeanDrawnDepth);
     newPosNode->setDepthRelativeToMeanDrawnDepth(depthRelativeToMeanDrawnDepth);
 
-    duplicateGraphicsNode(originalPosNode, newPosNode, scene);
-    duplicateGraphicsNode(originalNegNode, newNegNode, scene);
+    scene->duplicateGraphicsNode(originalPosNode, newPosNode);
+    scene->duplicateGraphicsNode(originalNegNode, newNegNode);
 }
 
 QString AssemblyGraph::getNewNodeName(QString oldNodeName) const

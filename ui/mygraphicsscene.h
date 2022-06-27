@@ -49,6 +49,7 @@ public:
                                  bool reverseComplement);
     void removeGraphicsItemNodes(const std::vector<DeBruijnNode *> &nodes,
                                  bool reverseComplement);
+    void duplicateGraphicsNode(DeBruijnNode * originalNode, DeBruijnNode * newNode);
 
 private:
     void removeAllGraphicsEdgesFromNode(DeBruijnNode * node, bool reverseComplement);
