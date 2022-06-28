@@ -1447,8 +1447,8 @@ static void mergeGraphicsNodes(QList<DeBruijnNode *> * originalNodes,
     std::vector<DeBruijnNode *> nodesToRemove;
     for (auto & originalNode : *originalNodes)
         nodesToRemove.push_back(originalNode);
-    if (scene)
-        scene->removeGraphicsItemNodes(nodesToRemove, true);
+
+    MyGraphicsScene::removeGraphicsItemNodes(nodesToRemove, true);
 }
 
 //This function simplifies the graph by merging all possible nodes in a simple

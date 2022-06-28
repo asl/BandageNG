@@ -18,12 +18,15 @@
 #pragma once
 
 #include "layout/graphlayout.h"
+
 #include <QGraphicsScene>
 #include <vector>
+#include <unordered_set>
 
 class DeBruijnNode;
 class DeBruijnEdge;
 class GraphicsItemNode;
+class GraphicsItemEdge;
 class AssemblyGraph;
 
 class MyGraphicsScene : public QGraphicsScene
@@ -45,12 +48,16 @@ public:
     void setSceneRectangle();
     void possiblyExpandSceneRectangle(std::vector<GraphicsItemNode *> * movedNodes);
 
-    void removeGraphicsItemEdges(const std::vector<DeBruijnEdge *> &edges,
-                                 bool reverseComplement);
-    void removeGraphicsItemNodes(const std::vector<DeBruijnNode *> &nodes,
-                                 bool reverseComplement);
+    static void removeGraphicsItemEdges(const std::vector<DeBruijnEdge *> &edges,
+                                        bool reverseComplement);
+    static void removeGraphicsItemNodes(const std::vector<DeBruijnNode *> &nodes,
+                                        bool reverseComplement);
+    static void removeAllGraphicsEdgesFromNode(DeBruijnNode *node,
+                                               bool reverseComplement);
+
     void duplicateGraphicsNode(DeBruijnNode * originalNode, DeBruijnNode * newNode);
 
 private:
-    void removeAllGraphicsEdgesFromNode(DeBruijnNode * node, bool reverseComplement);
+    void removeGraphicsItemNodes(const std::unordered_set<GraphicsItemNode*> &nodes);
+    void removeGraphicsItemEdges(const std::unordered_set<GraphicsItemEdge*> &edges);
 };
