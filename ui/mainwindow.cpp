@@ -42,6 +42,7 @@
 #include "graph/nodecolorers.h"
 
 #include "layout/graphlayoutworker.h"
+#include "layout/io.h"
 
 #include "program/globals.h"
 #include "program/memory.h"
@@ -2602,31 +2603,20 @@ void MainWindow::openGraphInfoDialog()
 }
 
 void MainWindow::exportGraphLayout() {
-    QString filter = "TSV (*.tsv)";
+    QString filter = "Bandage layout (*.layout)";
     QString fullFileName = QFileDialog::getSaveFileName(this, "Export graph layout",
                                                         "",
-                                                        "TSV (*.tsv);;",
+                                                        "Bandage layout (*.layout);;TSV (*.tsv)",
                                                         &filter);
 
     if (fullFileName.isEmpty())
         return;
 
-    QFile file(fullFileName);
-    file.open(QIODevice::WriteOnly | QIODevice::Text);
-    QTextStream out(&file);
-
-    for (auto *node : g_assemblyGraph->m_deBruijnGraphNodes) {
-        if (node->isNotDrawn())
-            continue;
-        if (!node->hasGraphicsItem())
-            continue;
-
-        const auto &segments = node->getGraphicsItemNode()->m_linePoints;
-        if (segments.empty())
-            continue;
-
-        size_t idx = (segments.size() - 1) / 2;
-        QPointF pos = segments[idx];
-        out << node->getName() << '\t' << pos.x() << '\t' << pos.y() << '\n';
-    }
+    bool isTSV = filter == "TSV (*.tsv)";
+    GraphLayout layout = layout::fromGraph(*g_assemblyGraph,
+                                           /* simplified */ isTSV);
+    if (isTSV)
+        layout::io::saveTSV(fullFileName, layout);
+    else
+        layout::io::save(fullFileName, layout);
 }

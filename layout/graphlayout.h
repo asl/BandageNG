@@ -23,14 +23,20 @@
 #include <QPointF>
 
 class DeBruijnNode;
+class AssemblyGraph;
 
 template<class T>
-struct GraphLayoutStorage {
+class GraphLayoutStorage {
+public:
+    explicit GraphLayoutStorage(const AssemblyGraph &graph)
+            : m_graph(graph) {}
+
+    [[nodiscard]] const AssemblyGraph &graph() const { return m_graph; }
     bool contains(const DeBruijnNode *node) const { return m_data.contains(node); }
     void add(DeBruijnNode *node, T point) { m_data[node].emplace_back(point); }
 
     const auto& segments(const DeBruijnNode *node) const { return m_data.at(node); }
-    auto& segments(const DeBruijnNode *node) { return m_data.at(node); }
+    auto& segments(DeBruijnNode *node) { return m_data[node]; }
 
     auto begin() { return m_data.begin(); }
     auto begin() const { return m_data.begin(); }
@@ -38,7 +44,12 @@ struct GraphLayoutStorage {
     auto end() const { return m_data.end(); }
 
 private:
+    const AssemblyGraph &m_graph;
     phmap::flat_hash_map<DeBruijnNode*, adt::SmallPODVector<T>> m_data;
 };
 
 using GraphLayout = GraphLayoutStorage<QPointF>;
+
+namespace layout {
+    GraphLayout fromGraph(const AssemblyGraph &graph, bool simplified = false);
+}

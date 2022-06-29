@@ -102,7 +102,7 @@ FetchContent_Declare(lexy URL https://lexy.foonathan.net/download/lexy-src.zip)
 FetchContent_MakeAvailable(lexy)
 
 # FIXME: Untagle this
-add_library(BandageLayout STATIC layout/graphlayoutworker.cpp)
+add_library(BandageLayout STATIC layout/graphlayoutworker.cpp layout/io.cpp layout/graphlayout.cpp)
 target_link_libraries(BandageLayout PRIVATE OGDF Qt6::Concurrent Qt6::Gui Qt6::Widgets)
 
 add_library(BandageLib STATIC ${LIB_SOURCES} ${FORMS})

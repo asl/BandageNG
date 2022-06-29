@@ -212,11 +212,11 @@ static void addToOgdfGraph(DeBruijnEdge *edge,
     edgeArray[newEdge] = g_settings->edgeLength;
 }
 
-void determineLinearNodePositions(const AssemblyGraph &graph,
-                                  ogdf::Graph &ogdfGraph,
+void determineLinearNodePositions(ogdf::Graph &ogdfGraph,
                                   ogdf::GraphAttributes &ogdfGraphAttributes,
                                   ogdf::EdgeArray<double> &ogdfEdgeLengths,
                                   OGDFGraphLayout &layout) {
+    const AssemblyGraph &graph = layout.graph();
     QList<DeBruijnNode *> sortedDrawnNodes;
 
     // We first try to sort the nodes numerically.
@@ -283,16 +283,15 @@ void determineLinearNodePositions(const AssemblyGraph &graph,
     }
 }
 
-static void buildGraph(const AssemblyGraph &graph,
-                       ogdf::Graph &ogdfGraph,
+static void buildGraph(ogdf::Graph &ogdfGraph,
                        ogdf::GraphAttributes &ogdfGraphAttributes,
                        ogdf::EdgeArray<double> &ogdfEdgeLengths,
                        OGDFGraphLayout &layout,
                        bool useLinearLayout) {
+    const AssemblyGraph &graph = layout.graph();
     // If performing a linear layout, we first sort the drawn nodes and add them left-to-right.
     if (useLinearLayout) {
-        determineLinearNodePositions(graph,
-                                     ogdfGraph, ogdfGraphAttributes, ogdfEdgeLengths,
+        determineLinearNodePositions(ogdfGraph, ogdfGraphAttributes, ogdfEdgeLengths,
                                      layout);
         // If the layout isn't linear, then we don't worry about the initial positions because they'll be randomised anyway.
     } else {
@@ -495,14 +494,14 @@ GraphLayout GraphLayoutWorker::layoutGraph(const AssemblyGraph &graph) {
     ogdf::EdgeArray<double> edgeLengths(G);
     ogdf::GraphAttributes GA(G,
                              ogdf::GraphAttributes::nodeGraphics | ogdf::GraphAttributes::edgeGraphics);
-    OGDFGraphLayout layout;
-    buildGraph(graph, G, GA, edgeLengths, layout, m_useLinearLayout);
+    OGDFGraphLayout layout(graph);
+    buildGraph(G, GA, edgeLengths, layout, m_useLinearLayout);
 
     //first we split the graph into its components
     ogdf::NodeArray<int> componentNumber(G);
     int numberOfComponents = connectedComponents(G, componentNumber);
     if (numberOfComponents == 0)
-        return {};
+        return GraphLayout(graph);
 
     ogdf::Array<ogdf::List<ogdf::node> > nodesInCC(numberOfComponents);
     for (auto v : G.nodes)
@@ -558,7 +557,7 @@ GraphLayout GraphLayoutWorker::layoutGraph(const AssemblyGraph &graph) {
                        m_graphLayoutComponentSeparation, m_aspectRatio,
                        nodesInCC);
 
-    GraphLayout res;
+    GraphLayout res(graph);
     for (const auto & entry : layout) {
         for (ogdf::node node : entry.second) {
             res.add(entry.first, { GA.x(node), GA.y(node) });
