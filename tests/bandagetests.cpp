@@ -22,6 +22,7 @@
 #include "graph/annotationsmanager.h"
 
 #include "layout/graphlayoutworker.h"
+#include "layout/io.h"
 
 #include "program/settings.h"
 #include "program/memory.h"
@@ -824,6 +825,13 @@ void BandageTests::graphScope()
     }
     drawnNodes = g_assemblyGraph->getDrawnNodeCount();
     QCOMPARE(drawnNodes, 9);
+
+    GraphLayout layout(*g_assemblyGraph);
+    layout::io::load(testFile("test.layout"), layout);
+    QCOMPARE(layout.size(), 42);
+    layout::apply(*g_assemblyGraph, layout);
+    drawnNodes = g_assemblyGraph->getDrawnNodeCount();
+    QCOMPARE(drawnNodes, 42);
 }
 
 void BandageTests::commandLineSettings()

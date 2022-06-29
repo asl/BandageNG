@@ -34,6 +34,7 @@ public:
     [[nodiscard]] const AssemblyGraph &graph() const { return m_graph; }
     bool contains(const DeBruijnNode *node) const { return m_data.contains(node); }
     void add(DeBruijnNode *node, T point) { m_data[node].emplace_back(point); }
+    size_t size() const { return m_data.size(); }
 
     const auto& segments(const DeBruijnNode *node) const { return m_data.at(node); }
     auto& segments(DeBruijnNode *node) { return m_data[node]; }
@@ -52,4 +53,5 @@ using GraphLayout = GraphLayoutStorage<QPointF>;
 
 namespace layout {
     GraphLayout fromGraph(const AssemblyGraph &graph, bool simplified = false);
+    void apply(AssemblyGraph &graph, const GraphLayout &layout);
 }

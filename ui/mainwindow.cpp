@@ -448,14 +448,7 @@ void MainWindow::loadGraphLayout(QString fullFileName) {
         return;
     }
 
-    // First, determine the set of nodes to be drawn from the layout
-    g_assemblyGraph->resetNodes();
-    for (auto& entry : layout)
-        entry.first->setAsDrawn();
-
-    // Then loop through each edge determining its drawn status
-    for (auto &entry : g_assemblyGraph->m_deBruijnGraphEdges)
-        entry.second->determineIfDrawn();
+    layout::apply(*g_assemblyGraph, layout);
 
     graphLayoutFinished(layout);
 }
