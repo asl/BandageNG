@@ -143,6 +143,7 @@ MainWindow::MainWindow(QString fileToLoadOnStartup, bool drawGraphAfterLoad) :
     connect(ui->drawGraphButton, SIGNAL(clicked()), this, SLOT(drawGraph()));
     connect(ui->actionLoad_graph, SIGNAL(triggered()), this, SLOT(loadGraph()));
     connect(ui->actionLoad_CSV, SIGNAL(triggered(bool)), this, SLOT(loadCSV()));
+    connect(ui->actionLoad_layout, SIGNAL(triggered()), this, SLOT(loadGraphLayout()));
     connect(ui->actionExit, SIGNAL(triggered()), this, SLOT(close()));
     connect(ui->graphScopeComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(graphScopeChanged()));
     connect(ui->zoomSpinBox, SIGNAL(valueChanged(double)), this, SLOT(zoomSpinBoxChanged()));
@@ -424,6 +425,39 @@ void MainWindow::loadGraph(QString fullFileName)
         clearGraphDetails();
         setUiState(NO_GRAPH_LOADED);
     }
+}
+
+void MainWindow::loadGraphLayout(QString fullFileName) {
+    if (fullFileName == "")
+        fullFileName = QFileDialog::getOpenFileName(this, "Load Bandage layout",
+                                                    "Bandage layout (*.layout)");
+
+    if (fullFileName == "")
+        return; // user clicked on cancel
+
+    GraphLayout layout(*g_assemblyGraph);
+    try {
+        layout::io::load(fullFileName, layout);
+    } catch (std::runtime_error &err) {
+        QString errorTitle = "Error loading layout";
+        QString errorMessage = "There was an error when attempting to load:\n"
+                               + fullFileName + ":\n"
+                               + err.what() + "\n\n"
+                                 "Please verify that this file has the correct format.";
+        QMessageBox::warning(this, errorTitle, errorMessage);
+        return;
+    }
+
+    // First, determine the set of nodes to be drawn from the layout
+    g_assemblyGraph->resetNodes();
+    for (auto& entry : layout)
+        entry.first->setAsDrawn();
+
+    // Then loop through each edge determining its drawn status
+    for (auto &entry : g_assemblyGraph->m_deBruijnGraphEdges)
+        entry.second->determineIfDrawn();
+
+    graphLayoutFinished(layout);
 }
 
 void MainWindow::displayGraphDetails()
@@ -801,6 +835,7 @@ void MainWindow::drawGraph()
 {
     QString errorTitle;
     QString errorMessage;
+    // FIXME: this function actually resets drawn status!!!!!
     std::vector<DeBruijnNode *> startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage,
                                                                                   ui->doubleNodesRadioButton->isChecked(),
                                                                                   ui->startingNodesLineEdit->text(),
@@ -814,6 +849,7 @@ void MainWindow::drawGraph()
     }
 
     resetScene();
+    g_assemblyGraph->resetNodes();
     g_assemblyGraph->markNodesToDraw(startingNodes, g_settings->nodeDistance);
     layoutGraph();
 }
@@ -1847,6 +1883,7 @@ void MainWindow::setUiState(UiState uiState)
         ui->annotationSelectorWidget->setEnabled(false);
         ui->selectionScrollAreaWidgetContents->setEnabled(false);
         ui->actionLoad_CSV->setEnabled(false);
+        ui->actionLoad_layout->setEnabled(false);
         ui->actionExport_layout->setEnabled(false);
         break;
     case GRAPH_LOADED:
@@ -1859,6 +1896,7 @@ void MainWindow::setUiState(UiState uiState)
         ui->annotationSelectorWidget->setEnabled(true);
         ui->selectionScrollAreaWidgetContents->setEnabled(false);
         ui->actionLoad_CSV->setEnabled(true);
+        ui->actionLoad_layout->setEnabled(true);
         ui->actionExport_layout->setEnabled(false);
         break;
     case GRAPH_DRAWN:
@@ -1872,6 +1910,7 @@ void MainWindow::setUiState(UiState uiState)
         ui->selectionScrollAreaWidgetContents->setEnabled(true);
         ui->actionZoom_to_selection->setEnabled(true);
         ui->actionLoad_CSV->setEnabled(true);
+        ui->actionLoad_layout->setEnabled(true);
         ui->actionExport_layout->setEnabled(true);
         break;
     }

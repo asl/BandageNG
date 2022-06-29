@@ -18,6 +18,8 @@
 #include "graphlayout.h"
 
 namespace layout::io {
+    bool load(const QString &filename,
+              GraphLayout &layout);
     bool save(const QString &filename,
               const GraphLayout &layout);
     bool saveTSV(const QString &filename,

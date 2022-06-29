@@ -642,6 +642,10 @@ void AssemblyGraph::markNodesToDraw(const std::vector<DeBruijnNode *>& startingN
             node->labelNeighbouringNodesAsDrawn(nodeDistance, nullptr);
         }
     }
+
+    // Then loop through each edge determining its drawn status
+    for (auto &entry : m_deBruijnGraphEdges)
+        entry.second->determineIfDrawn();
 }
 
 // FIXME: this does not belong here
@@ -678,7 +682,7 @@ static std::vector<DeBruijnNode *> getNodesFromBlastHits(const QString& queryNam
 
 // FIXME: This does not belong here!
 std::vector<DeBruijnNode *> AssemblyGraph::getStartingNodes(QString * errorTitle, QString * errorMessage, bool doubleMode,
-                                                            const QString& nodesList, const QString& blastQueryName, const QString& pathName)
+                                                            const QString& nodesList, const QString& blastQueryName, const QString& pathName) const
 {
     std::vector<DeBruijnNode *> startingNodes;
 
@@ -749,7 +753,6 @@ std::vector<DeBruijnNode *> AssemblyGraph::getStartingNodes(QString * errorTitle
     }
 
     g_settings->doubleMode = doubleMode;
-    resetNodes();
 
     if (g_settings->graphScope == AROUND_NODE)
         startingNodes = getNodesFromString(nodesList, g_settings->startingNodesExactMatch);
@@ -759,7 +762,7 @@ std::vector<DeBruijnNode *> AssemblyGraph::getStartingNodes(QString * errorTitle
         startingNodes = getNodesInDepthRange(g_settings->minDepthRange,
                                                  g_settings->maxDepthRange);
     else if (g_settings->graphScope == AROUND_PATHS) {
-        QList<DeBruijnNode *> nodes = m_deBruijnGraphPaths[pathName.toStdString()]->getNodes();
+        QList<DeBruijnNode *> nodes = m_deBruijnGraphPaths.at(pathName.toStdString())->getNodes();
 
         for (auto & node : nodes)
             startingNodes.push_back(node);
@@ -808,7 +811,7 @@ QString AssemblyGraph::generateNodesNotFoundErrorMessage(std::vector<QString> no
 }
 
 
-std::vector<DeBruijnNode *> AssemblyGraph::getNodesFromString(QString nodeNamesString, bool exactMatch, std::vector<QString> * nodesNotInGraph)
+std::vector<DeBruijnNode *> AssemblyGraph::getNodesFromString(QString nodeNamesString, bool exactMatch, std::vector<QString> * nodesNotInGraph) const
 {
     nodeNamesString = nodeNamesString.simplified();
     QStringList nodesList = nodeNamesString.split(",");
@@ -824,7 +827,7 @@ std::vector<DeBruijnNode *> AssemblyGraph::getNodesFromString(QString nodeNamesS
 //those names exactly.  The last +/- on the end of the node name is optional - if missing
 //both + and - nodes will be returned.
 std::vector<DeBruijnNode *> AssemblyGraph::getNodesFromListExact(const QStringList& nodesList,
-                                                                 std::vector<QString> * nodesNotInGraph)
+                                                                 std::vector<QString> * nodesNotInGraph) const
 {
     std::vector<DeBruijnNode *> returnVector;
 
@@ -841,7 +844,7 @@ std::vector<DeBruijnNode *> AssemblyGraph::getNodesFromListExact(const QStringLi
         if (lastChar == '+' || lastChar == '-')
         {
             if (m_deBruijnGraphNodes.count(nodeName.toStdString()))
-                returnVector.push_back(m_deBruijnGraphNodes[nodeName.toStdString()]);
+                returnVector.push_back(m_deBruijnGraphNodes.at(nodeName.toStdString()));
             else if (nodesNotInGraph != nullptr)
                 nodesNotInGraph->push_back(i.trimmed());
         }
@@ -853,14 +856,14 @@ std::vector<DeBruijnNode *> AssemblyGraph::getNodesFromListExact(const QStringLi
             bool posNodeFound = false;
             if (m_deBruijnGraphNodes.count(posNodeName.toStdString()))
             {
-                returnVector.push_back(m_deBruijnGraphNodes[posNodeName.toStdString()]);
+                returnVector.push_back(m_deBruijnGraphNodes.at(posNodeName.toStdString()));
                 posNodeFound = true;
             }
 
             bool negNodeFound = false;
             if (m_deBruijnGraphNodes.count(negNodeName.toStdString()))
             {
-                returnVector.push_back(m_deBruijnGraphNodes[negNodeName.toStdString()]);
+                returnVector.push_back(m_deBruijnGraphNodes.at(negNodeName.toStdString()));
                 negNodeFound = true;
             }
 
@@ -873,7 +876,7 @@ std::vector<DeBruijnNode *> AssemblyGraph::getNodesFromListExact(const QStringLi
 }
 
 std::vector<DeBruijnNode *> AssemblyGraph::getNodesFromListPartial(const QStringList& nodesList,
-                                                                   std::vector<QString> * nodesNotInGraph)
+                                                                   std::vector<QString> * nodesNotInGraph) const
 {
     std::vector<DeBruijnNode *> returnVector;
 
@@ -901,7 +904,7 @@ std::vector<DeBruijnNode *> AssemblyGraph::getNodesFromListPartial(const QString
     return returnVector;
 }
 
-std::vector<DeBruijnNode *> AssemblyGraph::getNodesInDepthRange(double min, double max)
+std::vector<DeBruijnNode *> AssemblyGraph::getNodesInDepthRange(double min, double max) const
 {
     std::vector<DeBruijnNode *> returnVector;
 

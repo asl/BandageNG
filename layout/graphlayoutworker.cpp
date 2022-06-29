@@ -179,7 +179,7 @@ static void addToOgdfGraph(DeBruijnNode *node,
     }
 }
 
-static void addToOgdfGraph(DeBruijnEdge *edge,
+static void addToOgdfGraph(const DeBruijnEdge *edge,
                            ogdf::Graph &ogdfGraph, ogdf::EdgeArray<double> &edgeArray,
                            const OGDFGraphLayout &layout) {
     ogdf::node firstEdgeOgdfNode;
@@ -306,10 +306,10 @@ static void buildGraph(ogdf::Graph &ogdfGraph,
         }
     }
 
-    //Then loop through each edge determining its drawn status and adding it to OGDF if it is drawn.
-    for (auto &entry : graph.m_deBruijnGraphEdges) {
-        DeBruijnEdge *edge = entry.second;
-        if (!edge->determineIfDrawn())
+    // Then loop through each edge determining its drawn status and adding it to OGDF if it is drawn.
+    for (const auto &entry : graph.m_deBruijnGraphEdges) {
+        const DeBruijnEdge *edge = entry.second;
+        if (!edge->isDrawn())
             continue;
 
         if (edge->getOverlapType() == JUMP)

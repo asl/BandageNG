@@ -615,6 +615,7 @@ void BandageTests::graphScope()
     g_settings->nodeDistance = 0;
     g_settings->doubleMode = false;
     startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage, g_settings->doubleMode, g_settings->startingNodes, "", "");
+    g_assemblyGraph->resetNodes();
     g_assemblyGraph->markNodesToDraw(startingNodes, g_settings->nodeDistance);
     {
         GraphLayoutWorker(g_settings->graphLayoutQuality,
@@ -628,6 +629,7 @@ void BandageTests::graphScope()
     g_settings->nodeDistance = 0;
     g_settings->doubleMode = true;
     startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage, g_settings->doubleMode, g_settings->startingNodes, "", "");
+    g_assemblyGraph->resetNodes();
     g_assemblyGraph->markNodesToDraw(startingNodes, g_settings->nodeDistance);
     {
         GraphLayoutWorker(g_settings->graphLayoutQuality,
@@ -642,6 +644,7 @@ void BandageTests::graphScope()
     g_settings->nodeDistance = 0;
     g_settings->doubleMode = false;
     startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage, g_settings->doubleMode, g_settings->startingNodes, "", "");
+    g_assemblyGraph->resetNodes();
     g_assemblyGraph->markNodesToDraw(startingNodes, g_settings->nodeDistance);
     {
         GraphLayoutWorker(g_settings->graphLayoutQuality,
@@ -656,6 +659,7 @@ void BandageTests::graphScope()
     g_settings->nodeDistance = 0;
     g_settings->doubleMode = true;
     startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage, g_settings->doubleMode, g_settings->startingNodes, "", "");
+    g_assemblyGraph->resetNodes();
     g_assemblyGraph->markNodesToDraw(startingNodes, g_settings->nodeDistance);
     {
         GraphLayoutWorker(g_settings->graphLayoutQuality,
@@ -670,6 +674,7 @@ void BandageTests::graphScope()
     g_settings->nodeDistance = 0;
     g_settings->doubleMode = true;
     startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage, g_settings->doubleMode, g_settings->startingNodes, "", "");
+    g_assemblyGraph->resetNodes();
     g_assemblyGraph->markNodesToDraw(startingNodes, g_settings->nodeDistance);
     {
         GraphLayoutWorker(g_settings->graphLayoutQuality,
@@ -684,6 +689,7 @@ void BandageTests::graphScope()
     g_settings->nodeDistance = 1;
     g_settings->doubleMode = false;
     startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage, g_settings->doubleMode, g_settings->startingNodes, "", "");
+    g_assemblyGraph->resetNodes();
     g_assemblyGraph->markNodesToDraw(startingNodes, g_settings->nodeDistance);
     {
         GraphLayoutWorker(g_settings->graphLayoutQuality,
@@ -698,6 +704,7 @@ void BandageTests::graphScope()
     g_settings->nodeDistance = 2;
     g_settings->doubleMode = false;
     startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage, g_settings->doubleMode, g_settings->startingNodes, "", "");
+    g_assemblyGraph->resetNodes();
     g_assemblyGraph->markNodesToDraw(startingNodes, g_settings->nodeDistance);
     {
         GraphLayoutWorker(g_settings->graphLayoutQuality,
@@ -713,6 +720,7 @@ void BandageTests::graphScope()
     g_settings->minDepthRange = 0.0;
     g_settings->maxDepthRange = 211.0;
     startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage, g_settings->doubleMode, g_settings->startingNodes, "", "");
+    g_assemblyGraph->resetNodes();
     g_assemblyGraph->markNodesToDraw(startingNodes, g_settings->nodeDistance);
     {
         GraphLayoutWorker(g_settings->graphLayoutQuality,
@@ -728,6 +736,7 @@ void BandageTests::graphScope()
     g_settings->minDepthRange = 0.0;
     g_settings->maxDepthRange = 211.0;
     startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage, g_settings->doubleMode, g_settings->startingNodes, "", "");
+    g_assemblyGraph->resetNodes();
     g_assemblyGraph->markNodesToDraw(startingNodes, g_settings->nodeDistance);
     {
         GraphLayoutWorker(g_settings->graphLayoutQuality,
@@ -743,6 +752,7 @@ void BandageTests::graphScope()
     g_settings->minDepthRange = 211.0;
     g_settings->maxDepthRange = 1000.0;
     startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage, g_settings->doubleMode, g_settings->startingNodes, "", "");
+    g_assemblyGraph->resetNodes();
     g_assemblyGraph->markNodesToDraw(startingNodes, g_settings->nodeDistance);
     {
         GraphLayoutWorker(g_settings->graphLayoutQuality,
@@ -758,6 +768,7 @@ void BandageTests::graphScope()
     g_settings->minDepthRange = 40.0;
     g_settings->maxDepthRange = 211.0;
     startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage, g_settings->doubleMode, g_settings->startingNodes, "", "");
+    g_assemblyGraph->resetNodes();
     g_assemblyGraph->markNodesToDraw(startingNodes, g_settings->nodeDistance);
     {
         GraphLayoutWorker(g_settings->graphLayoutQuality,
@@ -776,6 +787,7 @@ void BandageTests::graphScope()
     g_settings->nodeDistance = 0;
     g_settings->doubleMode = false;
     startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage, g_settings->doubleMode, g_settings->startingNodes, "all", "");
+    g_assemblyGraph->resetNodes();
     g_assemblyGraph->markNodesToDraw(startingNodes, g_settings->nodeDistance);
     {
         GraphLayoutWorker(g_settings->graphLayoutQuality,
@@ -789,6 +801,7 @@ void BandageTests::graphScope()
     g_settings->nodeDistance = 1;
     g_settings->doubleMode = false;
     startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage, g_settings->doubleMode, g_settings->startingNodes, "all", "");
+    g_assemblyGraph->resetNodes();
     g_assemblyGraph->markNodesToDraw(startingNodes, g_settings->nodeDistance);
     {
         GraphLayoutWorker(g_settings->graphLayoutQuality,
@@ -802,6 +815,7 @@ void BandageTests::graphScope()
     g_settings->nodeDistance = 2;
     g_settings->doubleMode = false;
     startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage, g_settings->doubleMode, g_settings->startingNodes, "all", "");
+    g_assemblyGraph->resetNodes();
     g_assemblyGraph->markNodesToDraw(startingNodes, g_settings->nodeDistance);
     {
         GraphLayoutWorker(g_settings->graphLayoutQuality,

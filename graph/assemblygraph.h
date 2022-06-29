@@ -127,14 +127,14 @@ public:
                                                  bool doubleMode,
                                                  const QString& nodesList,
                                                  const QString& blastQueryName,
-                                                 const QString& pathName);
+                                                 const QString& pathName) const;
 
     static bool checkIfStringHasNodes(QString nodesString);
     static QString generateNodesNotFoundErrorMessage(std::vector<QString> nodesNotInGraph,
                                               bool exact);
     std::vector<DeBruijnNode *> getNodesFromString(QString nodeNamesString,
                                                    bool exactMatch,
-                                                   std::vector<QString> * nodesNotInGraph = 0);
+                                                   std::vector<QString> * nodesNotInGraph = 0) const;
 
     void setAllEdgesExactOverlap(int overlap);
     void autoDetermineAllEdgesExactOverlap();
@@ -196,9 +196,9 @@ public:
     QString getUniqueNodeName(QString baseName) const;
     QString getNodeNameFromString(QString string) const;
 private:
-    std::vector<DeBruijnNode *> getNodesFromListExact(const QStringList& nodesList, std::vector<QString> * nodesNotInGraph);
-    std::vector<DeBruijnNode *> getNodesFromListPartial(const QStringList& nodesList, std::vector<QString> * nodesNotInGraph);
-    std::vector<DeBruijnNode *> getNodesInDepthRange(double min, double max);
+    std::vector<DeBruijnNode *> getNodesFromListExact(const QStringList& nodesList, std::vector<QString> * nodesNotInGraph) const;
+    std::vector<DeBruijnNode *> getNodesFromListPartial(const QStringList& nodesList, std::vector<QString> * nodesNotInGraph) const;
+    std::vector<DeBruijnNode *> getNodesInDepthRange(double min, double max) const;
     std::vector<int> makeOverlapCountVector();
     void clearAllCsvData();
     QString getNewNodeName(QString oldNodeName) const;
