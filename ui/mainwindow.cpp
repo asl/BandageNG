@@ -372,7 +372,7 @@ void MainWindow::loadGraph(QString fullFileName)
 
     auto *watcher = new QFutureWatcher<bool>;
     connect(watcher, &QFutureWatcher<bool>::finished,
-            this, [=]() {
+            this, [=, this]() {
         try {
             // Note that this will rethrow the exceptions, if any
             bool loaded = watcher->result();
@@ -926,7 +926,7 @@ void MainWindow::layoutGraph()
     auto *watcher = new QFutureWatcher<GraphLayout>;
 
     connect(watcher, &QFutureWatcher<GraphLayout>::finished,
-            this, [=]() { this->graphLayoutFinished(watcher->future().result()); });
+            this, [=, this]() { this->graphLayoutFinished(watcher->future().result()); });
     connect(watcher, SIGNAL(finished()), graphLayoutWorker, SLOT(deleteLater()));
     connect(watcher, SIGNAL(finished()), progress, SLOT(deleteLater()));
     connect(watcher, SIGNAL(finished()), watcher, SLOT(deleteLater()));

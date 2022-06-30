@@ -480,6 +480,7 @@ ColorMap colorMapFromName(const QString& name) {
 
 tinycolormap::ColormapType colorMap(ColorMap colorMap) {
     switch (colorMap) {
+        default:
         case Viridis:
             return tinycolormap::ColormapType::Viridis;
         case Parula:
@@ -508,9 +509,11 @@ tinycolormap::ColormapType colorMap(ColorMap colorMap) {
             return tinycolormap::ColormapType::Cubehelix;
     }
 
+    return tinycolormap::ColormapType::Viridis;
 }
 QString getColorMapName(ColorMap colorMap) {
     switch (colorMap) {
+        default:
         case Viridis:
             return "viridis";
         case Parula:
@@ -538,4 +541,6 @@ QString getColorMapName(ColorMap colorMap) {
         case Cubehelix:
             return "cubehelix";
     }
+
+    return "viridis";
 }
