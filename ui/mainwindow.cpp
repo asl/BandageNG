@@ -338,7 +338,7 @@ void MainWindow::loadCSV(QString fullFileName)
 void MainWindow::loadGraph(QString fullFileName)
 {
     QString selectedFilter = "Any supported graph (*)";
-    if (fullFileName == "")
+    if (fullFileName.isEmpty())
         fullFileName =
                 QFileDialog::getOpenFileName(this, "Load graph", g_memory->rememberedPath,
                                              "Any supported graph (*);;"
@@ -350,10 +350,11 @@ void MainWindow::loadGraph(QString fullFileName)
                                              "Plain FASTA (*.fasta)",
                                              &selectedFilter);
 
-    if (fullFileName == "") //User did hit cancel
+    if (fullFileName.isEmpty()) //User did hit cancel
         return;
 
-    auto builder = AssemblyGraphBuilder::get(fullFileName);
+    // We need to convert unique_ptr to shared_ptr in order to get builder shared between future and callback
+    std::shared_ptr<AssemblyGraphBuilder> builder = AssemblyGraphBuilder::get(fullFileName);
     if (!builder) {
         QMessageBox::warning(this,
                              "Graph format not recognised",
@@ -365,66 +366,75 @@ void MainWindow::loadGraph(QString fullFileName)
     cleanUp();
     ui->selectionSearchNodesLineEdit->clear();
 
-    try {
-        MyProgressDialog progress(this, "Loading " + fullFileName, false);
-        progress.setWindowModality(Qt::WindowModal);
-        progress.show();
+    auto *progress = new MyProgressDialog(this, "Loading " + fullFileName, false);
+    progress->setWindowModality(Qt::WindowModal);
+    progress->show();
 
-        builder->build(*g_assemblyGraph);
+    auto *watcher = new QFutureWatcher<bool>;
+    connect(watcher, &QFutureWatcher<bool>::finished,
+            this, [=]() {
+        try {
+            // Note that this will rethrow the exceptions, if any
+            bool loaded = watcher->result();
+            if (builder->hasComplexOverlaps())
+                QMessageBox::warning(this, "Unsupported CIGAR",
+                                     "This GFA file contains "
+                                     "links with complex CIGAR strings (containing "
+                                     "operators other than M).\n\n"
+                                     "Bandage does not support edge overlaps that are not "
+                                     "perfect, so the behaviour of such edges in this graph "
+                                     "is undefined.");
 
-        if (builder->hasComplexOverlaps())
-            QMessageBox::warning(this, "Unsupported CIGAR",
-                                 "This GFA file contains "
-                                 "links with complex CIGAR strings (containing "
-                                 "operators other than M).\n\n"
-                                 "Bandage does not support edge overlaps that are not "
-                                 "perfect, so the behaviour of such edges in this graph "
-                                 "is undefined.");
+            setUiState(GRAPH_LOADED);
+            setWindowTitle("BandageNG - " + fullFileName);
 
-        setUiState(GRAPH_LOADED);
-        setWindowTitle("BandageNG - " + fullFileName);
+            g_assemblyGraph->determineGraphInfo();
+            displayGraphDetails();
+            g_memory->rememberedPath = QFileInfo(fullFileName).absolutePath();
+            g_memory->clearGraphSpecificMemory();
 
-        g_assemblyGraph->determineGraphInfo();
-        displayGraphDetails();
-        g_memory->rememberedPath = QFileInfo(fullFileName).absolutePath();
-        g_memory->clearGraphSpecificMemory();
+            bool customColours = builder->hasCustomColours(),
+                    customLabels = builder->hasCustomLables();
 
-        bool customColours = builder->hasCustomColours(),
-              customLabels = builder->hasCustomLables();
+            // If the graph has custom colours, automatically switch the colour scheme to custom colours.
+            if (customColours)
+                switchColourScheme(CUSTOM_COLOURS);
 
-        // If the graph has custom colours, automatically switch the colour scheme to custom colours.
-        if (customColours)
-            switchColourScheme(CUSTOM_COLOURS);
+            // If the graph doesn't have custom colours, but the colour scheme is on 'Custom', automatically switch it back
+            // to the default of 'Random colours'.
+            if (!customColours && ui->coloursComboBox->currentIndex() == 6)
+                ui->coloursComboBox->setCurrentIndex(0);
 
-        // If the graph doesn't have custom colours, but the colour scheme is on 'Custom', automatically switch it back
-        // to the default of 'Random colours'.
-        if (!customColours && ui->coloursComboBox->currentIndex() == 6)
-            ui->coloursComboBox->setCurrentIndex(0);
+            setupPathSelectionLineEdit(ui->pathSelectionLineEdit);
+            setupPathSelectionLineEdit(ui->pathSelectionLineEdit2);
+        }  catch (const AssemblyGraphError &err) {
+            QString errorTitle = "Error loading graph";
+            QString errorMessage = "There was an error when attempting to load\n"
+                                   + fullFileName + ":\n"
+                                   + err.what() + "\n\n"
+                                   + "Please verify that this file has the correct format.";
+            QMessageBox::warning(this, errorTitle, errorMessage);
+            resetScene();
+            cleanUp();
+            clearGraphDetails();
+            setUiState(NO_GRAPH_LOADED);
+        } catch (...) {
+            QString errorTitle = "Error loading graph";
+            QString errorMessage = "There was an error when attempting to load:\n"
+                                   + fullFileName + "\n\n"
+                                   + "Please verify that this file has the correct format.";
+            QMessageBox::warning(this, errorTitle, errorMessage);
+            resetScene();
+            cleanUp();
+            clearGraphDetails();
+            setUiState(NO_GRAPH_LOADED);
+        }
+    });
+    connect(watcher, SIGNAL(finished()), progress, SLOT(deleteLater()));
+    connect(watcher, SIGNAL(finished()), watcher, SLOT(deleteLater()));
 
-        setupPathSelectionLineEdit(ui->pathSelectionLineEdit);
-        setupPathSelectionLineEdit(ui->pathSelectionLineEdit2);
-    }  catch (const AssemblyGraphError &err) {
-        QString errorTitle = "Error loading graph";
-        QString errorMessage = "There was an error when attempting to load\n"
-                               + fullFileName + ":\n"
-                               + err.what() + "\n\n"
-                               "Please verify that this file has the correct format.";
-        QMessageBox::warning(this, errorTitle, errorMessage);
-        resetScene();
-        cleanUp();
-        clearGraphDetails();
-        setUiState(NO_GRAPH_LOADED);
-    } catch (...) {
-        QString errorTitle = "Error loading graph";
-        QString errorMessage = "There was an error when attempting to load:\n"
-                               + fullFileName + "\n\n"
-                               "Please verify that this file has the correct format.";
-        QMessageBox::warning(this, errorTitle, errorMessage);
-        resetScene();
-        cleanUp();
-        clearGraphDetails();
-        setUiState(NO_GRAPH_LOADED);
-    }
+    auto res = QtConcurrent::run(&AssemblyGraphBuilder::build, builder, std::ref(*g_assemblyGraph));
+    watcher->setFuture(res);
 }
 
 void MainWindow::loadGraphLayout(QString fullFileName) {

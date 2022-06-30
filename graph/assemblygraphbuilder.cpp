@@ -26,7 +26,6 @@
 
 #include "seq/sequence.hpp"
 
-#include <QApplication>
 #include <QFileInfo>
 #include <QFile>
 #include <QDir>
@@ -487,7 +486,7 @@ class GFAAssemblyGraphBuilder : public AssemblyGraphBuilder {
   public:
     using AssemblyGraphBuilder::AssemblyGraphBuilder;
 
-    void build(AssemblyGraph &graph) override {
+    bool build(AssemblyGraph &graph) override {
         graph.m_graphFileType = GFA;
         graph.m_filename = fileName_;
 
@@ -505,8 +504,6 @@ class GFAAssemblyGraphBuilder : public AssemblyGraphBuilder {
         while ((read = gzgetline(&line, &len, fp.get())) != -1) {
             if (read <= 1)
                 continue; // skip empty lines
-
-            if (++i % 1000 == 0) QApplication::processEvents();
 
             auto result = gfa::parse_record(line, read - 1);
             if (!result)
@@ -530,6 +527,8 @@ class GFAAssemblyGraphBuilder : public AssemblyGraphBuilder {
         graph.m_sequencesLoadedFromFasta = NOT_TRIED;
         if (sequencesAreMissing)
             attemptToLoadSequencesFromFasta(graph);
+
+        return true;
     }
 };
 
@@ -578,7 +577,7 @@ class FastaAssemblyGraphBuilder : public AssemblyGraphBuilder {
         return name;
     }
 
-    void build(AssemblyGraph &graph) override {
+    bool build(AssemblyGraph &graph) override {
         graph.m_graphFileType = PLAIN_FASTA;
         graph.m_filename = fileName_;
         graph.m_depthTag = "";
@@ -589,8 +588,6 @@ class FastaAssemblyGraphBuilder : public AssemblyGraphBuilder {
 
         std::vector<QString> circularNodeNames;
         for (size_t i = 0; i < names.size(); ++i) {
-            QApplication::processEvents();
-
             QString name = names[i];
             QString lowerName = name.toLower();
             double depth = 1.0;
@@ -657,13 +654,15 @@ class FastaAssemblyGraphBuilder : public AssemblyGraphBuilder {
         for (const auto& circularNodeName : circularNodeNames) {
             graph.createDeBruijnEdge(circularNodeName, circularNodeName, 0, EXACT_OVERLAP);
         }
+
+        return true;
     }
 };
 
 class FastgAssemblyGraphBuilder : public AssemblyGraphBuilder {
     using AssemblyGraphBuilder::AssemblyGraphBuilder;
 
-    void build(AssemblyGraph &graph) override {
+    bool build(AssemblyGraph &graph) override {
         graph.m_graphFileType = FASTG;
         graph.m_filename = fileName_;
         graph.m_depthTag = "KC";
@@ -677,8 +676,6 @@ class FastgAssemblyGraphBuilder : public AssemblyGraphBuilder {
 
             QTextStream in(&inputFile);
             while (!in.atEnd()) {
-                QApplication::processEvents();
-
                 QString nodeName;
                 double nodeDepth;
 
@@ -793,6 +790,8 @@ class FastgAssemblyGraphBuilder : public AssemblyGraphBuilder {
 
         if (graph.m_deBruijnGraphNodes.empty())
             throw "load error";
+
+        return true;
     }
 };
 
@@ -804,7 +803,7 @@ class FastgAssemblyGraphBuilder : public AssemblyGraphBuilder {
 class AsqgAssemblyGraphBuilder : public AssemblyGraphBuilder {
     using AssemblyGraphBuilder::AssemblyGraphBuilder;
 
-    void build(AssemblyGraph &graph) override {
+    bool build(AssemblyGraph &graph) override {
         graph.m_graphFileType = ASQG;
         graph.m_filename = fileName_;
         graph.m_depthTag = "";
@@ -819,7 +818,6 @@ class AsqgAssemblyGraphBuilder : public AssemblyGraphBuilder {
 
             QTextStream in(&inputFile);
             while (!in.atEnd()) {
-                QApplication::processEvents();
                 QString line = in.readLine();
 
                 QStringList lineParts = line.split(QRegularExpression("\t"));
@@ -933,14 +931,14 @@ class AsqgAssemblyGraphBuilder : public AssemblyGraphBuilder {
         if (graph.m_deBruijnGraphNodes.empty())
             throw "load error";
 
-        // return badEdgeCount;
+        return badEdgeCount == 0;
     }
 };
 
 class TrinityAssemblyGraphBuilder : public AssemblyGraphBuilder {
     using AssemblyGraphBuilder::AssemblyGraphBuilder;
 
-    void build(AssemblyGraph &graph) override {
+    bool build(AssemblyGraph &graph) override {
         graph.m_graphFileType = TRINITY;
         graph.m_filename = fileName_;
         graph.m_depthTag = "";
@@ -953,8 +951,6 @@ class TrinityAssemblyGraphBuilder : public AssemblyGraphBuilder {
         std::vector<QString> edgeEndingNodeNames;
 
         for (size_t i = 0; i < names.size(); ++i) {
-            QApplication::processEvents();
-
             QString name = names[i];
             Sequence sequence{sequences[i]};
 
@@ -1069,6 +1065,8 @@ class TrinityAssemblyGraphBuilder : public AssemblyGraphBuilder {
 
         if (graph.m_deBruijnGraphNodes.empty())
             throw "load error";
+
+        return true;
     }
 };
 
@@ -1086,7 +1084,7 @@ class LastGraphAssemblyGraphBuilder : public AssemblyGraphBuilder {
         return number + "+";
     }
 
-    void build(AssemblyGraph &graph) override {
+    bool build(AssemblyGraph &graph) override {
         graph.m_graphFileType = LAST_GRAPH;
         graph.m_filename = fileName_;
         graph.m_depthTag = "KC";
@@ -1096,7 +1094,6 @@ class LastGraphAssemblyGraphBuilder : public AssemblyGraphBuilder {
         if (inputFile.open(QIODevice::ReadOnly)) {
             QTextStream in(&inputFile);
             while (!in.atEnd()) {
-                QApplication::processEvents();
                 QString line = in.readLine();
 
                 if (firstLine) {
@@ -1163,6 +1160,8 @@ class LastGraphAssemblyGraphBuilder : public AssemblyGraphBuilder {
 
         if (graph.m_deBruijnGraphNodes.empty())
             throw "load error";
+
+        return true;
     }
 };
 

@@ -134,7 +134,7 @@ public:
                                               bool exact);
     std::vector<DeBruijnNode *> getNodesFromString(QString nodeNamesString,
                                                    bool exactMatch,
-                                                   std::vector<QString> * nodesNotInGraph = 0) const;
+                                                   std::vector<QString> * nodesNotInGraph = nullptr) const;
 
     void setAllEdgesExactOverlap(int overlap);
     void autoDetermineAllEdgesExactOverlap();

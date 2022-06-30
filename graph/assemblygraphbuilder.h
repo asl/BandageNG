@@ -23,7 +23,7 @@
 
 class AssemblyGraphBuilder {
   public:    
-    virtual void build(AssemblyGraph &graph) = 0;
+    virtual bool build(AssemblyGraph &graph) = 0;
     virtual ~AssemblyGraphBuilder() = default;
 
     static std::unique_ptr<AssemblyGraphBuilder> get(const QString &fullFileName);
