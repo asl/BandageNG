@@ -1561,8 +1561,8 @@ void AssemblyGraph::saveEntireGraphToFasta(const QString& filename)
     file.open(QIODevice::WriteOnly | QIODevice::Text);
     QTextStream out(&file);
 
-    for (auto &entry : m_deBruijnGraphNodes) {
-        out <<entry->getFasta(true);
+    for (const auto *node : m_deBruijnGraphNodes) {
+        out << node->getFasta(true);
     }
 }
 
@@ -1572,8 +1572,7 @@ void AssemblyGraph::saveEntireGraphToFastaOnlyPositiveNodes(const QString& filen
     file.open(QIODevice::WriteOnly | QIODevice::Text);
     QTextStream out(&file);
 
-    for (auto &entry : m_deBruijnGraphNodes) {
-        DeBruijnNode * node = entry;
+    for (const auto *node : m_deBruijnGraphNodes) {
         if (node->isPositiveNode())
             out << node->getFasta(false);
     }
@@ -1598,19 +1597,52 @@ QString AssemblyGraph::getGfaSegmentLine(const DeBruijnNode *node, const QString
     //If the user has included custom labels or colours, include those.
     QString label = getCustomLabel(node);
     if (!label.isEmpty())
-        gfaSegmentLine += "\tLB:z:" + label.toLatin1();
+        gfaSegmentLine += "\tLB:Z:" + label.toLatin1();
 
     QString rcLabel = getCustomLabel(node->getReverseComplement());
     if (!rcLabel.isEmpty())
-        gfaSegmentLine += "\tL2:z:" + rcLabel.toLatin1();
+        gfaSegmentLine += "\tL2:Z:" + rcLabel.toLatin1();
     if (hasCustomColour(node))
-        gfaSegmentLine += "\tCL:z:" + getColourName(getCustomColour(node)).toLatin1();
+        gfaSegmentLine += "\tCL:Z:" + getColourName(getCustomColour(node)).toLatin1();
     if (hasCustomColour(node->getReverseComplement()))
-        gfaSegmentLine += "\tC2:z:" + getColourName(getCustomColour(node->getReverseComplement())).toLatin1();
+        gfaSegmentLine += "\tC2:Z:" + getColourName(getCustomColour(node->getReverseComplement())).toLatin1();
 
     return gfaSegmentLine;
 }
 
+QString AssemblyGraph::getGfaLinkLine(const DeBruijnEdge *edge) const {
+    const DeBruijnNode *startingNode = edge->getStartingNode();
+    const DeBruijnNode *endingNode = edge->getEndingNode();
+    bool isJump = edge->getOverlapType() == JUMP;
+
+    QByteArray gfaLinkLine = isJump ? "J\t" : "L\t";
+    gfaLinkLine += qPrintable(startingNode->getNameWithoutSign());
+    gfaLinkLine += '\t';
+    gfaLinkLine += qPrintable(startingNode->getSign());
+    gfaLinkLine += '\t';
+    gfaLinkLine += qPrintable(endingNode->getNameWithoutSign());
+    gfaLinkLine += '\t';
+    gfaLinkLine += qPrintable(endingNode->getSign());
+    gfaLinkLine += '\t';
+    // Emit overlap for normal links and distance for jump links
+    if (isJump) {
+        gfaLinkLine += edge->getOverlap() == 0 ? "*" : qPrintable(QString::number(edge->getOverlap()));
+    } else {
+        gfaLinkLine += qPrintable(QString::number(edge->getOverlap()));
+        gfaLinkLine += "M";
+    }
+
+    if (hasCustomColour(edge)) {
+        gfaLinkLine += "\tCL:Z:";
+        gfaLinkLine += qPrintable(getColourName(getCustomColour(edge)));
+    }
+    if (!edge->isOwnReverseComplement() && hasCustomColour(edge->getReverseComplement())) {
+        gfaLinkLine += "\tC2:Z:";
+        gfaLinkLine += qPrintable(getColourName(getCustomColour(edge->getReverseComplement())));
+    }
+
+    return gfaLinkLine;
+}
 
 bool AssemblyGraph::saveEntireGraphToGfa(const QString& filename)
 {
@@ -1621,8 +1653,7 @@ bool AssemblyGraph::saveEntireGraphToGfa(const QString& filename)
 
     QTextStream out(&file);
 
-    for (auto &entry : m_deBruijnGraphNodes) {
-        DeBruijnNode * node = entry;
+    for (const auto *node : m_deBruijnGraphNodes) {
         if (node->isPositiveNode())
             out << getGfaSegmentLine(node, m_depthTag) << '\n';
     }
@@ -1636,8 +1667,8 @@ bool AssemblyGraph::saveEntireGraphToGfa(const QString& filename)
 
     std::sort(edgesToSave.begin(), edgesToSave.end(), DeBruijnEdge::compareEdgePointers);
 
-    for (auto & i : edgesToSave)
-        out << i->getGfaLinkLine();
+    for (const auto *edge : edgesToSave)
+        out << getGfaLinkLine(edge) << '\n';
 
     return true;
 }
@@ -1651,25 +1682,24 @@ bool AssemblyGraph::saveVisibleGraphToGfa(const QString& filename)
 
     QTextStream out(&file);
 
-    for (auto &entry : m_deBruijnGraphNodes) {
-        DeBruijnNode * node = entry;
+    for (const auto *node : m_deBruijnGraphNodes) {
         if (node->thisNodeOrReverseComplementIsDrawn() && node->isPositiveNode())
             out << getGfaSegmentLine(node, m_depthTag) << '\n';
     }
 
-    QList<DeBruijnEdge*> edgesToSave;
+    QList<const DeBruijnEdge*> edgesToSave;
     for (auto &entry : m_deBruijnGraphEdges) {
-        DeBruijnEdge * edge = entry.second;
+        const DeBruijnEdge * edge = entry.second;
         if (edge->getStartingNode()->thisNodeOrReverseComplementIsDrawn() &&
-                edge->getEndingNode()->thisNodeOrReverseComplementIsDrawn() &&
-                edge->isPositiveEdge())
+            edge->getEndingNode()->thisNodeOrReverseComplementIsDrawn() &&
+            edge->isPositiveEdge())
             edgesToSave.push_back(edge);
     }
 
     std::sort(edgesToSave.begin(), edgesToSave.end(), DeBruijnEdge::compareEdgePointers);
 
-    for (auto & i : edgesToSave)
-        out << i->getGfaLinkLine();
+    for (const auto *node : edgesToSave)
+        out << getGfaLinkLine(node) << '\n';
 
     return true;
 }

@@ -192,6 +192,7 @@ public:
     QStringList getCustomLabelForDisplay(const DeBruijnNode *node) const;
 
     QString getGfaSegmentLine(const DeBruijnNode *node, const QString& depthTag) const;
+    QString getGfaLinkLine(const DeBruijnEdge *edge) const;
 
     QString getUniqueNodeName(QString baseName) const;
     QString getNodeNameFromString(QString string) const;

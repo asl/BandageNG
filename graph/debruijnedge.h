@@ -33,8 +33,6 @@ public:
     //CREATORS
     DeBruijnEdge(DeBruijnNode * startingNode, DeBruijnNode * endingNode);
 
-    //ACCESSORS
-    bool isStartingNode(DeBruijnNode * node) const {return node == m_startingNode;}
     DeBruijnNode * getStartingNode() const {return m_startingNode;}
     DeBruijnNode * getEndingNode() const {return m_endingNode;}
     GraphicsItemEdge * getGraphicsItemEdge() const {return m_graphicsItemEdge;}
@@ -57,11 +55,10 @@ public:
                          DeBruijnNode * target,
                          std::vector<DeBruijnNode *> pathSoFar,
                          bool includeReverseComplement) const;
-    QByteArray getGfaLinkLine() const;
     bool isPositiveEdge() const;
     bool isNegativeEdge() const {return !isPositiveEdge();}
     bool isOwnReverseComplement() const {return this == getReverseComplement();}
-    static bool compareEdgePointers(DeBruijnEdge * a, DeBruijnEdge * b);
+    static bool compareEdgePointers(const DeBruijnEdge * a, const DeBruijnEdge * b);
 
     //MODIFERS
     void setGraphicsItemEdge(GraphicsItemEdge * gie) {m_graphicsItemEdge = gie;}

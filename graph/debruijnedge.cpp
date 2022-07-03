@@ -28,16 +28,11 @@ DeBruijnEdge::DeBruijnEdge(DeBruijnNode *startingNode, DeBruijnNode *endingNode)
 {
 }
 
-
-
 //This function assumes that the parameter node pointer is one of the two nodes
 //in this edge, and it returns the other one.
 DeBruijnNode * DeBruijnEdge::getOtherNode(const DeBruijnNode * node) const
 {
-    if (node == m_startingNode)
-        return m_endingNode;
-    else
-        return m_startingNode;
+    return node == m_startingNode ?  m_endingNode : m_startingNode;
 }
 
 
@@ -332,24 +327,7 @@ bool DeBruijnEdge::testExactOverlap(int overlap) const
 }
 
 
-QByteArray DeBruijnEdge::getGfaLinkLine() const
-{
-    DeBruijnNode * startingNode = getStartingNode();
-    DeBruijnNode * endingNode = getEndingNode();
-
-    QByteArray gfaLinkLine = "L\t";
-    gfaLinkLine += startingNode->getNameWithoutSign().toLatin1() + "\t";
-    gfaLinkLine += startingNode->getSign().toLatin1() + "\t";
-    gfaLinkLine += endingNode->getNameWithoutSign().toLatin1() + "\t";
-    gfaLinkLine += endingNode->getSign().toLatin1() + "\t";
-    gfaLinkLine += QString::number(getOverlap()).toLatin1() + "M";
-
-    gfaLinkLine += "\n";
-    return gfaLinkLine;
-}
-
-bool DeBruijnEdge::compareEdgePointers(DeBruijnEdge * a, DeBruijnEdge * b)
-{
+bool DeBruijnEdge::compareEdgePointers(const DeBruijnEdge * a, const DeBruijnEdge * b) {
     QString aStart = a->getStartingNode()->getName();
     QString bStart = b->getStartingNode()->getName();
     QString aStartNoSign = aStart;
