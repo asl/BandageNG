@@ -1578,6 +1578,27 @@ void AssemblyGraph::saveEntireGraphToFastaOnlyPositiveNodes(const QString& filen
     }
 }
 
+static void printTags(QByteArray &out, const std::vector<gfa::tag> &tags) {
+    for (const auto &tag: tags) {
+        out += '\t';
+        out += tag.name[0];
+        out += tag.name[1];
+        out += ":";
+        out += tag.type;
+        out += ":";
+        std::visit([&](const auto& val) {
+            using T = std::decay_t<decltype(val)>;
+            if constexpr (std::is_same_v<T, int64_t>) {
+                out += qPrintable(QString::number(val));
+            } else if constexpr (std::is_same_v<T, float>) {
+                out += qPrintable(QString::number(val));
+            } else if constexpr (std::is_same_v<T, std::string>) {
+                out += val;
+            }
+        }, tag.val);
+    }
+}
+
 QString AssemblyGraph::getGfaSegmentLine(const DeBruijnNode *node, const QString& depthTag) const {
     QByteArray gfaSequence = node->getSequenceForGfa();
 
@@ -1606,6 +1627,10 @@ QString AssemblyGraph::getGfaSegmentLine(const DeBruijnNode *node, const QString
         gfaSegmentLine += "\tCL:Z:" + getColourName(getCustomColour(node)).toLatin1();
     if (hasCustomColour(node->getReverseComplement()))
         gfaSegmentLine += "\tC2:Z:" + getColourName(getCustomColour(node->getReverseComplement())).toLatin1();
+
+    auto tagIt = m_nodeTags.find(node);
+    if (tagIt != m_nodeTags.end())
+        printTags(gfaSegmentLine, tagIt->second);
 
     return gfaSegmentLine;
 }
@@ -1640,6 +1665,10 @@ QString AssemblyGraph::getGfaLinkLine(const DeBruijnEdge *edge) const {
         gfaLinkLine += "\tC2:Z:";
         gfaLinkLine += qPrintable(getColourName(getCustomColour(edge->getReverseComplement())));
     }
+
+    auto tagIt = m_edgeTags.find(edge);
+    if (tagIt != m_edgeTags.end())
+        printTags(gfaLinkLine, tagIt->second);
 
     return gfaLinkLine;
 }

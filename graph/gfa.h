@@ -38,8 +38,7 @@ struct tag {
 
     template<typename T>
     tag(std::string_view n, std::string_view t, T v)
-            : name{n[0], n[1]}, type(t.front()), val(std::move(v))
-    {}
+            : name{n[0], n[1]}, type(t.front()), val(std::move(v)) {}
 
     friend std::ostream &operator<<(std::ostream &s, const tag &t);
 
