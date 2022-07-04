@@ -96,7 +96,6 @@ public:
     double m_firstQuartileDepth;
     double m_medianDepth;
     double m_thirdQuartileDepth;
-    GraphFileType m_graphFileType;
     bool m_contiguitySearchDone;
     QString m_filename;
     QString m_depthTag;

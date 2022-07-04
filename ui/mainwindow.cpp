@@ -2274,23 +2274,6 @@ void MainWindow::openPathSpecifyDialog()
 }
 
 
-QString MainWindow::convertGraphFileTypeToString(GraphFileType graphFileType)
-{
-    QString graphFileTypeString;
-    switch (graphFileType)
-    {
-    case FASTG: graphFileTypeString = "FASTG"; break;
-    case GFA: graphFileTypeString = "GFA"; break;
-    case TRINITY: graphFileTypeString = "Trinity.fasta"; break;
-    case ASQG: graphFileTypeString = "ASQG"; break;
-    case PLAIN_FASTA: graphFileTypeString = "FASTA"; break;
-    case ANY_FILE_TYPE: graphFileTypeString = "any"; break;
-    case UNKNOWN_FILE_TYPE: graphFileTypeString = "unknown"; break;
-    }
-    return graphFileTypeString;
-}
-
-
 void MainWindow::setSelectedNodesWidgetsVisibility(bool visible)
 {
     ui->selectedNodesTitleLabel->setVisible(visible);

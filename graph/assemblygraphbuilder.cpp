@@ -482,7 +482,6 @@ class GFAAssemblyGraphBuilder : public AssemblyGraphBuilder {
     using AssemblyGraphBuilder::AssemblyGraphBuilder;
 
     bool build(AssemblyGraph &graph) override {
-        graph.m_graphFileType = GFA;
         graph.m_filename = fileName_;
 
         bool sequencesAreMissing = false;
@@ -573,7 +572,6 @@ class FastaAssemblyGraphBuilder : public AssemblyGraphBuilder {
     }
 
     bool build(AssemblyGraph &graph) override {
-        graph.m_graphFileType = PLAIN_FASTA;
         graph.m_filename = fileName_;
         graph.m_depthTag = "";
 
@@ -658,7 +656,6 @@ class FastgAssemblyGraphBuilder : public AssemblyGraphBuilder {
     using AssemblyGraphBuilder::AssemblyGraphBuilder;
 
     bool build(AssemblyGraph &graph) override {
-        graph.m_graphFileType = FASTG;
         graph.m_filename = fileName_;
         graph.m_depthTag = "KC";
 
@@ -799,7 +796,6 @@ class AsqgAssemblyGraphBuilder : public AssemblyGraphBuilder {
     using AssemblyGraphBuilder::AssemblyGraphBuilder;
 
     bool build(AssemblyGraph &graph) override {
-        graph.m_graphFileType = ASQG;
         graph.m_filename = fileName_;
         graph.m_depthTag = "";
 
@@ -934,7 +930,6 @@ class TrinityAssemblyGraphBuilder : public AssemblyGraphBuilder {
     using AssemblyGraphBuilder::AssemblyGraphBuilder;
 
     bool build(AssemblyGraph &graph) override {
-        graph.m_graphFileType = TRINITY;
         graph.m_filename = fileName_;
         graph.m_depthTag = "";
 

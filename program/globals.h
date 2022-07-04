@@ -38,8 +38,6 @@ enum GraphScope {WHOLE_GRAPH, AROUND_NODE, AROUND_PATHS, AROUND_BLAST_HITS, DEPT
 enum NodeDragging {ONE_PIECE, NEARBY_PIECES, ALL_PIECES, NO_DRAGGING};
 enum ZoomSource {MOUSE_WHEEL, SPIN_BOX, KEYBOARD, GESTURE};
 enum NodeLengthMode {AUTO_NODE_LENGTH, MANUAL_NODE_LENGTH};
-enum GraphFileType {FASTG, GFA, TRINITY, ASQG, PLAIN_FASTA, ANY_FILE_TYPE,
-                    UNKNOWN_FILE_TYPE};
 enum SequenceType {NUCLEOTIDE, PROTEIN, EITHER_NUCLEOTIDE_OR_PROTEIN};
 enum BlastUiState {BLAST_DB_NOT_YET_BUILT, BLAST_DB_BUILD_IN_PROGRESS,
                    BLAST_DB_BUILT_BUT_NO_QUERIES,
@@ -62,8 +60,9 @@ using AnnotationGroupId = int;
 using ViewId = int;
 
 
-//Some of the program's common components are made global, so they don't have
-//to be passed around as parameters.
+// Some of the program's common components are made global, so they don't have
+// to be passed around as parameters.
+// FIXME: This is bad. Factor this out when possible
 extern QSharedPointer<Settings> g_settings;
 extern QSharedPointer<Memory> g_memory;
 extern MyGraphicsView * g_graphicsView;

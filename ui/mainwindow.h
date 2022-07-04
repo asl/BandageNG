@@ -92,7 +92,7 @@ private:
     void setupBlastQueryComboBox();
     void setupPathSelectionLineEdit(QLineEdit *lineEdit);
     bool checkForImageSave();
-    QString convertGraphFileTypeToString(GraphFileType graphFileType);
+
     void setSelectedNodesWidgetsVisibility(bool visible);
     void setSelectedEdgesWidgetsVisibility(bool visible);
     void setStartingNodesWidgetVisibility(bool visible);
