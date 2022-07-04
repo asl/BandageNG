@@ -300,7 +300,7 @@ int BlastSearch::loadBlastQueriesFromFastaFile(QString fullFileName)
 
     std::vector<QString> queryNames;
     std::vector<QByteArray> querySequences;
-    utils::readFastaOrFastqFile(std::move(fullFileName), &queryNames, &querySequences);
+    utils::readFastxFile(std::move(fullFileName), &queryNames, &querySequences);
 
     for (size_t i = 0; i < queryNames.size(); ++i)
     {

@@ -23,8 +23,8 @@
 #include <QApplication>
 
 namespace utils {
-    void readFastaOrFastqFile(const QString &filename, std::vector<QString> *names,
-                              std::vector<QByteArray> *sequences) {
+    void readFastxFile(const QString &filename, std::vector<QString> *names,
+                       std::vector<QByteArray> *sequences) {
         QChar firstChar = QChar(0);
         QFile inputFile(filename);
         if (inputFile.open(QIODevice::ReadOnly)) {

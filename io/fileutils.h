@@ -22,8 +22,8 @@
 #include <vector>
 
 namespace utils {
-    void readFastaOrFastqFile(const QString &filename, std::vector<QString> *names,
-                              std::vector<QByteArray> *sequences);
+    void readFastxFile(const QString &filename, std::vector<QString> *names,
+                       std::vector<QByteArray> *sequences);
 
     void readFastaFile(const QString &filename, std::vector<QString> *names,
                        std::vector<QByteArray> *sequences);
