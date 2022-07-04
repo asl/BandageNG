@@ -17,12 +17,13 @@
 
 #include "assemblygraphbuilder.h"
 #include "path.h"
-#include "gfa.h"
 
 #include "graph/assemblygraph.h"
 #include "graph/debruijnedge.h"
 #include "graph/debruijnnode.h"
-#include "graph/fileutils.h"
+
+#include "io/gfa.h"
+#include "io/fileutils.h"
 
 #include "seq/sequence.hpp"
 
@@ -169,13 +170,15 @@ static bool attemptToLoadSequencesFromFasta(AssemblyGraph &graph) {
     for (size_t i = 0; i < names.size(); ++i) {
         QString name = names[i];
         name = name.split(QRegularExpression("\\s+"))[0];
-        if (graph.m_deBruijnGraphNodes.count((name + "+").toStdString())) {
-            DeBruijnNode * posNode = graph.m_deBruijnGraphNodes[(name + "+").toStdString()];
+        QString nodeName = name + "+";
+        auto nodeIt = graph.m_deBruijnGraphNodes.find(nodeName.toStdString());
+        if (nodeIt != graph.m_deBruijnGraphNodes.end()) {
+            DeBruijnNode *posNode = *nodeIt;
             if (posNode->sequenceIsMissing()) {
                 Sequence sequence{sequences[i]};
                 atLeastOneNodeSequenceLoaded = true;
                 posNode->setSequence(sequence);
-                DeBruijnNode * negNode = graph.m_deBruijnGraphNodes[(name + "-").toStdString()];
+                DeBruijnNode *negNode = graph.m_deBruijnGraphNodes.at((name + "-").toStdString());
                 negNode->setSequence(sequence.GetReverseComplement());
             }
         }
@@ -277,7 +280,7 @@ class GFAAssemblyGraphBuilder : public AssemblyGraphBuilder {
                                     const std::vector<gfa::tag> &tags,
                                     const char *tag,
                                     AssemblyGraph &graph) {
-        if (auto cb = getTag<std::string>(tag, tags)) {
+        if (auto cb = gfa::getTag<std::string>(tag, tags)) {
             graph.setCustomColour(e, cb->c_str());
             return true;
         }
@@ -305,8 +308,8 @@ class GFAAssemblyGraphBuilder : public AssemblyGraphBuilder {
         size_t length = seq.size();
         Sequence sequence;
         if (!length ||
-            length == 1 && seq.starts_with('*')) {
-            auto lnTag = getTag<int64_t>("LN", record.tags);
+            length == 1 && seq[0] == '*') {
+            auto lnTag = gfa::getTag<int64_t>("LN", record.tags);
             if (lnTag)
                 length = size_t(*lnTag);
 
@@ -316,16 +319,16 @@ class GFAAssemblyGraphBuilder : public AssemblyGraphBuilder {
             sequence = Sequence{seq};
 
         double nodeDepth = 0;
-        if (auto dpTag = getTag<float>("DP", record.tags)) {
+        if (auto dpTag = gfa::getTag<float>("DP", record.tags)) {
             graph.m_depthTag = "DP";
             nodeDepth = *dpTag;
-        } else if (auto kcTag = getTag<int64_t>("KC", record.tags)) {
+        } else if (auto kcTag = gfa::getTag<int64_t>("KC", record.tags)) {
             graph.m_depthTag = "KC";
             nodeDepth = double(*kcTag) / double(length);
-        } else if (auto rcTag = getTag<int64_t>("RC", record.tags)) {
+        } else if (auto rcTag = gfa::getTag<int64_t>("RC", record.tags)) {
             graph.m_depthTag = "RC";
             nodeDepth = double(*rcTag) / double(length);
-        } else if (auto fcTag = getTag<int64_t>("FC", record.tags)) {
+        } else if (auto fcTag = gfa::getTag<int64_t>("FC", record.tags)) {
             graph.m_depthTag = "FC";
             nodeDepth = double(*fcTag) / double(length);
         }
@@ -333,8 +336,8 @@ class GFAAssemblyGraphBuilder : public AssemblyGraphBuilder {
         // FIXME: get rid of copies and QString's
         auto [nodePtr, oppositeNodePtr] = addSegmentPair(nodeName, nodeDepth, sequence, graph);
 
-        auto lb = getTag<std::string>("LB", record.tags);
-        auto l2 = getTag<std::string>("L2", record.tags);
+        auto lb = gfa::getTag<std::string>("LB", record.tags);
+        auto l2 = gfa::getTag<std::string>("L2", record.tags);
         hasCustomLabels_ = hasCustomLabels_ || lb || l2;
         if (lb) graph.setCustomLabel(nodePtr, lb->c_str());
         if (l2) graph.setCustomLabel(oppositeNodePtr, l2->c_str());

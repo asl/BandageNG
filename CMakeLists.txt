@@ -27,11 +27,9 @@ set(LIB_SOURCES
         command_line/load.cpp
         command_line/querypaths.cpp
         command_line/reduce.cpp
-        graph/gfa.cpp
         graph/assemblygraphbuilder.cpp
         graph/assemblygraph.cpp
         graph/annotationsmanager.cpp
-        graph/bedloader.cpp
         graph/debruijnedge.cpp
         graph/debruijnnode.cpp
         graph/graphicsitemedge.cpp
@@ -72,8 +70,7 @@ set(LIB_SOURCES
         ui/verticallabel.cpp
         ui/verticalscrollarea.cpp
         graph/nodecolorer.cpp
-        graph/sequenceutils.cpp
-        graph/fileutils.cpp)
+        graph/sequenceutils.cpp)
 
 set(FORMS
         ui/aboutdialog.ui
@@ -101,12 +98,18 @@ include(FetchContent)
 FetchContent_Declare(lexy URL https://lexy.foonathan.net/download/lexy-src.zip)
 FetchContent_MakeAvailable(lexy)
 
-# FIXME: Untagle this
 add_library(BandageLayout STATIC layout/graphlayoutworker.cpp layout/io.cpp layout/graphlayout.cpp)
 target_link_libraries(BandageLayout PRIVATE OGDF Qt6::Concurrent Qt6::Gui Qt6::Widgets)
 
+add_library(BandageIo STATIC
+        io/gfa.cpp
+        io/bedloader.cpp
+        io/fileutils.cpp)
+target_link_libraries(BandageIo PRIVATE Qt6::Gui Qt6::Widgets foonathan::lexy)
+
+# FIXME: Untagle this
 add_library(BandageLib STATIC ${LIB_SOURCES} ${FORMS})
-target_link_libraries(BandageLib PRIVATE BandageLayout Qt6::Concurrent Qt6::Widgets Qt6::Svg foonathan::lexy ZLIB::ZLIB)
+target_link_libraries(BandageLib PRIVATE BandageLayout BandageIo Qt6::Concurrent Qt6::Widgets Qt6::Svg ZLIB::ZLIB)
 target_include_directories(BandageLib INTERFACE ".")
 
 add_executable(BandageNG program/main.cpp ${RESOURCES})

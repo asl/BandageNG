@@ -7,7 +7,7 @@
 #include <exception>
 
 #include "program/memory.h"
-#include "graph/bedloader.hpp"
+#include "io/bedloader.hpp"
 #include "graph/annotationsmanager.h"
 #include "graph/assemblygraph.h"
 #include "graph/debruijnnode.h"

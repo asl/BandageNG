@@ -25,7 +25,7 @@
 #include "graph/assemblygraph.h"
 #include "graph/debruijnnode.h"
 #include "graph/annotationsmanager.h"
-#include "graph/fileutils.h"
+#include "io/fileutils.h"
 
 #include <QDir>
 #include <QRegularExpression>

@@ -17,11 +17,9 @@
 
 #include "bedloader.hpp"
 
-#include <exception>
-#include <ostream>
-#include <sstream>
-
 #include <csv/csv.hpp>
+
+#include <sstream>
 
 namespace bed {
 
@@ -50,7 +48,7 @@ std::vector<Line> load(const std::filesystem::path &path) {
             "itemRgb", "blockCount",
             "blockSizes", "blockStarts"
         });
-    csv::CSVReader csvReader(path.native(), format);
+    csv::CSVReader csvReader(path.string(), format);
 
     csv::CSVRow row;
     std::vector<Line> res;

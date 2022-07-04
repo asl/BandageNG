@@ -1,17 +1,19 @@
 #ifndef BANDAGE_GRAPH_ANNOTATION_HPP_
 #define BANDAGE_GRAPH_ANNOTATION_HPP_
 
+#include "graphicsitemnode.h"
+
+#include "blast/blasthit.h"
+#include "blast/blastquery.h"
+#include "io/bedloader.hpp"
+
+#include "program/settings.h"
+
 #include <utility>
 
 #include <QColor>
 #include <QPainterPath>
 #include <QPainter>
-
-#include "blast/blasthit.h"
-#include "blast/blastquery.h"
-#include "graphicsitemnode.h"
-#include "program/settings.h"
-#include "bedloader.hpp"
 
 
 class IAnnotationView {

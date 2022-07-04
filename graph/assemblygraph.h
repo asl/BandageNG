@@ -21,10 +21,10 @@
 #pragma once
 
 #include "debruijnedge.h"
-#include "gfa.h"
 #include "path.h"
 #include "annotation.hpp"
 
+#include "io/gfa.h"
 #include "ui/mygraphicsscene.h"
 
 #include "seq/sequence.hpp"
