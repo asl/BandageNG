@@ -23,8 +23,8 @@
 #include <QApplication>
 
 namespace utils {
-    void readFastxFile(const QString &filename, std::vector<QString> *names,
-                       std::vector<QByteArray> *sequences) {
+    void readFastxFile(const QString &filename, std::vector<QString> &names,
+                       std::vector<QByteArray> &sequences) {
         QChar firstChar = QChar(0);
         QFile inputFile(filename);
         if (inputFile.open(QIODevice::ReadOnly)) {
@@ -40,8 +40,8 @@ namespace utils {
     }
 
 
-    void readFastaFile(const QString &filename, std::vector<QString> *names,
-                       std::vector<QByteArray> *sequences) {
+    void readFastaFile(const QString &filename, std::vector<QString> &names,
+                       std::vector<QByteArray> &sequences) {
         QFile inputFile(filename);
         if (inputFile.open(QIODevice::ReadOnly)) {
             QString name = "";
@@ -59,8 +59,8 @@ namespace utils {
                 if (line.at(0) == '>') {
                     //If there is a current sequence, add it to the vectors now.
                     if (name.length() > 0) {
-                        names->push_back(name);
-                        sequences->push_back(sequence);
+                        names.push_back(name);
+                        sequences.push_back(sequence);
                     }
 
                     line.remove(0, 1); //Remove '>' from start
@@ -72,8 +72,8 @@ namespace utils {
 
             //Add the last target to the results now.
             if (name.length() > 0) {
-                names->push_back(name);
-                sequences->push_back(sequence);
+                names.push_back(name);
+                sequences.push_back(sequence);
             }
 
             inputFile.close();
@@ -81,8 +81,8 @@ namespace utils {
     }
 
 
-    void readFastqFile(const QString &filename, std::vector<QString> *names,
-                       std::vector<QByteArray> *sequences) {
+    void readFastqFile(const QString &filename, std::vector<QString> &names,
+                       std::vector<QByteArray> &sequences) {
         QFile inputFile(filename);
         if (inputFile.open(QIODevice::ReadOnly)) {
             QTextStream in(&inputFile);
@@ -101,8 +101,8 @@ namespace utils {
                 if (name.at(0) != '@')
                     continue;
                 name.remove(0, 1); //Remove '@' from start
-                names->push_back(name);
-                sequences->push_back(sequence);
+                names.push_back(name);
+                sequences.push_back(sequence);
             }
             inputFile.close();
         }
