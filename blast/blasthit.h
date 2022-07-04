@@ -23,7 +23,6 @@ class DeBruijnNode;
 class BlastQuery;
 
 #include <QString>
-#include "blasthitpart.h"
 #include <vector>
 #include "graph/path.h"
 #include "graph/graphlocation.h"
