@@ -19,8 +19,6 @@
 #ifndef GLOBALS_H
 #define GLOBALS_H
 
-#include <colormap/tinycolormap_fwd.hpp>
-
 #include <QString>
 #include <QSharedPointer>
 #include <QColor>
@@ -45,13 +43,6 @@ enum BlastUiState {BLAST_DB_NOT_YET_BUILT, BLAST_DB_BUILD_IN_PROGRESS,
 enum CommandLineCommand {NO_COMMAND, BANDAGE_LOAD, BANDAGE_INFO, BANDAGE_IMAGE,
                          BANDAGE_DISTANCE, BANDAGE_QUERY_PATHS, BANDAGE_REDUCE};
 
-// FIXME: factor out
-enum ColorMap : int {
-    Viridis = 0,
-    Parula, Heat, Jet, Turbo, Hot, Gray, Magma, Inferno, Plasma, Cividis, Github, Cubehelix
-};
-
-
 // Some of the program's common components are made global, so they don't have
 // to be passed around as parameters.
 // FIXME: This is bad. Factor this out when possible
@@ -70,10 +61,5 @@ QString formatIntForDisplay(long long num);
 QString formatDoubleForDisplay(double num, int decimalPlacesToDisplay);
 QString formatDepthForDisplay(double depth);
 
-std::vector<QColor> getPresetColours();
-QString getColourName(QColor colour);
-ColorMap colorMapFromName(const QString& name);
-tinycolormap::ColormapType colorMap(ColorMap colorMap);
-QString getColorMapName(ColorMap colorMap);
 
 #endif // GLOBALS_H
