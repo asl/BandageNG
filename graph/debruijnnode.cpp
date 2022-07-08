@@ -24,6 +24,7 @@
 #include "blast/blasthit.h"
 
 #include <cmath>
+#include <unordered_set>
 
 #include <set>
 #include <QApplication>
@@ -405,9 +406,8 @@ QString DeBruijnNode::getNodeNameForFasta(bool sign) const
 }
 
 
-//This function recursively labels all nodes as drawn that are within a
-//certain distance of this node.  Whichever node called this will
-//definitely be drawn, so that one is excluded from the recursive call.
+//This function iteratively labels all nodes as drawn that are within a
+//certain distance of this node.
 void DeBruijnNode::labelNeighbouringNodesAsDrawn(int nodeDistance, DeBruijnNode * callingNode)
 {
     if (m_highestDistanceInNeighbourSearch > nodeDistance)
@@ -417,73 +417,28 @@ void DeBruijnNode::labelNeighbouringNodesAsDrawn(int nodeDistance, DeBruijnNode 
     if (nodeDistance == 0)
         return;
 
-    DeBruijnNode * otherNode;
-    for (auto &m_edge : m_edges)
-    {
-        otherNode = m_edge->getOtherNode(this);
-
-        if (otherNode == callingNode)
-            continue;
-
-        if (g_settings->doubleMode)
-            otherNode->m_drawn = true;
-        else //single mode
-        {
-            if (otherNode->isPositiveNode())
+    std::unordered_set<DeBruijnNode *> s1;
+    std::unordered_set<DeBruijnNode *> s2;
+    s1.insert(callingNode);
+    for (int depth = 0; depth <= nodeDistance; depth++) {
+        for (auto otherNode : s1) {
+            if (g_settings->doubleMode)
                 otherNode->m_drawn = true;
-            else
-                otherNode->getReverseComplement()->m_drawn = true;
+            else //single mode
+            {
+                if (otherNode->isPositiveNode())
+                    otherNode->m_drawn = true;
+                else
+                    otherNode->getReverseComplement()->m_drawn = true;
+            }
+            for (auto m_edge : otherNode->m_edges) {
+                DeBruijnNode * node = m_edge->getOtherNode(otherNode)
+                if (node->isNotDrawn())
+                    s2.insert(node);
+            }
         }
-        otherNode->labelNeighbouringNodesAsDrawn(nodeDistance-1, this);
-    }
-}
-
-//Iterative version of the function above
-void DeBruijnNode::labelNeighbouringNodesAsDrawn(int nodeDistance, DeBruijnNode * callingNode)
-{
-    if (m_highestDistanceInNeighbourSearch > nodeDistance)
-        return;
-    m_highestDistanceInNeighbourSearch = nodeDistance;
-
-    if (nodeDistance == 0)
-        return;
-
-    std::queue<DeBruijnNode *> q1;
-    std::queue<DeBruijnNode *> q2;
-    q1.push(callingNode);
-    int depth = 0;
-    while (!q1.empty() && !q2.empty()) {
-        DeBruijnNode * otherNode = q1.front();
-        q1.pop()
-
-        if (otherNode == callingNode)
-            continue;
-
-        if (g_settings->doubleMode)
-            otherNode->m_drawn = true;
-        else //single mode
-        {
-            if (otherNode->isPositiveNode())
-                otherNode->m_drawn = true;
-            else
-                otherNode->getReverseComplement()->m_drawn = true;
-        }
-
-        for (auto node : otherNode->getDownstreamNodes()) {
-            if (node->isNotDrawn())
-                q2.push(node);
-        }
-        for (auto node : otherNode->getUpstreamNodes()) {
-            if (node->isNotDrawn())
-                q2.push(node);
-        }
-        if (depth == nodeDistance) {
-            break;
-        }
-        if (q1.empty()) {
-            swap(q1, q2);
-            depth ++;
-        }
+        s1.clear();
+        s1.swap(s2);
     }
 }
 
