@@ -79,6 +79,9 @@ struct AnnotationSetting {
 
 using AnnotationSettings = std::unordered_map<AnnotationGroupId, AnnotationSetting>;
 
+enum NodeLengthMode {AUTO_NODE_LENGTH, MANUAL_NODE_LENGTH};
+enum NodeDragging {ONE_PIECE, NEARBY_PIECES, ALL_PIECES, NO_DRAGGING};
+
 class Settings
 {
 public:

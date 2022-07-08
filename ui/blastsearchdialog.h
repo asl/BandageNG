@@ -33,6 +33,11 @@ namespace Ui {
 class BlastSearchDialog;
 }
 
+enum BlastUiState {BLAST_DB_NOT_YET_BUILT, BLAST_DB_BUILD_IN_PROGRESS,
+    BLAST_DB_BUILT_BUT_NO_QUERIES,
+    READY_FOR_BLAST_SEARCH, BLAST_SEARCH_IN_PROGRESS,
+    BLAST_SEARCH_COMPLETE};
+
 class BlastSearchDialog : public QDialog
 {
     Q_OBJECT

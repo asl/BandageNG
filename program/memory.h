@@ -20,10 +20,12 @@
 #define MEMORY_H
 
 #include "graph/path.h"
-#include "program/globals.h"
 
 #include <QString>
 #include <QList>
+
+enum CommandLineCommand {NO_COMMAND, BANDAGE_LOAD, BANDAGE_INFO, BANDAGE_IMAGE,
+    BANDAGE_DISTANCE, BANDAGE_QUERY_PATHS, BANDAGE_REDUCE};
 
 class Memory
 {

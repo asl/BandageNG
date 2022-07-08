@@ -21,9 +21,8 @@
 
 #include <QString>
 #include <QSharedPointer>
-#include <QColor>
 
-#include <vector>
+#include <utility>
 
 class Settings;
 class Memory;
@@ -33,15 +32,6 @@ class AssemblyGraph;
 class AnnotationsManager;
 
 enum GraphScope {WHOLE_GRAPH, AROUND_NODE, AROUND_PATHS, AROUND_BLAST_HITS, DEPTH_RANGE};
-enum NodeDragging {ONE_PIECE, NEARBY_PIECES, ALL_PIECES, NO_DRAGGING};
-enum ZoomSource {MOUSE_WHEEL, SPIN_BOX, KEYBOARD, GESTURE};
-enum NodeLengthMode {AUTO_NODE_LENGTH, MANUAL_NODE_LENGTH};
-enum BlastUiState {BLAST_DB_NOT_YET_BUILT, BLAST_DB_BUILD_IN_PROGRESS,
-                   BLAST_DB_BUILT_BUT_NO_QUERIES,
-                   READY_FOR_BLAST_SEARCH, BLAST_SEARCH_IN_PROGRESS,
-                   BLAST_SEARCH_COMPLETE};
-enum CommandLineCommand {NO_COMMAND, BANDAGE_LOAD, BANDAGE_INFO, BANDAGE_IMAGE,
-                         BANDAGE_DISTANCE, BANDAGE_QUERY_PATHS, BANDAGE_REDUCE};
 
 // Some of the program's common components are made global, so they don't have
 // to be passed around as parameters.
