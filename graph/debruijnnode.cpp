@@ -438,6 +438,54 @@ void DeBruijnNode::labelNeighbouringNodesAsDrawn(int nodeDistance, DeBruijnNode 
     }
 }
 
+//Iterative version of the function above
+void DeBruijnNode::labelNeighbouringNodesAsDrawn(int nodeDistance, DeBruijnNode * callingNode)
+{
+    if (m_highestDistanceInNeighbourSearch > nodeDistance)
+        return;
+    m_highestDistanceInNeighbourSearch = nodeDistance;
+
+    if (nodeDistance == 0)
+        return;
+
+    std::queue<DeBruijnNode *> q1;
+    std::queue<DeBruijnNode *> q2;
+    q1.push(callingNode);
+    int depth = 0;
+    while (!q1.empty() && !q2.empty()) {
+        DeBruijnNode * otherNode = q1.front();
+        q1.pop()
+
+        if (otherNode == callingNode)
+            continue;
+
+        if (g_settings->doubleMode)
+            otherNode->m_drawn = true;
+        else //single mode
+        {
+            if (otherNode->isPositiveNode())
+                otherNode->m_drawn = true;
+            else
+                otherNode->getReverseComplement()->m_drawn = true;
+        }
+
+        for (auto node : otherNode->getDownstreamNodes()) {
+            if (node->isNotDrawn())
+                q2.push(node);
+        }
+        for (auto node : otherNode->getUpstreamNodes()) {
+            if (node->isNotDrawn())
+                q2.push(node);
+        }
+        if (depth == nodeDistance) {
+            break;
+        }
+        if (q1.empty()) {
+            swap(q1, q2);
+            depth ++;
+        }
+    }
+}
 
 bool DeBruijnNode::isPositiveNode() const
 {
