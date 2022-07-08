@@ -224,7 +224,8 @@ void QueryPathsDialog::tableSelectionChanged()
     {
         QString pathString = ui->tableWidget->item(row, 0)->text();
         QString pathStringFailure;
-        g_memory->queryPaths.push_back(Path::makeFromString(pathString, false, &pathStringFailure));
+        g_memory->queryPaths.push_back(Path::makeFromString(pathString, *g_assemblyGraph,
+                                                            false, &pathStringFailure));
     }
 
     emit selectionChanged();

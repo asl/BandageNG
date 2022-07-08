@@ -118,7 +118,8 @@ Path Path::makeFromOrderedNodes(QList<DeBruijnNode *> nodes, bool circular)
 
 
 
-Path Path::makeFromString(const QString& pathString, bool circular,
+Path Path::makeFromString(const QString& pathString, const AssemblyGraph &graph,
+                          bool circular,
                           QString * pathStringFailure)
 {
     Path path;
@@ -158,8 +159,9 @@ Path Path::makeFromString(const QString& pathString, bool circular,
     for (auto & i : nodeNameList)
     {
         QString nodeName = i.simplified();
-        if (g_assemblyGraph->m_deBruijnGraphNodes.count(nodeName.toStdString()))
-            nodesInGraph.push_back(g_assemblyGraph->m_deBruijnGraphNodes[nodeName.toStdString()]);
+        auto nodeIt = graph.m_deBruijnGraphNodes.find(nodeName.toStdString());
+        if (nodeIt != graph.m_deBruijnGraphNodes.end())
+            nodesInGraph.push_back(*nodeIt);
         else
             nodesNotInGraph.push_back(nodeName);
     }

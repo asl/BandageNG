@@ -85,8 +85,9 @@ void PathSpecifyDialog::checkPathValidity()
     QString pathStringFailure;
     QString pathText = ui->pathTextEdit->toPlainText().simplified();
     g_memory->userSpecifiedPath = Path::makeFromString(pathText,
-                                                         ui->circularPathCheckBox->isChecked(),
-                                                         &pathStringFailure);
+                                                       *g_assemblyGraph,
+                                                       ui->circularPathCheckBox->isChecked(),
+                                                       &pathStringFailure);
 
     //If the Path turned out to be empty, that means that makeFromString failed.
     if (g_memory->userSpecifiedPath.isEmpty())

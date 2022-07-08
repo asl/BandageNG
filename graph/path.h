@@ -44,7 +44,9 @@ public:
                                        bool strandSpecific);
     static Path makeFromOrderedNodes(QList<DeBruijnNode *> nodes,
                                      bool circular);
-    static Path makeFromString(const QString& pathString, bool circular,
+    static Path makeFromString(const QString& pathString,
+                               const AssemblyGraph &graph,
+                               bool circular,
                                QString * pathStringFailure);
 
     //ACCESSORS
