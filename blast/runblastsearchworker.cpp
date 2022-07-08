@@ -66,7 +66,7 @@ void RunBlastSearchWorker::runBlastSearch()
 }
 
 
-QString RunBlastSearchWorker::runOneBlastSearch(SequenceType sequenceType, bool * success)
+QString RunBlastSearchWorker::runOneBlastSearch(QuerySequenceType sequenceType, bool * success)
 {
     QStringList blastOptions;
 

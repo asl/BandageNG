@@ -19,11 +19,12 @@
 #ifndef BLASTQUERIES_H
 #define BLASTQUERIES_H
 
-#include <vector>
 #include "blastquery.h"
+
 #include <QFile>
-#include "program/globals.h"
 #include <QSharedPointer>
+
+#include <vector>
 
 //This class manages all BLAST queries. It holds BlastQuery
 //objects itself, and it creates/modifies/deletes the temp
@@ -52,7 +53,7 @@ public:
     int getQueryCount();
     int getQueryCountWithAtLeastOnePath();
     int getQueryPathCount();
-    int getQueryCount(SequenceType sequenceType);
+    int getQueryCount(QuerySequenceType sequenceType);
     bool isQueryPresent(BlastQuery * query);
     void findQueryPaths();
 
@@ -66,7 +67,7 @@ private:
     void updateTempFiles();
     bool tempNuclFileExists();
     bool tempProtFileExists();
-    void writeTempFile(QSharedPointer<QFile> file, SequenceType sequenceType);
+    void writeTempFile(QSharedPointer<QFile> file, QuerySequenceType sequenceType);
     QString getUniqueName(QString name);
 
 };

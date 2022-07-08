@@ -19,14 +19,15 @@
 #ifndef BLASTHIT_H
 #define BLASTHIT_H
 
-class DeBruijnNode;
-class BlastQuery;
-
-#include <QString>
-#include <vector>
 #include "graph/path.h"
 #include "graph/graphlocation.h"
 #include "program/scinot.h"
+
+#include <QString>
+#include <vector>
+
+class DeBruijnNode;
+class BlastQuery;
 
 class BlastHit
 {

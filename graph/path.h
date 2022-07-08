@@ -20,7 +20,6 @@
 #define PATH_H
 
 #include "graphlocation.h"
-#include "program/globals.h"
 
 #include <QByteArray>
 #include <QList>
@@ -31,6 +30,7 @@
 
 class DeBruijnNode;
 class DeBruijnEdge;
+class AssemblyGraph;
 
 class Path
 {

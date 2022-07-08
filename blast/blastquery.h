@@ -19,15 +19,22 @@
 #ifndef BLASTQUERY_H
 #define BLASTQUERY_H
 
+#include "blastquerypath.h"
+#include "blasthit.h"
+
+#include "program/globals.h"
+
 #include <QObject>
 #include <QString>
 #include <QColor>
-#include "program/globals.h"
-#include "blasthit.h"
 #include <QList>
 #include <QSharedPointer>
 #include <utility>
-#include "blastquerypath.h"
+
+enum QuerySequenceType {
+    NUCLEOTIDE,
+    PROTEIN
+};
 
 class BlastQuery : public QObject
 {
@@ -46,7 +53,7 @@ public:
     const std::vector<std::shared_ptr<BlastHit>> &getHits() const {return m_hits;}
     bool wasSearchedFor() const {return m_searchedFor;}
     QColor getColour() const {return m_colour;}
-    SequenceType getSequenceType() const {return m_sequenceType;}
+    QuerySequenceType getSequenceType() const {return m_sequenceType;}
     QList<BlastQueryPath> getPaths() const {return m_paths;}
     int getPathCount() const {return m_paths.size();}
     QString getTypeString() const;
@@ -71,7 +78,7 @@ private:
     std::vector<std::shared_ptr<BlastHit>> m_hits;
     bool m_searchedFor;
     QColor m_colour;
-    SequenceType m_sequenceType;
+    QuerySequenceType m_sequenceType;
     QList<BlastQueryPath> m_paths;
     bool m_shown;
 

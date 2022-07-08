@@ -19,6 +19,8 @@
 #ifndef RUNBLASTSEARCHWORKER_H
 #define RUNBLASTSEARCHWORKER_H
 
+#include "blastquery.h"
+
 #include <QObject>
 #include <QProcess>
 #include <QString>
@@ -41,7 +43,7 @@ private:
     QString m_blastnCommand;
     QString m_tblastnCommand;
     QString m_parameters;
-    QString runOneBlastSearch(SequenceType sequenceType, bool * success);
+    QString runOneBlastSearch(QuerySequenceType sequenceType, bool * success);
 
 public slots:
     void runBlastSearch();

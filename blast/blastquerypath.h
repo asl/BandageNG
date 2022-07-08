@@ -19,10 +19,12 @@
 #ifndef BLASTQUERYPATH_H
 #define BLASTQUERYPATH_H
 
-#include "graph/path.h"
-#include <QList>
 #include "blasthit.h"
+
+#include "graph/path.h"
 #include "program/scinot.h"
+
+#include <QList>
 
 class BlastQuery;
 

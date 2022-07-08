@@ -26,7 +26,6 @@
 #include <QStringList>
 #include <QApplication>
 #include <limits>
-#include <utility>
 
 
 Path::Path(GraphLocation startLocation) {

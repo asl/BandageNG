@@ -139,7 +139,7 @@ void BlastQueries::updateTempFiles()
 }
 
 
-void BlastQueries::writeTempFile(QSharedPointer<QFile> file, SequenceType sequenceType)
+void BlastQueries::writeTempFile(QSharedPointer<QFile> file, QuerySequenceType sequenceType)
 {
     file->open(QIODevice::Append | QIODevice::Text);
     QTextStream out(file.data());
@@ -197,7 +197,7 @@ int BlastQueries::getQueryPathCount()
     return count;
 }
 
-int BlastQueries::getQueryCount(SequenceType sequenceType)
+int BlastQueries::getQueryCount(QuerySequenceType sequenceType)
 {
     int count = 0;
     for (size_t i = 0; i < m_queries.size(); ++i)
