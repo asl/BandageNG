@@ -149,8 +149,8 @@ public:
     int mergeAllPossible(MyGraphicsScene * scene = 0,
                          MyProgressDialog * progressDialog = 0);
 
-    void saveEntireGraphToFasta(const QString& filename);
-    void saveEntireGraphToFastaOnlyPositiveNodes(const QString& filename);
+    bool saveEntireGraphToFasta(const QString& filename);
+    bool saveEntireGraphToFastaOnlyPositiveNodes(const QString& filename);
     bool saveEntireGraphToGfa(const QString& filename);
     bool saveVisibleGraphToGfa(const QString& filename);
     void changeNodeName(const QString& oldName, const QString& newName);
@@ -191,8 +191,6 @@ public:
     QColor getCustomColourForDisplay(const DeBruijnNode *node) const;
     QStringList getCustomLabelForDisplay(const DeBruijnNode *node) const;
 
-    QString getGfaSegmentLine(const DeBruijnNode *node, const QString& depthTag) const;
-    QString getGfaLinkLine(const DeBruijnEdge *edge) const;
 
     QString getUniqueNodeName(QString baseName) const;
     QString getNodeNameFromString(QString string) const;
@@ -203,6 +201,10 @@ private:
     std::vector<int> makeOverlapCountVector();
     void clearAllCsvData();
     QString getNewNodeName(QString oldNodeName) const;
+
+    QString getGfaSegmentLine(const DeBruijnNode *node, const QString& depthTag) const;
+    QString getGfaLinkLine(const DeBruijnEdge *edge) const;
+    QString getGfaPathLine(const std::string &name, const Path *path) const;
 
 signals:
     void setMergeTotalCount(int totalCount);

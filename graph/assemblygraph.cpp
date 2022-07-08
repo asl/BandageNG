@@ -1555,27 +1555,30 @@ int AssemblyGraph::mergeAllPossible(MyGraphicsScene * scene,
     return allMerges.size();
 }
 
-void AssemblyGraph::saveEntireGraphToFasta(const QString& filename)
-{
+bool AssemblyGraph::saveEntireGraphToFasta(const QString& filename) {
     QFile file(filename);
-    file.open(QIODevice::WriteOnly | QIODevice::Text);
-    QTextStream out(&file);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+        return false;
 
-    for (const auto *node : m_deBruijnGraphNodes) {
+    QTextStream out(&file);
+    for (const auto *node : m_deBruijnGraphNodes)
         out << node->getFasta(true);
-    }
+
+    return true;
 }
 
-void AssemblyGraph::saveEntireGraphToFastaOnlyPositiveNodes(const QString& filename)
-{
+bool AssemblyGraph::saveEntireGraphToFastaOnlyPositiveNodes(const QString& filename) {
     QFile file(filename);
-    file.open(QIODevice::WriteOnly | QIODevice::Text);
-    QTextStream out(&file);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+        return false;
 
+    QTextStream out(&file);
     for (const auto *node : m_deBruijnGraphNodes) {
         if (node->isPositiveNode())
             out << node->getFasta(false);
     }
+
+    return true;
 }
 
 static void printTags(QByteArray &out, const std::vector<gfa::tag> &tags) {
@@ -1673,11 +1676,35 @@ QString AssemblyGraph::getGfaLinkLine(const DeBruijnEdge *edge) const {
     return gfaLinkLine;
 }
 
+QString AssemblyGraph::getGfaPathLine(const std::string &name, const Path *path) const {
+    QByteArray gfaPathLine = "P\t";
+    gfaPathLine += name;
+    gfaPathLine += '\t';
+
+    const auto &nodes = path->getNodes();
+    const auto &edges = path->getEdges();
+
+    // edges is one less than nodes for linear paths and of
+    // same length for circular paths
+    for (size_t i = 0; i < edges.size(); ++i) {
+        const auto *edge = edges[i];
+        gfaPathLine += qPrintable(nodes[i]->getName());
+        gfaPathLine += edge->getOverlapType() == JUMP ? ';' : ',';
+    }
+    // Handle last node: for circular paths we're adding extra node here
+    if (nodes.size() == edges.size()) { // circular path
+        gfaPathLine += qPrintable(nodes.front()->getName());
+    } else {
+        gfaPathLine += qPrintable(nodes.back()->getName());
+    }
+
+    return gfaPathLine;
+}
+
 bool AssemblyGraph::saveEntireGraphToGfa(const QString& filename)
 {
     QFile file(filename);
-    bool success = file.open(QIODevice::WriteOnly | QIODevice::Text);
-    if (!success)
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
         return false;
 
     QTextStream out(&file);
@@ -1699,14 +1726,16 @@ bool AssemblyGraph::saveEntireGraphToGfa(const QString& filename)
     for (const auto *edge : edgesToSave)
         out << getGfaLinkLine(edge) << '\n';
 
+    for (auto it = m_deBruijnGraphPaths.begin(); it != m_deBruijnGraphPaths.end(); ++it)
+        out << getGfaPathLine(it.key(), *it) << '\n';
+
     return true;
 }
 
 bool AssemblyGraph::saveVisibleGraphToGfa(const QString& filename)
 {
     QFile file(filename);
-    bool success = file.open(QIODevice::WriteOnly | QIODevice::Text);
-    if (!success)
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
         return false;
 
     QTextStream out(&file);
@@ -1729,6 +1758,9 @@ bool AssemblyGraph::saveVisibleGraphToGfa(const QString& filename)
 
     for (const auto *node : edgesToSave)
         out << getGfaLinkLine(node) << '\n';
+
+    for (auto it = m_deBruijnGraphPaths.begin(); it != m_deBruijnGraphPaths.end(); ++it)
+        out << getGfaPathLine(it.key(), *it) << '\n';
 
     return true;
 }
