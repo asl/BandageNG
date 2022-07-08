@@ -23,6 +23,7 @@
 #include "graph/graphicsitemnode.h"
 #include "graph/graphicsitemedge.h"
 #include "layout/graphlayout.h"
+#include "program/settings.h"
 
 #include <unordered_set>
 

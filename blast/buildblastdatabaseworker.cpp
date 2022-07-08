@@ -17,15 +17,17 @@
 
 
 #include "buildblastdatabaseworker.h"
-#include <QProcess>
-#include "program/globals.h"
-#include "program/settings.h"
-#include <QFile>
-#include <QTextStream>
-#include <QMapIterator>
+#include "blastsearch.h"
+
 #include "graph/debruijnnode.h"
 #include "graph/assemblygraph.h"
-#include "blastsearch.h"
+
+#include "program/globals.h"
+#include "program/settings.h"
+
+#include <QProcess>
+#include <QFile>
+#include <QTextStream>
 
 BuildBlastDatabaseWorker::BuildBlastDatabaseWorker(QString makeblastdbCommand) :
     m_makeblastdbCommand(makeblastdbCommand)

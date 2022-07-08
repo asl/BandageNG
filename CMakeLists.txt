@@ -70,7 +70,8 @@ set(LIB_SOURCES
         ui/verticallabel.cpp
         ui/verticalscrollarea.cpp
         graph/nodecolorer.cpp
-        graph/sequenceutils.cpp)
+        graph/sequenceutils.cpp 
+        graph/annotation.cpp)
 
 set(FORMS
         ui/aboutdialog.ui

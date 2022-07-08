@@ -19,6 +19,8 @@
 #include "debruijnedge.h"
 #include "assemblygraph.h"
 
+#include "program/settings.h"
+
 #include <cmath>
 #include <QApplication>
 

@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Bandage.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "bedloader.hpp"
+#include "bedloader.h"
 
 #include <csv/csv.hpp>
 
@@ -23,7 +23,7 @@
 
 namespace bed {
 
-std::vector<int64_t> parseIntArray(const std::string &intArrayString) {
+static std::vector<int64_t> parseIntArray(const std::string &intArrayString) {
     std::stringstream ss{intArrayString};
     std::string intString;
     std::vector<int64_t> res;

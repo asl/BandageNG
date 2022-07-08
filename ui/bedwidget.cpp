@@ -1,16 +1,18 @@
 #include "bedwidget.h"
 
+#include "io/bedloader.h"
+#include "graph/annotationsmanager.h"
+#include "graph/assemblygraph.h"
+#include "graph/debruijnnode.h"
+
+#include "program/memory.h"
+#include "program/settings.h"
+
 #include <QPushButton>
 #include <QVBoxLayout>
 #include <QFileDialog>
 #include <QMessageBox>
 #include <exception>
-
-#include "program/memory.h"
-#include "io/bedloader.hpp"
-#include "graph/annotationsmanager.h"
-#include "graph/assemblygraph.h"
-#include "graph/debruijnnode.h"
 
 inline constexpr double BED_MAIN_WIDTH = 1;
 inline constexpr double BED_THICK_WIDTH = 1.3;

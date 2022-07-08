@@ -25,10 +25,14 @@
 #include "sequenceutils.h"
 
 #include "blast/blastsearch.h"
-#include "program/globals.h"
 #include "layout/graphlayoutworker.h"
+
 #include "program/memory.h"
+#include "program/globals.h"
+#include "program/settings.h"
+
 #include "ui/myprogressdialog.h"
+#include "ui/mygraphicsscene.h"
 
 #include <QApplication>
 #include <QFile>

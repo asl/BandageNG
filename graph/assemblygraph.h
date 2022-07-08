@@ -22,10 +22,9 @@
 
 #include "debruijnedge.h"
 #include "path.h"
-#include "annotation.hpp"
+#include "annotation.h"
 
 #include "io/gfa.h"
-#include "ui/mygraphicsscene.h"
 
 #include "seq/sequence.hpp"
 #include "parallel_hashmap/phmap.h"
@@ -39,6 +38,7 @@
 class DeBruijnNode;
 class DeBruijnEdge;
 class MyProgressDialog;
+class MyGraphicsScene;
 
 class AssemblyGraphError : public std::runtime_error {
   public:
@@ -47,6 +47,10 @@ class AssemblyGraphError : public std::runtime_error {
 
 class AssemblyGraphBuilder;
 
+enum NodeNameStatus {NODE_NAME_OKAY, NODE_NAME_TAKEN, NODE_NAME_CONTAINS_TAB,
+    NODE_NAME_CONTAINS_NEWLINE, NODE_NAME_CONTAINS_COMMA,
+    NODE_NAME_CONTAINS_SPACE};
+enum SequencesLoadedFromFasta {NOT_READY, NOT_TRIED, TRIED};
 
 class AssemblyGraph : public QObject
 {

@@ -18,8 +18,7 @@
 #include "graphlayout.h"
 
 #include "graph/assemblygraph.h"
-#include "graph/debruijnnode.h"
-#include "graph/debruijnedge.h"
+#include "graph/graphicsitemnode.h"
 
 namespace layout {
     GraphLayout fromGraph(const AssemblyGraph &graph, bool simplified) {

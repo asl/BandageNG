@@ -21,6 +21,8 @@
 #include "graph/debruijnnode.h"
 #include "graph/debruijnedge.h"
 
+#include "program/settings.h"
+
 #include "ogdf/basic/GraphCopy.h"
 #include "ogdf/basic/simple_graph_alg.h"
 #include "ogdf/energybased/FMMMLayout.h"

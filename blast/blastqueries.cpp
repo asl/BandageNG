@@ -17,11 +17,11 @@
 
 
 #include "blastqueries.h"
+#include "blastsearch.h"
+
 #include "program/globals.h"
 #include "program/settings.h"
 #include <QTextStream>
-#include "blastsearch.h"
-#include "program/memory.h"
 
 BlastQueries::BlastQueries() :
     m_tempNuclFile(0), m_tempProtFile(0)

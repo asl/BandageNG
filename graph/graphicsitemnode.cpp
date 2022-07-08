@@ -25,6 +25,7 @@
 
 #include "program/globals.h"
 #include "program/memory.h"
+#include "program/settings.h"
 
 #include "ui/mygraphicsscene.h"
 #include "ui/mygraphicsview.h"

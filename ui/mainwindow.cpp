@@ -46,6 +46,7 @@
 
 #include "program/globals.h"
 #include "program/memory.h"
+#include "program/settings.h"
 
 #include <QFileDialog>
 #include <QLatin1String>

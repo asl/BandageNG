@@ -18,10 +18,13 @@
 
 #include "pathspecifydialog.h"
 #include "ui_pathspecifydialog.h"
-#include "program/globals.h"
 #include "mygraphicsview.h"
-#include "program/memory.h"
+
 #include "graph/assemblygraph.h"
+
+#include "program/globals.h"
+#include "program/settings.h"
+#include "program/memory.h"
 
 #include <QClipboard>
 #include <QTextStream>

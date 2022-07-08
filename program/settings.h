@@ -68,12 +68,13 @@ public:
     bool inRange(SciNot v) const {return v >= min && v <= max;}
 };
 
+using AnnotationGroupId = int;
+using ViewId = int;
 
 struct AnnotationSetting {
     bool showText = false;
     std::set<ViewId> viewsToShow;
 };
-
 
 using AnnotationSettings = std::unordered_map<AnnotationGroupId, AnnotationSetting>;
 

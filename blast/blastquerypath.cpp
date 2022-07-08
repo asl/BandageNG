@@ -17,14 +17,15 @@
 
 
 #include "blastquerypath.h"
-
 #include "blastquery.h"
+
 #include "graph/debruijnnode.h"
-#include "program/globals.h"
 #include "graph/assemblygraph.h"
 #include "graph/debruijnedge.h"
+
+#include "program/globals.h"
+
 #include <limits>
-#include <utility>
 
 BlastQueryPath::BlastQueryPath(Path path, BlastQuery * query) :
     m_path(std::move(path)), m_query(query)

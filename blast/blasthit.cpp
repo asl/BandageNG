@@ -17,12 +17,10 @@
 
 
 #include "blasthit.h"
+#include "blastquery.h"
 
 #include "graph/debruijnnode.h"
-#include "blastquery.h"
-#include "program/globals.h"
 #include "graph/sequenceutils.h"
-#include <cmath>
 
 BlastHit::BlastHit(BlastQuery * query, DeBruijnNode * node,
                    double percentIdentity, int alignmentLength,

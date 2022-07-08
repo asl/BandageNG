@@ -23,6 +23,7 @@
 
 #include "graph/assemblygraph.h"
 #include "program/globals.h"
+#include "program/settings.h"
 
 #include <QPainterPathStroker>
 #include <QPainter>

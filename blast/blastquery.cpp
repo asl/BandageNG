@@ -23,7 +23,6 @@
 #include <limits>
 #include <utility>
 #include <vector>
-#include <utility>
 
 BlastQuery::BlastQuery(QString name, QString sequence) :
     m_name(std::move(name)), m_sequence(std::move(sequence)), m_searchedFor(false), m_shown(true)

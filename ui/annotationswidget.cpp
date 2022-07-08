@@ -1,9 +1,9 @@
 #include "annotationswidget.h"
 
-#include <QLabel>
-
 #include "mygraphicsview.h"
+#include "program/settings.h"
 
+#include <QLabel>
 
 AnnotationSettingsDialog::AnnotationSettingsDialog(const AnnotationGroup &annotationGroup, QWidget *parent)
         : QDialog(parent), m_annotationGroupId(annotationGroup.id) {

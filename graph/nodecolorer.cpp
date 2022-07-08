@@ -17,9 +17,13 @@
 
 #include "nodecolorer.h"
 #include "nodecolorers.h"
+
 #include "assemblygraph.h"
 #include "debruijnnode.h"
+#include "graphicsitemnode.h"
+
 #include "program/globals.h"
+#include "program/settings.h"
 
 #define TINYCOLORMAP_WITH_QT5
 #include <colormap/tinycolormap.hpp>

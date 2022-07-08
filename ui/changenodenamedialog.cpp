@@ -2,6 +2,8 @@
 #include "ui_changenodenamedialog.h"
 
 #include "graph/assemblygraph.h"
+#include "program/globals.h"
+
 #include <QPushButton>
 #include <utility>
 

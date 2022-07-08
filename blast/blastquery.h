@@ -22,8 +22,6 @@
 #include "blastquerypath.h"
 #include "blasthit.h"
 
-#include "program/globals.h"
-
 #include <QObject>
 #include <QString>
 #include <QColor>

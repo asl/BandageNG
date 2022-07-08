@@ -21,6 +21,8 @@
 #include "assemblygraph.h"
 #include "sequenceutils.h"
 
+#include "program/settings.h"
+
 #include <cmath>
 
 #include <set>

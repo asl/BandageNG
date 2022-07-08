@@ -44,19 +44,12 @@ enum BlastUiState {BLAST_DB_NOT_YET_BUILT, BLAST_DB_BUILD_IN_PROGRESS,
                    BLAST_SEARCH_COMPLETE};
 enum CommandLineCommand {NO_COMMAND, BANDAGE_LOAD, BANDAGE_INFO, BANDAGE_IMAGE,
                          BANDAGE_DISTANCE, BANDAGE_QUERY_PATHS, BANDAGE_REDUCE};
-enum NodeNameStatus {NODE_NAME_OKAY, NODE_NAME_TAKEN, NODE_NAME_CONTAINS_TAB,
-                     NODE_NAME_CONTAINS_NEWLINE, NODE_NAME_CONTAINS_COMMA,
-                     NODE_NAME_CONTAINS_SPACE};
-enum SequencesLoadedFromFasta {NOT_READY, NOT_TRIED, TRIED};
 
 // FIXME: factor out
 enum ColorMap : int {
     Viridis = 0,
     Parula, Heat, Jet, Turbo, Hot, Gray, Magma, Inferno, Plasma, Cividis, Github, Cubehelix
 };
-
-using AnnotationGroupId = int;
-using ViewId = int;
 
 
 // Some of the program's common components are made global, so they don't have
@@ -82,18 +75,5 @@ QString getColourName(QColor colour);
 ColorMap colorMapFromName(const QString& name);
 tinycolormap::ColormapType colorMap(ColorMap colorMap);
 QString getColorMapName(ColorMap colorMap);
-
-// Often used function for access const reference to value in map even if it doesn't exist
-template <typename K, typename V, template<typename, typename, typename...> typename MapLike>
-const V &getFromMapOrDefaultConstructed(const MapLike<K, V> &map, const K &key) {
-    auto it = map.find(key);
-    if (it != map.end()) {
-        return it->second;
-    } else {
-        static const V defaultConstructed{};
-        return defaultConstructed;
-    }
-}
-
 
 #endif // GLOBALS_H
