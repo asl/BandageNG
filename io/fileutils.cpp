@@ -23,88 +23,95 @@
 #include <QApplication>
 
 namespace utils {
-    void readFastxFile(const QString &filename, std::vector<QString> &names,
+    bool readFastxFile(const QString &filename, std::vector<QString> &names,
                        std::vector<QByteArray> &sequences) {
         QChar firstChar = QChar(0);
         QFile inputFile(filename);
-        if (inputFile.open(QIODevice::ReadOnly)) {
-            QTextStream in(&inputFile);
-            QString firstLine = in.readLine();
-            firstChar = firstLine.at(0);
-            inputFile.close();
-        }
+        if (!inputFile.open(QIODevice::ReadOnly))
+            return false;
+
+        QTextStream in(&inputFile);
+        QString firstLine = in.readLine();
+        firstChar = firstLine.at(0);
+        inputFile.close();
+
         if (firstChar == '>')
-            readFastaFile(filename, names, sequences);
+            return readFastaFile(filename, names, sequences);
         else if (firstChar == '@')
-            readFastqFile(filename, names, sequences);
+            return readFastqFile(filename, names, sequences);
+
+        return false;
     }
 
 
-    void readFastaFile(const QString &filename, std::vector<QString> &names,
+    bool readFastaFile(const QString &filename, std::vector<QString> &names,
                        std::vector<QByteArray> &sequences) {
         QFile inputFile(filename);
-        if (inputFile.open(QIODevice::ReadOnly)) {
-            QString name = "";
-            QByteArray sequence = "";
+        if (!inputFile.open(QIODevice::ReadOnly))
+            return false;
 
-            QTextStream in(&inputFile);
-            while (!in.atEnd()) {
-                QApplication::processEvents();
+        QString name = "";
+        QByteArray sequence = "";
 
-                QString line = in.readLine();
+        QTextStream in(&inputFile);
+        while (!in.atEnd()) {
+            QApplication::processEvents();
 
-                if (line.length() == 0)
-                    continue;
+            QString line = in.readLine();
 
-                if (line.at(0) == '>') {
-                    //If there is a current sequence, add it to the vectors now.
-                    if (name.length() > 0) {
-                        names.push_back(name);
-                        sequences.push_back(sequence);
-                    }
+            if (line.length() == 0)
+                continue;
 
-                    line.remove(0, 1); //Remove '>' from start
-                    name = line;
-                    sequence = "";
-                } else //It's a sequence line
-                    sequence += line.simplified().toLatin1();
-            }
+            if (line.at(0) == '>') {
+                //If there is a current sequence, add it to the vectors now.
+                if (name.length() > 0) {
+                    names.push_back(name);
+                    sequences.push_back(sequence);
+                }
 
-            //Add the last target to the results now.
-            if (name.length() > 0) {
-                names.push_back(name);
-                sequences.push_back(sequence);
-            }
-
-            inputFile.close();
+                line.remove(0, 1); //Remove '>' from start
+                name = line;
+                sequence = "";
+            } else //It's a sequence line
+                sequence += line.simplified().toLatin1();
         }
+
+        //Add the last target to the results now.
+        if (name.length() > 0) {
+            names.push_back(name);
+            sequences.push_back(sequence);
+        }
+
+            return true;
     }
 
 
-    void readFastqFile(const QString &filename, std::vector<QString> &names,
+    bool readFastqFile(const QString &filename, std::vector<QString> &names,
                        std::vector<QByteArray> &sequences) {
         QFile inputFile(filename);
-        if (inputFile.open(QIODevice::ReadOnly)) {
-            QTextStream in(&inputFile);
-            while (!in.atEnd()) {
-                QApplication::processEvents();
+        if (!inputFile.open(QIODevice::ReadOnly))
+            return false;
 
-                QString name = in.readLine().simplified();
-                QByteArray sequence = in.readLine().simplified().toLocal8Bit();
-                in.readLine();  // separator
-                in.readLine();  // qualities
+        QTextStream in(&inputFile);
+        while (!in.atEnd()) {
+            QApplication::processEvents();
 
-                if (name.length() == 0)
-                    continue;
-                if (sequence.length() == 0)
-                    continue;
-                if (name.at(0) != '@')
-                    continue;
-                name.remove(0, 1); //Remove '@' from start
-                names.push_back(name);
-                sequences.push_back(sequence);
-            }
-            inputFile.close();
+            QString name = in.readLine().simplified();
+            QByteArray sequence = in.readLine().simplified().toLocal8Bit();
+            in.readLine();  // separator
+            in.readLine();  // qualities
+
+            if (name.length() == 0)
+                continue;
+            if (sequence.length() == 0)
+                continue;
+            if (name.at(0) != '@')
+                continue;
+            name.remove(0, 1); //Remove '@' from start
+            names.push_back(name);
+            sequences.push_back(sequence);
         }
+
+        return true;
     }
 }
