@@ -258,5 +258,5 @@ std::optional<T> getTag(const char *name,
     return std::get<T>(res->val);
 }
 
-std::optional<gfa::record> parse_record(const char* line, size_t len);
+std::optional<gfa::record> parseRecord(const char* line, size_t len);
 } // namespace gfa
