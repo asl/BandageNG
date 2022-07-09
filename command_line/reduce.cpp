@@ -18,11 +18,16 @@
 
 #include "reduce.h"
 #include "commoncommandlinefunctions.h"
-#include "program/globals.h"
+
+#include "graph/assemblygraph.h"
+#include "graph/gfawriter.h"
+#include "blast/blastsearch.h"
+
 #include "ui/mygraphicsscene.h"
 #include "ui/mygraphicsview.h"
-#include "graph/assemblygraph.h"
-#include "blast/blastsearch.h"
+
+#include "program/globals.h"
+
 #include <QDir>
 #include <QPainter>
 #include <QSvgGenerator>
@@ -115,9 +120,7 @@ int bandageReduce(QStringList arguments)
 
     g_assemblyGraph->markNodesToDraw(startingNodes, g_settings->nodeDistance);
 
-    bool success = g_assemblyGraph->saveVisibleGraphToGfa(outputFilename);
-    if (!success)
-    {
+    if (!gfa::saveVisibleGraph(outputFilename, *g_assemblyGraph)) {
         err << "Bandage was unable to save the graph file." << Qt::endl;
         return 1;
     }

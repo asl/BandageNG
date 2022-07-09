@@ -20,6 +20,7 @@
 #include "graph/debruijnnode.h"
 #include "graph/debruijnedge.h"
 #include "graph/annotationsmanager.h"
+#include "graph/gfawriter.h"
 
 #include "layout/graphlayoutworker.h"
 #include "layout/io.h"
@@ -1246,7 +1247,7 @@ void BandageTests::fastgToGfa()
     QByteArray fastgTestPath2Sequence = fastgTestPath2.getPathSequence();
 
     //Now save the graph as a GFA and reload it and grab the same information.
-    QVERIFY(g_assemblyGraph->saveEntireGraphToGfa(tempFile("test_temp.gfa")));
+    QVERIFY(gfa::saveEntireGraph(tempFile("test_temp.gfa"), *g_assemblyGraph));
     QVERIFY(g_assemblyGraph->loadGraphFromFile(tempFile("test_temp.gfa")));
 
     int gfaNodeCount = g_assemblyGraph->m_nodeCount;

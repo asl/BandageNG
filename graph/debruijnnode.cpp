@@ -270,17 +270,6 @@ QByteArray DeBruijnNode::getFasta(bool sign, bool newLines, bool evenIfEmpty) co
     return fasta;
 }
 
-// This function gets the node's sequence for a GFA file.
-// If the sequence is missing, it will just give "*"
-QByteArray DeBruijnNode::getSequenceForGfa() const
-{
-    if (sequenceIsMissing())
-        return {"*"};
-
-    return utils::sequenceToQByteArray(getSequence());
-}
-
-
 QByteArray DeBruijnNode::getUpstreamSequence(int upstreamSequenceLength) const
 {
     std::vector<DeBruijnNode*> upstreamNodes = getUpstreamNodes();

@@ -40,6 +40,7 @@
 #include "graph/sequenceutils.h"
 #include "graph/assemblygraphbuilder.h"
 #include "graph/nodecolorers.h"
+#include "graph/gfawriter.h"
 
 #include "layout/graphlayoutworker.h"
 #include "layout/io.h"
@@ -372,7 +373,7 @@ void MainWindow::loadGraph(QString fullFileName)
 
     auto *watcher = new QFutureWatcher<bool>;
     connect(watcher, &QFutureWatcher<bool>::finished,
-            this, [=, this]() {
+            this, [=]() {
         try {
             // Note that this will rethrow the exceptions, if any
             bool loaded = watcher->result();
@@ -926,7 +927,7 @@ void MainWindow::layoutGraph()
     auto *watcher = new QFutureWatcher<GraphLayout>;
 
     connect(watcher, &QFutureWatcher<GraphLayout>::finished,
-            this, [=, this]() { this->graphLayoutFinished(watcher->future().result()); });
+            this, [=]() { this->graphLayoutFinished(watcher->future().result()); });
     connect(watcher, SIGNAL(finished()), graphLayoutWorker, SLOT(deleteLater()));
     connect(watcher, SIGNAL(finished()), progress, SLOT(deleteLater()));
     connect(watcher, SIGNAL(finished()), watcher, SLOT(deleteLater()));
@@ -2330,32 +2331,30 @@ void MainWindow::saveEntireGraphToFastaOnlyPositiveNodes()
 }
 
 
-void MainWindow::saveEntireGraphToGfa()
-{
+void MainWindow::saveEntireGraphToGfa() {
     QString defaultFileNameAndPath = g_memory->rememberedPath + "/graph.gfa";
-    QString fullFileName = QFileDialog::getSaveFileName(this, "Save entire graph", defaultFileNameAndPath, "GFA (*.gfa)");
+    QString fullFileName = QFileDialog::getSaveFileName(this, "Save entire graph", defaultFileNameAndPath,
+                                                        "GFA (*.gfa)");
 
-    if (fullFileName != "") //User did not hit cancel
-    {
-        g_memory->rememberedPath = QFileInfo(fullFileName).absolutePath();
-        bool success = g_assemblyGraph->saveEntireGraphToGfa(fullFileName);
-        if (!success)
-            QMessageBox::warning(this, "Error saving file", "Bandage was unable to save the graph file.");
-    }
+    if (fullFileName.isEmpty())
+        return; //User hit cancel
+
+    g_memory->rememberedPath = QFileInfo(fullFileName).absolutePath();
+    if (!gfa::saveEntireGraph(fullFileName, *g_assemblyGraph))
+        QMessageBox::warning(this, "Error saving file", "Bandage was unable to save the graph file.");
 }
 
-void MainWindow::saveVisibleGraphToGfa()
-{
+void MainWindow::saveVisibleGraphToGfa() {
     QString defaultFileNameAndPath = g_memory->rememberedPath + "/graph.gfa";
-    QString fullFileName = QFileDialog::getSaveFileName(this, "Save visible graph", defaultFileNameAndPath, "GFA (*.gfa)");
+    QString fullFileName = QFileDialog::getSaveFileName(this, "Save visible graph", defaultFileNameAndPath,
+                                                        "GFA (*.gfa)");
 
-    if (fullFileName != "") //User did not hit cancel
-    {
-        g_memory->rememberedPath = QFileInfo(fullFileName).absolutePath();
-        bool success = g_assemblyGraph->saveVisibleGraphToGfa(fullFileName);
-        if (!success)
-            QMessageBox::warning(this, "Error saving file", "Bandage was unable to save the graph file.");
-    }
+    if (fullFileName.isEmpty())
+        return; //User hit cancel
+
+    g_memory->rememberedPath = QFileInfo(fullFileName).absolutePath();
+    if (!gfa::saveVisibleGraph(fullFileName, *g_assemblyGraph))
+        QMessageBox::warning(this, "Error saving file", "Bandage was unable to save the graph file.");
 }
 
 

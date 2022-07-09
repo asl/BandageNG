@@ -14,7 +14,7 @@ public:
     setStyleSheet("background:none");
     setIconSize(QSize(8, 8));
     setFont(QApplication::font());
-    connect(this, &QToolButton::toggled, [=, this](bool checked) {
+    connect(this, &QToolButton::toggled, [this](bool checked) {
       setArrowType(checked ? Qt::ArrowType::DownArrow : Qt::ArrowType::RightArrow);
       content_ != nullptr && checked ? showContent() : hideContent();
     });

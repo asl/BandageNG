@@ -55,7 +55,6 @@ public:
     Sequence &getSequence();
 
     int getLength() const {return m_length;}
-    QByteArray getSequenceForGfa() const;
 
     int getLengthWithoutTrailingOverlap() const;
     QByteArray getFasta(bool sign, bool newLines = true, bool evenIfEmpty = true) const;
