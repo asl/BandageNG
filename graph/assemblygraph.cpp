@@ -1559,32 +1559,6 @@ int AssemblyGraph::mergeAllPossible(MyGraphicsScene * scene,
     return allMerges.size();
 }
 
-bool AssemblyGraph::saveEntireGraphToFasta(const QString& filename) {
-    QFile file(filename);
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
-        return false;
-
-    QTextStream out(&file);
-    for (const auto *node : m_deBruijnGraphNodes)
-        out << node->getFasta(true);
-
-    return true;
-}
-
-bool AssemblyGraph::saveEntireGraphToFastaOnlyPositiveNodes(const QString& filename) {
-    QFile file(filename);
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
-        return false;
-
-    QTextStream out(&file);
-    for (const auto *node : m_deBruijnGraphNodes) {
-        if (node->isPositiveNode())
-            out << node->getFasta(false);
-    }
-
-    return true;
-}
-
 bool AssemblyGraph::hasCustomColour(const DeBruijnNode* node) const {
     auto it = m_nodeColors.find(node);
     return it != m_nodeColors.end() && it->second.isValid();

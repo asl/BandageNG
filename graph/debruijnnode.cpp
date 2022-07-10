@@ -259,7 +259,7 @@ QByteArray DeBruijnNode::getFasta(bool sign, bool newLines, bool evenIfEmpty) co
         return {};
 
     QByteArray fasta = ">";
-    fasta += getNodeNameForFasta(sign).toLatin1();
+    fasta += getNodeNameForFasta(sign);
     fasta += "\n";
     if (newLines)
         fasta += utils::addNewlinesToSequence(sequence);
@@ -332,15 +332,12 @@ int DeBruijnNode::getLengthWithoutTrailingOverlap() const
 }
 
 
-QString DeBruijnNode::getNodeNameForFasta(bool sign) const
+QByteArray DeBruijnNode::getNodeNameForFasta(bool sign) const
 {
-    QString nodeNameForFasta;
+    QByteArray nodeNameForFasta;
 
     nodeNameForFasta += "NODE_";
-    if (sign)
-        nodeNameForFasta += getName();
-    else
-        nodeNameForFasta += getNameWithoutSign();
+    nodeNameForFasta += sign ? qPrintable(getName()) : qPrintable(getNameWithoutSign());
 
     nodeNameForFasta += "_length_";
     nodeNameForFasta += QByteArray::number(getLength());

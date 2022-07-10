@@ -128,7 +128,7 @@ private:
     bool m_specialNode : 1;
     bool m_drawn : 1;
 
-    QString getNodeNameForFasta(bool sign) const;
+    QByteArray getNodeNameForFasta(bool sign) const;
     QByteArray getUpstreamSequence(int upstreamSequenceLength) const;
 
     static bool isOnlyPathInItsDirection(DeBruijnNode * connectedNode,

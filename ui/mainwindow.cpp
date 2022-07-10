@@ -41,6 +41,7 @@
 #include "graph/assemblygraphbuilder.h"
 #include "graph/nodecolorers.h"
 #include "graph/gfawriter.h"
+#include "graph/fastawriter.h"
 
 #include "layout/graphlayoutworker.h"
 #include "layout/io.h"
@@ -2306,28 +2307,30 @@ void MainWindow::nodeWidthChanged()
 }
 
 
-void MainWindow::saveEntireGraphToFasta()
-{
+void MainWindow::saveEntireGraphToFasta() {
     QString defaultFileNameAndPath = g_memory->rememberedPath + "/all_graph_nodes.fasta";
-    QString fullFileName = QFileDialog::getSaveFileName(this, "Save entire graph", defaultFileNameAndPath, "FASTA (*.fasta)");
+    QString fullFileName = QFileDialog::getSaveFileName(this, "Save entire graph", defaultFileNameAndPath,
+                                                        "FASTA (*.fasta)");
 
-    if (fullFileName != "") //User did not hit cancel
-    {
-        g_memory->rememberedPath = QFileInfo(fullFileName).absolutePath();
-        g_assemblyGraph->saveEntireGraphToFasta(fullFileName);
-    }
+    if (fullFileName.isEmpty())
+        return; //User did hit cancel
+
+    g_memory->rememberedPath = QFileInfo(fullFileName).absolutePath();
+    if (!utils::saveEntireGraphToFasta(fullFileName, *g_assemblyGraph))
+        QMessageBox::warning(this, "Error saving file", "Bandage was unable to save the FASTA file.");
 }
 
-void MainWindow::saveEntireGraphToFastaOnlyPositiveNodes()
-{
+void MainWindow::saveEntireGraphToFastaOnlyPositiveNodes() {
     QString defaultFileNameAndPath = g_memory->rememberedPath + "/all_positive_graph_nodes.fasta";
-    QString fullFileName = QFileDialog::getSaveFileName(this, "Save entire graph (only positive nodes)", defaultFileNameAndPath, "FASTA (*.fasta)");
+    QString fullFileName = QFileDialog::getSaveFileName(this, "Save entire graph (only positive nodes)",
+                                                        defaultFileNameAndPath, "FASTA (*.fasta)");
 
-    if (fullFileName != "") //User did not hit cancel
-    {
-        g_memory->rememberedPath = QFileInfo(fullFileName).absolutePath();
-        g_assemblyGraph->saveEntireGraphToFastaOnlyPositiveNodes(fullFileName);
-    }
+    if (fullFileName.isEmpty())
+        return; //User did hit cancel
+
+    g_memory->rememberedPath = QFileInfo(fullFileName).absolutePath();
+    if (!utils::saveEntireGraphToFastaOnlyPositiveNodes(fullFileName, *g_assemblyGraph))
+        QMessageBox::warning(this, "Error saving file", "Bandage was unable to save the FASTA file.");
 }
 
 
