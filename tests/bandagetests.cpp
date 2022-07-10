@@ -1678,6 +1678,53 @@ DeBruijnEdge * BandageTests::getEdgeFromNodeNames(QString startingNodeName,
 }
 
 
+//http://www.code10.info/index.php?option=com_content&view=article&id=62:articledna-reverse-complement&catid=49:cat_coding_algorithms_bioinformatics&Itemid=74
+static QByteArray getReverseComplement(const QByteArray& forwardSequence) {
+    QByteArray reverseComplement;
+    reverseComplement.reserve(forwardSequence.length());
+
+    for (int i = forwardSequence.length() - 1; i >= 0; --i) {
+        switch (forwardSequence.at(i)) {
+            case 'A': reverseComplement.append('T'); break;
+            case 'T': reverseComplement.append('A'); break;
+            case 'G': reverseComplement.append('C'); break;
+            case 'C': reverseComplement.append('G'); break;
+            case 'a': reverseComplement.append('t'); break;
+            case 't': reverseComplement.append('a'); break;
+            case 'g': reverseComplement.append('c'); break;
+            case 'c': reverseComplement.append('g'); break;
+            case 'R': reverseComplement.append('Y'); break;
+            case 'Y': reverseComplement.append('R'); break;
+            case 'S': reverseComplement.append('S'); break;
+            case 'W': reverseComplement.append('W'); break;
+            case 'K': reverseComplement.append('M'); break;
+            case 'M': reverseComplement.append('K'); break;
+            case 'r': reverseComplement.append('y'); break;
+            case 'y': reverseComplement.append('r'); break;
+            case 's': reverseComplement.append('s'); break;
+            case 'w': reverseComplement.append('w'); break;
+            case 'k': reverseComplement.append('m'); break;
+            case 'm': reverseComplement.append('k'); break;
+            case 'B': reverseComplement.append('V'); break;
+            case 'D': reverseComplement.append('H'); break;
+            case 'H': reverseComplement.append('D'); break;
+            case 'V': reverseComplement.append('B'); break;
+            case 'b': reverseComplement.append('v'); break;
+            case 'd': reverseComplement.append('h'); break;
+            case 'h': reverseComplement.append('d'); break;
+            case 'v': reverseComplement.append('b'); break;
+            case 'N': reverseComplement.append('N'); break;
+            case 'n': reverseComplement.append('n'); break;
+            case '.': reverseComplement.append('.'); break;
+            case '-': reverseComplement.append('-'); break;
+            case '?': reverseComplement.append('?'); break;
+            default:  reverseComplement.append('*'); break;
+        }
+    }
+
+    return reverseComplement;
+}
+
 //This function checks to see if two circular sequences match.  It needs to
 //check each possible rotation, as well as reverse complements.
 bool BandageTests::doCircularSequencesMatch(QByteArray s1, QByteArray s2) const
@@ -1691,7 +1738,7 @@ bool BandageTests::doCircularSequencesMatch(QByteArray s1, QByteArray s2) const
 
     //If the code got here, then all possible rotations of s1 failed to match
     //s2.  Now we try the reverse complement.
-    QByteArray s1Rc = AssemblyGraph::getReverseComplement(s1);
+    QByteArray s1Rc = getReverseComplement(s1);
     for (int i = 0; i < s1Rc.length() - 1; ++i)
     {
         QByteArray rotatedS1Rc = s1Rc.right(s1Rc.length() - i) + s1Rc.left(i);

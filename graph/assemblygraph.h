@@ -110,7 +110,6 @@ public:
                             int overlap = 0,
                             EdgeOverlapType overlapType = UNKNOWN_OVERLAP);
     void resetNodes();
-    static QByteArray getReverseComplement(const QByteArray& forwardSequence);
     void resetEdges();
     double getMeanDepth(bool drawnNodesOnly = false);
     static double getMeanDepth(const std::vector<DeBruijnNode *> &nodes);
