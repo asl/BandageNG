@@ -105,7 +105,7 @@ target_link_libraries(BandageLayout PRIVATE OGDF Qt6::Concurrent Qt6::Gui Qt6::W
 add_library(BandageIo STATIC
         io/gfa.cpp
         io/bedloader.cpp
-        io/fileutils.cpp io/cigar.cpp)
+        io/fileutils.cpp io/cigar.cpp io/gaf.cpp)
 target_link_libraries(BandageIo PRIVATE Qt6::Gui Qt6::Widgets foonathan::lexy)
 
 # FIXME: Untagle this

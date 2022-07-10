@@ -79,9 +79,9 @@ namespace cigar::grammar {
                    );
         }();
 
-        static constexpr auto value = lexy::callback<gfa::tag>(
+        static constexpr auto value = lexy::callback<cigar::tag>(
                 [](std::string_view name, auto type, auto val) {
-                    return gfa::tag{name, std::string_view{type.data(), type.size()}, val};
+                    return cigar::tag{name, std::string_view{type.data(), type.size()}, val};
                 });
     };
 
@@ -100,15 +100,15 @@ namespace cigar::grammar {
             static constexpr auto rule =
                     dsl::period |
                     dsl::integer<std::uint32_t> >> dsl::capture(cigaropcode);
-            static constexpr auto value = lexy::callback<gfa::cigarop>(
-                    []() { return gfa::cigarop{0, 0}; },
+            static constexpr auto value = lexy::callback<cigar::cigarop>(
+                    []() { return cigar::cigarop{0, 0}; },
                     [](std::uint32_t cnt, auto lexeme) {
-                        return gfa::cigarop{cnt, lexeme[0]};
+                        return cigar::cigarop{cnt, lexeme[0]};
                     });
         };
 
         static constexpr auto rule = dsl::list(dsl::p<cigarop>);
-        static constexpr auto value = lexy::as_list<std::vector<gfa::cigarop>>;
+        static constexpr auto value = lexy::as_list<std::vector<cigar::cigarop>>;
     };
 
     auto tab = dsl::lit_c<'\t'>;
@@ -118,6 +118,6 @@ namespace cigar::grammar {
             auto tags = dsl::list(dsl::p<tag>, dsl::sep(tab));
             return dsl::eof | (tab >> tags + dsl::eof);
         }();
-        static constexpr auto value = lexy::as_list<std::vector<gfa::tag>>;
+        static constexpr auto value = lexy::as_list<std::vector<cigar::tag>>;
     };
 }
