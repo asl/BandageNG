@@ -16,6 +16,7 @@
 // along with Bandage.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "gfa.h"
+#include "cigar.h"
 
 #include <lexy/action/parse.hpp> // lexy::parse
 #include <lexy/action/trace.hpp> // lexy::trace
@@ -29,11 +30,6 @@
 
 
 namespace gfa {
-
-std::ostream &operator<<(std::ostream &s, const tag &t) {
-    s << t.name[0] << t.name[1] << ':';
-    return std::visit([&](const auto& value) -> std::ostream& { return s << value; }, t.val);
-}
 
 namespace grammar {
 namespace dsl = lexy::dsl;
