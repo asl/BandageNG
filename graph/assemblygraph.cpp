@@ -19,7 +19,7 @@
 #include "assemblygraph.h"
 #include "debruijnedge.h"
 #include "path.h"
-#include "assemblygraphbuilder.h"
+#include "io.h"
 #include "graphicsitemedge.h"
 #include "graphicsitemnode.h"
 #include "sequenceutils.h"
@@ -540,7 +540,7 @@ QString AssemblyGraph::getNodeNameFromString(QString string) const
 bool AssemblyGraph::loadGraphFromFile(const QString& filename) {
     cleanUp();
     
-    auto builder = AssemblyGraphBuilder::get(filename);
+    auto builder = io::AssemblyGraphBuilder::get(filename);
     if (!builder)
         return false;
     

@@ -2289,6 +2289,7 @@
     <addaction name="actionLoad_graph"/>
     <addaction name="actionLoad_CSV"/>
     <addaction name="actionLoad_layout"/>
+    <addaction name="actionLoad_paths"/>
     <addaction name="separator"/>
     <addaction name="actionSave_image_current_view"/>
     <addaction name="actionSave_image_entire_scene"/>
@@ -2754,6 +2755,16 @@
    </property>
    <property name="text">
     <string>Load layout</string>
+   </property>
+  </action>
+  <action name="actionLoad_paths">
+   <property name="icon">
+    <iconset>
+     <normalon>:/icons/load-256.png</normalon>
+    </iconset>
+   </property>
+   <property name="text">
+    <string>Load paths</string>
    </property>
   </action>
  </widget>

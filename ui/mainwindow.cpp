@@ -38,7 +38,7 @@
 #include "graph/graphicsitemedge.h"
 #include "graph/path.h"
 #include "graph/sequenceutils.h"
-#include "graph/assemblygraphbuilder.h"
+#include "graph/io.h"
 #include "graph/nodecolorers.h"
 #include "graph/gfawriter.h"
 #include "graph/fastawriter.h"
@@ -148,6 +148,7 @@ MainWindow::MainWindow(QString fileToLoadOnStartup, bool drawGraphAfterLoad) :
     connect(ui->actionLoad_graph, SIGNAL(triggered()), this, SLOT(loadGraph()));
     connect(ui->actionLoad_CSV, SIGNAL(triggered(bool)), this, SLOT(loadCSV()));
     connect(ui->actionLoad_layout, SIGNAL(triggered()), this, SLOT(loadGraphLayout()));
+    connect(ui->actionLoad_paths, SIGNAL(triggered()), this, SLOT(loadGraphPaths()));
     connect(ui->actionExit, SIGNAL(triggered()), this, SLOT(close()));
     connect(ui->graphScopeComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(graphScopeChanged()));
     connect(ui->zoomSpinBox, SIGNAL(valueChanged(double)), this, SLOT(zoomSpinBoxChanged()));
@@ -357,7 +358,7 @@ void MainWindow::loadGraph(QString fullFileName)
         return;
 
     // We need to convert unique_ptr to shared_ptr in order to get builder shared between future and callback
-    std::shared_ptr<AssemblyGraphBuilder> builder = AssemblyGraphBuilder::get(fullFileName);
+    std::shared_ptr<io::AssemblyGraphBuilder> builder = io::AssemblyGraphBuilder::get(fullFileName);
     if (!builder) {
         QMessageBox::warning(this,
                              "Graph format not recognised",
@@ -436,16 +437,16 @@ void MainWindow::loadGraph(QString fullFileName)
     connect(watcher, SIGNAL(finished()), progress, SLOT(deleteLater()));
     connect(watcher, SIGNAL(finished()), watcher, SLOT(deleteLater()));
 
-    auto res = QtConcurrent::run(&AssemblyGraphBuilder::build, builder, std::ref(*g_assemblyGraph));
+    auto res = QtConcurrent::run(&io::AssemblyGraphBuilder::build, builder, std::ref(*g_assemblyGraph));
     watcher->setFuture(res);
 }
 
 void MainWindow::loadGraphLayout(QString fullFileName) {
-    if (fullFileName == "")
+    if (fullFileName.isEmpty())
         fullFileName = QFileDialog::getOpenFileName(this, "Load Bandage layout",
                                                     "Bandage layout (*.layout)");
 
-    if (fullFileName == "")
+    if (fullFileName.isEmpty())
         return; // user clicked on cancel
 
     GraphLayout layout(*g_assemblyGraph);
@@ -464,6 +465,31 @@ void MainWindow::loadGraphLayout(QString fullFileName) {
     layout::apply(*g_assemblyGraph, layout);
 
     graphLayoutFinished(layout);
+}
+
+void MainWindow::loadGraphPaths(QString fullFileName) {
+    if (fullFileName.isEmpty())
+        fullFileName = QFileDialog::getOpenFileName(this, "Load graph paths",
+                                                    "GFA paths (*.gfa)");
+
+    if (fullFileName.isEmpty())
+        return; // user clicked on cancel
+
+    try {
+        io::loadGFAPaths(*g_assemblyGraph, fullFileName);
+    } catch (std::runtime_error &err) {
+        QString errorTitle = "Error loading graph paths";
+        QString errorMessage = "There was an error when attempting to load:\n"
+                               + fullFileName + ":\n"
+                               + err.what() + "\n\n"
+                               + "Please verify that this file has the correct format.";
+        QMessageBox::warning(this, errorTitle, errorMessage);
+        return;
+    }
+
+    // FIXME: ugly!
+    g_assemblyGraph->determineGraphInfo();
+    displayGraphDetails();
 }
 
 void MainWindow::displayGraphDetails()
@@ -1890,6 +1916,7 @@ void MainWindow::setUiState(UiState uiState)
         ui->selectionScrollAreaWidgetContents->setEnabled(false);
         ui->actionLoad_CSV->setEnabled(false);
         ui->actionLoad_layout->setEnabled(false);
+        ui->actionLoad_paths->setEnabled(false);
         ui->actionExport_layout->setEnabled(false);
         break;
     case GRAPH_LOADED:
@@ -1903,6 +1930,7 @@ void MainWindow::setUiState(UiState uiState)
         ui->selectionScrollAreaWidgetContents->setEnabled(false);
         ui->actionLoad_CSV->setEnabled(true);
         ui->actionLoad_layout->setEnabled(true);
+        ui->actionLoad_paths->setEnabled(true);
         ui->actionExport_layout->setEnabled(false);
         break;
     case GRAPH_DRAWN:
@@ -1917,6 +1945,7 @@ void MainWindow::setUiState(UiState uiState)
         ui->actionZoom_to_selection->setEnabled(true);
         ui->actionLoad_CSV->setEnabled(true);
         ui->actionLoad_layout->setEnabled(true);
+        ui->actionLoad_paths->setEnabled(true);
         ui->actionExport_layout->setEnabled(true);
         break;
     }
