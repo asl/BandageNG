@@ -77,6 +77,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <iostream>
+#include <filesystem>
 
 MainWindow::MainWindow(QString fileToLoadOnStartup, bool drawGraphAfterLoad) :
     QMainWindow(nullptr),
