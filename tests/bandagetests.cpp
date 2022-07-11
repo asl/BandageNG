@@ -21,6 +21,7 @@
 #include "graph/debruijnedge.h"
 #include "graph/annotationsmanager.h"
 #include "graph/gfawriter.h"
+#include "graph/io.h"
 
 #include "layout/graphlayoutworker.h"
 #include "layout/io.h"
@@ -102,6 +103,7 @@ private slots:
     void loadGFAWithPlaceholders();
     void loadGFA12();
     void loadGFA();
+    void loadGAF();
     void loadTrinity();
     void pathFunctionsOnGFA();
     void pathFunctionsOnFastg();
@@ -209,6 +211,28 @@ void BandageTests::loadGFA()
     QCOMPARE(node14->getLength(), 120);
 }
 
+void BandageTests::loadGAF()
+{
+    bool lastGraphLoaded = g_assemblyGraph->loadGraphFromFile(testFile("test_gaf.gfa"));
+
+    // Check that the graph loaded properly.
+    QVERIFY(lastGraphLoaded);
+
+    //Check that the appropriate number of nodes/edges are present.
+    QCOMPARE(g_assemblyGraph->m_deBruijnGraphNodes.size(), 8);
+    QCOMPARE(g_assemblyGraph->m_deBruijnGraphEdges.size(), 8);
+
+    //Check the length of a couple nodes.
+    DeBruijnNode * node1 = g_assemblyGraph->m_deBruijnGraphNodes["1+"];
+    DeBruijnNode * node14 = g_assemblyGraph->m_deBruijnGraphNodes["4-"];
+    QCOMPARE(node1->getLength(), 44);
+    QCOMPARE(node14->getLength(), 42);
+
+    QVERIFY(io::loadGAFPaths(*g_assemblyGraph, testFile("test.gaf")));
+    Path *p = g_assemblyGraph->m_deBruijnGraphPaths["read"];
+    // FIXME: proper length when location will be proper
+    QCOMPARE(p->getLength(), 87);
+}
 
 
 void BandageTests::loadTrinity()

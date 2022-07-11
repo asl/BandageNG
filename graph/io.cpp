@@ -74,6 +74,8 @@ namespace io {
             QList<DeBruijnNode *> pathNodes;
             pathNodes.reserve(path->segments.size());
 
+            // FIXME: handle orientation
+            // FIXME: handle start / end positions
             for (const auto &node: path->segments) {
                 char orientation = node.front();
                 std::string nodeName;
