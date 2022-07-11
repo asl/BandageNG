@@ -35,7 +35,7 @@ namespace gaf {
         using cigar::grammar::opt_tags;
 
         struct path_name {
-            static constexpr auto rule = dsl::identifier(dsl::ascii::word);
+            static constexpr auto rule = dsl::identifier(dsl::ascii::graph);
             static constexpr auto value = lexy::as_string<std::string_view>;
         };
 
