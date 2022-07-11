@@ -62,32 +62,20 @@ namespace gaf {
         struct record {
             static constexpr auto name = "GAF record";
 
-            struct expected_gaf_record {
-                static LEXY_CONSTEVAL auto name() {
-                    return "expected GAF record type";
-                }
-            };
-
             static constexpr auto rule = [] {
-                auto comment = dsl::lit_c<'#'> >> dsl::until(dsl::newline).or_eof();
-
-                return //comment |
-                       (
-                               dsl::p<path_name> + tab + // query name
-                               dsl::p<uint> + tab + // query length
-                               dsl::p<uint> + tab + // query start
-                               dsl::p<uint> + tab + // query_end
-                               dsl::p<strand> + tab + // strand
-                               dsl::p<segments> + tab + // segments
-                               dsl::p<uint> + tab + // path length
-                               dsl::p<uint> + tab + // start position on path
-                               dsl::p<uint> + tab + // end position on path
-                               dsl::p<uint> + tab + // number or matches
-                               dsl::p<uint> + tab + // alignment block length
-                               dsl::p<uint> + tab + // mapping quality
-                               dsl::p<opt_tags>
-                       );// |
-                       //dsl::error<expected_gaf_record>;
+                return dsl::p<path_name> + tab + // query name
+                       dsl::p<uint> + tab + // query length
+                       dsl::p<uint> + tab + // query start
+                       dsl::p<uint> + tab + // query_end
+                       dsl::p<strand> + tab + // strand
+                       dsl::p<segments> + tab + // segments
+                       dsl::p<uint> + tab + // path length
+                       dsl::p<uint> + tab + // start position on path
+                       dsl::p<uint> + tab + // end position on path
+                       dsl::p<uint> + tab + // number or matches
+                       dsl::p<uint> + tab + // alignment block length
+                       dsl::p<uint> + // mapping quality
+                       dsl::p<opt_tags>;
             }();
 
             static constexpr auto value = lexy::construct<gaf::record>;

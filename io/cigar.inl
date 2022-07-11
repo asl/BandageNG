@@ -111,7 +111,7 @@ namespace cigar::grammar {
         static constexpr auto value = lexy::as_list<std::vector<cigar::cigarop>>;
     };
 
-    auto tab = dsl::lit_c<'\t'>;
+    static constexpr auto tab = dsl::lit_c<'\t'>;
 
     struct opt_tags {
         static constexpr auto rule = [] {

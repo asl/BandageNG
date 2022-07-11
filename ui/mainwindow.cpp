@@ -443,7 +443,7 @@ void MainWindow::loadGraph(QString fullFileName)
 
 void MainWindow::loadGraphLayout(QString fullFileName) {
     if (fullFileName.isEmpty())
-        fullFileName = QFileDialog::getOpenFileName(this, "Load Bandage layout",
+        fullFileName = QFileDialog::getOpenFileName(this, "Load Bandage layout", "",
                                                     "Bandage layout (*.layout)");
 
     if (fullFileName.isEmpty())
@@ -468,20 +468,25 @@ void MainWindow::loadGraphLayout(QString fullFileName) {
 }
 
 void MainWindow::loadGraphPaths(QString fullFileName) {
+    QString selectedFilter = "GFA paths (*.gfa)";
     if (fullFileName.isEmpty())
-        fullFileName = QFileDialog::getOpenFileName(this, "Load graph paths",
-                                                    "GFA paths (*.gfa)");
+        fullFileName = QFileDialog::getOpenFileName(this, "Load graph paths", "",
+                                                    "GFA paths (*.gfa);;GAF paths (*.gaf)",
+                                                    &selectedFilter);
 
     if (fullFileName.isEmpty())
         return; // user clicked on cancel
 
     try {
-        io::loadGFAPaths(*g_assemblyGraph, fullFileName);
-    } catch (std::runtime_error &err) {
+        if (selectedFilter == "GFA paths (*.gfa)")
+            io::loadGFAPaths(*g_assemblyGraph, fullFileName);
+        else
+            io::loadGAFPaths(*g_assemblyGraph, fullFileName);
+    } catch (std::exception &e) {
         QString errorTitle = "Error loading graph paths";
         QString errorMessage = "There was an error when attempting to load:\n"
                                + fullFileName + ":\n"
-                               + err.what() + "\n\n"
+                               + e.what() + "\n\n"
                                + "Please verify that this file has the correct format.";
         QMessageBox::warning(this, errorTitle, errorMessage);
         return;
@@ -490,6 +495,8 @@ void MainWindow::loadGraphPaths(QString fullFileName) {
     // FIXME: ugly!
     g_assemblyGraph->determineGraphInfo();
     displayGraphDetails();
+    setupPathSelectionLineEdit(ui->pathSelectionLineEdit);
+    setupPathSelectionLineEdit(ui->pathSelectionLineEdit2);
 }
 
 void MainWindow::displayGraphDetails()

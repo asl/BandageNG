@@ -44,6 +44,6 @@ namespace io {
         bool hasComplexOverlaps_ = false;
     };
 
-    bool loadGFAPaths(AssemblyGraph &graph,
-                      QString fileName);
+    bool loadGFAPaths(AssemblyGraph &graph, QString fileName);
+    bool loadGAFPaths(AssemblyGraph &graph, QString fileName);
 }
