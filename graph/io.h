@@ -30,7 +30,7 @@ namespace io {
 
         static std::unique_ptr<AssemblyGraphBuilder> get(const QString &fullFileName);
 
-        [[nodiscard]] bool hasCustomLables() const { return hasCustomLabels_; }
+        [[nodiscard]] bool hasCustomLabels() const { return hasCustomLabels_; }
         [[nodiscard]] bool hasCustomColours() const { return hasCustomColours_; }
         [[nodiscard]] bool hasComplexOverlaps() const { return hasComplexOverlaps_; }
 

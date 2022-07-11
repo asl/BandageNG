@@ -398,7 +398,7 @@ void MainWindow::loadGraph(QString fullFileName)
             g_memory->clearGraphSpecificMemory();
 
             bool customColours = builder->hasCustomColours(),
-                    customLabels = builder->hasCustomLables();
+                    customLabels = builder->hasCustomLabels();
 
             // If the graph has custom colours, automatically switch the colour scheme to custom colours.
             if (customColours)
