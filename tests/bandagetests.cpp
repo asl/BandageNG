@@ -146,7 +146,7 @@ void BandageTests::loadFastg()
     bool fastgGraphLoaded = g_assemblyGraph->loadGraphFromFile(testFile("test.fastg"));
 
     //Check that the graph loaded properly.
-    QCOMPARE(fastgGraphLoaded, true);
+    QVERIFY(fastgGraphLoaded);
 
     //Check that the appropriate number of nodes/edges are present.
     QCOMPARE(g_assemblyGraph->m_deBruijnGraphNodes.size(), 88);
@@ -164,7 +164,7 @@ void BandageTests::loadGFAWithPlaceholders()
     bool gfaGraphLoaded = g_assemblyGraph->loadGraphFromFile(testFile("test_not_defined.gfa"));
 
     //Check that the graph loaded properly.
-    QCOMPARE(gfaGraphLoaded, true);
+    QVERIFY(gfaGraphLoaded);
 
     //Check that the appropriate number of nodes/edges are present.
     QCOMPARE(g_assemblyGraph->m_deBruijnGraphNodes.size(), 8);
@@ -184,7 +184,7 @@ void BandageTests::loadGFA12()
     bool gfaGraphLoaded = g_assemblyGraph->loadGraphFromFile(testFile("test_gfa12.gfa.gz"));
 
     //Check that the graph loaded properly.
-    QCOMPARE(gfaGraphLoaded, true);
+    QVERIFY(gfaGraphLoaded);
 
     //Check that the appropriate number of nodes/edges/paths are present.
     QCOMPARE(g_assemblyGraph->m_deBruijnGraphNodes.size(), 12);
@@ -195,10 +195,8 @@ void BandageTests::loadGFA12()
 
 void BandageTests::loadGFA()
 {
-    bool lastGraphLoaded = g_assemblyGraph->loadGraphFromFile(testFile("test.gfa"));
-
     //Check that the graph loaded properly.
-    QCOMPARE(lastGraphLoaded, true);
+    QVERIFY(g_assemblyGraph->loadGraphFromFile(testFile("test.gfa")));
 
     //Check that the appropriate number of nodes/edges are present.
     QCOMPARE(g_assemblyGraph->m_deBruijnGraphNodes.size(), 34);
@@ -213,10 +211,8 @@ void BandageTests::loadGFA()
 
 void BandageTests::loadGAF()
 {
-    bool lastGraphLoaded = g_assemblyGraph->loadGraphFromFile(testFile("test_gaf.gfa"));
-
     // Check that the graph loaded properly.
-    QVERIFY(lastGraphLoaded);
+    QVERIFY(g_assemblyGraph->loadGraphFromFile(testFile("test_gaf.gfa")));
 
     //Check that the appropriate number of nodes/edges are present.
     QCOMPARE(g_assemblyGraph->m_deBruijnGraphNodes.size(), 8);
@@ -240,7 +236,7 @@ void BandageTests::loadTrinity()
     bool trinityLoaded = g_assemblyGraph->loadGraphFromFile(testFile("test.Trinity.fasta"));
 
     //Check that the graph loaded properly.
-    QCOMPARE(trinityLoaded, true);
+    QVERIFY(trinityLoaded);
 
     //Check that the appropriate number of nodes/edges are present.
     QCOMPARE(g_assemblyGraph->m_deBruijnGraphNodes.size(), 1170);
@@ -258,7 +254,7 @@ void BandageTests::loadTrinity()
 //where the connections are simple.
 void BandageTests::pathFunctionsOnGFA()
 {
-    g_assemblyGraph->loadGraphFromFile(testFile("test.gfa"));
+    QVERIFY(g_assemblyGraph->loadGraphFromFile(testFile("test.gfa")));
 
     QString pathStringFailure;
     Path testPath1 = Path::makeFromString("(1996) 9+, 13+ (5)", *g_assemblyGraph, false, &pathStringFailure);
@@ -308,7 +304,7 @@ void BandageTests::pathFunctionsOnGFA()
 //the overlap has to be removed from the path sequence.
 void BandageTests::pathFunctionsOnFastg()
 {
-    g_assemblyGraph->loadGraphFromFile(testFile("test.fastg"));
+    QVERIFY(g_assemblyGraph->loadGraphFromFile(testFile("test.fastg")));
 
     QString pathStringFailure;
     Path testPath1 = Path::makeFromString("(50234) 6+, 26+, 23+, 26+, 24+ (200)", *g_assemblyGraph, false, &pathStringFailure);
@@ -327,7 +323,7 @@ void BandageTests::pathFunctionsOnFastg()
 void BandageTests::pathFunctionsOnGfaSequencesInGraph()
 {
     bool gfaLoaded = g_assemblyGraph->loadGraphFromFile(testFile("test_plasmids.gfa"));
-    QCOMPARE(gfaLoaded, true);
+    QVERIFY(gfaLoaded);
 
     //Check that the number of nodes/edges.
     QCOMPARE(g_assemblyGraph->m_deBruijnGraphNodes.size(), 18);
@@ -352,7 +348,7 @@ void BandageTests::pathFunctionsOnGfaSequencesInGraph()
 void BandageTests::pathFunctionsOnGfaSequencesInFasta()
 {
     bool gfaLoaded = g_assemblyGraph->loadGraphFromFile(testFile("test_plasmids_separate_sequences.gfa"));
-    QCOMPARE(gfaLoaded, true);
+    QVERIFY(gfaLoaded);
 
     //Check that the number of nodes/edges.
     QCOMPARE(g_assemblyGraph->m_deBruijnGraphNodes.size(), 18);
@@ -394,9 +390,9 @@ void BandageTests::pathFunctionsOnGfaSequencesInFasta()
 void BandageTests::graphLocationFunctions()
 {
     //First do some tests with a FASTG, where the overlap results in a simpler
-    //sitations: all positions have a reverse complement position in the
+    //situations: all positions have a reverse complement position in the
     //reverse complement node.
-    g_assemblyGraph->loadGraphFromFile(testFile("test.fastg"));
+    QVERIFY(g_assemblyGraph->loadGraphFromFile(testFile("test.fastg")));
     DeBruijnNode * node12Plus = g_assemblyGraph->m_deBruijnGraphNodes["12+"];
     DeBruijnNode * node3Plus = g_assemblyGraph->m_deBruijnGraphNodes["3+"];
 
@@ -426,7 +422,7 @@ void BandageTests::graphLocationFunctions()
 
 void BandageTests::loadCsvData()
 {
-    g_assemblyGraph->loadGraphFromFile(testFile("test.fastg"));
+    QVERIFY(g_assemblyGraph->loadGraphFromFile(testFile("test.fastg")));
 
     QString errormsg;
     QStringList columns;
@@ -491,7 +487,7 @@ void BandageTests::loadCsvData()
 
 void BandageTests::loadCsvDataTrinity()
 {
-    g_assemblyGraph->loadGraphFromFile(testFile("test.Trinity.fasta"));
+    QVERIFY(g_assemblyGraph->loadGraphFromFile(testFile("test.Trinity.fasta")));
 
     QString errormsg;
     QStringList columns;
@@ -519,7 +515,7 @@ void BandageTests::loadCsvDataTrinity()
 
 void BandageTests::blastSearch()
 {
-    g_assemblyGraph->loadGraphFromFile(testFile("test.fastg"));
+    QVERIFY(g_assemblyGraph->loadGraphFromFile(testFile("test.fastg")));
     g_settings->blastQueryFilename = testFile("test_queries1.fasta");
     createBlastTempDirectory();
 
@@ -565,7 +561,7 @@ void BandageTests::blastSearch()
 
 void BandageTests::blastSearchFilters()
 {
-    g_assemblyGraph->loadGraphFromFile(testFile("test.fastg"));
+    QVERIFY(g_assemblyGraph->loadGraphFromFile(testFile("test.fastg")));
     g_settings->blastQueryFilename = testFile("test_queries2.fasta");
     createBlastTempDirectory();
 
@@ -609,7 +605,7 @@ void BandageTests::blastSearchFilters()
 
 void BandageTests::graphScope()
 {
-    g_assemblyGraph->loadGraphFromFile(testFile("test.fastg"));
+    QVERIFY(g_assemblyGraph->loadGraphFromFile(testFile("test.fastg")));
 
     QString errorTitle;
     QString errorMessage;
@@ -1208,7 +1204,7 @@ void BandageTests::sciNotComparisons()
 
 void BandageTests::graphEdits()
 {
-    g_assemblyGraph->loadGraphFromFile(testFile("test.fastg"));
+    QVERIFY(g_assemblyGraph->loadGraphFromFile(testFile("test.fastg")));
 
     QCOMPARE(g_assemblyGraph->m_deBruijnGraphNodes.size(), 88);
     QCOMPARE(g_assemblyGraph->m_deBruijnGraphEdges.size(), 118);
@@ -1302,7 +1298,7 @@ void BandageTests::fastgToGfa()
 
 void BandageTests::mergeNodesOnGfa()
 {
-    g_assemblyGraph->loadGraphFromFile(testFile("test_plasmids.gfa"));
+    QVERIFY(g_assemblyGraph->loadGraphFromFile(testFile("test_plasmids.gfa")));
 
     DeBruijnNode * node6Plus = g_assemblyGraph->m_deBruijnGraphNodes["6+"];
     DeBruijnNode * node280Plus = g_assemblyGraph->m_deBruijnGraphNodes["280+"];
@@ -1362,7 +1358,7 @@ void BandageTests::mergeNodesOnGfa()
 
 void BandageTests::changeNodeNames()
 {
-    g_assemblyGraph->loadGraphFromFile(testFile("test.fastg"));
+    QVERIFY(g_assemblyGraph->loadGraphFromFile(testFile("test.fastg")));
 
     DeBruijnNode * node6Plus = g_assemblyGraph->m_deBruijnGraphNodes["6+"];
     DeBruijnNode * node6Minus = g_assemblyGraph->m_deBruijnGraphNodes["6-"];
@@ -1381,7 +1377,7 @@ void BandageTests::changeNodeNames()
 
 void BandageTests::changeNodeDepths()
 {
-    g_assemblyGraph->loadGraphFromFile(testFile("test.fastg"));
+    QVERIFY(g_assemblyGraph->loadGraphFromFile(testFile("test.fastg")));
 
     DeBruijnNode * node6Plus = g_assemblyGraph->m_deBruijnGraphNodes["6+"];
     DeBruijnNode * node6Minus = g_assemblyGraph->m_deBruijnGraphNodes["6-"];
@@ -1407,7 +1403,7 @@ void BandageTests::changeNodeDepths()
 
 void BandageTests::blastQueryPaths()
 {
-    g_assemblyGraph->loadGraphFromFile(testFile("test_query_paths.gfa"));
+    QVERIFY(g_assemblyGraph->loadGraphFromFile(testFile("test_query_paths.gfa")));
 
     Settings defaultSettings;
     g_settings->blastQueryFilename = testFile("test_query_paths.fasta");
@@ -1551,7 +1547,7 @@ void BandageTests::bandageInfo()
     int componentCount = 0;
     int largestComponentLength = 0;
 
-    g_assemblyGraph->loadGraphFromFile(testFile("test.fastg"));
+    QVERIFY(g_assemblyGraph->loadGraphFromFile(testFile("test.fastg")));
     g_assemblyGraph->getNodeStats(&n50, &shortestNode, &firstQuartile, &median, &thirdQuartile, &longestNode);
     g_assemblyGraph->getGraphComponentCountAndLargestComponentSize(&componentCount, &largestComponentLength);
     QCOMPARE(44, g_assemblyGraph->m_nodeCount);
@@ -1564,14 +1560,14 @@ void BandageTests::bandageInfo()
     QCOMPARE(1, componentCount);
     QCOMPARE(214441, largestComponentLength);
 
-    g_assemblyGraph->loadGraphFromFile(testFile("test.Trinity.fasta"));
+    QVERIFY(g_assemblyGraph->loadGraphFromFile(testFile("test.Trinity.fasta")));
     g_assemblyGraph->getNodeStats(&n50, &shortestNode, &firstQuartile, &median, &thirdQuartile, &longestNode);
     g_assemblyGraph->getGraphComponentCountAndLargestComponentSize(&componentCount, &largestComponentLength);
     QCOMPARE(149, g_assemblyGraph->getDeadEndCount());
     QCOMPARE(66, componentCount);
     QCOMPARE(9398, largestComponentLength);
 
-    g_assemblyGraph->loadGraphFromFile(testFile("test.gfa"));
+    QVERIFY(g_assemblyGraph->loadGraphFromFile(testFile("test.gfa")));
     g_assemblyGraph->getNodeStats(&n50, &shortestNode, &firstQuartile, &median, &thirdQuartile, &longestNode);
     g_assemblyGraph->getGraphComponentCountAndLargestComponentSize(&componentCount, &largestComponentLength);
     QCOMPARE(17, g_assemblyGraph->m_nodeCount);
