@@ -421,7 +421,7 @@ void DeBruijnNode::labelNeighbouringNodesAsDrawn(int nodeDistance, DeBruijnNode 
     std::unordered_set<DeBruijnNode *> s2;
     s1.insert(callingNode);
     for (int depth = 0; depth <= nodeDistance; depth++) {
-        for (auto otherNode : s1) {
+        for (auto *otherNode : s1) {
             if (g_settings->doubleMode)
                 otherNode->m_drawn = true;
             else //single mode
@@ -431,12 +431,14 @@ void DeBruijnNode::labelNeighbouringNodesAsDrawn(int nodeDistance, DeBruijnNode 
                 else
                     otherNode->getReverseComplement()->m_drawn = true;
             }
-            for (auto m_edge : otherNode->m_edges) {
-                DeBruijnNode * node = m_edge->getOtherNode(otherNode)
-                if (node->isNotDrawn())
+            for (auto *m_edge : otherNode->m_edges) {
+                DeBruijnNode * node = m_edge->getOtherNode(otherNode);
+                if (!node->thisNodeOrReverseComplementIsDrawn())
                     s2.insert(node);
             }
         }
+        if (s2.empty())
+            break;
         s1.clear();
         s1.swap(s2);
     }
