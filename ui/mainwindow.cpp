@@ -468,10 +468,10 @@ void MainWindow::loadGraphLayout(QString fullFileName) {
 }
 
 void MainWindow::loadGraphPaths(QString fullFileName) {
-    QString selectedFilter = "GFA paths (*.gfa)";
+    QString selectedFilter = "GAF paths (*.gaf)";
     if (fullFileName.isEmpty())
         fullFileName = QFileDialog::getOpenFileName(this, "Load graph paths", "",
-                                                    "GFA paths (*.gfa);;GAF paths (*.gaf)",
+                                                    "GAF paths (*.gaf);;GFA paths (*.gfa);;SPAligner TSV paths (*.tsv)",
                                                     &selectedFilter);
 
     if (fullFileName.isEmpty())
@@ -480,6 +480,8 @@ void MainWindow::loadGraphPaths(QString fullFileName) {
     try {
         if (selectedFilter == "GFA paths (*.gfa)")
             io::loadGFAPaths(*g_assemblyGraph, fullFileName);
+        else if (selectedFilter == "SPAligner TSV paths (*.tsv)")
+            io::loadSPAlignerPaths(*g_assemblyGraph, fullFileName);
         else
             io::loadGAFPaths(*g_assemblyGraph, fullFileName);
     } catch (std::exception &e) {

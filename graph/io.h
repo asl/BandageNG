@@ -46,4 +46,5 @@ namespace io {
 
     bool loadGFAPaths(AssemblyGraph &graph, QString fileName);
     bool loadGAFPaths(AssemblyGraph &graph, QString fileName);
+    bool loadSPAlignerPaths(AssemblyGraph &graph, QString fileName);
 }

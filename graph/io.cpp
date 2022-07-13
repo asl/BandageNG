@@ -21,6 +21,8 @@
 #include "io/gfa.h"
 #include "io/gaf.h"
 
+#include <csv/csv.hpp>
+
 #include <QFile>
 #include <QTextStream>
 
@@ -97,4 +99,52 @@ namespace io {
 
         return true;
     }
+
+    bool loadSPAlignerPaths(AssemblyGraph &graph,
+                            QString fileName) {
+        csv::CSVFormat format;
+        format.delimiter('\t')
+                .quote('"')
+                .no_header();  // Parse TSVs without a header row
+        format.column_names({
+                                    "name",
+                                    "qstart", "qend",
+                                    "pstart", "pend",
+                                    "length",
+                                    "path", "alnlength",
+                                    "pathseq"
+                            });
+        csv::CSVReader csvReader(fileName.toStdString(), format);
+
+        for (csv::CSVRow &row: csvReader) {
+            if (row.size() != 9)
+                throw std::logic_error("Mandatory columns were not found");
+
+            std::string name(row["name"].get_sv());
+            auto pathSv = row["path"].get_sv();
+            QStringList pathParts = QString(QByteArray(pathSv.data(), pathSv.size())).split(";");
+
+            auto addPath = [&](const std::string &name, const QString &pathPart) {
+                QList<DeBruijnNode *> pathNodes;
+                for (const auto &nodeName: pathPart.split(","))
+                    pathNodes.push_back(graph.m_deBruijnGraphNodes.at(nodeName.toStdString()));
+
+                graph.m_deBruijnGraphPaths[name] =
+                        new Path(Path::makeFromOrderedNodes(pathNodes, false));
+            };
+            if (pathParts.size() == 1) {
+                // Keep the name as-is
+                addPath(name, pathParts.front());
+            } else {
+                size_t pathIdx = 0;
+                for (const auto &pathPart: pathParts) {
+                    addPath(name + "_" + std::to_string(pathIdx), pathPart);
+                    pathIdx += 1;
+                }
+            }
+        }
+
+        return true;
+    }
+
 }
