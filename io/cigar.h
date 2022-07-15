@@ -98,6 +98,9 @@ namespace cigar {
         if (res == tags.end())
             return {};
 
+        if (!std::holds_alternative<T>(res->val))
+            return {};
+
         return std::get<T>(res->val);
     }
 }
