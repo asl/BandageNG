@@ -1,9 +1,11 @@
 name: build-snapshots
 
 on:
+  workflow_dispatch:
   push:
     tags:
       - "v*.*"
+
 env:
   BUILD_TYPE: Release
   QT_QPA_PLATFORM: offscreen
