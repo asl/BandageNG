@@ -139,8 +139,8 @@ namespace gfa {
         gfaPathLine += name;
         gfaPathLine += '\t';
 
-        const auto &nodes = path->getNodes();
-        const auto &edges = path->getEdges();
+        const auto &nodes = path->nodes();
+        const auto &edges = path->edges();
 
         // edges is one less than nodes for linear paths and of
         // same length for circular paths

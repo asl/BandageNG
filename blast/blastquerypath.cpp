@@ -36,7 +36,7 @@ BlastQueryPath::BlastQueryPath(Path path, BlastQuery * query) :
     //the path begins later in the query than the previous hit.
 
     BlastHit * previousHit = nullptr;
-    QList<DeBruijnNode *> pathNodes = m_path.getNodes();
+    const auto &pathNodes = m_path.nodes();
     for (int i = 0; i < pathNodes.size(); ++i)
     {
         DeBruijnNode * node = pathNodes[i];
@@ -53,7 +53,7 @@ BlastQueryPath::BlastQueryPath(Path path, BlastQuery * query) :
         std::sort(hitsThisNode.begin(), hitsThisNode.end(),
                   BlastHit::compareTwoBlastHitPointers);
 
-        for (auto hit : hitsThisNode)
+        for (auto *hit : hitsThisNode)
         {
             //First check to make sure the hits are within the path.  This means
             //if we are in the first or last nodes of the path, we need to make

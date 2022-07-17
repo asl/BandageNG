@@ -65,4 +65,15 @@ namespace utils {
 
         return list;
     }
+
+    QByteArray modifySequenceUsingOverlap(QByteArray sequence, int overlap) {
+        if (overlap > 0) {
+            int rightChars = sequence.length() - overlap;
+            if (rightChars >= 0)
+                sequence = sequence.right(rightChars);
+        } else if (overlap < 0)
+            sequence = QByteArray(-overlap, 'N') + sequence;
+
+        return sequence;
+    }
 } // namespace utils

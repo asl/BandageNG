@@ -44,7 +44,7 @@ namespace io {
                 continue;
 
             if (auto *path = std::get_if<gfa::path>(&*val)) {
-                QList<DeBruijnNode *> pathNodes;
+                std::vector<DeBruijnNode*> pathNodes;
                 pathNodes.reserve(path->segments.size());
 
                 for (const auto &node: path->segments)
@@ -73,7 +73,7 @@ namespace io {
             if (!path)
                 continue;
 
-            QList<DeBruijnNode *> pathNodes;
+            std::vector<DeBruijnNode *> pathNodes;
             pathNodes.reserve(path->segments.size());
 
             // FIXME: handle orientation
@@ -125,7 +125,7 @@ namespace io {
             QStringList pathParts = QString(QByteArray(pathSv.data(), pathSv.size())).split(";");
 
             auto addPath = [&](const std::string &name, const QString &pathPart) {
-                QList<DeBruijnNode *> pathNodes;
+                std::vector<DeBruijnNode *> pathNodes;
                 for (const auto &nodeName: pathPart.split(","))
                     pathNodes.push_back(graph.m_deBruijnGraphNodes.at(nodeName.toStdString()));
 

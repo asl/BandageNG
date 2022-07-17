@@ -131,9 +131,6 @@ private:
     QByteArray getNodeNameForFasta(bool sign) const;
     QByteArray getUpstreamSequence(int upstreamSequenceLength) const;
 
-    static bool isOnlyPathInItsDirection(DeBruijnNode * connectedNode,
-                                  std::vector<DeBruijnNode *> * incomingNodes,
-                                  std::vector<DeBruijnNode *> * outgoingNodes);
     static std::vector<DeBruijnNode *> getNodesCommonToAllPaths(std::vector< std::vector <DeBruijnNode *> > * paths,
                                                          bool includeReverseComplements) ;
     bool doesPathLeadOnlyToNode(DeBruijnNode * node, bool includeReverseComplement);

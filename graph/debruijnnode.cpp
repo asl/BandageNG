@@ -234,26 +234,7 @@ void DeBruijnNode::upgradeContiguityStatus(ContiguityStatus newStatus)
         m_contiguityStatus = newStatus;
 }
 
-
-
-//It is expected that the argument connectedNode is either in incomingNodes or
-//outgoingNodes.  If that node is the only one in whichever container it is in,
-//this function returns true.
-bool DeBruijnNode::isOnlyPathInItsDirection(DeBruijnNode * connectedNode,
-                                            std::vector<DeBruijnNode *> * incomingNodes,
-                                            std::vector<DeBruijnNode *> * outgoingNodes)
-{
-    std::vector<DeBruijnNode *> * container;
-    if (std::find(incomingNodes->begin(), incomingNodes->end(), connectedNode) != incomingNodes->end())
-        container = incomingNodes;
-    else
-        container = outgoingNodes;
-
-    return (container->size() == 1 && (*container)[0] == connectedNode);
-}
-
-QByteArray DeBruijnNode::getFasta(bool sign, bool newLines, bool evenIfEmpty) const
-{
+QByteArray DeBruijnNode::getFasta(bool sign, bool newLines, bool evenIfEmpty) const {
     QByteArray sequence = utils::sequenceToQByteArray(getSequence());
     if (sequence.isEmpty() && !evenIfEmpty)
         return {};
@@ -270,8 +251,7 @@ QByteArray DeBruijnNode::getFasta(bool sign, bool newLines, bool evenIfEmpty) co
     return fasta;
 }
 
-QByteArray DeBruijnNode::getUpstreamSequence(int upstreamSequenceLength) const
-{
+QByteArray DeBruijnNode::getUpstreamSequence(int upstreamSequenceLength) const {
     std::vector<DeBruijnNode*> upstreamNodes = getUpstreamNodes();
 
     QByteArray bestUpstreamNodeSequence;
@@ -401,8 +381,7 @@ bool DeBruijnNode::isNegativeNode() const
 //it returns a null pointer.
 DeBruijnEdge * DeBruijnNode::doesNodeLeadIn(DeBruijnNode * node) const
 {
-    for (auto edge : m_edges)
-    {
+    for (auto *edge : m_edges) {
         if (edge->getStartingNode() == node && edge->getEndingNode() == this)
             return edge;
     }
@@ -414,8 +393,7 @@ DeBruijnEdge * DeBruijnNode::doesNodeLeadIn(DeBruijnNode * node) const
 //it returns a null pointer.
 DeBruijnEdge * DeBruijnNode::doesNodeLeadAway(DeBruijnNode * node) const
 {
-    for (auto edge : m_edges)
-    {
+    for (auto *edge : m_edges) {
         if (edge->getStartingNode() == this && edge->getEndingNode() == node)
             return edge;
     }
@@ -425,8 +403,7 @@ DeBruijnEdge * DeBruijnNode::doesNodeLeadAway(DeBruijnNode * node) const
 
 bool DeBruijnNode::isNodeConnected(DeBruijnNode * node) const
 {
-    for (auto edge : m_edges)
-    {
+    for (auto *edge : m_edges) {
         if (edge->getStartingNode() == node || edge->getEndingNode() == node)
             return true;
     }
@@ -438,8 +415,7 @@ bool DeBruijnNode::isNodeConnected(DeBruijnNode * node) const
 std::vector<DeBruijnEdge *> DeBruijnNode::getEnteringEdges() const
 {
     std::vector<DeBruijnEdge *> returnVector;
-    for (auto edge : m_edges)
-    {
+    for (auto *edge : m_edges) {
         if (this == edge->getEndingNode())
             returnVector.push_back(edge);
     }
@@ -448,8 +424,7 @@ std::vector<DeBruijnEdge *> DeBruijnNode::getEnteringEdges() const
 std::vector<DeBruijnEdge *> DeBruijnNode::getLeavingEdges() const
 {
     std::vector<DeBruijnEdge *> returnVector;
-    for (auto edge : m_edges)
-    {
+    for (auto *edge : m_edges) {
         if (this == edge->getStartingNode())
             returnVector.push_back(edge);
     }

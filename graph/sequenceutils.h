@@ -44,4 +44,8 @@ namespace utils {
     // Known Bugs: CSV (as per RFC4180) allows multi-line fields (\r\n between "..."), which
     //             can't be parsed line-by line, hence isn't supported.
     QStringList splitCsv(const QString& line, const QString& sep=",");
+
+    // This function will trim bases from the start of a sequence (in the case of
+    // positive overlap) or add Ns to the start (in the case of negative overlap).
+    QByteArray modifySequenceUsingOverlap(QByteArray sequence, int overlap);
 }

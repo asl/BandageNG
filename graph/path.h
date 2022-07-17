@@ -24,7 +24,6 @@
 #include <QByteArray>
 #include <QList>
 #include <QString>
-#include <QStringList>
 
 #include <vector>
 
@@ -38,11 +37,10 @@ public:
     //CREATORS
     Path() {}
     Path(GraphLocation location);
-    static Path makeFromUnorderedNodes(QList<DeBruijnNode *> nodes,
+
+    static Path makeFromUnorderedNodes(const std::vector<DeBruijnNode *> &nodes,
                                        bool strandSpecific);
-    static Path makeFromUnorderedNodes(const std::vector<DeBruijnNode *>& nodes,
-                                       bool strandSpecific);
-    static Path makeFromOrderedNodes(QList<DeBruijnNode *> nodes,
+    static Path makeFromOrderedNodes(const std::vector<DeBruijnNode *> &nodes,
                                      bool circular);
     static Path makeFromString(const QString& pathString,
                                const AssemblyGraph &graph,
@@ -50,15 +48,15 @@ public:
                                QString * pathStringFailure);
 
     //ACCESSORS
-    const QList<DeBruijnNode *>& getNodes() const {return m_nodes;}
-    const QList<DeBruijnEdge *>& getEdges() const {return m_edges;}
+    const auto& nodes() const {return m_nodes;}
+    const auto& edges() const {return m_edges;}
     bool isEmpty() const {return m_nodes.empty();}
     bool isCircular() const;
     bool haveSameNodes(const Path& other) const;
     bool hasNodeSubset(const Path& other) const;
-    QByteArray getPathSequence() const;
-    QString getFasta() const;
-    QString getString(bool spaces) const;
+    [[nodiscard]] QByteArray getPathSequence() const;
+    [[nodiscard]] QString getFasta() const;
+    [[nodiscard]] QString getString(bool spaces) const;
     int getLength() const;
     QList<Path> extendPathInAllPossibleWays() const;
     bool canNodeFitOnEnd(DeBruijnNode * node, Path * extendedPath) const;
@@ -90,12 +88,9 @@ public:
 private:
     GraphLocation m_startLocation;
     GraphLocation m_endLocation;
-    QList<DeBruijnNode *> m_nodes;
-    QList<DeBruijnEdge *> m_edges;
+    std::vector<DeBruijnNode *> m_nodes;
+    std::vector<DeBruijnEdge *> m_edges;
 
-    void buildUnambiguousPathFromNodes(QList<DeBruijnNode *> nodes,
-                                       bool strandSpecific);
-    static QByteArray modifySequenceUsingOverlap(QByteArray sequence, int overlap) ;
     bool checkForOtherEdges();
 };
 

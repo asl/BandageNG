@@ -1680,7 +1680,7 @@ void MainWindow::selectPathNodes()
         QMessageBox::information(this, "Path not found", "Path named \"" + pathName + "\" is not found. Maybe you wanted to select nodes instead?");
         return;
     }
-    for (auto *node : (*nodes)->getNodes())
+    for (auto *node : (*nodes)->nodes())
         nodesToSelect.push_back(node);
 
     doSelectNodes(nodesToSelect, nodesNotInGraph, ui->pathSelectionRecolorRadioButton->isChecked());

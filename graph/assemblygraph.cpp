@@ -45,6 +45,7 @@
 #include <limits>
 #include <cmath>
 #include <utility>
+#include <deque>
 
 AssemblyGraph::AssemblyGraph()
         : m_kmer(0), m_contiguitySearchDone(false),
@@ -419,7 +420,7 @@ bool AssemblyGraph::loadCSV(const QString &filename, QStringList *columns, QStri
         {
             auto pathIt = m_deBruijnGraphPaths.equal_prefix_range(nodeName.toStdString());
             for (; pathIt.first != pathIt.second; ++pathIt.first) {
-                const auto &pathNodes = (*pathIt.first)->getNodes();
+                const auto &pathNodes = (*pathIt.first)->nodes();
 
                 for (auto *node: pathNodes) {
                     nodes.emplace_back(node);
@@ -709,12 +710,9 @@ std::vector<DeBruijnNode *> AssemblyGraph::getStartingNodes(QString * errorTitle
         startingNodes = getNodesFromBlastHits(blastQueryName);
     else if (g_settings->graphScope == DEPTH_RANGE)
         startingNodes = getNodesInDepthRange(g_settings->minDepthRange,
-                                                 g_settings->maxDepthRange);
+                                             g_settings->maxDepthRange);
     else if (g_settings->graphScope == AROUND_PATHS) {
-        QList<DeBruijnNode *> nodes = m_deBruijnGraphPaths.at(pathName.toStdString())->getNodes();
-
-        for (auto & node : nodes)
-            startingNodes.push_back(node);
+        startingNodes = m_deBruijnGraphPaths.at(pathName.toStdString())->nodes();
     }
 
     return startingNodes;
@@ -1143,10 +1141,8 @@ QString AssemblyGraph::getNewNodeName(QString oldNodeName) const
     return newNodeName;
 }
 
-static bool canAddNodeToStartOfMergeList(QList<DeBruijnNode *> * mergeList,
-                                         DeBruijnNode * potentialNode)
-{
-    DeBruijnNode * firstNode = mergeList->front();
+static bool canAddNodeToStartOfMergeList(const DeBruijnNode *firstNode,
+                                         const DeBruijnNode *potentialNode) {
     std::vector<DeBruijnEdge *> edgesEnteringFirstNode = firstNode->getEnteringEdges();
     std::vector<DeBruijnEdge *> edgesLeavingPotentialNode = potentialNode->getLeavingEdges();
     return (edgesEnteringFirstNode.size() == 1 &&
@@ -1156,10 +1152,8 @@ static bool canAddNodeToStartOfMergeList(QList<DeBruijnNode *> * mergeList,
 }
 
 
-static bool canAddNodeToEndOfMergeList(QList<DeBruijnNode *> * mergeList,
-                                       DeBruijnNode * potentialNode)
-{
-    DeBruijnNode * lastNode = mergeList->back();
+static bool canAddNodeToEndOfMergeList(const DeBruijnNode *lastNode,
+                                       const DeBruijnNode *potentialNode) {
     std::vector<DeBruijnEdge *> edgesLeavingLastNode = lastNode->getLeavingEdges();
     std::vector<DeBruijnEdge *> edgesEnteringPotentialNode = potentialNode->getEnteringEdges();
     return (edgesLeavingLastNode.size() == 1 &&
@@ -1168,8 +1162,8 @@ static bool canAddNodeToEndOfMergeList(QList<DeBruijnNode *> * mergeList,
             edgesEnteringPotentialNode[0]->getStartingNode() == lastNode);
 }
 
-static void mergeGraphicsNodes(QList<DeBruijnNode *> * originalNodes,
-                               QList<DeBruijnNode *> * revCompOriginalNodes,
+static void mergeGraphicsNodes(const std::vector<DeBruijnNode *> &originalNodes,
+                               const std::vector<DeBruijnNode *> &revCompOriginalNodes,
                                DeBruijnNode * newNode,
                                MyGraphicsScene * scene);
 
@@ -1183,8 +1177,8 @@ bool AssemblyGraph::mergeNodes(QList<DeBruijnNode *> nodes, MyGraphicsScene * sc
         return true;
 
     //We now need to sort the nodes into merge order.
-    QList<DeBruijnNode *> orderedList;
-    orderedList.push_back(nodes[0]);
+    std::deque<DeBruijnNode *> mergeList;
+    mergeList.push_back(nodes[0]);
     nodes.pop_front();
 
     bool addedNode;
@@ -1196,18 +1190,18 @@ bool AssemblyGraph::mergeNodes(QList<DeBruijnNode *> nodes, MyGraphicsScene * sc
             DeBruijnNode * potentialNextNode = nodes[i];
 
             //Check if the node can be added to the end of the list.
-            if (canAddNodeToEndOfMergeList(&orderedList, potentialNextNode))
+            if (canAddNodeToEndOfMergeList(mergeList.back(), potentialNextNode))
             {
-                orderedList.push_back(potentialNextNode);
+                mergeList.push_back(potentialNextNode);
                 nodes.removeAt(i);
                 addedNode = true;
                 break;
             }
 
             //Check if the node can be added to the front of the list.
-            if (canAddNodeToStartOfMergeList(&orderedList, potentialNextNode))
+            if (canAddNodeToStartOfMergeList(mergeList.front(), potentialNextNode))
             {
-                orderedList.push_front(potentialNextNode);
+                mergeList.push_front(potentialNextNode);
                 nodes.removeAt(i);
                 addedNode = true;
                 break;
@@ -1216,16 +1210,16 @@ bool AssemblyGraph::mergeNodes(QList<DeBruijnNode *> nodes, MyGraphicsScene * sc
             //If neither of those worked, then we should try the node's reverse
             //complement.
             DeBruijnNode * potentialNextNodeRevComp = potentialNextNode->getReverseComplement();
-            if (canAddNodeToEndOfMergeList(&orderedList, potentialNextNodeRevComp))
+            if (canAddNodeToEndOfMergeList(mergeList.back(), potentialNextNodeRevComp))
             {
-                orderedList.push_back(potentialNextNodeRevComp);
+                mergeList.push_back(potentialNextNodeRevComp);
                 nodes.removeAt(i);
                 addedNode = true;
                 break;
             }
-            if (canAddNodeToStartOfMergeList(&orderedList, potentialNextNodeRevComp))
+            if (canAddNodeToStartOfMergeList(mergeList.front(), potentialNextNodeRevComp))
             {
-                orderedList.push_front(potentialNextNodeRevComp);
+                mergeList.push_front(potentialNextNodeRevComp);
                 nodes.removeAt(i);
                 addedNode = true;
                 break;
@@ -1242,21 +1236,19 @@ bool AssemblyGraph::mergeNodes(QList<DeBruijnNode *> nodes, MyGraphicsScene * sc
     if (!nodes.empty())
         return false;
 
-    double mergedNodeDepth = getMeanDepth(orderedList);
-
+    std::vector<DeBruijnNode*> orderedList(mergeList.begin(), mergeList.end());
     Path posPath = Path::makeFromOrderedNodes(orderedList, false);
     Sequence mergedNodePosSequence{posPath.getPathSequence()};
 
-    QList<DeBruijnNode *> revCompOrderedList;
-    for (auto &node : orderedList)
-        revCompOrderedList.push_front(node->getReverseComplement());
+    std::vector<DeBruijnNode*> revCompOrderedList;
+    for (auto it = orderedList.rbegin(); it != orderedList.rend(); ++it)
+        revCompOrderedList.push_back((*it)->getReverseComplement());
 
     Path negPath = Path::makeFromOrderedNodes(revCompOrderedList, false);
     Sequence mergedNodeNegSequence{negPath.getPathSequence()};
 
     QString newNodeBaseName;
-    for (int i = 0; i < orderedList.size(); ++i)
-    {
+    for (int i = 0; i < orderedList.size(); ++i) {
         newNodeBaseName += orderedList[i]->getNameWithoutSign();
         if (i < orderedList.size() - 1)
             newNodeBaseName += "_";
@@ -1264,6 +1256,8 @@ bool AssemblyGraph::mergeNodes(QList<DeBruijnNode *> nodes, MyGraphicsScene * sc
     newNodeBaseName = getUniqueNodeName(newNodeBaseName);
     QString newPosNodeName = newNodeBaseName + "+";
     QString newNegNodeName = newNodeBaseName + "-";
+
+    double mergedNodeDepth = getMeanDepth(orderedList);
 
     auto newPosNode = new DeBruijnNode(newPosNodeName, mergedNodeDepth, mergedNodePosSequence);
     auto newNegNode = new DeBruijnNode(newNegNodeName, mergedNodeDepth, mergedNodeNegSequence);
@@ -1306,25 +1300,22 @@ bool AssemblyGraph::mergeNodes(QList<DeBruijnNode *> nodes, MyGraphicsScene * sc
         newNegNode->setDepthRelativeToMeanDrawnDepth(1.0);
     }
 
-    mergeGraphicsNodes(&orderedList, &revCompOrderedList, newPosNode, scene);
+    mergeGraphicsNodes(orderedList, revCompOrderedList, newPosNode, scene);
 
-    std::vector<DeBruijnNode *> nodesToDelete;
-    for (auto node : orderedList)
-        nodesToDelete.push_back(node);
-    deleteNodes(nodesToDelete);
+    deleteNodes(orderedList);
 
     return true;
 }
 
 
-static bool mergeGraphicsNodes2(QList<DeBruijnNode *> * originalNodes,
+static bool mergeGraphicsNodes2(const std::vector<DeBruijnNode *> &originalNodes,
                                 DeBruijnNode * newNode,
                                 MyGraphicsScene * scene)
 {
     bool success = true;
     std::vector<QPointF> linePoints;
 
-    for (auto node : *originalNodes)
+    for (auto *node : originalNodes)
     {
         //If we are in single mode, then we should check for a GraphicsItemNode only
         //in the positive nodes.
@@ -1346,20 +1337,16 @@ static bool mergeGraphicsNodes2(QList<DeBruijnNode *> * originalNodes,
 
         //Add the original line points to the new line point collection.  If we
         //are working with an opposite node, then we need to reverse the order.
-        if (opposite)
-        {
+        if (opposite) {
             for (size_t j = originalLinePoints.size(); j > 0; --j)
                 linePoints.push_back(originalLinePoints[j-1]);
-        }
-        else
-        {
+        } else {
             for (auto originalLinePoint : originalLinePoints)
                 linePoints.push_back(originalLinePoint);
         }
     }
 
-    if (success)
-    {
+    if (success) {
         auto * newGraphicsItemNode = new GraphicsItemNode(newNode, linePoints);
 
         newNode->setGraphicsItemNode(newGraphicsItemNode);
@@ -1380,8 +1367,8 @@ static bool mergeGraphicsNodes2(QList<DeBruijnNode *> * originalNodes,
     return success;
 }
 
-static void mergeGraphicsNodes(QList<DeBruijnNode *> * originalNodes,
-                               QList<DeBruijnNode *> * revCompOriginalNodes,
+static void mergeGraphicsNodes(const std::vector<DeBruijnNode *> &originalNodes,
+                               const std::vector<DeBruijnNode *> &revCompOriginalNodes,
                                DeBruijnNode * newNode,
                                MyGraphicsScene * scene)
 {
@@ -1396,11 +1383,7 @@ static void mergeGraphicsNodes(QList<DeBruijnNode *> * originalNodes,
             newRevComp->setAsDrawn();
     }
 
-    std::vector<DeBruijnNode *> nodesToRemove;
-    for (auto & originalNode : *originalNodes)
-        nodesToRemove.push_back(originalNode);
-
-    MyGraphicsScene::removeGraphicsItemNodes(nodesToRemove, true);
+    MyGraphicsScene::removeGraphicsItemNodes(originalNodes, true);
 }
 
 //This function simplifies the graph by merging all possible nodes in a simple

@@ -473,7 +473,7 @@ namespace io {
 
         void handlePath(const gfa::path &record,
                         AssemblyGraph &graph) {
-            QList<DeBruijnNode *> pathNodes;
+            std::vector<DeBruijnNode *> pathNodes;
             pathNodes.reserve(record.segments.size());
 
             for (const auto &node: record.segments)
