@@ -902,6 +902,12 @@ void MainWindow::graphLayoutFinished(const GraphLayout &layout)
     m_scene->addGraphicsItemsToScene(*g_assemblyGraph, layout);
     m_scene->setSceneRectangle();
     zoomToFitScene();
+
+    g_settings->averageNodeWidth = g_settings->averageNodeWidth / pow(g_absoluteZoom, 0.75);
+    ui->nodeWidthSpinBox->setValue(g_settings->averageNodeWidth);
+    g_assemblyGraph->recalculateAllNodeWidths();
+    g_graphicsView->viewport()->update();
+
     selectionChanged();
 
     setUiState(GRAPH_DRAWN);
@@ -1033,17 +1039,13 @@ void MainWindow::zoomToFitRect(QRectF rect)
     {
         double newZoomFactor = minZoom / g_absoluteZoom;
         m_graphicsViewZoom->gentleZoom(newZoomFactor, SPIN_BOX);
-        g_absoluteZoom *= newZoomFactor;
         g_absoluteZoom = minZoom;
-        newSpinBoxValue = minZoom * 100.0;
-    }
-    if (g_absoluteZoom > g_settings->maxAutomaticZoom)
-    {
+        newSpinBoxValue = g_absoluteZoom * 100.0;
+    } else if (g_absoluteZoom > g_settings->maxAutomaticZoom) {
         double newZoomFactor = g_settings->maxAutomaticZoom / g_absoluteZoom;
         m_graphicsViewZoom->gentleZoom(newZoomFactor, SPIN_BOX);
-        g_absoluteZoom *= newZoomFactor;
         g_absoluteZoom = g_settings->maxAutomaticZoom;
-        newSpinBoxValue = g_settings->maxAutomaticZoom * 100.0;
+        newSpinBoxValue = g_absoluteZoom * 100.0;
     }
 
     ui->zoomSpinBox->blockSignals(true);
