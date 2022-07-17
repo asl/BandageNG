@@ -56,8 +56,8 @@ Settings::Settings()
     blastQueryFilename = "";
     unnamedQueryDefaultName = "unnamed";
 
-    minZoom = 0.01;
-    minZoomOnGraphDraw = 0.2;
+    minZoom = 0.001;
+    minZoomOnGraphDraw = 0.001;
     maxZoom = 100.0;
     maxAutomaticZoom = 10.0;
     zoomFactor = 1.0005;

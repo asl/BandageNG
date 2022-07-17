@@ -467,7 +467,6 @@ rotateComponentsAndCalculateBoundingRectangles(
         //tipp the smallest rectangle over by angle PI/2 around the origin if it makes the
         //aspect_ratio of r_best more similar to the desired aspect_ratio
         double ratio = r_best.get_width() / r_best.get_height();
-
         if ((aspectRatio < 1 && ratio > 1) || (aspectRatio >= 1 && ratio < 1)) {
             for (ogdf::node v: nodesInCC[i]) {
                 new_pos.m_x = best_coords[i][v].m_y * (-1);
