@@ -76,7 +76,6 @@ private:
     void resetAllNodeColours();
     void layoutGraph();
     void zoomToFitRect(QRectF rect);
-    void zoomToFitScene();
     void setZoomSpinBoxStep();
     void getSelectedNodeInfo(int & selectedNodeCount, QString & selectedNodeCountText,
                              QString & selectedNodeListText, QString & selectedNodeLengthText, QString &selectedNodeDepthText,
@@ -112,6 +111,7 @@ private slots:
     void drawGraph();
     void zoomSpinBoxChanged();
     void zoomedWithMouseWheel();
+    void zoomToFitScene();
     void copySelectedSequencesToClipboardActionTriggered();
     void copySelectedSequencesToClipboard();
     void saveSelectedSequencesToFileActionTriggered();

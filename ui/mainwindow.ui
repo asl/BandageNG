@@ -2309,6 +2309,8 @@
     </property>
     <addaction name="actionControls_panel"/>
     <addaction name="actionSelection_panel"/>
+    <addaction name="separator"/>
+    <addaction name="actionZoom_to_fit_graph"/>
    </widget>
    <widget class="QMenu" name="menuSelection">
     <property name="title">
@@ -2765,6 +2767,16 @@
    </property>
    <property name="text">
     <string>Load paths</string>
+   </property>
+  </action>
+  <action name="actionZoom_to_fit_graph">
+   <property name="icon">
+    <iconset>
+     <normalon>:/icons/zoom.png</normalon>
+    </iconset>
+   </property>
+   <property name="text">
+    <string>Zoom to fit graph</string>
    </property>
   </action>
  </widget>
