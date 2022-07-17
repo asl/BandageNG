@@ -61,6 +61,7 @@ public:
     char getBaseAt(int i) const {if (i >= 0 && i < m_sequence.size()) return m_sequence[i]; else return '\0';} // NOTE
     ContiguityStatus getContiguityStatus() const {return m_contiguityStatus;}
     DeBruijnNode * getReverseComplement() const {return m_reverseComplement;}
+    DeBruijnNode *getCanonical() { return isPositiveNode() ? this : m_reverseComplement; }
 
     GraphicsItemNode * getGraphicsItemNode() const {return m_graphicsItemNode;}
     bool hasGraphicsItem() const {return m_graphicsItemNode != nullptr;}
@@ -108,7 +109,7 @@ public:
     void addEdge(DeBruijnEdge * edge);
     void removeEdge(DeBruijnEdge * edge);
     void determineContiguity();
-    void labelNeighbouringNodesAsDrawn(int nodeDistance, DeBruijnNode * callingNode);
+    void labelNeighbouringNodesAsDrawn(int nodeDistance);
     void setDepth(double newDepth) {m_depth = newDepth;}
     void setName(QString newName) {m_name = std::move(newName);}
 
@@ -122,8 +123,7 @@ private:
 
     GraphicsItemNode * m_graphicsItemNode;
 
-    int m_length;
-    int m_highestDistanceInNeighbourSearch : 27;
+    int m_length : 27;
     ContiguityStatus m_contiguityStatus : 3;
     bool m_specialNode : 1;
     bool m_drawn : 1;

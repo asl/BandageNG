@@ -26,9 +26,9 @@
 #include <cmath>
 
 #include <set>
+#include <unordered_set>
 #include <QApplication>
 #include <QSet>
-
 
 //The length parameter is optional.  If it is set, then the node will use that
 //for its length.  If not set, it will just use the sequence length.
@@ -42,9 +42,7 @@ DeBruijnNode::DeBruijnNode(QString name, double depth, const Sequence& sequence,
     m_reverseComplement(nullptr),
     m_graphicsItemNode(nullptr),
     m_specialNode(false),
-    m_drawn(false),
-    m_highestDistanceInNeighbourSearch(0)
-{
+    m_drawn(false) {
     if (length > 0)
         m_length = length;
 }
@@ -74,7 +72,6 @@ void DeBruijnNode::resetNode()
     resetContiguityStatus();
     setAsNotDrawn();
     setAsNotSpecial();
-    m_highestDistanceInNeighbourSearch = 0;
 }
 
 //This function determines the contiguity of nodes relative to this one.
@@ -328,39 +325,32 @@ QByteArray DeBruijnNode::getNodeNameForFasta(bool sign) const
 }
 
 
-//This function recursively labels all nodes as drawn that are within a
-//certain distance of this node.  Whichever node called this will
-//definitely be drawn, so that one is excluded from the recursive call.
-void DeBruijnNode::labelNeighbouringNodesAsDrawn(int nodeDistance, DeBruijnNode * callingNode)
-{
-    if (m_highestDistanceInNeighbourSearch > nodeDistance)
-        return;
-    m_highestDistanceInNeighbourSearch = nodeDistance;
+// This function recursively labels all nodes as drawn that are within a
+// certain distance of this node.  Whichever node called this will
+// definitely be drawn, so that one is excluded from the recursive call.
+// FIXME: this function does not belong here
+void DeBruijnNode::labelNeighbouringNodesAsDrawn(int nodeDistance) {
+    std::unordered_set<DeBruijnNode*> worklist, seen;
+    worklist.insert(this);
+    for (int depth = 0; depth <= nodeDistance; depth++) {
+        for (auto *node : worklist) {
+            auto *nodeToMark =
+                        g_settings->doubleMode ? node : node->getCanonical();
+            nodeToMark->m_drawn = true;
 
-    if (nodeDistance == 0)
-        return;
-
-    DeBruijnNode * otherNode;
-    for (auto &m_edge : m_edges)
-    {
-        otherNode = m_edge->getOtherNode(this);
-
-        if (otherNode == callingNode)
-            continue;
-
-        if (g_settings->doubleMode)
-            otherNode->m_drawn = true;
-        else //single mode
-        {
-            if (otherNode->isPositiveNode())
-                otherNode->m_drawn = true;
-            else
-                otherNode->getReverseComplement()->m_drawn = true;
+            for (auto *m_edge : node->m_edges) {
+                DeBruijnNode * otherNode = m_edge->getOtherNode(node);
+                if (!otherNode->thisNodeOrReverseComplementIsDrawn())
+                    seen.insert(otherNode);
+            }
         }
-        otherNode->labelNeighbouringNodesAsDrawn(nodeDistance-1, this);
+
+        if (seen.empty())
+            break;
+        worklist.clear();
+        worklist.swap(seen);
     }
 }
-
 
 bool DeBruijnNode::isPositiveNode() const
 {
@@ -401,8 +391,7 @@ DeBruijnEdge * DeBruijnNode::doesNodeLeadAway(DeBruijnNode * node) const
 }
 
 
-bool DeBruijnNode::isNodeConnected(DeBruijnNode * node) const
-{
+bool DeBruijnNode::isNodeConnected(DeBruijnNode * node) const {
     for (auto *edge : m_edges) {
         if (edge->getStartingNode() == node || edge->getEndingNode() == node)
             return true;
@@ -439,7 +428,7 @@ std::vector<DeBruijnNode *> DeBruijnNode::getDownstreamNodes() const
 
     std::vector<DeBruijnNode *> returnVector;
     returnVector.reserve(leavingEdges.size());
-    for (auto &leavingEdge : leavingEdges)
+    for (auto *leavingEdge : leavingEdges)
         returnVector.push_back(leavingEdge->getEndingNode());
 
     return returnVector;
@@ -452,7 +441,7 @@ std::vector<DeBruijnNode *> DeBruijnNode::getUpstreamNodes() const
 
     std::vector<DeBruijnNode *> returnVector;
     returnVector.reserve(enteringEdges.size());
-    for (auto &enteringEdge : enteringEdges)
+    for (auto *enteringEdge : enteringEdges)
         returnVector.push_back(enteringEdge->getStartingNode());
 
     return returnVector;
@@ -518,10 +507,9 @@ int DeBruijnNode::getDeadEndCount() const
 //reverse complement) are connected to.
 std::vector<DeBruijnNode *> DeBruijnNode::getAllConnectedPositiveNodes() const
 {
-    QSet<DeBruijnNode *> connectedPositiveNodesSet;
+    std::unordered_set<DeBruijnNode *> connectedPositiveNodesSet;
 
-    for (auto edge : m_edges)
-    {
+    for (auto *edge : m_edges) {
         DeBruijnNode * connectedNode = edge->getOtherNode(this);
         if (connectedNode->isNegativeNode())
             connectedNode = connectedNode->getReverseComplement();
@@ -529,12 +517,7 @@ std::vector<DeBruijnNode *> DeBruijnNode::getAllConnectedPositiveNodes() const
         connectedPositiveNodesSet.insert(connectedNode);
     }
 
-    std::vector<DeBruijnNode *> connectedPositiveNodesVector;
-    QSetIterator<DeBruijnNode *> i(connectedPositiveNodesSet);
-    while (i.hasNext())
-        connectedPositiveNodesVector.push_back(i.next());
-
-    return connectedPositiveNodesVector;
+    return { connectedPositiveNodesSet.begin(), connectedPositiveNodesSet.end() };
 }
 
 float DeBruijnNode::getGC() const {

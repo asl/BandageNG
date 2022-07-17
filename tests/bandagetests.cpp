@@ -618,11 +618,6 @@ void BandageTests::graphScope()
     startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage, g_settings->doubleMode, g_settings->startingNodes, "", "");
     g_assemblyGraph->resetNodes();
     g_assemblyGraph->markNodesToDraw(startingNodes, g_settings->nodeDistance);
-    {
-        GraphLayoutWorker(g_settings->graphLayoutQuality,
-                          g_settings->linearLayout,
-                          g_settings->componentSeparation).layoutGraph(*g_assemblyGraph);
-    }
     drawnNodes = g_assemblyGraph->getDrawnNodeCount();
     QCOMPARE(drawnNodes, 44);
 
@@ -632,11 +627,6 @@ void BandageTests::graphScope()
     startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage, g_settings->doubleMode, g_settings->startingNodes, "", "");
     g_assemblyGraph->resetNodes();
     g_assemblyGraph->markNodesToDraw(startingNodes, g_settings->nodeDistance);
-    {
-        GraphLayoutWorker(g_settings->graphLayoutQuality,
-                          g_settings->linearLayout,
-                          g_settings->componentSeparation).layoutGraph(*g_assemblyGraph);
-    }
     drawnNodes = g_assemblyGraph->getDrawnNodeCount();
     QCOMPARE(drawnNodes, 88);
 
@@ -647,11 +637,6 @@ void BandageTests::graphScope()
     startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage, g_settings->doubleMode, g_settings->startingNodes, "", "");
     g_assemblyGraph->resetNodes();
     g_assemblyGraph->markNodesToDraw(startingNodes, g_settings->nodeDistance);
-    {
-        GraphLayoutWorker(g_settings->graphLayoutQuality,
-                          g_settings->linearLayout,
-                          g_settings->componentSeparation).layoutGraph(*g_assemblyGraph);
-    }
     drawnNodes = g_assemblyGraph->getDrawnNodeCount();
     QCOMPARE(drawnNodes, 1);
 
@@ -662,11 +647,6 @@ void BandageTests::graphScope()
     startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage, g_settings->doubleMode, g_settings->startingNodes, "", "");
     g_assemblyGraph->resetNodes();
     g_assemblyGraph->markNodesToDraw(startingNodes, g_settings->nodeDistance);
-    {
-        GraphLayoutWorker(g_settings->graphLayoutQuality,
-                          g_settings->linearLayout,
-                          g_settings->componentSeparation).layoutGraph(*g_assemblyGraph);
-    }
     drawnNodes = g_assemblyGraph->getDrawnNodeCount();
     QCOMPARE(drawnNodes, 2);
 
@@ -677,11 +657,6 @@ void BandageTests::graphScope()
     startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage, g_settings->doubleMode, g_settings->startingNodes, "", "");
     g_assemblyGraph->resetNodes();
     g_assemblyGraph->markNodesToDraw(startingNodes, g_settings->nodeDistance);
-    {
-        GraphLayoutWorker(g_settings->graphLayoutQuality,
-                          g_settings->linearLayout,
-                          g_settings->componentSeparation).layoutGraph(*g_assemblyGraph);
-    }
     drawnNodes = g_assemblyGraph->getDrawnNodeCount();
     QCOMPARE(drawnNodes, 1);
 
@@ -692,11 +667,6 @@ void BandageTests::graphScope()
     startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage, g_settings->doubleMode, g_settings->startingNodes, "", "");
     g_assemblyGraph->resetNodes();
     g_assemblyGraph->markNodesToDraw(startingNodes, g_settings->nodeDistance);
-    {
-        GraphLayoutWorker(g_settings->graphLayoutQuality,
-                          g_settings->linearLayout,
-                          g_settings->componentSeparation).layoutGraph(*g_assemblyGraph);
-    }
     drawnNodes = g_assemblyGraph->getDrawnNodeCount();
     QCOMPARE(drawnNodes, 3);
 
@@ -707,11 +677,6 @@ void BandageTests::graphScope()
     startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage, g_settings->doubleMode, g_settings->startingNodes, "", "");
     g_assemblyGraph->resetNodes();
     g_assemblyGraph->markNodesToDraw(startingNodes, g_settings->nodeDistance);
-    {
-        GraphLayoutWorker(g_settings->graphLayoutQuality,
-                          g_settings->linearLayout,
-                          g_settings->componentSeparation).layoutGraph(*g_assemblyGraph);
-    }
     drawnNodes = g_assemblyGraph->getDrawnNodeCount();
     QCOMPARE(drawnNodes, 10);
 
@@ -723,11 +688,6 @@ void BandageTests::graphScope()
     startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage, g_settings->doubleMode, g_settings->startingNodes, "", "");
     g_assemblyGraph->resetNodes();
     g_assemblyGraph->markNodesToDraw(startingNodes, g_settings->nodeDistance);
-    {
-        GraphLayoutWorker(g_settings->graphLayoutQuality,
-                          g_settings->linearLayout,
-                          g_settings->componentSeparation).layoutGraph(*g_assemblyGraph);
-    }
     drawnNodes = g_assemblyGraph->getDrawnNodeCount();
     QCOMPARE(drawnNodes, 43);
 
@@ -739,11 +699,6 @@ void BandageTests::graphScope()
     startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage, g_settings->doubleMode, g_settings->startingNodes, "", "");
     g_assemblyGraph->resetNodes();
     g_assemblyGraph->markNodesToDraw(startingNodes, g_settings->nodeDistance);
-    {
-        GraphLayoutWorker(g_settings->graphLayoutQuality,
-                          g_settings->linearLayout,
-                          g_settings->componentSeparation).layoutGraph(*g_assemblyGraph);
-    }
     drawnNodes = g_assemblyGraph->getDrawnNodeCount();
     QCOMPARE(drawnNodes, 43);
 
@@ -755,11 +710,6 @@ void BandageTests::graphScope()
     startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage, g_settings->doubleMode, g_settings->startingNodes, "", "");
     g_assemblyGraph->resetNodes();
     g_assemblyGraph->markNodesToDraw(startingNodes, g_settings->nodeDistance);
-    {
-        GraphLayoutWorker(g_settings->graphLayoutQuality,
-                          g_settings->linearLayout,
-                          g_settings->componentSeparation).layoutGraph(*g_assemblyGraph);
-    }
     drawnNodes = g_assemblyGraph->getDrawnNodeCount();
     QCOMPARE(drawnNodes, 1);
 
@@ -771,11 +721,6 @@ void BandageTests::graphScope()
     startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage, g_settings->doubleMode, g_settings->startingNodes, "", "");
     g_assemblyGraph->resetNodes();
     g_assemblyGraph->markNodesToDraw(startingNodes, g_settings->nodeDistance);
-    {
-        GraphLayoutWorker(g_settings->graphLayoutQuality,
-                          g_settings->linearLayout,
-                          g_settings->componentSeparation).layoutGraph(*g_assemblyGraph);
-    }
     drawnNodes = g_assemblyGraph->getDrawnNodeCount();
     QCOMPARE(drawnNodes, 42);
 
@@ -790,11 +735,6 @@ void BandageTests::graphScope()
     startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage, g_settings->doubleMode, g_settings->startingNodes, "all", "");
     g_assemblyGraph->resetNodes();
     g_assemblyGraph->markNodesToDraw(startingNodes, g_settings->nodeDistance);
-    {
-        GraphLayoutWorker(g_settings->graphLayoutQuality,
-                          g_settings->linearLayout,
-                          g_settings->componentSeparation).layoutGraph(*g_assemblyGraph);
-    }
     drawnNodes = g_assemblyGraph->getDrawnNodeCount();
     QCOMPARE(drawnNodes, 1);
 
@@ -804,11 +744,6 @@ void BandageTests::graphScope()
     startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage, g_settings->doubleMode, g_settings->startingNodes, "all", "");
     g_assemblyGraph->resetNodes();
     g_assemblyGraph->markNodesToDraw(startingNodes, g_settings->nodeDistance);
-    {
-        GraphLayoutWorker(g_settings->graphLayoutQuality,
-                          g_settings->linearLayout,
-                          g_settings->componentSeparation).layoutGraph(*g_assemblyGraph);
-    }
     drawnNodes = g_assemblyGraph->getDrawnNodeCount();
     QCOMPARE(drawnNodes, 3);
 
@@ -818,11 +753,6 @@ void BandageTests::graphScope()
     startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage, g_settings->doubleMode, g_settings->startingNodes, "all", "");
     g_assemblyGraph->resetNodes();
     g_assemblyGraph->markNodesToDraw(startingNodes, g_settings->nodeDistance);
-    {
-        GraphLayoutWorker(g_settings->graphLayoutQuality,
-                          g_settings->linearLayout,
-                          g_settings->componentSeparation).layoutGraph(*g_assemblyGraph);
-    }
     drawnNodes = g_assemblyGraph->getDrawnNodeCount();
     QCOMPARE(drawnNodes, 9);
 
