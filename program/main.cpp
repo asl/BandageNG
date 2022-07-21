@@ -103,8 +103,12 @@ int main(int argc, char *argv[])
     bool guiNeeded = (first == "") || first.startsWith("-") || (first.toLower() == "load") || imageWithText;
     if (checkForHelp(arguments) || checkForHelpAll(arguments))
         guiNeeded = false;
+    // Only use minimal platform on Linux. Both Windows and MacOS X always have full platform available
+    // (as there is no real headless mode)
+#ifdef Q_OS_LINUX
     if (!guiNeeded)
         qputenv("QT_QPA_PLATFORM", QByteArrayLiteral("minimal"));
+#endif
     new QApplication(argc, argv);
 
     //Create the important global objects.
