@@ -16,7 +16,7 @@
 //along with Bandage.  If not, see <http://www.gnu.org/licenses/>.
 
 
-#include "mygraphicsscene.h"
+#include "bandagegraphicsscene.h"
 #include "graph/assemblygraph.h"
 #include "graph/debruijnnode.h"
 #include "graph/debruijnedge.h"
@@ -27,7 +27,7 @@
 
 #include <unordered_set>
 
-MyGraphicsScene::MyGraphicsScene(QObject *parent) :
+BandageGraphicsScene::BandageGraphicsScene(QObject *parent) :
     QGraphicsScene(parent)
 {
 }
@@ -56,7 +56,7 @@ bool compareNodePointers(DeBruijnNode * a, DeBruijnNode * b)
 
 
 //This function returns all of the selected nodes, sorted by their node number.
-std::vector<DeBruijnNode *> MyGraphicsScene::getSelectedNodes()
+std::vector<DeBruijnNode *> BandageGraphicsScene::getSelectedNodes()
 {
     std::vector<DeBruijnNode *> returnVector;
 
@@ -78,7 +78,7 @@ std::vector<DeBruijnNode *> MyGraphicsScene::getSelectedNodes()
 //returned.  If a negative node is selected, its positive complement is in the
 //results.  If both nodes in a pair are selected, then only the positive node
 //of the pair is in the results.
-std::vector<DeBruijnNode *> MyGraphicsScene::getSelectedPositiveNodes()
+std::vector<DeBruijnNode *> BandageGraphicsScene::getSelectedPositiveNodes()
 {
     std::vector<DeBruijnNode *> selectedNodes = getSelectedNodes();
 
@@ -108,7 +108,7 @@ std::vector<DeBruijnNode *> MyGraphicsScene::getSelectedPositiveNodes()
 }
 
 //This function returns all of the selected graphics item nodes, unsorted.
-std::vector<GraphicsItemNode *> MyGraphicsScene::getSelectedGraphicsItemNodes()
+std::vector<GraphicsItemNode *> BandageGraphicsScene::getSelectedGraphicsItemNodes()
 {
     std::vector<GraphicsItemNode *> returnVector;
 
@@ -124,7 +124,7 @@ std::vector<GraphicsItemNode *> MyGraphicsScene::getSelectedGraphicsItemNodes()
 }
 
 
-std::vector<DeBruijnEdge *> MyGraphicsScene::getSelectedEdges()
+std::vector<DeBruijnEdge *> BandageGraphicsScene::getSelectedEdges()
 {
     std::vector<DeBruijnEdge *> returnVector;
 
@@ -141,7 +141,7 @@ std::vector<DeBruijnEdge *> MyGraphicsScene::getSelectedEdges()
 
 
 
-DeBruijnNode * MyGraphicsScene::getOneSelectedNode()
+DeBruijnNode * BandageGraphicsScene::getOneSelectedNode()
 {
     std::vector<DeBruijnNode *> selectedNodes = getSelectedNodes();
     if (selectedNodes.empty())
@@ -150,7 +150,7 @@ DeBruijnNode * MyGraphicsScene::getOneSelectedNode()
         return selectedNodes[0];
 }
 
-DeBruijnEdge * MyGraphicsScene::getOneSelectedEdge()
+DeBruijnEdge * BandageGraphicsScene::getOneSelectedEdge()
 {
     std::vector<DeBruijnEdge *> selectedEdges = getSelectedEdges();
     if (selectedEdges.empty())
@@ -163,7 +163,7 @@ DeBruijnEdge * MyGraphicsScene::getOneSelectedEdge()
 //graph and a 0 if it can't be done.  However, it will always return the
 //positive node in the pair, and if two complementary nodes are selected, it
 //will still work.
-DeBruijnNode * MyGraphicsScene::getOnePositiveSelectedNode()
+DeBruijnNode * BandageGraphicsScene::getOnePositiveSelectedNode()
 {
     std::vector<DeBruijnNode *> selectedNodes = getSelectedNodes();
     if (selectedNodes.empty())
@@ -196,7 +196,7 @@ DeBruijnNode * MyGraphicsScene::getOnePositiveSelectedNode()
     return nullptr;
 }
 
-double MyGraphicsScene::getTopZValue()
+double BandageGraphicsScene::getTopZValue()
 {
     double topZ = 0.0;
 
@@ -219,7 +219,7 @@ double MyGraphicsScene::getTopZValue()
 
 
 //Expands the scene rectangle a bit beyond the items, so they aren't drawn right to the edge.
-void MyGraphicsScene::setSceneRectangle()
+void BandageGraphicsScene::setSceneRectangle()
 {
     QRectF boundingRect = itemsBoundingRect();
     double width = boundingRect.width();
@@ -235,7 +235,7 @@ void MyGraphicsScene::setSceneRectangle()
 
 //After the user drags nodes, it may be necessary to expand the scene rectangle
 //if the nodes were moved out of the existing rectangle.
-void MyGraphicsScene::possiblyExpandSceneRectangle(std::vector<GraphicsItemNode *> * movedNodes)
+void BandageGraphicsScene::possiblyExpandSceneRectangle(std::vector<GraphicsItemNode *> * movedNodes)
 {
     QRectF currentSceneRect = sceneRect();
     QRectF newSceneRect = currentSceneRect;
@@ -250,8 +250,8 @@ void MyGraphicsScene::possiblyExpandSceneRectangle(std::vector<GraphicsItemNode 
         setSceneRect(newSceneRect);
 }
 
-void MyGraphicsScene::addGraphicsItemsToScene(AssemblyGraph &graph,
-                                              const GraphLayout &layout) {
+void BandageGraphicsScene::addGraphicsItemsToScene(AssemblyGraph &graph,
+                                                   const GraphLayout &layout) {
     clear();
 
     double meanDrawnDepth = graph.getMeanDepth(true);
@@ -313,13 +313,13 @@ void MyGraphicsScene::addGraphicsItemsToScene(AssemblyGraph &graph,
     }
 }
 
-void MyGraphicsScene::removeAllGraphicsEdgesFromNode(DeBruijnNode *node, bool reverseComplement) {
+void BandageGraphicsScene::removeAllGraphicsEdgesFromNode(DeBruijnNode *node, bool reverseComplement) {
     std::vector<DeBruijnEdge*> edges(node->edgeBegin(), node->edgeEnd());
     removeGraphicsItemEdges(edges, reverseComplement);
 }
 
-void MyGraphicsScene::removeGraphicsItemEdges(const std::vector<DeBruijnEdge *> &edges,
-                                              bool reverseComplement) {
+void BandageGraphicsScene::removeGraphicsItemEdges(const std::vector<DeBruijnEdge *> &edges,
+                                                   bool reverseComplement) {
     std::unordered_set<GraphicsItemEdge *> graphicsItemEdgesToDelete;
     for (auto *edge : edges) {
         if (auto *graphicsItemEdge = edge->getGraphicsItemEdge())
@@ -338,7 +338,7 @@ void MyGraphicsScene::removeGraphicsItemEdges(const std::vector<DeBruijnEdge *> 
     if (graphicsItemEdgesToDelete.empty())
         return;
 
-    MyGraphicsScene *scene = dynamic_cast<MyGraphicsScene*>((*graphicsItemEdgesToDelete.begin())->scene());
+    BandageGraphicsScene *scene = dynamic_cast<BandageGraphicsScene*>((*graphicsItemEdgesToDelete.begin())->scene());
     if (!scene)
         return;
 
@@ -346,7 +346,7 @@ void MyGraphicsScene::removeGraphicsItemEdges(const std::vector<DeBruijnEdge *> 
 
 }
 
-void MyGraphicsScene::removeGraphicsItemEdges(const std::unordered_set<GraphicsItemEdge *> &edges) {
+void BandageGraphicsScene::removeGraphicsItemEdges(const std::unordered_set<GraphicsItemEdge *> &edges) {
     blockSignals(true);
 
     for (auto *graphicsItemEdge : edges) {
@@ -360,8 +360,8 @@ void MyGraphicsScene::removeGraphicsItemEdges(const std::unordered_set<GraphicsI
 }
 
 // If reverseComplement is true, this function will also remove the graphics items for reverse complements of the nodes.
-void MyGraphicsScene::removeGraphicsItemNodes(const std::vector<DeBruijnNode *> &nodes,
-                                              bool reverseComplement) {
+void BandageGraphicsScene::removeGraphicsItemNodes(const std::vector<DeBruijnNode *> &nodes,
+                                                   bool reverseComplement) {
     std::unordered_set<GraphicsItemNode *> graphicsItemNodesToDelete;
     for (auto *node : nodes) {
         removeAllGraphicsEdgesFromNode(node, reverseComplement);
@@ -382,14 +382,14 @@ void MyGraphicsScene::removeGraphicsItemNodes(const std::vector<DeBruijnNode *> 
     if (graphicsItemNodesToDelete.empty())
         return;
 
-    MyGraphicsScene *scene = dynamic_cast<MyGraphicsScene*>((*graphicsItemNodesToDelete.begin())->scene());
+    BandageGraphicsScene *scene = dynamic_cast<BandageGraphicsScene*>((*graphicsItemNodesToDelete.begin())->scene());
     if (!scene)
         return;
 
     scene->removeGraphicsItemNodes(graphicsItemNodesToDelete);
 }
 
-void MyGraphicsScene::removeGraphicsItemNodes(const std::unordered_set<GraphicsItemNode*> &nodes) {
+void BandageGraphicsScene::removeGraphicsItemNodes(const std::unordered_set<GraphicsItemNode*> &nodes) {
     blockSignals(true);
     for (auto *graphicsItemNode : nodes) {
         if (graphicsItemNode == nullptr)
@@ -401,7 +401,7 @@ void MyGraphicsScene::removeGraphicsItemNodes(const std::unordered_set<GraphicsI
     blockSignals(false);
 }
 
-void MyGraphicsScene::duplicateGraphicsNode(DeBruijnNode * originalNode, DeBruijnNode * newNode) {
+void BandageGraphicsScene::duplicateGraphicsNode(DeBruijnNode * originalNode, DeBruijnNode * newNode) {
     GraphicsItemNode * originalGraphicsItemNode = originalNode->getGraphicsItemNode();
     if (originalGraphicsItemNode == nullptr)
         return;

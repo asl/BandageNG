@@ -22,9 +22,9 @@
 #include <QScrollBar>
 #include <qmath.h>
 #include "program/settings.h"
-#include "mygraphicsview.h"
+#include "bandagegraphicsview.h"
 
-GraphicsViewZoom::GraphicsViewZoom(MyGraphicsView * view) :
+GraphicsViewZoom::GraphicsViewZoom(BandageGraphicsView * view) :
     QObject(view), m_view(view)
 {
     g_absoluteZoom = 1.0;

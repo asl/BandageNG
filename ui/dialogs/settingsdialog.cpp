@@ -18,7 +18,7 @@
 
 #include "settingsdialog.h"
 
-#include "colourbutton.h"
+#include "ui/widgets/colourbutton.h"
 #include "program/scinot.h"
 #include "program/settings.h"
 

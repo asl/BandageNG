@@ -26,7 +26,7 @@
 
 class Settings;
 class Memory;
-class MyGraphicsView;
+class BandageGraphicsView;
 class BlastSearch;
 class AssemblyGraph;
 class AnnotationsManager;
@@ -38,7 +38,7 @@ enum GraphScope {WHOLE_GRAPH, AROUND_NODE, AROUND_PATHS, AROUND_BLAST_HITS, DEPT
 // FIXME: This is bad. Factor this out when possible
 extern QSharedPointer<Settings> g_settings;
 extern QSharedPointer<Memory> g_memory;
-extern MyGraphicsView * g_graphicsView;
+extern BandageGraphicsView * g_graphicsView;
 extern double g_absoluteZoom;
 extern QSharedPointer<BlastSearch> g_blastSearch;
 extern QSharedPointer<AssemblyGraph> g_assemblyGraph;

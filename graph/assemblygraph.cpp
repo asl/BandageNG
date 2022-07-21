@@ -31,8 +31,8 @@
 #include "program/globals.h"
 #include "program/settings.h"
 
-#include "ui/myprogressdialog.h"
-#include "ui/mygraphicsscene.h"
+#include "ui/dialogs/myprogressdialog.h"
+#include "ui/bandagegraphicsscene.h"
 
 #include <QApplication>
 #include <QFile>
@@ -1063,7 +1063,7 @@ void AssemblyGraph::deleteEdges(const std::vector<DeBruijnEdge *> &edges)
 //This function assumes it is receiving a positive node.  It will duplicate both
 //the positive and negative node in the pair.  It divided their depth in
 //two, giving half to each node.
-void AssemblyGraph::duplicateNodePair(DeBruijnNode * node, MyGraphicsScene * scene)
+void AssemblyGraph::duplicateNodePair(DeBruijnNode * node, BandageGraphicsScene * scene)
 {
     DeBruijnNode * originalPosNode = node;
     DeBruijnNode * originalNegNode = node->getReverseComplement();
@@ -1165,12 +1165,12 @@ static bool canAddNodeToEndOfMergeList(const DeBruijnNode *lastNode,
 static void mergeGraphicsNodes(const std::vector<DeBruijnNode *> &originalNodes,
                                const std::vector<DeBruijnNode *> &revCompOriginalNodes,
                                DeBruijnNode * newNode,
-                               MyGraphicsScene * scene);
+                               BandageGraphicsScene * scene);
 
 //This function will merge the given nodes, if possible.  Nodes can only be
 //merged if they are in a simple, unbranching path with no extra edges.  If the
 //merge is successful, it returns true, otherwise false.
-bool AssemblyGraph::mergeNodes(QList<DeBruijnNode *> nodes, MyGraphicsScene * scene,
+bool AssemblyGraph::mergeNodes(QList<DeBruijnNode *> nodes, BandageGraphicsScene * scene,
                                bool recalulateDepth)
 {
     if (nodes.empty())
@@ -1310,7 +1310,7 @@ bool AssemblyGraph::mergeNodes(QList<DeBruijnNode *> nodes, MyGraphicsScene * sc
 
 static bool mergeGraphicsNodes2(const std::vector<DeBruijnNode *> &originalNodes,
                                 DeBruijnNode * newNode,
-                                MyGraphicsScene * scene)
+                                BandageGraphicsScene * scene)
 {
     bool success = true;
     std::vector<QPointF> linePoints;
@@ -1370,7 +1370,7 @@ static bool mergeGraphicsNodes2(const std::vector<DeBruijnNode *> &originalNodes
 static void mergeGraphicsNodes(const std::vector<DeBruijnNode *> &originalNodes,
                                const std::vector<DeBruijnNode *> &revCompOriginalNodes,
                                DeBruijnNode * newNode,
-                               MyGraphicsScene * scene)
+                               BandageGraphicsScene * scene)
 {
     bool success = mergeGraphicsNodes2(originalNodes, newNode, scene);
     if (success)
@@ -1383,14 +1383,14 @@ static void mergeGraphicsNodes(const std::vector<DeBruijnNode *> &originalNodes,
             newRevComp->setAsDrawn();
     }
 
-    MyGraphicsScene::removeGraphicsItemNodes(originalNodes, true);
+    BandageGraphicsScene::removeGraphicsItemNodes(originalNodes, true);
 }
 
 //This function simplifies the graph by merging all possible nodes in a simple
 //line.  It returns the number of merges that it did.
 //It gets a pointer to the progress dialog as well so it can check to see if the
 //user has cancelled the merge.
-int AssemblyGraph::mergeAllPossible(MyGraphicsScene * scene,
+int AssemblyGraph::mergeAllPossible(BandageGraphicsScene * scene,
                                     MyProgressDialog * progressDialog)
 {
     //Create a set of all nodes.

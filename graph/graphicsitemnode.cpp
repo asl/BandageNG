@@ -27,8 +27,8 @@
 #include "program/memory.h"
 #include "program/settings.h"
 
-#include "ui/mygraphicsscene.h"
-#include "ui/mygraphicsview.h"
+#include "ui/bandagegraphicsscene.h"
+#include "ui/bandagegraphicsview.h"
 
 #include <QTransform>
 #include <QPainterPathStroker>
@@ -378,7 +378,7 @@ void GraphicsItemNode::mouseMoveEvent(QGraphicsSceneMouseEvent * event)
     //If this node is selected, then move all of the other selected nodes too.
     //If it is not selected, then only move this node.
     std::vector<GraphicsItemNode *> nodesToMove;
-    auto *graphicsScene = dynamic_cast<MyGraphicsScene *>(scene());
+    auto *graphicsScene = dynamic_cast<BandageGraphicsScene *>(scene());
     if (isSelected())
         nodesToMove = graphicsScene->getSelectedGraphicsItemNodes();
     else

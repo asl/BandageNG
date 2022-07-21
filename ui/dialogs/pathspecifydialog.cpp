@@ -18,7 +18,7 @@
 
 #include "pathspecifydialog.h"
 #include "ui_pathspecifydialog.h"
-#include "mygraphicsview.h"
+#include "bandagegraphicsview.h"
 
 #include "graph/assemblygraph.h"
 

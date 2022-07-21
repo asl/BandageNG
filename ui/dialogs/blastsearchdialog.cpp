@@ -39,7 +39,7 @@
 #include "blast/buildblastdatabaseworker.h"
 #include "blast/runblastsearchworker.h"
 #include "myprogressdialog.h"
-#include "colourbutton.h"
+#include "ui/widgets/colourbutton.h"
 #include <QSet>
 #include "tablewidgetitemname.h"
 #include "tablewidgetitemint.h"

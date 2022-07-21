@@ -37,7 +37,7 @@
 Q_MOC_INCLUDE("graph/debruijnnode.h")
 
 class GraphicsViewZoom;
-class MyGraphicsScene;
+class BandageGraphicsScene;
 class DeBruijnNode;
 class DeBruijnEdge;
 class BlastSearchDialog;
@@ -58,7 +58,7 @@ public:
 
 private:
     Ui::MainWindow *ui;
-    MyGraphicsScene * m_scene;
+    BandageGraphicsScene * m_scene;
 
     GraphicsViewZoom * m_graphicsViewZoom;
     double m_previousZoomSpinBoxValue;

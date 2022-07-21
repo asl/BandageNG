@@ -28,8 +28,8 @@
 #include "layout/graphlayout.h"
 #include "layout/graphlayoutworker.h"
 
-#include "ui/mygraphicsscene.h"
-#include "ui/mygraphicsview.h"
+#include "ui/bandagegraphicsscene.h"
+#include "ui/bandagegraphicsview.h"
 
 #include <vector>
 #include <QPainter>
@@ -168,7 +168,7 @@ int bandageImage(QStringList arguments)
     }
 
     g_assemblyGraph->markNodesToDraw(startingNodes, g_settings->nodeDistance);
-    MyGraphicsScene scene;
+    BandageGraphicsScene scene;
     {
         GraphLayoutStorage layout =
                 GraphLayoutWorker(g_settings->graphLayoutQuality,

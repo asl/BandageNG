@@ -58,20 +58,20 @@ enum ZoomSource {MOUSE_WHEEL, SPIN_BOX, KEYBOARD, GESTURE};
  * The default zoom factor base is 1.0015.
  */
 
-class MyGraphicsView;
+class BandageGraphicsView;
 
 class GraphicsViewZoom : public QObject
 {
     Q_OBJECT
 public:
-    explicit GraphicsViewZoom(MyGraphicsView * view);
+    explicit GraphicsViewZoom(BandageGraphicsView * view);
     void gentleZoom(double factor, ZoomSource zoomSource);
     void setModifiers(Qt::KeyboardModifiers modifiers);
     void setZoomFactorBase(double value);
     double m_zoomFactorBase;
 
 private:
-    MyGraphicsView * m_view;
+    BandageGraphicsView * m_view;
     Qt::KeyboardModifiers m_modifiers;
     QPointF targetScenePos, targetViewportPos;
     bool eventFilter(QObject * object, QEvent * event) override;

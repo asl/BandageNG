@@ -2791,7 +2791,7 @@
   <customwidget>
    <class>VerticalScrollArea</class>
    <extends>QScrollArea</extends>
-   <header>verticalscrollarea.h</header>
+   <header>widgets/verticalscrollarea.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>
@@ -2809,7 +2809,7 @@
   <customwidget>
    <class>CollapseButton</class>
    <extends>QToolButton</extends>
-   <header>collapsebutton.h</header>
+   <header>widgets/collapsebutton.h</header>
   </customwidget>
  </customwidgets>
  <tabstops>

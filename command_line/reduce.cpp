@@ -23,8 +23,8 @@
 #include "graph/gfawriter.h"
 #include "blast/blastsearch.h"
 
-#include "ui/mygraphicsscene.h"
-#include "ui/mygraphicsview.h"
+#include "ui/bandagegraphicsscene.h"
+#include "ui/bandagegraphicsview.h"
 
 #include "program/globals.h"
 

@@ -4314,13 +4314,13 @@ discrepancy (bases):</string>
   <customwidget>
    <class>VerticalScrollArea</class>
    <extends>QScrollArea</extends>
-   <header>verticalscrollarea.h</header>
+   <header>widgets/verticalscrollarea.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>VerticalLabel</class>
    <extends>QLabel</extends>
-   <header>verticallabel.h</header>
+   <header>widgets/verticallabel.h</header>
   </customwidget>
   <customwidget>
    <class>NodeWidthVisualAid</class>
@@ -4331,7 +4331,7 @@ discrepancy (bases):</string>
   <customwidget>
    <class>ColourButton</class>
    <extends>QPushButton</extends>
-   <header>colourbutton.h</header>
+   <header>widgets/colourbutton.h</header>
   </customwidget>
  </customwidgets>
  <tabstops>

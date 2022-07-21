@@ -16,7 +16,7 @@
 //along with Bandage.  If not, see <http://www.gnu.org/licenses/>.
 
 
-#include "mygraphicsview.h"
+#include "bandagegraphicsview.h"
 #include "graph/graphicsitemnode.h"
 #include "program/globals.h"
 #include "program/settings.h"
@@ -27,7 +27,7 @@
 #include <qmath.h>
 #include <cmath>
 
-MyGraphicsView::MyGraphicsView(QObject * /*parent*/) :
+BandageGraphicsView::BandageGraphicsView(QObject * /*parent*/) :
     QGraphicsView(), m_rotation(0.0)
 {
     setDragMode(QGraphicsView::RubberBandDrag);
@@ -38,7 +38,7 @@ MyGraphicsView::MyGraphicsView(QObject * /*parent*/) :
 
 
 
-void MyGraphicsView::mousePressEvent(QMouseEvent * event)
+void BandageGraphicsView::mousePressEvent(QMouseEvent * event)
 {
     if (event->modifiers() == Qt::CTRL)
         setDragMode(QGraphicsView::ScrollHandDrag);
@@ -50,14 +50,14 @@ void MyGraphicsView::mousePressEvent(QMouseEvent * event)
     QGraphicsView::mousePressEvent(event);
 }
 
-void MyGraphicsView::mouseReleaseEvent(QMouseEvent * event)
+void BandageGraphicsView::mouseReleaseEvent(QMouseEvent * event)
 {
     QGraphicsView::mouseReleaseEvent(event);
     setDragMode(QGraphicsView::RubberBandDrag);
     g_settings->nodeDragging = NEARBY_PIECES;
 }
 
-void MyGraphicsView::mouseMoveEvent(QMouseEvent * event)
+void BandageGraphicsView::mouseMoveEvent(QMouseEvent * event)
 {
     //If the user drags the right mouse button while holding control,
     //the view rotates.
@@ -82,7 +82,7 @@ void MyGraphicsView::mouseMoveEvent(QMouseEvent * event)
 }
 
 
-void MyGraphicsView::mouseDoubleClickEvent(QMouseEvent * event)
+void BandageGraphicsView::mouseDoubleClickEvent(QMouseEvent * event)
 {
     //Find the node beneath the cursor.
     QGraphicsItem * item = itemAt(event->pos());
@@ -94,7 +94,7 @@ void MyGraphicsView::mouseDoubleClickEvent(QMouseEvent * event)
 
 //Adapted from:
 //http://stackoverflow.com/questions/2663570/how-to-calculate-both-positive-and-negative-angle-between-two-lines
-double MyGraphicsView::angleBetweenTwoLines(QPointF line1Start, QPointF line1End, QPointF line2Start, QPointF line2End)
+double BandageGraphicsView::angleBetweenTwoLines(QPointF line1Start, QPointF line1End, QPointF line2Start, QPointF line2End)
 {
     double a = line1End.x() - line1Start.x();
     double b = line1End.y() - line1Start.y();
@@ -107,14 +107,14 @@ double MyGraphicsView::angleBetweenTwoLines(QPointF line1Start, QPointF line1End
     return atanA - atanB;
 }
 
-double MyGraphicsView::distance(double x1, double y1, double x2, double y2)
+double BandageGraphicsView::distance(double x1, double y1, double x2, double y2)
 {
     double xDiff = x1 - x2;
     double yDiff = y1 - y2;
     return sqrt(xDiff * xDiff + yDiff * yDiff);
 }
 
-void MyGraphicsView::keyPressEvent(QKeyEvent * event)
+void BandageGraphicsView::keyPressEvent(QKeyEvent * event)
 {
     //This function uses angle in the same way that the mouse wheel code
     //in GraphicsViewZoom does.  This keeps the zoom steps consistent
@@ -168,7 +168,7 @@ void MyGraphicsView::keyPressEvent(QKeyEvent * event)
     QGraphicsView::keyPressEvent(event);
 }
 
-void MyGraphicsView::setAntialiasing(bool antialiasingOn)
+void BandageGraphicsView::setAntialiasing(bool antialiasingOn)
 {
     if (antialiasingOn)
     {
@@ -184,7 +184,7 @@ void MyGraphicsView::setAntialiasing(bool antialiasingOn)
     }
 }
 
-bool MyGraphicsView::isPointVisible(QPointF p)
+bool BandageGraphicsView::isPointVisible(QPointF p)
 {
     QPointF corner1, corner2, corner3, corner4;
     getFourViewportCornersInSceneCoordinates(&corner1, &corner2, &corner3, &corner4);
@@ -199,7 +199,7 @@ bool MyGraphicsView::isPointVisible(QPointF p)
 
 
 //This function tests to see if two given points, p1 and p2, are on different sides of a line.
-bool MyGraphicsView::differentSidesOfLine(QPointF p1, QPointF p2, QLineF line)
+bool BandageGraphicsView::differentSidesOfLine(QPointF p1, QPointF p2, QLineF line)
 {
     bool p1Side = sideOfLine(p1, line);
     bool p2Side = sideOfLine(p2, line);
@@ -207,7 +207,7 @@ bool MyGraphicsView::differentSidesOfLine(QPointF p1, QPointF p2, QLineF line)
 }
 //This function tests to see if all four points are the same side of a line (returns false) or
 //some are on different sides (returns true).
-bool MyGraphicsView::differentSidesOfLine(QPointF p1, QPointF p2, QPointF p3, QPointF p4, QLineF line)
+bool BandageGraphicsView::differentSidesOfLine(QPointF p1, QPointF p2, QPointF p3, QPointF p4, QLineF line)
 {
     bool p1Side = sideOfLine(p1, line);
     bool p2Side = sideOfLine(p2, line);
@@ -222,7 +222,7 @@ bool MyGraphicsView::differentSidesOfLine(QPointF p1, QPointF p2, QPointF p3, QP
     return (p1Side != p4Side);
 }
 
-bool MyGraphicsView::sideOfLine(QPointF p, QLineF line)
+bool BandageGraphicsView::sideOfLine(QPointF p, QLineF line)
 {
     return ((p.y() - line.p1().y() - (p.x() - line.p1().x())*(line.p2().y() - line.p1().y())/(line.p2().x() - line.p1().x())) > 0);
 }
@@ -230,7 +230,7 @@ bool MyGraphicsView::sideOfLine(QPointF p, QLineF line)
 
 //This function assumes that the line does intersect with the viewport
 //boundary - i.e. one end of the line is in the viewport and one is not.
-QPointF MyGraphicsView::findIntersectionWithViewportBoundary(QLineF line)
+QPointF BandageGraphicsView::findIntersectionWithViewportBoundary(QLineF line)
 {
     QPointF c1, c2, c3, c4;
     getFourViewportCornersInSceneCoordinates(&c1, &c2, &c3, &c4);
@@ -259,7 +259,7 @@ QPointF MyGraphicsView::findIntersectionWithViewportBoundary(QLineF line)
 //If a line intersections the scene rectangle but both of its end points are
 //outside the scene rectangle, then this function will return the part of the
 //line which is in the scene rectangle.
-QLineF MyGraphicsView::findVisiblePartOfLine(QLineF line, bool * success)
+QLineF BandageGraphicsView::findVisiblePartOfLine(QLineF line, bool * success)
 {
     QPointF c1, c2, c3, c4;
     getFourViewportCornersInSceneCoordinates(&c1, &c2, &c3, &c4);
@@ -299,7 +299,7 @@ QLineF MyGraphicsView::findVisiblePartOfLine(QLineF line, bool * success)
 }
 
 
-void MyGraphicsView::getFourViewportCornersInSceneCoordinates(QPointF * c1, QPointF * c2, QPointF * c3, QPointF * c4)
+void BandageGraphicsView::getFourViewportCornersInSceneCoordinates(QPointF * c1, QPointF * c2, QPointF * c3, QPointF * c4)
 {
     *c1 = mapToScene(QPoint(0, 0));
     *c2 = mapToScene(QPoint(viewport()->width(), 0));
@@ -307,19 +307,19 @@ void MyGraphicsView::getFourViewportCornersInSceneCoordinates(QPointF * c1, QPoi
     *c4 = mapToScene(QPoint(0, viewport()->height()));
 }
 
-void MyGraphicsView::setRotation(double newRotation)
+void BandageGraphicsView::setRotation(double newRotation)
 {
     undoRotation();
     changeRotation(newRotation);
 }
 
-void MyGraphicsView::changeRotation(double rotationChange)
+void BandageGraphicsView::changeRotation(double rotationChange)
 {
     rotate(rotationChange);
     m_rotation += rotationChange;
 }
 
-void MyGraphicsView::undoRotation()
+void BandageGraphicsView::undoRotation()
 {
     rotate(-g_graphicsView->m_rotation);
     m_rotation = 0.0;

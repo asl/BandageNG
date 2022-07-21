@@ -38,7 +38,7 @@
 class DeBruijnNode;
 class DeBruijnEdge;
 class MyProgressDialog;
-class MyGraphicsScene;
+class BandageGraphicsScene;
 
 class AssemblyGraphError : public std::runtime_error {
   public:
@@ -146,11 +146,11 @@ public:
     int getDrawnNodeCount() const;
     void deleteNodes(const std::vector<DeBruijnNode *> &nodes);
     void deleteEdges(const std::vector<DeBruijnEdge *> &edges);
-    void duplicateNodePair(DeBruijnNode * node, MyGraphicsScene * scene);
-    bool mergeNodes(QList<DeBruijnNode *> nodes, MyGraphicsScene * scene,
+    void duplicateNodePair(DeBruijnNode * node, BandageGraphicsScene * scene);
+    bool mergeNodes(QList<DeBruijnNode *> nodes, BandageGraphicsScene * scene,
                     bool recalulateDepth);
 
-    int mergeAllPossible(MyGraphicsScene * scene = 0,
+    int mergeAllPossible(BandageGraphicsScene * scene = 0,
                          MyProgressDialog * progressDialog = 0);
 
     void changeNodeName(const QString& oldName, const QString& newName);

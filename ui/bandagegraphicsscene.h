@@ -29,11 +29,11 @@ class GraphicsItemNode;
 class GraphicsItemEdge;
 class AssemblyGraph;
 
-class MyGraphicsScene : public QGraphicsScene
+class BandageGraphicsScene : public QGraphicsScene
 {
     Q_OBJECT
 public:
-    explicit MyGraphicsScene(QObject *parent = nullptr);
+    explicit BandageGraphicsScene(QObject *parent = nullptr);
     void addGraphicsItemsToScene(AssemblyGraph &graph,
                                  const GraphLayout &layout);
 

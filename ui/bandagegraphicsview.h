@@ -26,12 +26,12 @@
 class GraphicsViewZoom;
 class DeBruijnNode;
 
-class MyGraphicsView : public QGraphicsView
+class BandageGraphicsView : public QGraphicsView
 {
     Q_OBJECT
 public:
     // CREATORS
-    explicit MyGraphicsView(QObject *parent = 0);
+    explicit BandageGraphicsView(QObject *parent = 0);
 
     //ACCESSORS
     double getRotation() const {return m_rotation;}

@@ -40,52 +40,52 @@ set(LIB_SOURCES
         program/memory.cpp
         program/scinot.cpp
         program/settings.cpp
-        ui/aboutdialog.cpp
+        ui/dialogs/aboutdialog.cpp
         ui/annotationswidget.cpp
         ui/bedwidget.cpp
-        ui/blasthitfiltersdialog.cpp
-        ui/blastsearchdialog.cpp
-        ui/changenodedepthdialog.cpp
-        ui/changenodenamedialog.cpp
-        ui/colourbutton.cpp
-        ui/enteroneblastquerydialog.cpp
+        ui/dialogs/blasthitfiltersdialog.cpp
+        ui/dialogs/blastsearchdialog.cpp
+        ui/dialogs/changenodedepthdialog.cpp
+        ui/dialogs/changenodenamedialog.cpp
+        ui/widgets/colourbutton.cpp
+        ui/dialogs/enteroneblastquerydialog.cpp
         ui/graphicsviewzoom.cpp
-        ui/graphinfodialog.cpp
+        ui/dialogs/graphinfodialog.cpp
         ui/infotextwidget.cpp
         ui/mainwindow.cpp
-        ui/mygraphicsscene.cpp
-        ui/mygraphicsview.cpp
-        ui/myprogressdialog.cpp
+        ui/bandagegraphicsscene.cpp
+        ui/bandagegraphicsview.cpp
+        ui/dialogs/myprogressdialog.cpp
         ui/mytablewidget.cpp
         ui/nodewidthvisualaid.cpp
-        ui/pathspecifydialog.cpp
-        ui/querypathsdialog.cpp
+        ui/dialogs/pathspecifydialog.cpp
+        ui/dialogs/querypathsdialog.cpp
         ui/querypathsequencecopybutton.cpp
         ui/querypathspushbutton.cpp
-        ui/settingsdialog.cpp
+        ui/dialogs/settingsdialog.cpp
         ui/tablewidgetitemdouble.cpp
         ui/tablewidgetitemint.cpp
         ui/tablewidgetitemname.cpp
         ui/tablewidgetitemshown.cpp
-        ui/verticallabel.cpp
-        ui/verticalscrollarea.cpp
+        ui/widgets/verticallabel.cpp
+        ui/widgets/verticalscrollarea.cpp
         graph/nodecolorer.cpp
         graph/sequenceutils.cpp 
         graph/annotation.cpp)
 
 set(FORMS
-        ui/aboutdialog.ui
-        ui/blasthitfiltersdialog.ui
-        ui/blastsearchdialog.ui
-        ui/changenodedepthdialog.ui
-        ui/changenodenamedialog.ui
-        ui/enteroneblastquerydialog.ui
-        ui/graphinfodialog.ui
+        ui/dialogs/aboutdialog.ui
+        ui/dialogs/blasthitfiltersdialog.ui
+        ui/dialogs/blastsearchdialog.ui
+        ui/dialogs/changenodedepthdialog.ui
+        ui/dialogs/changenodenamedialog.ui
+        ui/dialogs/enteroneblastquerydialog.ui
+        ui/dialogs/graphinfodialog.ui
         ui/mainwindow.ui
-        ui/myprogressdialog.ui
-        ui/pathspecifydialog.ui
-        ui/querypathsdialog.ui
-        ui/settingsdialog.ui)
+        ui/dialogs/myprogressdialog.ui
+        ui/dialogs/pathspecifydialog.ui
+        ui/dialogs/querypathsdialog.ui
+        ui/dialogs/settingsdialog.ui)
 
 set(RESOURCES images/images.qrc images/application.icns)
 

@@ -34,7 +34,7 @@
 
 #include "ui/mainwindow.h"
 #include "graph/annotationsmanager.h"
-#include "ui/mygraphicsview.h"
+#include "ui/bandagegraphicsview.h"
 
 #include <QApplication>
 #include <QString>
@@ -116,7 +116,7 @@ int main(int argc, char *argv[])
     g_memory.reset(new Memory());
     g_blastSearch.reset(new BlastSearch());
     g_assemblyGraph.reset(new AssemblyGraph());
-    g_graphicsView = new MyGraphicsView();
+    g_graphicsView = new BandageGraphicsView();
     g_annotationsManager = std::make_shared<AnnotationsManager>();
 
     //Save the terminal width (useful for displaying help text neatly).

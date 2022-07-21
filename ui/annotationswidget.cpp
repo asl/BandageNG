@@ -1,6 +1,6 @@
 #include "annotationswidget.h"
 
-#include "mygraphicsview.h"
+#include "bandagegraphicsview.h"
 #include "program/settings.h"
 
 #include <QLabel>

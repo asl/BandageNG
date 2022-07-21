@@ -17,17 +17,17 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
-#include "settingsdialog.h"
-#include "aboutdialog.h"
-#include "blastsearchdialog.h"
-#include "mygraphicsview.h"
+#include "ui/dialogs/settingsdialog.h"
+#include "ui/dialogs/aboutdialog.h"
+#include "ui/dialogs/blastsearchdialog.h"
+#include "bandagegraphicsview.h"
 #include "graphicsviewzoom.h"
-#include "mygraphicsscene.h"
-#include "myprogressdialog.h"
-#include "pathspecifydialog.h"
-#include "changenodenamedialog.h"
-#include "changenodedepthdialog.h"
-#include "graphinfodialog.h"
+#include "bandagegraphicsscene.h"
+#include "ui/dialogs/myprogressdialog.h"
+#include "ui/dialogs/pathspecifydialog.h"
+#include "ui/dialogs/changenodenamedialog.h"
+#include "ui/dialogs/changenodedepthdialog.h"
+#include "ui/dialogs/graphinfodialog.h"
 
 #include "blast/blastsearch.h"
 
@@ -111,7 +111,7 @@ MainWindow::MainWindow(QString fileToLoadOnStartup, bool drawGraphAfterLoad) :
     m_graphicsViewZoom = new GraphicsViewZoom(g_graphicsView);
     g_graphicsView->m_zoom = m_graphicsViewZoom;
 
-    m_scene = new MyGraphicsScene(this);
+    m_scene = new BandageGraphicsScene(this);
     g_graphicsView->setScene(m_scene);
 
     setInfoTexts();
@@ -913,7 +913,7 @@ void MainWindow::resetScene()
 
     g_graphicsView->setScene(nullptr);
     delete m_scene;
-    m_scene = new MyGraphicsScene(this);
+    m_scene = new BandageGraphicsScene(this);
 
     g_graphicsView->setScene(m_scene);
     connect(m_scene, SIGNAL(selectionChanged()), this, SLOT(selectionChanged()));
