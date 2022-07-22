@@ -23,24 +23,14 @@
 #include "program/settings.h"
 #include <QTextStream>
 
-BlastQueries::BlastQueries() :
-    m_tempNuclFile(0), m_tempProtFile(0)
-{
-    m_presetColours = getPresetColours();
-}
-
+BlastQueries::BlastQueries()
+: m_presetColours{getPresetColours()} {}
 
 BlastQueries::~BlastQueries()
 {
     clearAllQueries();
 }
 
-
-void BlastQueries::createTempQueryFiles()
-{
-    m_tempNuclFile.reset(new QFile(g_blastSearch->m_tempDirectory.filePath("nucl_queries.fasta")));
-    m_tempProtFile.reset(new QFile(g_blastSearch->m_tempDirectory.filePath("prot_queries.fasta")));
-}
 
 BlastQuery * BlastQueries::getQueryFromName(QString queryName)
 {
@@ -63,7 +53,6 @@ void BlastQueries::addQuery(BlastQuery * newQuery)
     newQuery->setColour(m_presetColours[colourIndex]);
 
     m_queries.push_back(newQuery);
-    updateTempFiles();
 }
 
 
@@ -73,7 +62,6 @@ void BlastQueries::addQuery(BlastQuery * newQuery)
 QString BlastQueries::renameQuery(BlastQuery * newQuery, QString newName)
 {
     newQuery->setName(getUniqueName(newName));
-    updateTempFiles();
     return newQuery->getName();
 }
 
@@ -105,7 +93,6 @@ void BlastQueries::clearAllQueries()
     for (size_t i = 0; i < m_queries.size(); ++i)
         delete m_queries[i];
     m_queries.clear();
-    deleteTempFiles();
 }
 
 void BlastQueries::clearSomeQueries(std::vector<BlastQuery *> queriesToRemove)
@@ -115,29 +102,7 @@ void BlastQueries::clearSomeQueries(std::vector<BlastQuery *> queriesToRemove)
         m_queries.erase(std::remove(m_queries.begin(), m_queries.end(), queriesToRemove[i]), m_queries.end());
         delete queriesToRemove[i];
     }
-
-    updateTempFiles();
 }
-
-void BlastQueries::deleteTempFiles()
-{
-    if (tempNuclFileExists())
-        m_tempNuclFile->remove();
-    if (tempProtFileExists())
-        m_tempProtFile->remove();
-}
-
-void BlastQueries::updateTempFiles()
-{
-    deleteTempFiles();
-
-    if (getQueryCount(NUCLEOTIDE) > 0)
-        writeTempFile(m_tempNuclFile, NUCLEOTIDE);
-
-    if (getQueryCount(PROTEIN) > 0)
-        writeTempFile(m_tempProtFile, PROTEIN);
-}
-
 
 void BlastQueries::writeTempFile(QSharedPointer<QFile> file, QuerySequenceType sequenceType) {
     file->open(QIODevice::Append | QIODevice::Text);
@@ -205,21 +170,6 @@ int BlastQueries::getQueryCount(QuerySequenceType sequenceType)
     }
     return count;
 }
-
-
-bool BlastQueries::tempNuclFileExists()
-{
-    if (m_tempNuclFile.isNull())
-        return false;
-    return m_tempNuclFile->exists();
-}
-bool BlastQueries::tempProtFileExists()
-{
-    if (m_tempProtFile.isNull())
-        return false;
-    return m_tempProtFile->exists();
-}
-
 
 //This function looks to see if a query pointer is in the list
 //of queries.  The query pointer given may or may not still

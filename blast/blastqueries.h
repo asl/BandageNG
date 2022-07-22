@@ -39,7 +39,6 @@ public:
 
     BlastQuery * getQueryFromName(QString queryName);
 
-    void createTempQueryFiles();
     void addQuery(BlastQuery * newQuery);
     QString renameQuery(BlastQuery * newQuery, QString newName);
     void clearAllQueries();
@@ -56,16 +55,8 @@ public:
     std::vector<QColor> m_presetColours;
 
 private:
-    QSharedPointer<QFile> m_tempNuclFile;
-    QSharedPointer<QFile> m_tempProtFile;
-
-    void deleteTempFiles();
-    void updateTempFiles();
-    bool tempNuclFileExists();
-    bool tempProtFileExists();
     void writeTempFile(QSharedPointer<QFile> file, QuerySequenceType sequenceType);
     QString getUniqueName(QString name);
-
 };
 
 #endif // BLASTQUERIES_H

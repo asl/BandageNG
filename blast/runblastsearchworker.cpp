@@ -22,6 +22,8 @@
 #include "program/globals.h"
 #include "program/settings.h"
 
+#include <QTemporaryFile>
+
 RunBlastSearchWorker::RunBlastSearchWorker(QString blastnCommand, QString tblastnCommand, QString parameters) :
     m_blastnCommand(blastnCommand), m_tblastnCommand(tblastnCommand), m_parameters(parameters)
 {
@@ -64,12 +66,35 @@ void RunBlastSearchWorker::runBlastSearch()
     emit finishedSearch(m_error);
 }
 
+static void writeQueryFile(QFile *file,
+                           const BlastQueries &queries,
+                           QuerySequenceType sequenceType) {
+
+    QTextStream out(file);
+    for (const auto *query: queries.m_queries) {
+        if (query->getSequenceType() != sequenceType)
+            continue;
+
+        out << '>' << query->getName() << '\n'
+            << query->getSequence()
+            << '\n';
+    }
+}
 
 QString RunBlastSearchWorker::runOneBlastSearch(QuerySequenceType sequenceType, bool * success) {
     QStringList blastOptions;
 
-    blastOptions << "-query" << (g_blastSearch-> m_tempDirectory.filePath(
-                                 (sequenceType == NUCLEOTIDE ? "nucl_queries.fasta" : "prot_queries.fasta")))
+    QTemporaryFile tmpFile(g_blastSearch->m_tempDirectory.filePath(sequenceType == NUCLEOTIDE ?
+                                            "nucl_queries.XXXXXX.fasta" : "prot_queries.XXXXXX.fasta"));
+    if (!tmpFile.open()) {
+        m_error = "Failed to create temporary query file";
+        *success = false;
+        return "";
+    }
+
+    writeQueryFile(&tmpFile, g_blastSearch->m_blastQueries, sequenceType);
+
+    blastOptions << "-query" << tmpFile.fileName()
                  << "-db" << (g_blastSearch->m_tempDirectory.filePath("all_nodes.fasta"))
                  << "-outfmt" << "6";
     blastOptions << m_parameters.split(" ", Qt::SkipEmptyParts);

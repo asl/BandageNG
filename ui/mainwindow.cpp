@@ -99,8 +99,7 @@ MainWindow::MainWindow(QString fileToLoadOnStartup, bool drawGraphAfterLoad) :
     if (!QDir().mkdir(g_blastSearch->m_tempDirectory.absolutePath())) {
         QMessageBox::warning(this, "Error", "A temporary directory could not be created.  BLAST search functionality will not be available");
         return;
-    } else
-        g_blastSearch->m_blastQueries.createTempQueryFiles();
+    }
 
     m_previousZoomSpinBoxValue = ui->zoomSpinBox->value();
     ui->zoomSpinBox->setMinimum(g_settings->minZoom * 100.0);

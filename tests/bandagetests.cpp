@@ -1606,7 +1606,6 @@ bool BandageTests::createBlastTempDirectory()
     if (!QDir().mkdir(g_blastSearch->m_tempDirectory.absolutePath()))
         return false;
 
-    g_blastSearch->m_blastQueries.createTempQueryFiles();
     return true;
 }
 

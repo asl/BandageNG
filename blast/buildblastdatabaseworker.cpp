@@ -39,7 +39,10 @@ void BuildBlastDatabaseWorker::buildBlastDatabase()
     g_blastSearch->m_cancelBuildBlastDatabase = false;
 
     QFile file(g_blastSearch->m_tempDirectory.filePath("all_nodes.fasta"));
-    file.open(QIODevice::WriteOnly | QIODevice::Text);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        emit finishedBuild("Failed to open: " + file.fileName());
+        return;
+    }
     QTextStream out(&file);
 
     for (auto &entry : g_assemblyGraph->m_deBruijnGraphNodes) {

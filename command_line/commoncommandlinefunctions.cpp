@@ -1202,7 +1202,6 @@ bool createBlastTempDirectory()
     if (!g_blastSearch->m_tempDirectory.exists())
         return false;
 
-    g_blastSearch->m_blastQueries.createTempQueryFiles();
     return true;
 }
 
