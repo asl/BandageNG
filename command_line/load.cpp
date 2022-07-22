@@ -18,6 +18,7 @@
 
 #include "load.h"
 #include "commoncommandlinefunctions.h"
+#include "ui/mainwindow.h"
 #include <QApplication>
 
 int bandageLoad(QStringList arguments)

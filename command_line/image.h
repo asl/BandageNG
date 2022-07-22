@@ -20,9 +20,7 @@
 #define IMAGE_H
 
 #include <QStringList>
-#include "ui/mainwindow.h"
 #include <QTextStream>
-#include <QApplication>
 
 int bandageImage(QStringList arguments);
 void printImageUsage(QTextStream * out, bool all);
