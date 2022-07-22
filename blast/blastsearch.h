@@ -21,12 +21,10 @@
 
 #include "blasthit.h"
 #include "blastqueries.h"
-#include "program/scinot.h"
 
-#include <QProcess>
 #include <QString>
-#include <QList>
 #include <QDir>
+#include <QTemporaryDir>
 
 #include <vector>
 
@@ -34,10 +32,12 @@
 //An instance of it is made available to the whole program
 //as a global.
 
+class QProcess;
+
 class BlastSearch
 {
 public:
-    BlastSearch();
+    explicit BlastSearch(const QDir &workDir = QDir::temp());
     ~BlastSearch();
 
     BlastQueries m_blastQueries;
@@ -46,8 +46,7 @@ public:
     bool m_cancelRunBlastSearch{};
     QProcess *m_makeblastdb{};
     QProcess *m_blast{};
-    // FIXME: use QTempDirectory
-    QDir m_tempDirectory;
+    QTemporaryDir m_tempDirectory;
     std::vector<std::shared_ptr<BlastHit>> m_allHits;
 
     static QString getNodeNameFromString(const QString& nodeString);

@@ -119,9 +119,9 @@ int bandageImage(QStringList arguments)
 
     if (blastUsed)
     {
-        if (!createBlastTempDirectory())
+        if (!g_blastSearch->m_tempDirectory.isValid())
         {
-            err << "Error creating temporary directory for BLAST files" << Qt::endl;
+            err << "Error creating temporary directory for BLAST files: " << g_blastSearch->m_tempDirectory.errorString() << Qt::endl;
             return 1;
         }
 
@@ -227,8 +227,6 @@ int bandageImage(QStringList arguments)
     else
         returnCode = 0;
 
-    if (blastUsed)
-        deleteBlastTempDirectory();
 
     return returnCode;
 }

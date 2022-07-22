@@ -32,14 +32,13 @@
 #include <QApplication>
 #include <cmath>
 
-BlastSearch::BlastSearch() :
-    m_blastQueries(), m_tempDirectory("bandage_temp/")
-{
-}
+BlastSearch::BlastSearch(const QDir &workDir) :
+    m_blastQueries(), m_tempDirectory(workDir.filePath("bandage_temp_XXXXXX")) {}
 
 BlastSearch::~BlastSearch()
 {
-    cleanUp();
+    clearBlastHits();
+    m_blastQueries.clearAllQueries();
 }
 
 void BlastSearch::clearBlastHits()
@@ -244,13 +243,7 @@ void BlastSearch::clearSomeQueries(std::vector<BlastQuery *> queriesToRemove)
 
 void BlastSearch::emptyTempDirectory() const
 {
-    //Safety checks
-    if (!g_blastSearch->m_tempDirectory.exists())
-        return;
-    if (!g_blastSearch->m_tempDirectory.dirName().contains("bandage_temp"))
-        return;
-
-    QDir tempDirectory(m_tempDirectory);
+    QDir tempDirectory(m_tempDirectory.path());
     tempDirectory.setNameFilters(QStringList() << "*.*");
     tempDirectory.setFilter(QDir::Files);
     foreach(QString dirFile, tempDirectory.entryList())

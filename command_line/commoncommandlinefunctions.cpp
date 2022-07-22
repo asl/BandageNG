@@ -1189,30 +1189,6 @@ void getCommonHelp(QStringList * text)
 
 
 
-bool createBlastTempDirectory()
-{
-    // Running from the command line, it makes more sense to put the temp
-    // directory in the current directory.
-    QString tempDir = "bandage_temp-" + QString::number(QApplication::applicationPid());
-
-    if (!QDir().mkdir(tempDir))
-        return false;
-
-    g_blastSearch->m_tempDirectory = tempDir;
-    if (!g_blastSearch->m_tempDirectory.exists())
-        return false;
-
-    return true;
-}
-
-void deleteBlastTempDirectory()
-{
-    if (g_blastSearch->m_tempDirectory.exists() &&
-        g_blastSearch->m_tempDirectory.dirName().contains("bandage_temp"))
-       g_blastSearch->m_tempDirectory.removeRecursively();
-}
-
-
 
 QString getElapsedTime(const QDateTime& start, const QDateTime& end)
 {

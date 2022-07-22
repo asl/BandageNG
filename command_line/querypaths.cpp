@@ -118,9 +118,9 @@ int bandageQueryPaths(QStringList arguments)
         return 1;
     out << "done" << Qt::endl;
 
-    if (!createBlastTempDirectory())
+    if (!g_blastSearch->m_tempDirectory.isValid())
     {
-        err << "Error creating temporary directory for BLAST files" << Qt::endl;
+        err << "Error creating temporary directory for BLAST files: " << g_blastSearch->m_tempDirectory.errorString() << Qt::endl;
         return 1;
     }
 
@@ -261,7 +261,6 @@ int bandageQueryPaths(QStringList arguments)
 
     out << Qt::endl << "Elapsed time: " << getElapsedTime(startTime, QDateTime::currentDateTime()) << Qt::endl;
 
-    deleteBlastTempDirectory();
     return 0;
 }
 

@@ -85,15 +85,12 @@ private slots:
     void init() {
         g_settings.reset(new Settings());
         g_memory.reset(new Memory());
-        g_blastSearch.reset(new BlastSearch());
+        g_blastSearch.reset(new BlastSearch(QDir(".")));
         g_assemblyGraph.reset(new AssemblyGraph());
         g_annotationsManager = std::make_shared<AnnotationsManager>();
     }
 
     void cleanup() {
-        if (g_blastSearch->m_tempDirectory.exists() &&
-            g_blastSearch->m_tempDirectory.dirName().contains("bandage_temp"))
-            g_blastSearch->m_tempDirectory.removeRecursively();
     }
 
     void loadFastg();
@@ -129,7 +126,6 @@ private slots:
 
 
 private:
-    bool createBlastTempDirectory();
     DeBruijnEdge * getEdgeFromNodeNames(QString startingNodeName,
                                         QString endingNodeName) const;
     bool doCircularSequencesMatch(QByteArray s1, QByteArray s2) const;
@@ -514,7 +510,6 @@ void BandageTests::blastSearch()
 {
     QVERIFY(g_assemblyGraph->loadGraphFromFile(testFile("test.fastg")));
     g_settings->blastQueryFilename = testFile("test_queries1.fasta");
-    createBlastTempDirectory();
 
     auto errorString = g_blastSearch->doAutoBlastSearch();
 
@@ -560,7 +555,6 @@ void BandageTests::blastSearchFilters()
 {
     QVERIFY(g_assemblyGraph->loadGraphFromFile(testFile("test.fastg")));
     g_settings->blastQueryFilename = testFile("test_queries2.fasta");
-    createBlastTempDirectory();
 
     //First do the search with no filters
     g_blastSearch->doAutoBlastSearch();
@@ -720,8 +714,6 @@ void BandageTests::graphScope()
     g_assemblyGraph->markNodesToDraw(startingNodes, g_settings->nodeDistance);
     drawnNodes = g_assemblyGraph->getDrawnNodeCount();
     QCOMPARE(drawnNodes, 42);
-
-    createBlastTempDirectory();
 
     g_settings->blastQueryFilename = testFile("test_queries1.fasta");
     g_blastSearch->doAutoBlastSearch();
@@ -1336,8 +1328,6 @@ void BandageTests::blastQueryPaths()
     g_settings->blastQueryFilename = testFile("test_query_paths.fasta");
     defaultSettings.blastQueryFilename = testFile("test_query_paths.fasta");
 
-    createBlastTempDirectory();
-
     //Now filter by e-value to get only strong hits and do the BLAST search.
     g_settings->blastEValueFilter.on = true;
     g_settings->blastEValueFilter = SciNot(1.0, -5);
@@ -1596,18 +1586,6 @@ void BandageTests::sequenceDoubleReverseComplement() {
 
 
 
-
-bool BandageTests::createBlastTempDirectory()
-{
-    // Running from the command line, it makes more sense to put the temp
-    // directory in the current directory.
-    g_blastSearch->m_tempDirectory = "bandage_temp-" + QString::number(QCoreApplication::applicationPid()) + "/";
-
-    if (!QDir().mkdir(g_blastSearch->m_tempDirectory.absolutePath()))
-        return false;
-
-    return true;
-}
 
 DeBruijnEdge * BandageTests::getEdgeFromNodeNames(QString startingNodeName,
                                                   QString endingNodeName) const

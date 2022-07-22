@@ -73,9 +73,6 @@ void parseSettings(QStringList arguments);
 void getCommonHelp(QStringList * text);
 void getSettingsUsage(QStringList *text);
 
-bool createBlastTempDirectory();
-void deleteBlastTempDirectory();
-
 QString getElapsedTime(const QDateTime& start, const QDateTime& end);
 
 void getGraphScopeOptions(QStringList * text);

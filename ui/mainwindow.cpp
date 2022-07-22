@@ -92,12 +92,8 @@ MainWindow::MainWindow(QString fileToLoadOnStartup, bool drawGraphAfterLoad) :
 
     srand(time(nullptr));
 
-    //Make a temp directory to hold the BLAST files.
-    //Since Bandage is running in GUI mode, we make it in the system's
-    //temp area - out of the way for the user.
-    g_blastSearch->m_tempDirectory = QDir::temp().filePath("bandage_temp-" + QString::number(QApplication::applicationPid()));
-    if (!QDir().mkdir(g_blastSearch->m_tempDirectory.absolutePath())) {
-        QMessageBox::warning(this, "Error", "A temporary directory could not be created.  BLAST search functionality will not be available");
+    if (!g_blastSearch->m_tempDirectory.isValid()) {
+        QMessageBox::warning(this, "Error", "A temporary directory could not be created.  BLAST search functionality will not be available. Error: " + g_blastSearch->m_tempDirectory.errorString());
         return;
     }
 
@@ -262,10 +258,6 @@ MainWindow::~MainWindow()
     cleanUp();
     delete m_graphicsViewZoom;
     delete ui;
-
-    if (g_blastSearch->m_tempDirectory.exists() &&
-        g_blastSearch->m_tempDirectory.dirName().contains("bandage_temp"))
-        g_blastSearch->m_tempDirectory.removeRecursively();
 }
 
 
