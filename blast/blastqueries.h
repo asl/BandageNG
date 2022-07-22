@@ -55,7 +55,6 @@ public:
     std::vector<QColor> m_presetColours;
 
 private:
-    void writeTempFile(QSharedPointer<QFile> file, QuerySequenceType sequenceType);
     QString getUniqueName(QString name);
 };
 

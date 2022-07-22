@@ -104,21 +104,6 @@ void BlastQueries::clearSomeQueries(std::vector<BlastQuery *> queriesToRemove)
     }
 }
 
-void BlastQueries::writeTempFile(QSharedPointer<QFile> file, QuerySequenceType sequenceType) {
-    file->open(QIODevice::Append | QIODevice::Text);
-    QTextStream out(file.data());
-    for (const auto *query : m_queries) {
-        if (query->getSequenceType() != sequenceType)
-            continue;
-
-        out << '>' << query->getName() << '\n'
-            << query->getSequence()
-            << '\n';
-    }
-    file->close();
-}
-
-
 void BlastQueries::searchOccurred()
 {
     for (size_t i = 0; i < m_queries.size(); ++i)
