@@ -38,7 +38,7 @@ void BuildBlastDatabaseWorker::buildBlastDatabase()
 {
     g_blastSearch->m_cancelBuildBlastDatabase = false;
 
-    QFile file(g_blastSearch->m_tempDirectory + "all_nodes.fasta");
+    QFile file(g_blastSearch->m_tempDirectory.filePath("all_nodes.fasta"));
     file.open(QIODevice::WriteOnly | QIODevice::Text);
     QTextStream out(&file);
 
@@ -72,7 +72,7 @@ void BuildBlastDatabaseWorker::buildBlastDatabase()
     }
 
     QStringList makeBlastdbOptions;
-    makeBlastdbOptions << "-in" << (g_blastSearch->m_tempDirectory + "all_nodes.fasta")
+    makeBlastdbOptions << "-in" << (g_blastSearch->m_tempDirectory.filePath("all_nodes.fasta"))
                        << "-dbtype" << "nucl";
     
     g_blastSearch->m_makeblastdb = new QProcess();

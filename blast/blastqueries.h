@@ -26,12 +26,8 @@
 
 #include <vector>
 
-//This class manages all BLAST queries. It holds BlastQuery
-//objects itself, and it creates/modifies/deletes the temp
-//files which hold the queries for use in BLAST.
-//There are two separate temp files, one for nucleotide
-//queries (for blastn) and one for protein queries (for
-//tblasn).
+// This class manages all BLAST queries. It holds BlastQuery
+// objects
 
 class BlastQueries
 {

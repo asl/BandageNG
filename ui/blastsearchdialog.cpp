@@ -94,7 +94,7 @@ BlastSearchDialog::BlastSearchDialog(QWidget *parent, const QString& autoQuery) 
 
 
     //If a BLAST database already exists, move to step 2.
-    QFile databaseFile(g_blastSearch->m_tempDirectory + "all_nodes.fasta");
+    QFile databaseFile =g_blastSearch->m_tempDirectory.filePath("all_nodes.fasta");
     if (databaseFile.exists())
         setUiStep(BLAST_DB_BUILT_BUT_NO_QUERIES);
 

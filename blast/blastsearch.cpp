@@ -245,9 +245,9 @@ void BlastSearch::clearSomeQueries(std::vector<BlastQuery *> queriesToRemove)
 void BlastSearch::emptyTempDirectory() const
 {
     //Safety checks
-    if (g_blastSearch->m_tempDirectory == "")
+    if (!g_blastSearch->m_tempDirectory.exists())
         return;
-    if (!g_blastSearch->m_tempDirectory.contains("bandage_temp"))
+    if (!g_blastSearch->m_tempDirectory.dirName().contains("bandage_temp"))
         return;
 
     QDir tempDirectory(m_tempDirectory);

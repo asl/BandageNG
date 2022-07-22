@@ -91,12 +91,9 @@ private slots:
     }
 
     void cleanup() {
-        if (g_blastSearch->m_tempDirectory == "")
-            return;
-
-        QDir tmpdir(g_blastSearch->m_tempDirectory);
-        if (tmpdir.exists() && tmpdir.dirName().contains("bandage_temp"))
-            tmpdir.removeRecursively();
+        if (g_blastSearch->m_tempDirectory.exists() &&
+            g_blastSearch->m_tempDirectory.dirName().contains("bandage_temp"))
+            g_blastSearch->m_tempDirectory.removeRecursively();
     }
 
     void loadFastg();
@@ -1602,11 +1599,11 @@ void BandageTests::sequenceDoubleReverseComplement() {
 
 bool BandageTests::createBlastTempDirectory()
 {
-    //Running from the command line, it makes more sense to put the temp
-    //directory in the current directory.
+    // Running from the command line, it makes more sense to put the temp
+    // directory in the current directory.
     g_blastSearch->m_tempDirectory = "bandage_temp-" + QString::number(QCoreApplication::applicationPid()) + "/";
 
-    if (!QDir().mkdir(g_blastSearch->m_tempDirectory))
+    if (!QDir().mkdir(g_blastSearch->m_tempDirectory.absolutePath()))
         return false;
 
     g_blastSearch->m_blastQueries.createTempQueryFiles();

@@ -38,8 +38,8 @@ BlastQueries::~BlastQueries()
 
 void BlastQueries::createTempQueryFiles()
 {
-    m_tempNuclFile.reset(new QFile(g_blastSearch->m_tempDirectory + "nucl_queries.fasta"));
-    m_tempProtFile.reset(new QFile(g_blastSearch->m_tempDirectory + "prot_queries.fasta"));
+    m_tempNuclFile.reset(new QFile(g_blastSearch->m_tempDirectory.filePath("nucl_queries.fasta")));
+    m_tempProtFile.reset(new QFile(g_blastSearch->m_tempDirectory.filePath("prot_queries.fasta")));
 }
 
 BlastQuery * BlastQueries::getQueryFromName(QString queryName)
@@ -139,18 +139,16 @@ void BlastQueries::updateTempFiles()
 }
 
 
-void BlastQueries::writeTempFile(QSharedPointer<QFile> file, QuerySequenceType sequenceType)
-{
+void BlastQueries::writeTempFile(QSharedPointer<QFile> file, QuerySequenceType sequenceType) {
     file->open(QIODevice::Append | QIODevice::Text);
     QTextStream out(file.data());
-    for (size_t i = 0; i < m_queries.size(); ++i)
-    {
-        if (m_queries[i]->getSequenceType() == sequenceType)
-        {
-            out << ">" << m_queries[i]->getName() << "\n";
-            out << m_queries[i]->getSequence();
-            out << "\n";
-        }
+    for (const auto *query : m_queries) {
+        if (query->getSequenceType() != sequenceType)
+            continue;
+
+        out << '>' << query->getName() << '\n'
+            << query->getSequence()
+            << '\n';
     }
     file->close();
 }

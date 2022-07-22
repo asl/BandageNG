@@ -65,13 +65,12 @@ void RunBlastSearchWorker::runBlastSearch()
 }
 
 
-QString RunBlastSearchWorker::runOneBlastSearch(QuerySequenceType sequenceType, bool * success)
-{
+QString RunBlastSearchWorker::runOneBlastSearch(QuerySequenceType sequenceType, bool * success) {
     QStringList blastOptions;
 
-    blastOptions << "-query" << (g_blastSearch-> m_tempDirectory +
-                                 (sequenceType == NUCLEOTIDE ? "nucl_queries.fasta" : "prot_queries.fasta"))
-                 << "-db" << (g_blastSearch->m_tempDirectory + "all_nodes.fasta")
+    blastOptions << "-query" << (g_blastSearch-> m_tempDirectory.filePath(
+                                 (sequenceType == NUCLEOTIDE ? "nucl_queries.fasta" : "prot_queries.fasta")))
+                 << "-db" << (g_blastSearch->m_tempDirectory.filePath("all_nodes.fasta"))
                  << "-outfmt" << "6";
     blastOptions << m_parameters.split(" ", Qt::SkipEmptyParts);
     

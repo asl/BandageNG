@@ -26,7 +26,7 @@
 #include <QProcess>
 #include <QString>
 #include <QList>
-#include <QSharedPointer>
+#include <QDir>
 
 #include <vector>
 
@@ -46,7 +46,8 @@ public:
     bool m_cancelRunBlastSearch{};
     QProcess *m_makeblastdb{};
     QProcess *m_blast{};
-    QString m_tempDirectory;
+    // FIXME: use QTempDirectory
+    QDir m_tempDirectory;
     std::vector<std::shared_ptr<BlastHit>> m_allHits;
 
     static QString getNodeNameFromString(const QString& nodeString);

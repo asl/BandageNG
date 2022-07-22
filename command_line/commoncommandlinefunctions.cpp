@@ -1191,11 +1191,15 @@ void getCommonHelp(QStringList * text)
 
 bool createBlastTempDirectory()
 {
-    //Running from the command line, it makes more sense to put the temp
-    //directory in the current directory.
-    g_blastSearch->m_tempDirectory = "bandage_temp-" + QString::number(QApplication::applicationPid()) + "/";
+    // Running from the command line, it makes more sense to put the temp
+    // directory in the current directory.
+    QString tempDir = "bandage_temp-" + QString::number(QApplication::applicationPid());
 
-    if (!QDir().mkdir(g_blastSearch->m_tempDirectory))
+    if (!QDir().mkdir(tempDir))
+        return false;
+
+    g_blastSearch->m_tempDirectory = tempDir;
+    if (!g_blastSearch->m_tempDirectory.exists())
         return false;
 
     g_blastSearch->m_blastQueries.createTempQueryFiles();
@@ -1204,10 +1208,9 @@ bool createBlastTempDirectory()
 
 void deleteBlastTempDirectory()
 {
-    if (g_blastSearch->m_tempDirectory != "" &&
-            QDir(g_blastSearch->m_tempDirectory).exists() &&
-            QDir(g_blastSearch->m_tempDirectory).dirName().contains("bandage_temp"))
-        QDir(g_blastSearch->m_tempDirectory).removeRecursively();
+    if (g_blastSearch->m_tempDirectory.exists() &&
+        g_blastSearch->m_tempDirectory.dirName().contains("bandage_temp"))
+       g_blastSearch->m_tempDirectory.removeRecursively();
 }
 
 
