@@ -22,7 +22,6 @@
 #include "blastquery.h"
 
 #include <QObject>
-#include <QProcess>
 #include <QString>
 
 //This class carries out the task of running blastn and/or

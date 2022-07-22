@@ -20,7 +20,6 @@
 #define BUILDBLASTDATABASEWORKER_H
 
 #include <QObject>
-#include <QProcess>
 
 //This class carries out the task of running makeblastdb on
 //the graph's nodes.

@@ -23,6 +23,7 @@
 #include "program/settings.h"
 
 #include <QTemporaryFile>
+#include <QProcess>
 
 RunBlastSearchWorker::RunBlastSearchWorker(QString blastnCommand, QString tblastnCommand, QString parameters) :
     m_blastnCommand(blastnCommand), m_tblastnCommand(tblastnCommand), m_parameters(parameters)

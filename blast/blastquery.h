@@ -26,7 +26,6 @@
 #include <QString>
 #include <QColor>
 #include <QList>
-#include <QSharedPointer>
 #include <utility>
 
 enum QuerySequenceType {

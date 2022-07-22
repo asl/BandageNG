@@ -30,6 +30,7 @@
 #include <QDir>
 #include <QRegularExpression>
 #include <QApplication>
+#include <QProcess>
 #include <cmath>
 
 BlastSearch::BlastSearch(const QDir &workDir) :

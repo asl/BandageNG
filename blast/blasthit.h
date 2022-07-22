@@ -19,7 +19,6 @@
 #ifndef BLASTHIT_H
 #define BLASTHIT_H
 
-#include "graph/path.h"
 #include "graph/graphlocation.h"
 #include "program/scinot.h"
 
@@ -56,7 +55,7 @@ public:
     double m_queryStartFraction;
     double m_queryEndFraction;
 
-    static bool compareTwoBlastHitPointers(BlastHit * a, BlastHit * b);
+    static bool compareTwoBlastHitPointers(const BlastHit *a, const BlastHit *b);
 
     double getQueryCoverageFraction() const;
     GraphLocation getHitStart() const;

@@ -45,7 +45,7 @@ BlastHit::BlastHit(BlastQuery * query, DeBruijnNode * node,
 }
 
 
-bool BlastHit::compareTwoBlastHitPointers(BlastHit * a, BlastHit * b)
+bool BlastHit::compareTwoBlastHitPointers(const BlastHit *a, const BlastHit *b)
 {
     return a->m_queryStart < b->m_queryStart;
 }

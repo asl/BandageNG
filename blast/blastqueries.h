@@ -21,9 +21,6 @@
 
 #include "blastquery.h"
 
-#include <QFile>
-#include <QSharedPointer>
-
 #include <vector>
 
 // This class manages all BLAST queries. It holds BlastQuery
