@@ -78,6 +78,7 @@ public:
     //MODIFERS
     bool addNode(DeBruijnNode * newNode, bool strandSpecific, bool makeCircularIfPossible);
     void extendPathToIncludeEntirityOfNodes();
+    void trim(int start = 0, int end = 0);
 
     //STATIC
     static QList<Path> getAllPossiblePaths(GraphLocation startLocation,

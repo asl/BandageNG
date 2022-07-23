@@ -415,10 +415,13 @@ QByteArray Path::getPathSequence() const
 
 int Path::getLength() const {
     int length = 0;
-    for (auto *m_node : m_nodes)
+    if (m_nodes.empty())
+        return 0;
+
+    for (const auto *m_node : m_nodes)
         length += m_node->getLength();
 
-    for (auto *m_edge : m_edges)
+    for (const auto *m_edge : m_edges)
         length -= m_edge->getOverlap();
 
     length -= m_startLocation.getPosition() - 1;
@@ -745,4 +748,9 @@ double Path::getEndFraction() const {
         return 1.0;
 
     return double(m_endLocation.getPosition()) / lastNodeLength;
+}
+
+void Path::trim(int fromStart, int fromEnd) {
+    m_startLocation.moveLocation(fromStart);
+    m_endLocation.moveLocation(-fromEnd);
 }

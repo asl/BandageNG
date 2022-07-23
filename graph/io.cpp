@@ -93,8 +93,11 @@ namespace io {
                 pathNodes.push_back(graph.m_deBruijnGraphNodes.at(nodeName));
             }
 
-            graph.m_deBruijnGraphPaths[path->name] =
-                    new Path(Path::makeFromOrderedNodes(pathNodes, false));
+            Path *p = new Path(Path::makeFromOrderedNodes(pathNodes, false));
+            // Start / end positions on path are zero-based, graph location is 1-based. So we'd just trim
+            // the corresponding amounts
+            p->trim(path->pstart, path->plen - path->pend - 1);
+            graph.m_deBruijnGraphPaths[path->name] = p;
         }
 
         return true;
@@ -122,24 +125,41 @@ namespace io {
 
             std::string name(row["name"].get_sv());
             auto pathSv = row["path"].get_sv();
+            auto pstartSv = row["pstart"].get_sv();
+            auto pendSv = row["pend"].get_sv();
             QStringList pathParts = QString(QByteArray(pathSv.data(), pathSv.size())).split(";");
+            QStringList startParts = QString(QByteArray(pstartSv.data(), pstartSv.size())).split(",");
+            QStringList endParts = QString(QByteArray(pendSv.data(), pendSv.size())).split(",");
 
-            auto addPath = [&](const std::string &name, const QString &pathPart) {
+            if (pathParts.size() != startParts.size() ||
+                pathParts.size() != endParts.size())
+                throw std::logic_error("Invalid path start / end components");
+
+            auto addPath =
+                    [&](const std::string &name,
+                        const QString &pathPart, const QString &start, const QString &end) {
                 std::vector<DeBruijnNode *> pathNodes;
                 for (const auto &nodeName: pathPart.split(","))
                     pathNodes.push_back(graph.m_deBruijnGraphNodes.at(nodeName.toStdString()));
 
-                graph.m_deBruijnGraphPaths[name] =
-                        new Path(Path::makeFromOrderedNodes(pathNodes, false));
+                auto *p = new Path(Path::makeFromOrderedNodes(pathNodes, false));
+                int sPos = start.toInt(); // if conversion fails, we'd end with zero, we're ok with it.
+                bool ok = false;
+                int ePos = end.toInt(&ok); // if conversion fails, we'd need end of the node, not zero here.
+                if (!ok)
+                    ePos = pathNodes.back()->getLength() - 1;
+                p->trim(sPos, pathNodes.back()->getLength() - ePos - 1);
+                graph.m_deBruijnGraphPaths[name] = p;
             };
             if (pathParts.size() == 1) {
                 // Keep the name as-is
-                addPath(name, pathParts.front());
+                addPath(name,
+                        pathParts.front(), startParts.front(), endParts.front());
             } else {
                 size_t pathIdx = 0;
-                for (const auto &pathPart: pathParts) {
-                    addPath(name + "_" + std::to_string(pathIdx), pathPart);
-                    pathIdx += 1;
+                for (size_t pathIdx = 0; pathIdx < pathParts.size(); ++pathIdx) {
+                    addPath(name + "_" + std::to_string(pathIdx),
+                            pathParts[pathIdx], startParts[pathIdx], endParts[pathIdx]);
                 }
             }
         }

@@ -220,8 +220,7 @@ void BandageTests::loadGAF()
 
     QVERIFY(io::loadGAFPaths(*g_assemblyGraph, testFile("test.gaf")));
     Path *p = g_assemblyGraph->m_deBruijnGraphPaths["read"];
-    // FIXME: proper length when location will be proper
-    QCOMPARE(p->getLength(), 87);
+    QCOMPARE(p->getLength(), 71);
 }
 
 
