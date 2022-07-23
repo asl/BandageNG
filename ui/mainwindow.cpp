@@ -28,6 +28,7 @@
 #include "ui/dialogs/changenodenamedialog.h"
 #include "ui/dialogs/changenodedepthdialog.h"
 #include "ui/dialogs/graphinfodialog.h"
+#include "ui/dialogs/pathlistdialog.h"
 
 #include "blast/blastsearch.h"
 
@@ -168,6 +169,7 @@ MainWindow::MainWindow(QString fileToLoadOnStartup, bool drawGraphAfterLoad) :
     connect(ui->actionSettings, SIGNAL(triggered()), this, SLOT(openSettingsDialog()));
     connect(ui->selectNodesButton, SIGNAL(clicked()), this, SLOT(selectUserSpecifiedNodes()));
     connect(ui->pathSelectButton, SIGNAL(clicked()), this, SLOT(selectPathNodes()));
+    connect(ui->pathListButton, SIGNAL(clicked()), this, SLOT(showPathListDialog()));
     connect(ui->selectionSearchNodesLineEdit, SIGNAL(returnPressed()), this, SLOT(selectUserSpecifiedNodes()));
     connect(ui->actionAbout, SIGNAL(triggered()), this, SLOT(openAboutDialog()));
     connect(ui->blastSearchButton, SIGNAL(clicked()), this, SLOT(openBlastSearchDialog()));
@@ -2678,4 +2680,9 @@ void MainWindow::exportGraphLayout() {
         layout::io::saveTSV(fullFileName, layout);
     else
         layout::io::save(fullFileName, layout);
+}
+
+void MainWindow::showPathListDialog() {
+    PathListDialog pathListDialog(*g_assemblyGraph, this);
+    pathListDialog.exec();
 }

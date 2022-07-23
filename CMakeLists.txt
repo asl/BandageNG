@@ -49,6 +49,7 @@ set(LIB_SOURCES
         ui/dialogs/changenodenamedialog.cpp
         ui/widgets/colourbutton.cpp
         ui/dialogs/enteroneblastquerydialog.cpp
+        ui/dialogs/pathlistdialog.cpp
         ui/graphicsviewzoom.cpp
         ui/dialogs/graphinfodialog.cpp
         ui/infotextwidget.cpp

@@ -1673,7 +1673,7 @@
          <x>0</x>
          <y>0</y>
          <width>244</width>
-         <height>1065</height>
+         <height>1099</height>
         </rect>
        </property>
        <property name="sizePolicy">
@@ -1992,6 +1992,13 @@
           </property>
           <property name="text">
            <string>Find path</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="pathListButton">
+          <property name="text">
+           <string>Paths...</string>
           </property>
          </widget>
         </item>
