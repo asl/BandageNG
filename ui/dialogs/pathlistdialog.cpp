@@ -23,6 +23,7 @@
 
 #include <QMessageBox>
 #include <QPushButton>
+#include <QStringBuilder>
 
 PathListDialog::PathListDialog(const AssemblyGraph &graph,
                                const std::vector<DeBruijnNode *> &startNodes,
@@ -32,6 +33,13 @@ PathListDialog::PathListDialog(const AssemblyGraph &graph,
       ui(new Ui::PathListDialog) {
     ui->setupUi(this);
     setWindowTitle("Paths");
+
+    QString nodes;
+    for (size_t i = 0; i < startNodes.size(); ++i)
+        nodes = (i == 0 ?
+                 startNodes[i]->getName() :
+                 nodes % ", " % startNodes[i]->getName());
+    ui->nodeEdit->setText(nodes);
 
     // Ensure our "Close" is not default
     ui->buttonBox->button(QDialogButtonBox::Close)->setAutoDefault(false);
