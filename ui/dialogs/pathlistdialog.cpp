@@ -25,6 +25,14 @@
 #include <QPushButton>
 #include <QStringBuilder>
 
+enum Columns : unsigned {
+    Name = 0,
+    Length = 1,
+    NodePosition = 2,
+    PathNodes = 3,
+    TotalColumns = PathNodes + 1
+};
+
 PathListDialog::PathListDialog(const AssemblyGraph &graph,
                                const std::vector<DeBruijnNode *> &startNodes,
                                QWidget *parent)
@@ -47,11 +55,13 @@ PathListDialog::PathListDialog(const AssemblyGraph &graph,
     ui->pathsView->setModel(new PathListModel(graph, startNodes));
     ui->pathsView->sortByColumn(1, Qt::DescendingOrder);
     ui->pathsView->setSortingEnabled(true);
+    ui->pathsView->setColumnHidden(Columns::NodePosition, startNodes.size() != 1);
     ui->pathsView->resizeColumnsToContents();
     ui->pathsView->horizontalHeader()->setStretchLastSection(true);
 
     connect(ui->nodeEdit, &QLineEdit::editingFinished, this, &PathListDialog::refineByNode);
-    ui->refineInfoText->setInfoText("Refine path list to include only those that contain ANY of the entered nodes");
+    ui->refineInfoText->setInfoText("Refine path list to include only those that contain ANY of the entered nodes\n"
+                                    "If a single node is selected, its position is shown as well");
 }
 
 PathListDialog::~PathListDialog() {
@@ -74,15 +84,9 @@ void PathListDialog::refineByNode() {
     model->refinePathOrder(nodes);
 
     // Resort
+    ui->pathsView->setColumnHidden(Columns::NodePosition, nodes.size() != 1);
     ui->pathsView->sortByColumn(1, Qt::DescendingOrder);
 }
-
-enum Columns : unsigned {
-    Name = 0,
-    Length = 1,
-    PathNodes = 2,
-    TotalColumns = PathNodes + 1
-};
 
 PathListModel::PathListModel(const AssemblyGraph &g,
                              const std::vector<DeBruijnNode*> &startNodes,
@@ -142,6 +146,8 @@ QVariant PathListModel::headerData(int section, Qt::Orientation orientation, int
             return "Name";
         case Columns::Length:
             return "Length";
+        case Columns::NodePosition:
+            return "Node positions";
         case Columns::PathNodes:
             return "Path";
     }
@@ -163,6 +169,18 @@ QVariant PathListModel::data(const QModelIndex &index, int role) const {
                 return entry.first.c_str();
             case Columns::Length:
                 return entry.second->getLength();
+            case Columns::NodePosition: {
+                if (m_node == nullptr)
+                    return {};
+                auto pos = entry.second->getPosition(m_node);
+                QString positions;
+                for (size_t i = 0; i < pos.size(); ++i)
+                    positions =
+                            i == 0 ?
+                            QString::number(pos[i]) :
+                            positions % ", " % QString::number(pos[i]);
+                return positions;
+            }
             case Columns::PathNodes:
                 return entry.second->getString(true);
         }
@@ -175,6 +193,7 @@ void PathListModel::refinePathOrder(const std::vector<DeBruijnNode*> &nodes) {
     beginResetModel();
 
     m_orderedPaths.clear();
+    m_node = nullptr;
 
     // No node: whole graph and all paths
     if (nodes.empty()) {
@@ -183,6 +202,9 @@ void PathListModel::refinePathOrder(const std::vector<DeBruijnNode*> &nodes) {
             m_orderedPaths.emplace_back(it.key(), *it);
     } else {
         phmap::flat_hash_set<const Path *> paths;
+        if (nodes.size() == 1)
+            m_node = nodes.front();
+
         for (const auto *node: nodes) {
             auto entry = m_coverageMap.find(node);
             if (entry == m_coverageMap.end())

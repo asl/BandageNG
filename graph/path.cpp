@@ -754,3 +754,19 @@ void Path::trim(int fromStart, int fromEnd) {
     m_startLocation.moveLocation(fromStart);
     m_endLocation.moveLocation(-fromEnd);
 }
+
+std::vector<unsigned> Path::getPosition(const DeBruijnNode *node) const {
+    unsigned pos = 0;
+
+    std::vector<unsigned> res;
+    for (size_t i = 0; i < m_nodes.size(); ++i) {
+        if (i > 0)
+            pos -= m_edges[i-1]->getOverlap();
+        if (m_nodes[i] == node)
+            res.push_back(pos);
+
+        pos += m_nodes[i]->getLength();
+    }
+
+    return res;
+}

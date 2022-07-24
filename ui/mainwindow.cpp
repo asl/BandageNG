@@ -2670,6 +2670,14 @@ void MainWindow::exportGraphLayout() {
 }
 
 void MainWindow::showPathListDialog() {
-    PathListDialog pathListDialog(*g_assemblyGraph, m_scene->getSelectedNodes(), this);
+    std::vector<DeBruijnNode*> selectedNodes;
+    for (auto *node : m_scene->getSelectedNodes()) {
+        selectedNodes.push_back(node);
+        // In single mode add also reverse-complements
+        if (!g_settings->doubleMode)
+            selectedNodes.push_back(node->getReverseComplement());
+    }
+
+    PathListDialog pathListDialog(*g_assemblyGraph, selectedNodes, this);
     pathListDialog.exec();
 }
