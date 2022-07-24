@@ -2683,6 +2683,6 @@ void MainWindow::exportGraphLayout() {
 }
 
 void MainWindow::showPathListDialog() {
-    PathListDialog pathListDialog(*g_assemblyGraph, this);
+    PathListDialog pathListDialog(*g_assemblyGraph, nullptr, this);
     pathListDialog.exec();
 }

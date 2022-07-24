@@ -21,20 +21,52 @@
 #include "graph/assemblygraph.h"
 #include "graph/path.h"
 
-PathListDialog::PathListDialog(const AssemblyGraph &graph, QWidget *parent) :
-    QDialog(parent),
-    ui(new Ui::PathListDialog) {
-    ui->setupUi(this);
+#include <QMessageBox>
+#include <QPushButton>
 
-    ui->pathsView->setModel(new PathListModel(graph));
+PathListDialog::PathListDialog(const AssemblyGraph &graph,
+                               const DeBruijnNode *startNode,
+                               QWidget *parent)
+    : m_graph(graph),
+      QDialog(parent),
+      ui(new Ui::PathListDialog) {
+    ui->setupUi(this);
+    setWindowTitle("Paths");
+
+    // Ensure our "Close" is not default
+    ui->buttonBox->button(QDialogButtonBox::Close)->setAutoDefault(false);
+
+    ui->pathsView->setModel(new PathListModel(graph, startNode));
     ui->pathsView->sortByColumn(1, Qt::DescendingOrder);
     ui->pathsView->setSortingEnabled(true);
     ui->pathsView->resizeColumnsToContents();
     ui->pathsView->horizontalHeader()->setStretchLastSection(true);
+
+    connect(ui->nodeEdit, &QLineEdit::editingFinished, this, &PathListDialog::refineByNode);
+    ui->refineInfoText->setInfoText("Refine path list to include only those that contain ANY of the entered nodes");
 }
 
 PathListDialog::~PathListDialog() {
     delete ui;
+}
+
+void PathListDialog::refineByNode() {
+    QString nodeName = ui->nodeEdit->text();
+    std::vector<QString> nodesNotInGraph;
+
+    auto nodes = m_graph.getNodesFromString(nodeName, true, &nodesNotInGraph);
+    if (!nodesNotInGraph.empty()) {
+        QMessageBox::information(this, "Nodes not found",
+                                 // FIXME: This is crazy!
+                                 AssemblyGraph::generateNodesNotFoundErrorMessage(nodesNotInGraph, true));
+        return;
+    }
+
+    auto *model = dynamic_cast<PathListModel*>(ui->pathsView->model());
+    model->refinePathOrder(nodes);
+
+    // Resort
+    ui->pathsView->sortByColumn(1, Qt::DescendingOrder);
 }
 
 enum Columns : unsigned {
@@ -44,11 +76,19 @@ enum Columns : unsigned {
     TotalColumns = PathSeq + 1
 };
 
-PathListModel::PathListModel(const AssemblyGraph &g, QObject *parent)
+PathListModel::PathListModel(const AssemblyGraph &g,
+                             const DeBruijnNode *startNode,
+                             QObject *parent)
   : QAbstractTableModel(parent), graph(g) {
-    m_orderedPaths.reserve(graph.m_deBruijnGraphPaths.size());
-    for (auto it = graph.m_deBruijnGraphPaths.begin(); it != graph.m_deBruijnGraphPaths.end(); ++it)
-        m_orderedPaths.emplace_back(it.key(), *it);
+    // Build a coverage map: which node is covered by which paths (used for filtering)
+    for (const auto *p : graph.m_deBruijnGraphPaths)
+        for (const auto *node : p->nodes())
+            m_coverageMap[node].insert(p);
+
+    if (startNode)
+        refinePathOrder({const_cast<DeBruijnNode*>(startNode)});
+    else
+        refinePathOrder();
 }
 
 int PathListModel::rowCount(const QModelIndex &) const {
@@ -124,4 +164,33 @@ QVariant PathListModel::data(const QModelIndex &index, int role) const {
     }
 
     return {};
+}
+
+void PathListModel::refinePathOrder(const std::vector<DeBruijnNode*> &nodes) {
+    beginResetModel();
+
+    m_orderedPaths.clear();
+
+    // No node: whole graph and all paths
+    if (nodes.empty()) {
+        m_orderedPaths.reserve(graph.m_deBruijnGraphPaths.size());
+        for (auto it = graph.m_deBruijnGraphPaths.begin(); it != graph.m_deBruijnGraphPaths.end(); ++it)
+            m_orderedPaths.emplace_back(it.key(), *it);
+    } else {
+        phmap::flat_hash_set<const Path *> paths;
+        for (const auto *node: nodes) {
+            auto entry = m_coverageMap.find(node);
+            if (entry == m_coverageMap.end())
+                continue;
+
+            paths.insert(entry->second.begin(), entry->second.end());
+        }
+
+        // We have to iterate over all paths as names are stored as name in the map
+        for (auto it = graph.m_deBruijnGraphPaths.begin(); it != graph.m_deBruijnGraphPaths.end(); ++it)
+            if (paths.contains(*it))
+                m_orderedPaths.emplace_back(it.key(), *it);
+    }
+
+    endResetModel();
 }

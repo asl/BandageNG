@@ -16,8 +16,13 @@
 // along with Bandage.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
+
+#include "parallel_hashmap/phmap.h"
+
 #include <QDialog>
 #include <QAbstractTableModel>
+
+#include <vector>
 
 namespace Ui {
 class PathListDialog;
@@ -25,12 +30,15 @@ class PathListDialog;
 
 class AssemblyGraph;
 class Path;
+class DeBruijnNode;
 
 class PathListModel : public QAbstractTableModel {
 Q_OBJECT
 
 public:
-    PathListModel(const AssemblyGraph &g, QObject *parent = nullptr);
+    PathListModel(const AssemblyGraph &g,
+                  const DeBruijnNode *startNode = nullptr,
+                  QObject *parent = nullptr);
 
     int rowCount(const QModelIndex &) const override;
     int columnCount(const QModelIndex &) const override;
@@ -38,8 +46,11 @@ public:
     QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
     void sort(int column, Qt::SortOrder order = Qt::AscendingOrder) override;
 
+    void refinePathOrder(const std::vector<DeBruijnNode *> &nodes = {});
 private:
-    std::vector<std::pair<std::string, Path*>> m_orderedPaths;
+
+    std::vector<std::pair<std::string, const Path*>> m_orderedPaths;
+    phmap::parallel_flat_hash_map<const DeBruijnNode*, phmap::flat_hash_set<const Path*>> m_coverageMap;
     const AssemblyGraph &graph;
 };
 
@@ -48,9 +59,14 @@ class PathListDialog : public QDialog
     Q_OBJECT
 
 public:
-    PathListDialog(const AssemblyGraph &graph, QWidget *parent = nullptr);
+    PathListDialog(const AssemblyGraph &graph,
+                   const DeBruijnNode *startNode = nullptr,
+                   QWidget *parent = nullptr);
     ~PathListDialog();
 
 private:
+    void refineByNode();
+
+    const AssemblyGraph &m_graph;
     Ui::PathListDialog *ui;
 };
