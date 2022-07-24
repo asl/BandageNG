@@ -1672,8 +1672,8 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>244</width>
-         <height>1099</height>
+         <width>254</width>
+         <height>1130</height>
         </rect>
        </property>
        <property name="sizePolicy">
@@ -1882,7 +1882,7 @@
            <property name="bottomMargin">
             <number>0</number>
            </property>
-           <item row="1" column="0">
+           <item row="2" column="0">
             <widget class="InfoTextWidget" name="pathSelectionTypeInfoText" native="true">
              <property name="enabled">
               <bool>true</bool>
@@ -1901,16 +1901,19 @@
              </property>
             </widget>
            </item>
-           <item row="1" column="2">
-            <widget class="QRadioButton" name="pathSelectionSelectRadioButton">
+           <item row="0" column="2" colspan="2">
+            <widget class="QLineEdit" name="pathSelectionLineEdit2">
+             <property name="enabled">
+              <bool>true</bool>
+             </property>
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
              <property name="focusPolicy">
               <enum>Qt::StrongFocus</enum>
-             </property>
-             <property name="text">
-              <string>Select</string>
-             </property>
-             <property name="checked">
-              <bool>true</bool>
              </property>
             </widget>
            </item>
@@ -1927,6 +1930,39 @@
              </property>
              <property name="text">
               <string>Name:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="3">
+            <widget class="QRadioButton" name="pathSelectionRecolorRadioButton">
+             <property name="focusPolicy">
+              <enum>Qt::StrongFocus</enum>
+             </property>
+             <property name="text">
+              <string>Recolor</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QLabel" name="label_116">
+             <property name="enabled">
+              <bool>true</bool>
+             </property>
+             <property name="text">
+              <string>Action:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="2">
+            <widget class="QRadioButton" name="pathSelectionSelectRadioButton">
+             <property name="focusPolicy">
+              <enum>Qt::StrongFocus</enum>
+             </property>
+             <property name="text">
+              <string>Select</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
              </property>
             </widget>
            </item>
@@ -1947,40 +1983,14 @@
             </widget>
            </item>
            <item row="1" column="1">
-            <widget class="QLabel" name="label_116">
-             <property name="enabled">
-              <bool>true</bool>
-             </property>
+            <widget class="QLabel" name="label">
              <property name="text">
-              <string>Action:</string>
+              <string>Position:</string>
              </property>
             </widget>
            </item>
-           <item row="1" column="3">
-            <widget class="QRadioButton" name="pathSelectionRecolorRadioButton">
-             <property name="focusPolicy">
-              <enum>Qt::StrongFocus</enum>
-             </property>
-             <property name="text">
-              <string>Recolor</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="2" colspan="2">
-            <widget class="QLineEdit" name="pathSelectionLineEdit2">
-             <property name="enabled">
-              <bool>true</bool>
-             </property>
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="focusPolicy">
-              <enum>Qt::StrongFocus</enum>
-             </property>
-            </widget>
+           <item row="1" column="2" colspan="2">
+            <widget class="QLineEdit" name="pathSelectionPositionLineEdit"/>
            </item>
           </layout>
          </widget>
@@ -2286,7 +2296,7 @@
      <x>0</x>
      <y>0</y>
      <width>1465</width>
-     <height>37</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">

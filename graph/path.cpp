@@ -755,17 +755,37 @@ void Path::trim(int fromStart, int fromEnd) {
     m_endLocation.moveLocation(-fromEnd);
 }
 
-std::vector<unsigned> Path::getPosition(const DeBruijnNode *node) const {
-    unsigned pos = 0;
+// Note that position of the first node might be negative if path starts
+// in the middle of the node
+std::vector<int> Path::getPosition(const DeBruijnNode *node) const {
+    int pos = -m_startLocation.getPosition() + 1; // all UI positions are 1-based
 
-    std::vector<unsigned> res;
+    std::vector<int> res;
     for (size_t i = 0; i < m_nodes.size(); ++i) {
         if (i > 0)
             pos -= m_edges[i-1]->getOverlap();
         if (m_nodes[i] == node)
-            res.push_back(pos);
+            res.push_back(pos + 1); // all UI positions are 1-based
 
         pos += m_nodes[i]->getLength();
+    }
+
+    return res;
+}
+
+std::vector<DeBruijnNode *> Path::getNodesAt(int pathPosition) const {
+    int pos = -m_startLocation.getPosition() + 1; // all UI positions are 1-based, convert to 0-based
+
+    pathPosition -= 1; // all UI positions are 1-based, convert to 0-based
+    std::vector<DeBruijnNode*> res;
+    for (size_t i = 0; i < m_nodes.size(); ++i) {
+        if (i > 0)
+            pos -= m_edges[i-1]->getOverlap();
+        int nodeLen = m_nodes[i]->getLength();
+        if (pos <= pathPosition && pathPosition < pos + nodeLen)
+            res.push_back(m_nodes[i]);
+
+        pos += nodeLen;
     }
 
     return res;

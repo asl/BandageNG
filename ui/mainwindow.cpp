@@ -1665,8 +1665,23 @@ void MainWindow::selectPathNodes()
         QMessageBox::information(this, "Path not found", "Path named \"" + pathName + "\" is not found. Maybe you wanted to select nodes instead?");
         return;
     }
-    for (auto *node : (*pathIt)->nodes())
-        nodesToSelect.push_back(node);
+
+    Path *p = *pathIt;
+
+    QString posText = ui->pathSelectionPositionLineEdit->text();
+    if (posText.isEmpty()) {
+        for (auto *node : p->nodes())
+            nodesToSelect.push_back(node);
+    } else {
+        bool ok;
+        unsigned pos = posText.toInt(&ok);
+        if (!ok) {
+            QMessageBox::information(this, "Invalid position", "Invalid path position: " + posText);
+            return;
+        }
+
+        nodesToSelect = p->getNodesAt(pos);
+    }
 
     doSelectNodes(nodesToSelect, nodesNotInGraph, ui->pathSelectionRecolorRadioButton->isChecked());
 }
