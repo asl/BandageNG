@@ -1574,22 +1574,18 @@ void MainWindow::doSelectNodes(const std::vector<DeBruijnNode *> &nodesToSelect,
     std::vector<QString> nodesNotFound;
     int foundNodes = 0;
     QColor color1, color2;
-    for (size_t i = 0; i < nodesToSelect.size(); ++i)
-    {
+    for (size_t i = 0; i < nodesToSelect.size(); ++i) {
         GraphicsItemNode * graphicsItemNode = nodesToSelect[i]->getGraphicsItemNode();
         GraphicsItemNode * rcgraphicsItemNode = nodesToSelect[i]->getReverseComplement()->getGraphicsItemNode();
 
-        //If the GraphicsItemNode isn't found, try the reverse complement.  This
-        //is only done for single node mode.
+        // If the GraphicsItemNode isn't found, try the reverse complement.  This
+        // is only done for single node mode.
         if (graphicsItemNode == nullptr && !g_settings->doubleMode)
             graphicsItemNode = rcgraphicsItemNode;
 
-        if (graphicsItemNode != nullptr)
-        {
-            if (recolor)
-            {
-                if (i == 0)
-                {
+        if (graphicsItemNode != nullptr) {
+            if (recolor) {
+                if (i == 0) {
                     color1 = graphicsItemNode->m_colour;
                     if (g_settings->doubleMode)
                         color2 = rcgraphicsItemNode->m_colour;
@@ -1603,29 +1599,23 @@ void MainWindow::doSelectNodes(const std::vector<DeBruijnNode *> &nodesToSelect,
 
             graphicsItemNode->setSelected(true);
             ++foundNodes;
-        }
-        else
+        } else
             nodesNotFound.push_back(nodesToSelect[i]->getName());
     }
 
     if (foundNodes > 0)
         zoomToSelection();
 
-    if (!nodesNotInGraph.empty() || !nodesNotFound.empty())
-    {
+    if (!nodesNotInGraph.empty() || !nodesNotFound.empty()) {
         QString errorMessage;
         if (!nodesNotInGraph.empty())
-        {
             errorMessage += g_assemblyGraph->generateNodesNotFoundErrorMessage(nodesNotInGraph,
                                                                                ui->selectionSearchNodesExactMatchRadioButton->isChecked());
-        }
-        if (!nodesNotFound.empty())
-        {
+        if (!nodesNotFound.empty()) {
             if (errorMessage.length() > 0)
                 errorMessage += "\n";
             errorMessage += "The following nodes are in the graph but not currently displayed:\n";
-            for (size_t i = 0; i < nodesNotFound.size(); ++i)
-            {
+            for (size_t i = 0; i < nodesNotFound.size(); ++i) {
                 errorMessage += nodesNotFound[i];
                 if (i != nodesNotFound.size() - 1)
                     errorMessage += ", ";
@@ -1670,12 +1660,12 @@ void MainWindow::selectPathNodes()
     std::vector<DeBruijnNode *> nodesToSelect;
 
     QString pathName = ui->pathSelectionLineEdit2->displayText();
-    auto nodes = g_assemblyGraph->m_deBruijnGraphPaths.find(pathName.toStdString());
-    if (nodes == g_assemblyGraph->m_deBruijnGraphPaths.end()) {
+    auto pathIt = g_assemblyGraph->m_deBruijnGraphPaths.find(pathName.toStdString());
+    if (pathIt == g_assemblyGraph->m_deBruijnGraphPaths.end()) {
         QMessageBox::information(this, "Path not found", "Path named \"" + pathName + "\" is not found. Maybe you wanted to select nodes instead?");
         return;
     }
-    for (auto *node : (*nodes)->nodes())
+    for (auto *node : (*pathIt)->nodes())
         nodesToSelect.push_back(node);
 
     doSelectNodes(nodesToSelect, nodesNotInGraph, ui->pathSelectionRecolorRadioButton->isChecked());
@@ -2142,18 +2132,15 @@ void MainWindow::invertSelection()
 void MainWindow::zoomToSelection()
 {
     QList<QGraphicsItem *> selection = m_scene->selectedItems();
-    if (selection.empty())
-    {
+    if (selection.empty()) {
         QMessageBox::information(this, "No nodes selected", "You must first select nodes in the graph before using "
                                                             "the 'Zoom to fit selection' function.");
         return;
     }
 
     QRectF boundingBox;
-    for (auto selectedItem : selection)
-    {
+    for (auto *selectedItem : selection)
         boundingBox = boundingBox | selectedItem->boundingRect();
-    }
 
     zoomToFitRect(boundingBox);
 }

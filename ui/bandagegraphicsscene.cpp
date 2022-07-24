@@ -29,12 +29,10 @@
 
 BandageGraphicsScene::BandageGraphicsScene(QObject *parent) :
     QGraphicsScene(parent)
-{
-}
+{ }
 
 
-bool compareNodePointers(DeBruijnNode * a, DeBruijnNode * b)
-{
+static bool compareNodePointers(const DeBruijnNode * a, const DeBruijnNode * b) {
     QString aName = a->getName();
     QString bName = b->getName();
 
@@ -54,100 +52,62 @@ bool compareNodePointers(DeBruijnNode * a, DeBruijnNode * b)
     return aName < bName;
 }
 
-
-//This function returns all of the selected nodes, sorted by their node number.
-std::vector<DeBruijnNode *> BandageGraphicsScene::getSelectedNodes()
-{
+// This function returns all of the selected nodes, sorted by their node number.
+std::vector<DeBruijnNode *> BandageGraphicsScene::getSelectedNodes() {
     std::vector<DeBruijnNode *> returnVector;
 
-    QList<QGraphicsItem *> selection = selectedItems();
-    for (auto selectedItem : selection)
-    {
-        auto * selectedNodeItem = dynamic_cast<GraphicsItemNode *>(selectedItem);
-        if (selectedNodeItem != nullptr)
+    for (auto *selectedItem : selectedItems())
+        if (auto *selectedNodeItem = dynamic_cast<GraphicsItemNode *>(selectedItem))
             returnVector.push_back(selectedNodeItem->m_deBruijnNode);
-    }
 
     std::sort(returnVector.begin(), returnVector.end(), compareNodePointers);
 
     return returnVector;
 }
 
-
-//This function works like getSelectedNodes, but only positive nodes are
-//returned.  If a negative node is selected, its positive complement is in the
-//results.  If both nodes in a pair are selected, then only the positive node
-//of the pair is in the results.
-std::vector<DeBruijnNode *> BandageGraphicsScene::getSelectedPositiveNodes()
-{
+// This function works like getSelectedNodes, but only positive nodes are
+// returned.  If a negative node is selected, its positive complement is in the
+// results.  If both nodes in a pair are selected, then only the positive node
+// of the pair is in the results.
+std::vector<DeBruijnNode *> BandageGraphicsScene::getSelectedPositiveNodes() {
     std::vector<DeBruijnNode *> selectedNodes = getSelectedNodes();
 
     //First turn all of the nodes to positive nodes.
-    std::vector<DeBruijnNode *> allPositive;
-    for (auto node : selectedNodes)
-    {
-        if (node->isNegativeNode())
-            node = node->getReverseComplement();
-        allPositive.push_back(node);
-    }
+    std::unordered_set<DeBruijnNode *> allPositive;
+    for (auto *node : selectedNodes)
+        allPositive.insert(node->isNegativeNode() ? node->getReverseComplement() : node);
 
-    //Now remove duplicates.  Since the nodes are sorted, all duplicates should
-    //be adjacent to each other.
-    std::vector<DeBruijnNode *> uniquePositive;
-    for (size_t i = 0; i < allPositive.size(); ++i)
-    {
-        DeBruijnNode * node = allPositive[i];
-        DeBruijnNode * previousNode = nullptr;
-        if (i > 0)
-            previousNode = allPositive[i-1];
-        if (node != previousNode)
-            uniquePositive.push_back(node);
-    }
-
-    return uniquePositive;
+    return { allPositive.begin(), allPositive.end() };
 }
 
 //This function returns all of the selected graphics item nodes, unsorted.
-std::vector<GraphicsItemNode *> BandageGraphicsScene::getSelectedGraphicsItemNodes()
-{
+std::vector<GraphicsItemNode *> BandageGraphicsScene::getSelectedGraphicsItemNodes() {
     std::vector<GraphicsItemNode *> returnVector;
 
-    QList<QGraphicsItem *> selection = selectedItems();
-    for (auto selectedItem : selection)
-    {
-        auto * selectedNodeItem = dynamic_cast<GraphicsItemNode *>(selectedItem);
-        if (selectedNodeItem != nullptr)
+    for (auto *selectedItem : selectedItems())
+        if (auto * selectedNodeItem = dynamic_cast<GraphicsItemNode *>(selectedItem))
             returnVector.push_back(selectedNodeItem);
-    }
 
     return returnVector;
 }
 
 
-std::vector<DeBruijnEdge *> BandageGraphicsScene::getSelectedEdges()
-{
+std::vector<DeBruijnEdge *> BandageGraphicsScene::getSelectedEdges() {
     std::vector<DeBruijnEdge *> returnVector;
 
-    QList<QGraphicsItem *> selection = selectedItems();
-    for (auto selectedItem : selection)
-    {
-        auto * selectedEdgeItem = dynamic_cast<GraphicsItemEdge *>(selectedItem);
-        if (selectedEdgeItem != nullptr)
+    for (auto *selectedItem : selectedItems())
+        if (auto * selectedEdgeItem = dynamic_cast<GraphicsItemEdge *>(selectedItem))
             returnVector.push_back(selectedEdgeItem->m_deBruijnEdge);
-    }
 
     return returnVector;
 }
 
-
-
-DeBruijnNode * BandageGraphicsScene::getOneSelectedNode()
-{
+DeBruijnNode * BandageGraphicsScene::getOneSelectedNode() {
     std::vector<DeBruijnNode *> selectedNodes = getSelectedNodes();
     if (selectedNodes.empty())
         return nullptr;
-    else
-        return selectedNodes[0];
+
+    return selectedNodes.front();
 }
 
 DeBruijnEdge * BandageGraphicsScene::getOneSelectedEdge()
@@ -155,8 +115,8 @@ DeBruijnEdge * BandageGraphicsScene::getOneSelectedEdge()
     std::vector<DeBruijnEdge *> selectedEdges = getSelectedEdges();
     if (selectedEdges.empty())
         return nullptr;
-    else
-        return selectedEdges[0];
+
+    return selectedEdges.front();
 }
 
 //This function, like getOneSelectedNode, returns a single selected node from
@@ -169,28 +129,18 @@ DeBruijnNode * BandageGraphicsScene::getOnePositiveSelectedNode()
     if (selectedNodes.empty())
         return nullptr;
 
-    else if (selectedNodes.size() == 1)
-    {
-        DeBruijnNode * selectedNode = selectedNodes[0];
-        if (selectedNode->isPositiveNode())
-            return selectedNode;
-        else
-            return selectedNode->getReverseComplement();
+    if (selectedNodes.size() == 1) {
+        DeBruijnNode * selectedNode = selectedNodes.front();
+        return (selectedNode->isPositiveNode() ? selectedNode : selectedNode->getReverseComplement());
     }
 
-    else if (selectedNodes.size() == 2)
-    {
+    if (selectedNodes.size() == 2) {
         DeBruijnNode * selectedNode1 = selectedNodes[0];
         DeBruijnNode * selectedNode2 = selectedNodes[1];
-        if (selectedNode1->getReverseComplement() == selectedNode2)
-        {
-            if (selectedNode1->isPositiveNode())
-                return selectedNode1;
-            else
-                return selectedNode2;
-        }
-        else
+        if (selectedNode1->getReverseComplement() != selectedNode2)
             return nullptr;
+
+        return selectedNode1->isPositiveNode() ? selectedNode1 : selectedNode2;
     }
 
     return nullptr;
