@@ -169,7 +169,7 @@ MainWindow::MainWindow(QString fileToLoadOnStartup, bool drawGraphAfterLoad) :
     connect(ui->actionSettings, SIGNAL(triggered()), this, SLOT(openSettingsDialog()));
     connect(ui->selectNodesButton, SIGNAL(clicked()), this, SLOT(selectUserSpecifiedNodes()));
     connect(ui->pathSelectButton, SIGNAL(clicked()), this, SLOT(selectPathNodes()));
-    connect(ui->pathListButton, SIGNAL(clicked()), this, SLOT(showPathListDialog()));
+    connect(ui->pathListButton, &QPushButton::clicked, this, &MainWindow::showPathListDialog);
     connect(ui->selectionSearchNodesLineEdit, SIGNAL(returnPressed()), this, SLOT(selectUserSpecifiedNodes()));
     connect(ui->actionAbout, SIGNAL(triggered()), this, SLOT(openAboutDialog()));
     connect(ui->blastSearchButton, SIGNAL(clicked()), this, SLOT(openBlastSearchDialog()));
@@ -2683,6 +2683,6 @@ void MainWindow::exportGraphLayout() {
 }
 
 void MainWindow::showPathListDialog() {
-    PathListDialog pathListDialog(*g_assemblyGraph, nullptr, this);
+    PathListDialog pathListDialog(*g_assemblyGraph, {}, this);
     pathListDialog.exec();
 }

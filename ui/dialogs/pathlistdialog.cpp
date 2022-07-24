@@ -25,7 +25,7 @@
 #include <QPushButton>
 
 PathListDialog::PathListDialog(const AssemblyGraph &graph,
-                               const DeBruijnNode *startNode,
+                               const std::vector<DeBruijnNode *> &startNodes,
                                QWidget *parent)
     : m_graph(graph),
       QDialog(parent),
@@ -36,7 +36,7 @@ PathListDialog::PathListDialog(const AssemblyGraph &graph,
     // Ensure our "Close" is not default
     ui->buttonBox->button(QDialogButtonBox::Close)->setAutoDefault(false);
 
-    ui->pathsView->setModel(new PathListModel(graph, startNode));
+    ui->pathsView->setModel(new PathListModel(graph, startNodes));
     ui->pathsView->sortByColumn(1, Qt::DescendingOrder);
     ui->pathsView->setSortingEnabled(true);
     ui->pathsView->resizeColumnsToContents();
@@ -72,12 +72,12 @@ void PathListDialog::refineByNode() {
 enum Columns : unsigned {
     Name = 0,
     Length = 1,
-    PathSeq = 2,
-    TotalColumns = PathSeq + 1
+    PathNodes = 2,
+    TotalColumns = PathNodes + 1
 };
 
 PathListModel::PathListModel(const AssemblyGraph &g,
-                             const DeBruijnNode *startNode,
+                             const std::vector<DeBruijnNode*> &startNodes,
                              QObject *parent)
   : QAbstractTableModel(parent), graph(g) {
     // Build a coverage map: which node is covered by which paths (used for filtering)
@@ -85,10 +85,7 @@ PathListModel::PathListModel(const AssemblyGraph &g,
         for (const auto *node : p->nodes())
             m_coverageMap[node].insert(p);
 
-    if (startNode)
-        refinePathOrder({const_cast<DeBruijnNode*>(startNode)});
-    else
-        refinePathOrder();
+    refinePathOrder(startNodes);
 }
 
 int PathListModel::rowCount(const QModelIndex &) const {
@@ -137,7 +134,7 @@ QVariant PathListModel::headerData(int section, Qt::Orientation orientation, int
             return "Name";
         case Columns::Length:
             return "Length";
-        case Columns::PathSeq:
+        case Columns::PathNodes:
             return "Path";
     }
 }
@@ -158,7 +155,7 @@ QVariant PathListModel::data(const QModelIndex &index, int role) const {
                 return entry.first.c_str();
             case Columns::Length:
                 return entry.second->getLength();
-            case Columns::PathSeq:
+            case Columns::PathNodes:
                 return entry.second->getString(true);
         }
     }

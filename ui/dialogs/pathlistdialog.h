@@ -37,7 +37,7 @@ Q_OBJECT
 
 public:
     PathListModel(const AssemblyGraph &g,
-                  const DeBruijnNode *startNode = nullptr,
+                  const std::vector<DeBruijnNode *> &startNodes = {},
                   QObject *parent = nullptr);
 
     int rowCount(const QModelIndex &) const override;
@@ -60,7 +60,7 @@ class PathListDialog : public QDialog
 
 public:
     PathListDialog(const AssemblyGraph &graph,
-                   const DeBruijnNode *startNode = nullptr,
+                   const std::vector<DeBruijnNode *> &startNodes = {},
                    QWidget *parent = nullptr);
     ~PathListDialog();
 
