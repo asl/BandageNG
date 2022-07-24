@@ -1673,14 +1673,29 @@ void MainWindow::selectPathNodes()
         for (auto *node : p->nodes())
             nodesToSelect.push_back(node);
     } else {
-        bool ok;
-        unsigned pos = posText.toInt(&ok);
-        if (!ok) {
+        bool ok = true;
+        auto posParts = posText.split(":");
+        if (posParts.size() != 1 && posParts.size() != 2) {
             QMessageBox::information(this, "Invalid position", "Invalid path position: " + posText);
             return;
         }
 
-        nodesToSelect = p->getNodesAt(pos);
+        int startPos = posParts.front().toInt(&ok);
+        if (!ok) {
+            QMessageBox::information(this, "Invalid position", "Invalid path position: " + posParts.front());
+            return;
+        }
+
+        int endPos = startPos;
+        if (posParts.size() == 2) {
+            endPos = posParts.back().toInt(&ok);
+            if (!ok) {
+                QMessageBox::information(this, "Invalid position", "Invalid path position: " + posParts.back());
+                return;
+            }
+        }
+
+        nodesToSelect = p->getNodesAt(startPos, endPos);
     }
 
     doSelectNodes(nodesToSelect, nodesNotInGraph, ui->pathSelectionRecolorRadioButton->isChecked());

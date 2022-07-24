@@ -63,7 +63,7 @@ public:
     bool canNodeFitAtStart(DeBruijnNode * node, Path * extendedPath) const;
 
     std::vector<int> getPosition(const DeBruijnNode *node) const;
-    std::vector<DeBruijnNode *> getNodesAt(int pathPosition) const;
+    std::vector<DeBruijnNode *> getNodesAt(int startPosition, int endPosition) const;
     bool containsNode(const DeBruijnNode * node) const;
     bool containsEntireNode(const DeBruijnNode * node) const;
     bool isInMiddleOfPath(const DeBruijnNode * node) const;

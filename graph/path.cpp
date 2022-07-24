@@ -773,16 +773,26 @@ std::vector<int> Path::getPosition(const DeBruijnNode *node) const {
     return res;
 }
 
-std::vector<DeBruijnNode *> Path::getNodesAt(int pathPosition) const {
+// Checks whether [leftx, rightx) intersects [lefty, righty)
+static bool intersects(int leftx, int rightx,
+                       int lefty, int righty) {
+    return (leftx <= lefty && lefty < rightx) ||
+           (lefty <= leftx && leftx < righty);
+
+}
+
+std::vector<DeBruijnNode *> Path::getNodesAt(int startPosition, int endPosition) const {
     int pos = -m_startLocation.getPosition() + 1; // all UI positions are 1-based, convert to 0-based
 
-    pathPosition -= 1; // all UI positions are 1-based, convert to 0-based
+    startPosition -= 1; endPosition -= 1; // all UI positions are 1-based, convert to 0-based
+
     std::vector<DeBruijnNode*> res;
     for (size_t i = 0; i < m_nodes.size(); ++i) {
         if (i > 0)
             pos -= m_edges[i-1]->getOverlap();
         int nodeLen = m_nodes[i]->getLength();
-        if (pos <= pathPosition && pathPosition < pos + nodeLen)
+        if (intersects(pos, pos+nodeLen,
+                       startPosition, endPosition))
             res.push_back(m_nodes[i]);
 
         pos += nodeLen;
