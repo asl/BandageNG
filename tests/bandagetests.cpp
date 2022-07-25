@@ -289,6 +289,16 @@ void BandageTests::pathFunctionsOnGFA()
     QCOMPARE(testPath4Extended.getString(true), QString("9+, 13+, 14-, 7+"));
     QCOMPARE(testPath4.canNodeFitAtStart(node4Minus, &testPath4Extended), true);
     QCOMPARE(testPath4Extended.getString(true), QString("4-, 9+, 13+, 14-"));
+
+    auto node13Pos = testPath4.getPosition(node13Plus);
+    QCOMPARE(node13Pos.size(), 1);
+    QCOMPARE(node13Pos.front(), 2001);
+    auto nodesAt2000 = testPath4.getNodesAt(2000, 2000);
+    QCOMPARE(nodesAt2000.size(), 1);
+    auto nodesAt2001 = testPath4.getNodesAt(2001, 2001);
+    QCOMPARE(nodesAt2001.size(), 2);
+    auto nodeRange = testPath4.getNodesAt(2000, 4060);
+    QCOMPARE(nodeRange.size(), 3);
 }
 
 
