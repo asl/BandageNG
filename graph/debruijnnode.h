@@ -115,13 +115,14 @@ public:
 
 private:
     QString m_name;
-    float m_depth;
-    float m_depthRelativeToMeanDrawnDepth;
     Sequence m_sequence;
     DeBruijnNode * m_reverseComplement;
     adt::SmallPODVector<DeBruijnEdge *> m_edges;
 
     GraphicsItemNode * m_graphicsItemNode;
+
+    float m_depth;
+    float m_depthRelativeToMeanDrawnDepth;
 
     int m_length : 27;
     ContiguityStatus m_contiguityStatus : 3;

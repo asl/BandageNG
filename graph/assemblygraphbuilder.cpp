@@ -403,6 +403,19 @@ namespace io {
             hasCustomColours_ |= maybeAddCustomColor(edgePtr, tags, "CB", graph);
             hasCustomColours_ |= maybeAddCustomColor(rcEdgePtr, tags, "C2", graph);
 
+            if (auto wd = gfa::getTag<float>("WD", tags)) {
+                graph.setCustomStyle(edgePtr, *wd);
+                graph.setCustomStyle(rcEdgePtr, *wd);
+            } else if (auto wd = gfa::getTag<int64_t>("WD", tags)) {
+                graph.setCustomStyle(edgePtr, *wd);
+                graph.setCustomStyle(rcEdgePtr, *wd);
+            }
+
+            if (auto ps = gfa::getTag<int64_t>("PS", tags)) {
+                graph.setCustomStyle(edgePtr, Qt::PenStyle(*ps));
+                graph.setCustomStyle(rcEdgePtr, Qt::PenStyle(*ps));
+            }
+
             maybeAddTags(edgePtr, graph.m_edgeTags, tags,
                          false);
             if (rcEdgePtr)

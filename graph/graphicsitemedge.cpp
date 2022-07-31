@@ -33,22 +33,23 @@
 GraphicsItemEdge::GraphicsItemEdge(DeBruijnEdge * deBruijnEdge, QGraphicsItem * parent)
     : QGraphicsPathItem(parent), m_deBruijnEdge(deBruijnEdge) {
     m_edgeColor = g_assemblyGraph->getCustomColour(deBruijnEdge);
-    m_penStyle = g_assemblyGraph->getCustomStyle(deBruijnEdge);
+    auto style = g_assemblyGraph->getCustomStyle(deBruijnEdge);
+    m_penStyle = style.lineStyle;
+    m_width = style.width;
 
     remakePath();
 }
 
 void GraphicsItemEdge::paint(QPainter * painter, const QStyleOptionGraphicsItem *, QWidget *) {
-    double edgeWidth = g_settings->edgeWidth;
     QColor penColour = isSelected() ? g_settings->selectionColour : m_edgeColor;
-    QPen edgePen(QBrush(penColour), edgeWidth, m_penStyle, Qt::RoundCap);
+    QPen edgePen(QBrush(penColour), m_width, m_penStyle, Qt::RoundCap);
     painter->setPen(edgePen);
     painter->drawPath(path());
 }
 
 QPainterPath GraphicsItemEdge::shape() const {
     QPainterPathStroker stroker;
-    stroker.setWidth(g_settings->edgeWidth);
+    stroker.setWidth(m_width);
     stroker.setCapStyle(Qt::RoundCap);
     stroker.setJoinStyle(Qt::RoundJoin);
     return stroker.createStroke(path());

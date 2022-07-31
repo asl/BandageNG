@@ -76,7 +76,13 @@ public:
     // Custom labels
     phmap::parallel_flat_hash_map<const DeBruijnNode*, QString> m_nodeLabels;
     // Edge styles
-    phmap::parallel_flat_hash_map<const DeBruijnEdge*, Qt::PenStyle> m_edgeStyles;
+    struct EdgeStyle {
+        float width;
+        Qt::PenStyle lineStyle;
+
+        EdgeStyle();
+    };
+    phmap::parallel_flat_hash_map<const DeBruijnEdge*, EdgeStyle> m_edgeStyles;
     // Edge colors
     phmap::parallel_flat_hash_map<const DeBruijnEdge*, QColor> m_edgeColors;
 
@@ -175,8 +181,10 @@ public:
     void setCustomColour(const DeBruijnNode* node, QColor color);
     void setCustomColour(const DeBruijnEdge* edge, QColor color);
 
-    Qt::PenStyle getCustomStyle(const DeBruijnEdge* edge) const;
-    void setCustomStyle(const DeBruijnEdge* edge, Qt::PenStyle style);
+    EdgeStyle getCustomStyle(const DeBruijnEdge* edge) const;
+    void setCustomStyle(const DeBruijnEdge* edge, Qt::PenStyle lineStyle);
+    void setCustomStyle(const DeBruijnEdge* edge, float width);
+    void setCustomStyle(const DeBruijnEdge* edge, EdgeStyle style);
     bool hasCustomStyle(const DeBruijnEdge* edge) const;
 
     QString getCustomLabel(const DeBruijnNode* node) const;

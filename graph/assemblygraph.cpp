@@ -1508,9 +1508,9 @@ QColor AssemblyGraph::getCustomColour(const DeBruijnEdge* edge) const {
     return it == m_edgeColors.end() ? g_settings->edgeColour : it->second;
 }
 
-Qt::PenStyle AssemblyGraph::getCustomStyle(const DeBruijnEdge* edge) const {
+AssemblyGraph::EdgeStyle AssemblyGraph::getCustomStyle(const DeBruijnEdge* edge) const {
     auto it = m_edgeStyles.find(edge);
-    return it == m_edgeStyles.end() ? Qt::SolidLine : it->second;
+    return it == m_edgeStyles.end() ? AssemblyGraph::EdgeStyle() : it->second;
 }
 
 void AssemblyGraph::setCustomColour(const DeBruijnNode* node, QColor color) {
@@ -1524,7 +1524,24 @@ void AssemblyGraph::setCustomColour(const DeBruijnEdge* edge, QColor color) {
     m_edgeColors[edge] = color;
 }
 
-void AssemblyGraph::setCustomStyle(const DeBruijnEdge* edge, Qt::PenStyle style) {
+void AssemblyGraph::setCustomStyle(const DeBruijnEdge* edge, Qt::PenStyle lineStyle) {
+    // To simplify upstream code we ignore null edges
+    if (edge == nullptr)
+        return;
+    m_edgeStyles[edge].lineStyle = lineStyle;
+}
+
+AssemblyGraph::EdgeStyle::EdgeStyle()
+ : width(float(g_settings->edgeWidth)), lineStyle(Qt::SolidLine) {}
+
+void AssemblyGraph::setCustomStyle(const DeBruijnEdge* edge, float width) {
+    // To simplify upstream code we ignore null edges
+    if (edge == nullptr)
+        return;
+    m_edgeStyles[edge].width = width;
+}
+
+void AssemblyGraph::setCustomStyle(const DeBruijnEdge* edge, EdgeStyle style) {
     // To simplify upstream code we ignore null edges
     if (edge == nullptr)
         return;

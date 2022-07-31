@@ -38,6 +38,7 @@ private:
     DeBruijnEdge *m_deBruijnEdge;
     QColor m_edgeColor;
     Qt::PenStyle m_penStyle;
+    float m_width;
 };
 
 #endif // GRAPHICSITEMEDGE_H
