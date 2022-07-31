@@ -97,7 +97,7 @@ std::vector<DeBruijnEdge *> BandageGraphicsScene::getSelectedEdges() {
 
     for (auto *selectedItem : selectedItems())
         if (auto * selectedEdgeItem = dynamic_cast<GraphicsItemEdge *>(selectedItem))
-            returnVector.push_back(selectedEdgeItem->m_deBruijnEdge);
+            returnVector.push_back(selectedEdgeItem->edge());
 
     return returnVector;
 }

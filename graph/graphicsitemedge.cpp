@@ -35,21 +35,10 @@ GraphicsItemEdge::GraphicsItemEdge(DeBruijnEdge * deBruijnEdge, QGraphicsItem * 
     m_edgeColor = g_assemblyGraph->getCustomColour(deBruijnEdge);
     m_penStyle = g_assemblyGraph->getCustomStyle(deBruijnEdge);
 
-    calculateAndSetPath();
+    remakePath();
 }
 
-
-static QPointF extendLine(QPointF start, QPointF end, double extensionLength)
-{
-    double extensionRatio = extensionLength / QLineF(start, end).length();
-    QPointF difference = end - start;
-    difference *= extensionRatio;
-    return end + difference;
-}
-
-
-void GraphicsItemEdge::paint(QPainter * painter, const QStyleOptionGraphicsItem *, QWidget *)
-{
+void GraphicsItemEdge::paint(QPainter * painter, const QStyleOptionGraphicsItem *, QWidget *) {
     double edgeWidth = g_settings->edgeWidth;
     QColor penColour = isSelected() ? g_settings->selectionColour : m_edgeColor;
     QPen edgePen(QBrush(penColour), edgeWidth, m_penStyle, Qt::RoundCap);
@@ -57,10 +46,7 @@ void GraphicsItemEdge::paint(QPainter * painter, const QStyleOptionGraphicsItem 
     painter->drawPath(path());
 }
 
-
-
-QPainterPath GraphicsItemEdge::shape() const
-{
+QPainterPath GraphicsItemEdge::shape() const {
     QPainterPathStroker stroker;
     stroker.setWidth(g_settings->edgeWidth);
     stroker.setCapStyle(Qt::RoundCap);
@@ -68,127 +54,120 @@ QPainterPath GraphicsItemEdge::shape() const
     return stroker.createStroke(path());
 }
 
+static void getControlPointLocations(const DeBruijnEdge *edge,
+                                     QPointF &startLocation, QPointF &beforeStartLocation,
+                                     QPointF &endLocation, QPointF &afterEndLocation) {
+    DeBruijnNode * startingNode = edge->getStartingNode();
+    DeBruijnNode * endingNode = edge->getEndingNode();
 
+    if (startingNode->hasGraphicsItem()) {
+        startLocation = startingNode->getGraphicsItemNode()->getLast();
+        beforeStartLocation = startingNode->getGraphicsItemNode()->getSecondLast();
+    } else if (startingNode->getReverseComplement()->hasGraphicsItem()) {
+        startLocation = startingNode->getReverseComplement()->getGraphicsItemNode()->getFirst();
+        beforeStartLocation = startingNode->getReverseComplement()->getGraphicsItemNode()->getSecond();
+    }
 
-void GraphicsItemEdge::calculateAndSetPath()
-{
-    setControlPointLocations();
+    if (endingNode->hasGraphicsItem()) {
+        endLocation = endingNode->getGraphicsItemNode()->getFirst();
+        afterEndLocation = endingNode->getGraphicsItemNode()->getSecond();
+    } else if (endingNode->getReverseComplement()->hasGraphicsItem()) {
+        endLocation = endingNode->getReverseComplement()->getGraphicsItemNode()->getLast();
+        afterEndLocation = endingNode->getReverseComplement()->getGraphicsItemNode()->getSecondLast();
+    }
+}
 
-    double edgeDistance = QLineF(m_startingLocation, m_endingLocation).length();
+static QPointF extendLine(QPointF start, QPointF end, double extensionLength) {
+    double extensionRatio = extensionLength / QLineF(start, end).length();
+    QPointF difference = end - start;
+    difference *= extensionRatio;
+    return end + difference;
+}
+
+// This function handles the special case of an edge that connects a node
+// to itself where the node graphics item has only one line segment.
+static void makeSpecialPathConnectingNodeToSelf(QPainterPath &path,
+                                                const QPointF &startLocation, const QPointF &beforeStartLocation,
+                                                const QPointF &endLocation, const QPointF &afterEndLocation) {
+    double extensionLength = g_settings->edgeLength;
+    QPointF controlPoint1 = extendLine(beforeStartLocation, startLocation, extensionLength),
+            controlPoint2 = extendLine(afterEndLocation, endLocation, extensionLength);
+
+    QLineF nodeLine(startLocation, endLocation);
+    QLineF normalUnitLine = nodeLine.normalVector().unitVector();
+    QPointF perpendicularShift = (normalUnitLine.p2() - normalUnitLine.p1()) * g_settings->edgeLength;
+    QPointF nodeMidPoint = (startLocation + endLocation) / 2.0;
+
+    path.moveTo(startLocation);
+
+    path.cubicTo(controlPoint1, controlPoint1 + perpendicularShift, nodeMidPoint + perpendicularShift);
+    path.cubicTo(controlPoint2 + perpendicularShift, controlPoint2, endLocation);
+}
+
+// This function handles the special case of an edge that connects a node to its
+// reverse complement and is displayed in single mode.
+static void makeSpecialPathConnectingNodeToReverseComplement(QPainterPath &path,
+                                                             const QPointF &startLocation, const QPointF &beforeStartLocation,
+                                                             const QPointF &endLocation, const QPointF &afterEndLocation) {
+    double extensionLength = g_settings->edgeLength / 2.0;
+    QPointF controlPoint1 = extendLine(beforeStartLocation, startLocation, extensionLength),
+            controlPoint2 = extendLine(afterEndLocation, endLocation, extensionLength);
+
+    QPointF startToControl = controlPoint1 - startLocation;
+    QPointF pathMidPoint = startLocation + startToControl * 3.0;
+
+    QLineF normalLine = QLineF(controlPoint1, startLocation).normalVector();
+    QPointF perpendicularShift = (normalLine.p2() - normalLine.p1()) * 1.5;
+
+    path.moveTo(startLocation);
+
+    path.cubicTo(controlPoint1, pathMidPoint + perpendicularShift, pathMidPoint);
+    path.cubicTo(pathMidPoint - perpendicularShift, controlPoint2, endLocation);
+}
+
+void GraphicsItemEdge::remakePath() {
+    QPointF startLocation, beforeStartLocation, endLocation, afterEndLocation;
+    getControlPointLocations(m_deBruijnEdge,
+                             startLocation, beforeStartLocation,
+                             endLocation, afterEndLocation);
+
+    double edgeDistance = QLineF(startLocation, endLocation).length();
 
     double extensionLength = g_settings->edgeLength;
     if (extensionLength > edgeDistance / 2.0)
         extensionLength = edgeDistance / 2.0;
 
-    m_controlPoint1 = extendLine(m_beforeStartingLocation, m_startingLocation, extensionLength);
-    m_controlPoint2 = extendLine(m_afterEndingLocation, m_endingLocation, extensionLength);
+    QPointF controlPoint1 = extendLine(beforeStartLocation, startLocation, extensionLength),
+            controlPoint2 = extendLine(afterEndLocation, endLocation, extensionLength);
 
+    QPainterPath path;
 
-    //If this edge is connecting a node to itself, and that node
-    //is made of only one line segment, then a special path is
-    //required, otherwise the edge will be mostly hidden underneath
-    //the node.
+    // If this edge is connecting a node to itself, and that node
+    // is made of only one line segment, then a special path is
+    // required, otherwise the edge will be mostly hidden underneath
+    // the node.
     DeBruijnNode * startingNode = m_deBruijnEdge->getStartingNode();
     DeBruijnNode * endingNode = m_deBruijnEdge->getEndingNode();
-    if (startingNode == endingNode)
-    {
+    if (startingNode == endingNode) {
         GraphicsItemNode * graphicsItemNode = startingNode->getGraphicsItemNode();
-        if (graphicsItemNode == nullptr)
+        if (!graphicsItemNode)
             graphicsItemNode = startingNode->getReverseComplement()->getGraphicsItemNode();
-        if (graphicsItemNode != nullptr && graphicsItemNode->m_linePoints.size() == 2)
-        {
-            makeSpecialPathConnectingNodeToSelf();
-            return;
-        }
+        if (graphicsItemNode && graphicsItemNode->m_linePoints.size() == 2)
+            makeSpecialPathConnectingNodeToSelf(path,
+                                                startLocation, beforeStartLocation,
+                                                endLocation, afterEndLocation);
+    } else if (startingNode == endingNode->getReverseComplement() &&
+               !g_settings->doubleMode) {
+        //If we are in single mode and the edge connects a node to its reverse
+        //complement, then we need a special path to make it visible.
+        makeSpecialPathConnectingNodeToReverseComplement(path,
+                                                         startLocation, beforeStartLocation,
+                                                         endLocation, afterEndLocation);
+    } else {
+        // Otherwise, the path is just a single cubic Bezier curve.
+        path.moveTo(startLocation);
+        path.cubicTo(controlPoint1, controlPoint2, endLocation);
     }
-
-    //If we are in single mode and the edge connects a node to its reverse
-    //complement, then we need a special path to make it visible.
-    if (startingNode == endingNode->getReverseComplement() &&
-            !g_settings->doubleMode)
-    {
-        makeSpecialPathConnectingNodeToReverseComplement();
-        return;
-    }
-
-    //Otherwise, the path is just a single cubic Bezier curve.
-    QPainterPath path;
-    path.moveTo(m_startingLocation);
-    path.cubicTo(m_controlPoint1, m_controlPoint2, m_endingLocation);
-
-    setPath(path);
-}
-
-void GraphicsItemEdge::setControlPointLocations()
-{
-    DeBruijnNode * startingNode = m_deBruijnEdge->getStartingNode();
-    DeBruijnNode * endingNode = m_deBruijnEdge->getEndingNode();
-
-    if (startingNode->hasGraphicsItem())
-    {
-        m_startingLocation = startingNode->getGraphicsItemNode()->getLast();
-        m_beforeStartingLocation = startingNode->getGraphicsItemNode()->getSecondLast();
-    }
-    else if (startingNode->getReverseComplement()->hasGraphicsItem())
-    {
-        m_startingLocation = startingNode->getReverseComplement()->getGraphicsItemNode()->getFirst();
-        m_beforeStartingLocation = startingNode->getReverseComplement()->getGraphicsItemNode()->getSecond();
-    }
-
-    if (endingNode->hasGraphicsItem())
-    {
-        m_endingLocation = endingNode->getGraphicsItemNode()->getFirst();
-        m_afterEndingLocation = endingNode->getGraphicsItemNode()->getSecond();
-    }
-    else if (endingNode->getReverseComplement()->hasGraphicsItem())
-    {
-        m_endingLocation = endingNode->getReverseComplement()->getGraphicsItemNode()->getLast();
-        m_afterEndingLocation = endingNode->getReverseComplement()->getGraphicsItemNode()->getSecondLast();
-    }
-}
-
-
-//This function handles the special case of an edge that connects a node
-//to itself where the node graphics item has only one line segment.
-void GraphicsItemEdge::makeSpecialPathConnectingNodeToSelf()
-{
-    double extensionLength = g_settings->edgeLength;
-    m_controlPoint1 = extendLine(m_beforeStartingLocation, m_startingLocation, extensionLength);
-    m_controlPoint2 = extendLine(m_afterEndingLocation, m_endingLocation, extensionLength);
-
-    QLineF nodeLine(m_startingLocation, m_endingLocation);
-    QLineF normalUnitLine = nodeLine.normalVector().unitVector();
-    QPointF perpendicularShift = (normalUnitLine.p2() - normalUnitLine.p1()) * g_settings->edgeLength;
-    QPointF nodeMidPoint = (m_startingLocation + m_endingLocation) / 2.0;
-
-    QPainterPath path;
-    path.moveTo(m_startingLocation);
-
-    path.cubicTo(m_controlPoint1, m_controlPoint1 + perpendicularShift, nodeMidPoint + perpendicularShift);
-    path.cubicTo(m_controlPoint2 + perpendicularShift, m_controlPoint2, m_endingLocation);
-
-    setPath(path);
-}
-
-//This function handles the special case of an edge that connects a node to its
-//reverse complement and is displayed in single mode.
-void GraphicsItemEdge::makeSpecialPathConnectingNodeToReverseComplement()
-{
-    double extensionLength = g_settings->edgeLength / 2.0;
-    m_controlPoint1 = extendLine(m_beforeStartingLocation, m_startingLocation, extensionLength);
-    m_controlPoint2 = extendLine(m_afterEndingLocation, m_endingLocation, extensionLength);
-
-    QPointF startToControl = m_controlPoint1 - m_startingLocation;
-    QPointF pathMidPoint = m_startingLocation + startToControl * 3.0;
-
-    QLineF normalLine = QLineF(m_controlPoint1, m_startingLocation).normalVector();
-    QPointF perpendicularShift = (normalLine.p2() - normalLine.p1()) * 1.5;
-
-    QPainterPath path;
-    path.moveTo(m_startingLocation);
-
-    path.cubicTo(m_controlPoint1, pathMidPoint + perpendicularShift, pathMidPoint);
-    path.cubicTo(pathMidPoint - perpendicularShift, m_controlPoint2, m_endingLocation);
 
     setPath(path);
 }

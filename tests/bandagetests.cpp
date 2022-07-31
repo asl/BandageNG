@@ -19,6 +19,8 @@
 #include "graph/assemblygraph.h"
 #include "graph/debruijnnode.h"
 #include "graph/debruijnedge.h"
+#include "graph/graphicsitemedge.h"
+#include "graph/graphicsitemnode.h"
 #include "graph/annotationsmanager.h"
 #include "graph/gfawriter.h"
 #include "graph/io.h"
@@ -79,6 +81,8 @@ public:
             : m_tmpDir("bandage-tests") {
         std::cout << "sizeof(DeBruijnNode)=" << sizeof(DeBruijnNode)
                   << ", sizeof(DeBruijnEdge)=" << sizeof(DeBruijnEdge) << std::endl;
+        std::cout << "sizeof(GraphicsItemEdge)=" << sizeof(GraphicsItemEdge)
+                  << ", sizeof(GraphicsItemNode)=" << sizeof(GraphicsItemNode) << std::endl;
     }
 
 private slots:

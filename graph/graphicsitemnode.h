@@ -69,9 +69,9 @@ public:
     void shiftPoints(QPointF difference);
     void remakePath();
     bool usePositiveNodeColour() const;
-    QPointF getFirst() const {return m_linePoints[0];}
+    QPointF getFirst() const {return m_linePoints.front();}
     QPointF getSecond() const {return m_linePoints[1];}
-    QPointF getLast() const {return m_linePoints[m_linePoints.size()-1];}
+    QPointF getLast() const {return m_linePoints.back();}
     QPointF getSecondLast() const {return m_linePoints[m_linePoints.size()-2];}
     std::vector<QPointF> getCentres() const;
     void setNodeColour(QColor color) { m_colour = color; }

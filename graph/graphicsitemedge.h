@@ -25,29 +25,19 @@
 
 class DeBruijnEdge;
 
-class GraphicsItemEdge : public QGraphicsPathItem
-{
+class GraphicsItemEdge : public QGraphicsPathItem {
 public:
     explicit GraphicsItemEdge(DeBruijnEdge * deBruijnEdge, QGraphicsItem * parent = nullptr);
 
-    DeBruijnEdge * m_deBruijnEdge;
-    QPointF m_startingLocation;
-    QPointF m_endingLocation;
-    QPointF m_beforeStartingLocation;
-    QPointF m_afterEndingLocation;
-    QPointF m_controlPoint1;
-    QPointF m_controlPoint2;
-    QColor m_edgeColor;
-    Qt::PenStyle m_penStyle;
-
     void paint(QPainter * painter, const QStyleOptionGraphicsItem *, QWidget *) override;
     QPainterPath shape() const override;
-    void calculateAndSetPath();
-    void setControlPointLocations();
-    void setStartingPoints(QPointF startingLocation, QPointF beforeStartingLocation) {m_startingLocation = startingLocation; m_beforeStartingLocation = beforeStartingLocation;}
-    void setEndingPoints(QPointF endingLocation, QPointF afterEndingLocation) {m_endingLocation = endingLocation; m_afterEndingLocation = afterEndingLocation;}
-    void makeSpecialPathConnectingNodeToSelf();
-    void makeSpecialPathConnectingNodeToReverseComplement();
+
+    void remakePath();
+    DeBruijnEdge *edge() const { return m_deBruijnEdge; }
+private:
+    DeBruijnEdge *m_deBruijnEdge;
+    QColor m_edgeColor;
+    Qt::PenStyle m_penStyle;
 };
 
 #endif // GRAPHICSITEMEDGE_H

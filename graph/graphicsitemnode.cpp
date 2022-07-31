@@ -395,44 +395,34 @@ void GraphicsItemNode::mouseMoveEvent(QGraphicsSceneMouseEvent * event)
 }
 
 
-//This function remakes edge paths.  If nodes is passed, it will remake the
-//edge paths for all of the nodes.  If nodes isn't passed, then it will just
-//do it for this node.
-void GraphicsItemNode::fixEdgePaths(std::vector<GraphicsItemNode *> * nodes) const
-{
+// This function remakes edge paths.  If nodes is passed, it will remake the
+// edge paths for all of the nodes.  If nodes isn't passed, then it will just
+// do it for this node.
+void GraphicsItemNode::fixEdgePaths(std::vector<GraphicsItemNode *> * nodes) const {
     std::set<DeBruijnEdge *> edgesToFix;
 
-    if (nodes == nullptr)
-    {
+    if (nodes == nullptr) {
         for (auto *edge : m_deBruijnNode->edges())
             edgesToFix.insert(edge);
-    }
-    else
-    {
-        for (auto &graphicNode : *nodes)
-        {
+    } else {
+        for (auto &graphicNode : *nodes) {
             DeBruijnNode * node = graphicNode->m_deBruijnNode;
             for (auto *edge : node->edges())
                 edgesToFix.insert(edge);
         }
     }
 
-    for (auto *deBruijnEdge : edgesToFix)
-    {
-        GraphicsItemEdge * graphicsItemEdge = deBruijnEdge->getGraphicsItemEdge();
-
+    for (auto *deBruijnEdge : edgesToFix) {
         //If this edge has a graphics item, adjust it now.
-        if (graphicsItemEdge != nullptr)
-            graphicsItemEdge->calculateAndSetPath();
+        if (GraphicsItemEdge *graphicsItemEdge = deBruijnEdge->getGraphicsItemEdge())
+            graphicsItemEdge->remakePath();
 
         // If this edge does not have a graphics item, then perhaps its
         // reverse complement does.  Only do this check if the graph was drawn
         // on single mode.
-        else if (!g_settings->doubleMode)
-        {
-            graphicsItemEdge = deBruijnEdge->getReverseComplement()->getGraphicsItemEdge();
-            if (graphicsItemEdge != nullptr)
-                graphicsItemEdge->calculateAndSetPath();
+        else if (!g_settings->doubleMode) {
+            if (GraphicsItemEdge *graphicsItemEdge = deBruijnEdge->getReverseComplement()->getGraphicsItemEdge())
+                graphicsItemEdge->remakePath();
         }
     }
 }
