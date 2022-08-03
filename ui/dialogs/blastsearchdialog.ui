@@ -50,6 +50,9 @@
           <height>16</height>
          </size>
         </property>
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The BLAST hits are displayed in this table after a BLAST search is run.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Query name&lt;/span&gt;: This is the name of the BLAST query for the hit.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Node name&lt;/span&gt;: This is the name of the graph node that the query matched.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Percent identity&lt;/span&gt;: This is the sequence similarity over the length of the hit. 100% identity means that the query and node are identical over the length of the hit.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Alignment length&lt;/span&gt;: This is the length of the alignment as measured against the node. It is equal to node end minus node start plus one.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Query cover&lt;/span&gt;: This is the fraction of the query covered by the hit. It is equivalent to the 'qcovhsp' output option in BLAST.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Mismatches&lt;/span&gt;: This is the number of locations (bases for nucleotide sequence, amino acids for protein sequences) where the query and node sequences differ.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Gap opens&lt;/span&gt;: This is the number of gaps in the alignment due to either insertions or deletions.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Query start&lt;/span&gt;: This is the position where the alignment starts relative to the query.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Query end&lt;/span&gt;: This is the position where the alignment ends relative to the query.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Node start&lt;/span&gt;: This is the position where the alignment starts relative to the node sequence.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Node end&lt;/span&gt;: This is the position where the alignment ends relative to the node sequence.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;E-value&lt;/span&gt;: This is the BLAST-calculated expect value.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Bit score&lt;/span&gt;: This is the BLAST-calculated bit score.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
        </widget>
       </item>
       <item>
@@ -158,6 +161,9 @@
           <height>16</height>
          </size>
         </property>
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;This step runs makeblastdb on the contig sequences, preparing them for a BLAST search.&lt;br/&gt;&lt;br/&gt;The database files generated are temporary and will be deleted when Bandage is closed.  &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
        </widget>
       </item>
       <item>
@@ -205,6 +211,9 @@
           <height>16</height>
          </size>
         </property>
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Click this button to load a FASTA file. Each sequence in the FASTA file will be a separate query.  &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
        </widget>
       </item>
       <item>
@@ -249,6 +258,9 @@
           <width>16</width>
           <height>16</height>
          </size>
+        </property>
+        <property name="toolTip">
+         <string>Click this button to type or paste a single query sequence.</string>
         </property>
        </widget>
       </item>
@@ -295,6 +307,9 @@
           <height>16</height>
          </size>
         </property>
+        <property name="toolTip">
+         <string>Click this button to remove any selected queries in the below list.</string>
+        </property>
        </widget>
       </item>
       <item>
@@ -339,6 +354,9 @@
           <width>16</width>
           <height>16</height>
          </size>
+        </property>
+        <property name="toolTip">
+         <string>Click this button to remove all queries in the below list.</string>
         </property>
        </widget>
       </item>
@@ -390,7 +408,6 @@
     <widget class="QLabel" name="step1Label">
      <property name="font">
       <font>
-       <weight>50</weight>
        <bold>false</bold>
       </font>
      </property>
@@ -476,7 +493,6 @@
     <widget class="QLabel" name="hitsLabel">
      <property name="font">
       <font>
-       <weight>75</weight>
        <bold>true</bold>
       </font>
      </property>
@@ -554,6 +570,9 @@
           <width>16</width>
           <height>16</height>
          </size>
+        </property>
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The BLAST queries are displayed in this table. Before a BLAST search is run, some information about the queries is not yet available and will show a dash.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Colour&lt;/span&gt;: Each query is automatically assigned a colour which is used for the 'Blast hits (solid)' graph colour scheme. This colour can be changed by clicking in the table cell. &lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Show&lt;/span&gt;: if this box is ticked, the query's hits will be able to be viewed on the graph. If this box is not ticked, the query's hits will be hidden on the graph.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Query name&lt;/span&gt;: If a query is loaded from a FASTA file, its name is the sequence ID (the text between the '&amp;gt;' and the first space in the description line). Query names are editable by double clicking in their table cell.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Type&lt;/span&gt;: This is either 'nucl' for nucleotide sequences or 'prot' for protein sequences. Nucleotide sequences will be searched for using blastn, while protein sequences will be search for with tblastn. Both types can be used simultaneously.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Length&lt;/span&gt;: This is the length of the query, in bases (for nucleotide queries) or amino acids (for protein queries).&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Hits&lt;/span&gt;: This is the number of BLAST hits acquired for the query.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Query cover&lt;/span&gt;: This is the total fraction of the query captured by all of the BLAST hits. However, the hits may not be proximal to each other. For example, if the first half a query was found in one part of the graph and the second half in a different part, this value would be 100%. This value is equivalent to the 'qcovs' output option in BLAST.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Paths&lt;/span&gt;: These are the number of possible paths through the graph which represent the entire query. If there is at least one path, you can click on this button to view a table of the paths' properties.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
        </widget>
       </item>
@@ -662,6 +681,9 @@
           <height>16</height>
          </size>
         </property>
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Click the 'Set filters' button to open a dialog where you can set one or more BLAST hit filters.&lt;br/&gt;&lt;br/&gt;These let you exclude BLAST hits using a threshold for alignment length, query coverage, identity, e-value or bit score.  &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
        </widget>
       </item>
       <item row="0" column="0">
@@ -677,6 +699,9 @@
           <width>16</width>
           <height>16</height>
          </size>
+        </property>
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;You may add additional blastn/tblastn parameters here, exactly as they would be typed at the command line.  &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
        </widget>
       </item>
@@ -723,6 +748,9 @@
           <width>16</width>
           <height>16</height>
          </size>
+        </property>
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Click this to conduct search for the above queries on the graph nodes.&lt;br/&gt;&lt;br/&gt;If no parameters were added above, this will run:&lt;br/&gt;blastn -query queries.fasta -db all_nodes.fasta -outfmt 6&lt;br/&gt;&lt;br/&gt;If, for example, '-evalue 0.01' was entered in the above parameters field, then this will run: &lt;br/&gt;blastn -query queries.fasta -db all_nodes.fasta -outfmt 6 -evalue 0.01&lt;br/&gt;&lt;br/&gt;For protein queries, tblastn will be used instead of blastn.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
        </widget>
       </item>

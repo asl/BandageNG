@@ -95,7 +95,7 @@ Double clicking on a node in the graph will add it to the path, if possible. As 
          <string/>
         </property>
         <property name="pixmap">
-         <pixmap resource="../images/images.qrc">:/icons/cross-128.png</pixmap>
+         <pixmap>:/icons/cross-128.png</pixmap>
         </property>
         <property name="scaledContents">
          <bool>true</bool>
@@ -143,6 +143,9 @@ Double clicking on a node in the graph will add it to the path, if possible. As 
           <width>16</width>
           <height>16</height>
          </size>
+        </property>
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Tick this box to indicate that the path is circular, i.e. there is an edge connecting the last node in the list to the first.&lt;br/&gt;&lt;br/&gt;Circular paths must contain the entirety of their nodes and therefore cannot contain start/end positions.  &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
        </widget>
       </item>

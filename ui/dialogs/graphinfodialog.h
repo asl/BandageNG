@@ -19,7 +19,6 @@ private:
     Ui::GraphInfoDialog *ui;
 
     void setLabels();
-    void setInfoTexts();
 };
 
 #endif // GRAPHINFODIALOG_H

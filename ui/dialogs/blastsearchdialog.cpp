@@ -124,8 +124,6 @@ BlastSearchDialog::BlastSearchDialog(QWidget *parent, const QString& autoQuery) 
     //the user has hidden.
     queryShownChanged();
 
-    setInfoTexts();
-
     connect(ui->buildBlastDatabaseButton, SIGNAL(clicked()), this, SLOT(buildBlastDatabaseInThread()));
     connect(ui->loadQueriesFromFastaButton, SIGNAL(clicked()), this, SLOT(loadBlastQueriesFromFastaFileButtonClicked()));
     connect(ui->enterQueryManuallyButton, SIGNAL(clicked()), this, SLOT(enterQueryManually()));
@@ -842,93 +840,6 @@ void BlastSearchDialog::setUiStep(BlastUiState blastUiState)
         break;
     }
 }
-
-
-
-void BlastSearchDialog::setInfoTexts()
-{
-    ui->buildBlastDatabaseInfoText->setInfoText("This step runs makeblastdb on the contig sequences, "
-                                                "preparing them for a BLAST search.<br><br>"
-                                                "The database files generated are temporary and will "
-                                                "be deleted when Bandage is closed.");
-
-    ui->loadQueriesFromFastaInfoText->setInfoText("Click this button to load a FASTA file. Each "
-                                                  "sequence in the FASTA file will be a separate "
-                                                  "query.");
-
-    ui->enterQueryManuallyInfoText->setInfoText("Click this button to type or paste a single query sequence.");
-
-    ui->parametersInfoText->setInfoText("You may add additional blastn/tblastn parameters here, exactly as they "
-                                        "would be typed at the command line.");
-
-    ui->startBlastSearchInfoText->setInfoText("Click this to conduct search for the above "
-                                              "queries on the graph nodes.<br><br>"
-                                              "If no parameters were added above, this will run:<br>"
-                                              "blastn -query queries.fasta -db all_nodes.fasta -outfmt 6<br><br>"
-                                              "If, for example, '-evalue 0.01' was entered in the above "
-                                              "parameters field, then this will run:<br>"
-                                              "blastn -query queries.fasta -db all_nodes.fasta -outfmt 6 -evalue 0.01<br><br>"
-                                              "For protein queries, tblastn will be used instead of blastn.");
-
-    ui->clearSelectedQueriesInfoText->setInfoText("Click this button to remove any selected queries in the below list.");
-
-    ui->clearAllQueriesInfoText->setInfoText("Click this button to remove all queries in the below list.");
-
-    ui->blastQueriesTableInfoText->setInfoText("The BLAST queries are displayed in this table. Before a BLAST search "
-                                               "is run, some information about the queries is not yet available and "
-                                               "will show a dash.<br><br>"
-                                               "<b>Colour</b>: Each query is automatically assigned a colour which is used for the "
-                                               "'Blast hits (solid)' graph colour scheme. This colour can be changed by "
-                                               "clicking in the table cell.<br><br>"
-                                               "<b>Show</b>: if this box is ticked, the query's hits will be able to be viewed "
-                                               "on the graph. If this box is not ticked, the query's hits will be hidden "
-                                               "on the graph.<br><br>"
-                                               "<b>Query name</b>: If a query is loaded from a FASTA file, its name is the sequence "
-                                               "ID (the text between the '>' and the first space in the description line). "
-                                               "Query names are editable by double clicking in their table cell.<br><br>"
-                                               "<b>Type</b>: This is either 'nucl' for nucleotide sequences or 'prot' for protein "
-                                               "sequences. Nucleotide sequences will be searched for using blastn, while "
-                                               "protein sequences will be search for with tblastn. Both types can be used "
-                                               "simultaneously.<br><br>"
-                                               "<b>Length</b>: This is the length of the query, in bases (for nucleotide queries) "
-                                               "or amino acids (for protein queries).<br><br>"
-                                               "<b>Hits</b>: This is the number of BLAST hits acquired for the query.<br><br>"
-                                               "<b>Query cover</b>: This is the total fraction of the query captured by all of "
-                                               "the BLAST hits. However, the hits may not be proximal to each other. For "
-                                               "example, if the first half a query was found in one part of the graph and "
-                                               "the second half in a different part, this value would be 100%. This value "
-                                               "is equivalent to the 'qcovs' output option in BLAST.<br><br>"
-                                               "<b>Paths</b>: These are the number of possible paths through the graph which "
-                                               "represent the entire query.  If there is at least one path, you can click on "
-                                               "this button to view a table of the paths' properties.");
-
-    ui->blastHitsTableInfoText->setInfoText("The BLAST hits are displayed in this table after a BLAST search is run.<br><br>"
-                                            "<b>Query name</b>: This is the name of the BLAST query for the hit.<br><br>"
-                                            "<b>Node name</b>: This is the name of the graph node that the query matched.<br><br>"
-                                            "<b>Percent identity</b>: This is the sequence similarity over the length of the hit. "
-                                            "100% identity means that the query and node are identical over the length of the hit.<br><br>"
-                                            "<b>Alignment length</b>: This is the length of the alignment as measured against the "
-                                            "node. It is equal to node end minus node start plus one.<br><br>"
-                                            "<b>Query cover</b>: This is the fraction of the query covered by the hit. It is "
-                                            "equivalent to the 'qcovhsp' output option in BLAST.<br><br>"
-                                            "<b>Mismatches</b>: This is the number of locations (bases for nucleotide sequence, "
-                                            "amino acids for protein sequences) where the query and node sequences differ.<br><br>"
-                                            "<b>Gap opens</b>: This is the number of gaps in the alignment due to either insertions "
-                                            "or deletions.<br><br>"
-                                            "<b>Query start</b>: This is the position where the alignment starts relative to the query.<br><br>"
-                                            "<b>Query end</b>: This is the position where the alignment ends relative to the query.<br><br>"
-                                            "<b>Node start</b>: This is the position where the alignment starts relative to the node sequence.<br><br>"
-                                            "<b>Node end</b>: This is the position where the alignment ends relative to the node sequence.<br><br>"
-                                            "<b>E-value</b>: This is the BLAST-calculated expect value.<br><br>"
-                                            "<b>Bit score</b>: This is the BLAST-calculated bit score.");
-
-    ui->blastHitFiltersInfoText->setInfoText("Click the 'Set filters' button to open a dialog where you can set one or more BLAST hit "
-                                             "filters.<br><br>"
-                                             "These let you exclude BLAST hits using a threshold for alignment length, query coverage, "
-                                             "identity, e-value or bit score.");
-}
-
-
 
 //This function is called whenever a user changed the 'Show' tick box for a
 //query.  It does three things:

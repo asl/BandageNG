@@ -10,8 +10,6 @@ BlastHitFiltersDialog::BlastHitFiltersDialog(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    setInfoTexts();
-
     connect(ui->alignmentLengthCheckBox, SIGNAL(toggled(bool)), this, SLOT(checkBoxesChanged()));
     connect(ui->queryCoverageCheckBox, SIGNAL(toggled(bool)), this, SLOT(checkBoxesChanged()));
     connect(ui->identityCheckBox, SIGNAL(toggled(bool)), this, SLOT(checkBoxesChanged()));
@@ -128,24 +126,4 @@ QString BlastHitFiltersDialog::getFilterText()
         filterText = "none";
 
     return filterText;
-}
-
-
-void BlastHitFiltersDialog::setInfoTexts()
-{
-    ui->alignmentLengthInfoText->setInfoText("This filter will exclude any BLAST hits with an alignment length shorter than the "
-                                             "specified value.  I.e. only hits with an alignment length greater than or equal to "
-                                             "the value will be included in BLAST results.");
-    ui->queryCoverageInfoText->setInfoText("This filter will exclude any BLAST hits with a query coverage less than the "
-                                             "specified value.  I.e. only hits with a query coverage greater than or equal to "
-                                             "the value will be included in BLAST results.");
-    ui->identityInfoText->setInfoText("This filter will exclude any BLAST hits with an identity less than the "
-                                             "specified value.  I.e. only hits with an identity greater than or equal to "
-                                             "the value will be included in BLAST results.");
-    ui->eValueInfoText->setInfoText("This filter will exclude any BLAST hits with an e-value greater than the "
-                                             "specified value.  I.e. only hits with an e-value less than or equal to "
-                                             "the value will be included in BLAST results.");
-    ui->bitScoreInfoText->setInfoText("This filter will exclude any BLAST hits with a bit score length less than the "
-                                             "specified value.  I.e. only hits with a bit score greater than or equal to "
-                                             "the value will be included in BLAST results.");
 }

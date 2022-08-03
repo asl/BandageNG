@@ -43,7 +43,6 @@ private:
     Ui::SettingsDialog *ui;
 
     void loadOrSaveSettingsToOrFromWidgets(bool setWidgets, Settings * settings);
-    void setInfoTexts();
 
 private slots:
     void restoreDefaults();

@@ -41,7 +41,7 @@
       <property name="geometry">
        <rect>
         <x>0</x>
-        <y>-1924</y>
+        <y>0</y>
         <width>373</width>
         <height>3388</height>
        </rect>
@@ -123,6 +123,9 @@
               <width>16</width>
               <height>16</height>
              </size>
+            </property>
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;This controls the length of the drawn nodes relative to the nodes' sequence lengths.&lt;br/&gt;&lt;br/&gt;Set to a larger number for longer nodes and set to a smaller number for shorter nodes.&lt;br/&gt;&lt;br/&gt;Specifically, a node's length is determined by multiplying its sequence length (in Megabases) by this number. If the resulting value is less than the 'Minimum node length' setting, the node's length will be increased to that value.&lt;br/&gt;&lt;br/&gt;Note that node lengths are not exact, but are rather used as targets for the graph layout algorithm. &lt;br/&gt;&lt;br/&gt;The graph must be redrawn to see the effect of changing this setting.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
            </widget>
           </item>
@@ -295,6 +298,9 @@ per megabase:</string>
               <height>16</height>
              </size>
             </property>
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;This controls the minimum node length, regardless of the length of a node's sequence.&lt;br/&gt;&lt;br/&gt;Setting this to a smaller value will give a tighter correlation between sequence lengths and node lengths. Setting this to a larger will make smaller nodes easier to see and work with.&lt;br/&gt;&lt;br/&gt;The graph must be redrawn to see the effect of changing this setting.  &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
            </widget>
           </item>
           <item row="0" column="5">
@@ -438,6 +444,9 @@ per megabase:</string>
               <height>16</height>
              </size>
             </property>
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;This controls how far apart complementary nodes are drawn from each other when the graph is drawn in double mode.&lt;br/&gt;&lt;br/&gt;The graph must be redrawn to see the effect of changing this setting.  &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
            </widget>
           </item>
           <item row="1" column="4">
@@ -454,6 +463,9 @@ per megabase:</string>
               <height>16</height>
              </size>
             </property>
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;This controls the length of the edges that connect nodes.&lt;br/&gt;&lt;br/&gt;Set to a larger value for more separate nodes. Set to a smaller value for more tightly packed nodes.&lt;br/&gt;&lt;br/&gt;The graph must be redrawn to see the effect of changing this setting. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
            </widget>
           </item>
           <item row="2" column="4">
@@ -469,6 +481,9 @@ per megabase:</string>
               <width>16</width>
               <height>16</height>
              </size>
+            </property>
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;This controls the width of the edges that connect nodes.&lt;br/&gt;&lt;br/&gt;The graph does not need to be redrawn to see the effect of changing this setting. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
            </widget>
           </item>
@@ -653,6 +668,11 @@ per megabase:</string>
               <height>16</height>
              </size>
             </property>
+            <property name="toolTip">
+             <string>Enable this option if the graph is ordered in a linear fashion, e.g. for a MSA graph.&lt;br&gt;&lt;br&gt;
+                                          When on, Bandage will sort the nodes by name (numerically or alphabetically) and initialise the graph layout left-to-right, resulting in a more linear layout.&lt;br&gt;&lt;br&gt;
+                                          This type of layout is automatically used when viewing plain FASTA files in Bandage.</string>
+            </property>
            </widget>
           </item>
           <item row="0" column="3">
@@ -723,6 +743,11 @@ per megabase:</string>
               <height>16</height>
              </size>
             </property>
+            <property name="toolTip">
+             <string>This controls the length of the line segments which make up a drawn node.&lt;br&gt;&lt;br&gt;
+                                               Setting this to a smaller value will produce higher quality nodes with smoother curves, but graph layout will take longer and graphical performance will be slower. Setting this to a larger value will produce nodes with more obvious angles, but graph layout and graphical performance will be faster.&lt;br&gt;&lt;br&gt;
+                                               The graph must be redrawn to see the effect of changing this setting.</string>
+            </property>
            </widget>
           </item>
           <item row="1" column="2">
@@ -738,6 +763,11 @@ per megabase:</string>
               <width>16</width>
               <height>16</height>
              </size>
+            </property>
+            <property name="toolTip">
+             <string>This controls how much time the graph layout algorithm spends on positioning the graph components.&lt;br&gt;&lt;br&gt;
+                                                Low values are faster and recommended for big assembly graphs. Higher values may result in smoother, more pleasing layouts.&lt;br&gt;&lt;br&gt;
+                                                The graph must be redrawn to see the effect of changing this setting.</string>
             </property>
            </widget>
           </item>
@@ -853,6 +883,11 @@ per megabase:</string>
               <height>16</height>
              </size>
             </property>
+            <property name="toolTip">
+             <string>When the graph contains separate connected components, this will be the distance between the components.&lt;br&gt;&lt;br&gt;
+                                                 A low value will give a dense, more tightly packed layout. A high value will give a more spaced-out layout.&lt;br&gt;&lt;br&gt;
+                                                 The graph must be redrawn to see the effect of changing this setting.</string>
+            </property>
            </widget>
           </item>
          </layout>
@@ -948,6 +983,9 @@ per megabase:</string>
               <height>16</height>
              </size>
             </property>
+            <property name="toolTip">
+             <string>This colour is used for all edges connecting nodes.</string>
+            </property>
            </widget>
           </item>
           <item row="1" column="3">
@@ -1005,6 +1043,9 @@ per megabase:</string>
               <width>16</width>
               <height>16</height>
              </size>
+            </property>
+            <property name="toolTip">
+             <string>This colour is used to outline nodes that are not currently selected by the user.</string>
             </property>
            </widget>
           </item>
@@ -1083,6 +1124,10 @@ per megabase:</string>
               <height>16</height>
              </size>
             </property>
+            <property name="toolTip">
+             <string>This is the thickness of the outline drawn around each node.&lt;br&gt;&lt;br&gt;
+                                              Drawing outlines is somewhat CPU-intensive, so set this to zero to improve performance.</string>
+            </property>
            </widget>
           </item>
           <item row="5" column="1">
@@ -1098,6 +1143,9 @@ per megabase:</string>
               <width>16</width>
               <height>16</height>
              </size>
+            </property>
+            <property name="toolTip">
+             <string>This colour is used to outline nodes that are currently selected by the user. Selected edges will also be displayed in this colour.</string>
             </property>
            </widget>
           </item>
@@ -1260,6 +1308,9 @@ per megabase:</string>
               <height>16</height>
              </size>
             </property>
+            <property name="toolTip">
+             <string>Antialiasing makes the display smoother and more pleasing. Disable antialiasing if you are experiencing slow performance when viewing large graphs.</string>
+            </property>
            </widget>
           </item>
           <item row="7" column="3">
@@ -1289,6 +1340,10 @@ single node style:</string>
               <width>16</width>
               <height>16</height>
              </size>
+            </property>
+            <property name="toolTip">
+             <string>When on, this will draw nodes with arrowheads, even when Bandage is in single node style.&lt;br&gt;&lt;br&gt;
+                                                  This makes sense for graphs where the positive-negative distinction is meaningful, e.g. a MSA graph of gene sequences where the positive nodes are the coding strands. It does not make sense for graphs where the positive-negative distinction is arbitrary, e.g. a SPAdes assembly graph.</string>
             </property>
            </widget>
           </item>
@@ -1372,6 +1427,10 @@ single node style:</string>
               <height>16</height>
              </size>
             </property>
+            <property name="toolTip">
+             <string>This is the thickness of the outline drawn around node labels when the 'Text outline' option is ticked.&lt;br&gt;&lt;br&gt;
+                                                  Large values can make text easier to read, but may obscure more of the graph.</string>
+            </property>
            </widget>
           </item>
           <item row="0" column="1">
@@ -1387,6 +1446,9 @@ single node style:</string>
               <width>16</width>
               <height>16</height>
              </size>
+            </property>
+            <property name="toolTip">
+             <string>This colour is used for the text of node labels.</string>
             </property>
            </widget>
           </item>
@@ -1474,6 +1536,9 @@ single node style:</string>
               <width>16</width>
               <height>16</height>
              </size>
+            </property>
+            <property name="toolTip">
+             <string>If the text outline thickness setting has a nonzero value, then a text outline will be displayed with this colour.</string>
             </property>
            </widget>
           </item>
@@ -1584,6 +1649,10 @@ single node style:</string>
               <width>16</width>
               <height>16</height>
              </size>
+            </property>
+            <property name="toolTip">
+             <string>When 'Over visible regions' is selected, node labels will move based on the position of the view to stay visible.&lt;br&gt;&lt;br&gt;
+                                          When 'On node centre' is selected, node labels will always be displayed at the centre of each node, regardless of the view's position.</string>
             </property>
            </widget>
           </item>
@@ -1740,6 +1809,10 @@ single node style:</string>
               <height>16</height>
              </size>
             </property>
+            <property name="toolTip">
+             <string>This controls the degree to which a node's depth affects its width.&lt;br&gt;&lt;br&gt;
+                                                   If set to 0%, all nodes will have the same width (equal to the average node width).</string>
+            </property>
            </widget>
           </item>
           <item row="1" column="2">
@@ -1755,6 +1828,9 @@ single node style:</string>
               <width>16</width>
               <height>16</height>
              </size>
+            </property>
+            <property name="toolTip">
+             <string>This is the power used in the function for determining node widths.</string>
             </property>
            </widget>
           </item>
@@ -2109,6 +2185,10 @@ single node style:</string>
               <height>16</height>
              </size>
             </property>
+            <property name="toolTip">
+             <string>This controls the colour saturation of the positive nodes when the 'Random colours' option is used.&lt;br&gt;&lt;br&gt;
+                                                            The minimum value will result in colourless (grey) nodes while high values will result in brightly coloured nodes.</string>
+            </property>
            </widget>
           </item>
           <item row="2" column="1">
@@ -2125,6 +2205,10 @@ single node style:</string>
               <height>16</height>
              </size>
             </property>
+            <property name="toolTip">
+             <string>This controls the colour lightness of the positive nodes when the 'Random colours' option is used.&lt;br&gt;&lt;br&gt;
+                                                           Low values will result in dark nodes while high values result in light nodes</string>
+            </property>
            </widget>
           </item>
           <item row="1" column="1">
@@ -2140,6 +2224,11 @@ single node style:</string>
               <width>16</width>
               <height>16</height>
              </size>
+            </property>
+            <property name="toolTip">
+             <string>This controls the colour saturation of the negative nodes when the 'Random colours' option is used.&lt;br&gt;&lt;br&gt;
+                                                            The minimum value will result in colourless (grey) nodes while high values will result in brightly coloured nodes.&lt;br&gt;&lt;br&gt;
+                                                            Note that negative nodes are only visible when the graph is drawn in double mode.</string>
             </property>
            </widget>
           </item>
@@ -2327,6 +2416,11 @@ single node style:</string>
               <height>16</height>
              </size>
             </property>
+            <property name="toolTip">
+             <string>This controls the colour lightness of the negative nodes when the 'Random colours' option is used.&lt;br&gt;&lt;br&gt;
+                                                           Low values will result in dark nodes while high values result in light nodes.&lt;br&gt;&lt;br&gt;
+                                                           Note that negative nodes are only visible when the graph is drawn in double mode.</string>
+            </property>
            </widget>
           </item>
           <item row="4" column="1">
@@ -2342,6 +2436,10 @@ single node style:</string>
               <width>16</width>
               <height>16</height>
              </size>
+            </property>
+            <property name="toolTip">
+             <string>This controls how opaque the positive nodes are when the 'Random colours' option is used.&lt;br&gt;&lt;br&gt;
+                                                         Set to the minimum value for fully transparent nodes. Set to the maximum value for completely opaque nodes.</string>
             </property>
            </widget>
           </item>
@@ -2445,6 +2543,11 @@ single node style:</string>
               <width>16</width>
               <height>16</height>
              </size>
+            </property>
+            <property name="toolTip">
+             <string>This controls how opaque the negative nodes are when the 'Random colours' option is used.&lt;br&gt;&lt;br&gt;
+                                                         Set to the minimum value for fully transparent nodes. Set to the maximum value for completely opaque nodes.&lt;br&gt;&lt;br&gt;
+                                                         Note that negative nodes are only visible when the graph is drawn in double mode.</string>
             </property>
            </widget>
           </item>
@@ -2573,6 +2676,11 @@ single node style:</string>
               <height>16</height>
              </size>
             </property>
+            <property name="toolTip">
+             <string>When Bandage is set to the 'Uniform colour' option, this colour is used for limited graph scopes:&lt;ul&gt;
+                                                      &lt;li&gt;When the graph scope is set to 'Around node(s)', this colour is used for the user-specified nodes.&lt;/li&gt;
+                                                      &lt;li&gt;When the graph scope is set to 'Around BLAST hit(s)', this colour is used for nodes that contain at least one BLAST hit.&lt;/li&gt;&lt;/ul&gt;</string>
+            </property>
            </widget>
           </item>
           <item row="1" column="1">
@@ -2588,6 +2696,9 @@ single node style:</string>
               <width>16</width>
               <height>16</height>
              </size>
+            </property>
+            <property name="toolTip">
+             <string>This is the colour of all negative nodes when Bandage is set to the 'Uniform colour' option. Negative nodes are only displayed when the graph is drawn in 'Double' mode.</string>
             </property>
            </widget>
           </item>
@@ -2627,6 +2738,9 @@ single node style:</string>
               <width>16</width>
               <height>16</height>
              </size>
+            </property>
+            <property name="toolTip">
+             <string>This is the colour of all positive nodes when Bandage is set to the 'Uniform colour' option.</string>
             </property>
            </widget>
           </item>
@@ -3150,6 +3264,9 @@ single node style:</string>
                  <height>16</height>
                 </size>
                </property>
+               <property name="toolTip">
+                <string>When set to 'Auto', the low depth value is set to the first quartile and the high depth value is set to the third quartile.</string>
+               </property>
               </widget>
              </item>
              <item row="2" column="0">
@@ -3165,6 +3282,9 @@ single node style:</string>
                  <width>16</width>
                  <height>16</height>
                 </size>
+               </property>
+               <property name="toolTip">
+                <string>When set to 'Manual', you can specify the values used for depth colouring.</string>
                </property>
               </widget>
              </item>
@@ -3266,6 +3386,9 @@ single node style:</string>
               <width>16</width>
               <height>16</height>
              </size>
+            </property>
+            <property name="toolTip">
+             <string>When Bandage is set to the 'Colour using BLAST hits' option, this colour is used for nodes that do not have any BLAST hits. It is also used for any region of a node without BLAST hits, even if there are BLAST hits in other regions of that node.</string>
             </property>
            </widget>
           </item>
@@ -3410,6 +3533,9 @@ single node style:</string>
               <height>16</height>
              </size>
             </property>
+            <property name="toolTip">
+             <string>When a contiguity search is conducted, this is the colour given to the starting node(s).</string>
+            </property>
            </widget>
           </item>
           <item row="2" column="1">
@@ -3425,6 +3551,10 @@ single node style:</string>
               <width>16</width>
               <height>16</height>
              </size>
+            </property>
+            <property name="toolTip">
+             <string>When a contiguity search is conducted, this is the colour given to nodes that are determined to be contiguous with the starting node(s).&lt;br&gt;&lt;br&gt;
+                                                          This colour is used for nodes where either the node or its reverse complement are contiguous with the starting node, but it cannot be determined which.</string>
             </property>
            </widget>
           </item>
@@ -3442,6 +3572,9 @@ single node style:</string>
               <height>16</height>
              </size>
             </property>
+            <property name="toolTip">
+             <string>When a contiguity search is conducted, this is the colour given to nodes that are not determined to be contiguous with the starting node(s).</string>
+            </property>
            </widget>
           </item>
           <item row="3" column="1">
@@ -3457,6 +3590,9 @@ single node style:</string>
               <width>16</width>
               <height>16</height>
              </size>
+            </property>
+            <property name="toolTip">
+             <string>When a contiguity search is conducted, this is the colour given to nodes that are determined to be possibly contiguous with the starting node(s).</string>
             </property>
            </widget>
           </item>
@@ -3519,6 +3655,10 @@ single node style:</string>
               <height>16</height>
              </size>
             </property>
+            <property name="toolTip">
+             <string>This is the number of steps the contiguity search will take. Larger values will find more distant contiguous nodes, at a performance cost.&lt;br&gt;&lt;br&gt;
+                                                   The time taken to complete the search can grow rapidly as values increase, so use values above 20 with caution.</string>
+            </property>
            </widget>
           </item>
           <item row="1" column="1">
@@ -3534,6 +3674,10 @@ single node style:</string>
               <width>16</width>
               <height>16</height>
              </size>
+            </property>
+            <property name="toolTip">
+             <string>When a contiguity search is conducted, this is the colour given to nodes that are determined to be contiguous with the starting node(s).&lt;br&gt;&lt;br&gt;
+                                                            This colour is used for strand-specific matches. It is only used for nodes that are determined to be on the same strand as the starting node</string>
             </property>
            </widget>
           </item>
@@ -3773,6 +3917,10 @@ single node style:</string>
               <height>16</height>
              </size>
             </property>
+            <property name="toolTip">
+             <string>This is a minimum value for the fraction of a BLAST query which is covered by the hits in a BLAST query path. Paths with hits that cover less of the query than this setting will not be included in the query's paths.&lt;br&gt;&lt;br&gt;
+                                                   Set to a higher value to make BLAST query paths more stringent.</string>
+            </property>
            </widget>
           </item>
           <item row="3" column="3" colspan="2">
@@ -3985,6 +4133,10 @@ discrepancy (bases):</string>
               <height>16</height>
              </size>
             </property>
+            <property name="toolTip">
+             <string>This is a minimum value for the relative length between a BLAST query and its path in the graph. Paths with a relative length less than this setting will not be included in the query's paths.&lt;br&gt;&lt;br&gt;
+                                                 Set to a value closer to 100% to make BLAST query paths more stringent.</string>
+            </property>
            </widget>
           </item>
           <item row="8" column="1">
@@ -4001,6 +4153,10 @@ discrepancy (bases):</string>
               <height>16</height>
              </size>
             </property>
+            <property name="toolTip">
+             <string>This is a maximum value for the relative length between a BLAST query and its path in the graph. Paths with a relative length greater than this setting will not be included in the query's paths.&lt;br&gt;&lt;br&gt;
+                                                 Set to a value closer to 100% to make BLAST query paths more stringent.</string>
+            </property>
            </widget>
           </item>
           <item row="9" column="1">
@@ -4016,6 +4172,10 @@ discrepancy (bases):</string>
               <width>16</width>
               <height>16</height>
              </size>
+            </property>
+            <property name="toolTip">
+             <string>This is the minimum length difference (in bases) between a BLAST query and its path in the graph.  Paths with a length difference less than this setting will not be included in the query's paths.&lt;br&gt;&lt;br&gt;
+                                                      Set to a value closer to 0 to make BLAST query paths more stringent.</string>
             </property>
            </widget>
           </item>
@@ -4049,6 +4209,10 @@ discrepancy (bases):</string>
               <height>16</height>
              </size>
             </property>
+            <property name="toolTip">
+             <string>This is a minimum value for the mean of the percent identity for the hits in a BLAST query path, weighted by the hits' lengths. Paths with a mean hit percent identity less than this setting will not be included in the query's paths.&lt;br&gt;&lt;br&gt;
+                                                Set to a higher value to make BLAST query paths more stringent.</string>
+            </property>
            </widget>
           </item>
           <item row="1" column="1">
@@ -4064,6 +4228,10 @@ discrepancy (bases):</string>
               <width>16</width>
               <height>16</height>
              </size>
+            </property>
+            <property name="toolTip">
+             <string>This controls the maximum number of nodes in BLAST query paths.&lt;br&gt;&lt;br&gt;
+                                          A higher value will allow for paths containing more nodes, at a performance cost.</string>
             </property>
            </widget>
           </item>
@@ -4081,6 +4249,10 @@ discrepancy (bases):</string>
               <height>16</height>
              </size>
             </property>
+            <property name="toolTip">
+             <string>This is a maximum value for the product of the e-values of all the hits in a BLAST query path. Paths with an e-value product greater than this setting will not be included in the query's paths.&lt;br&gt;&lt;br&gt;
+                                              Set to a lower value to make BLAST query paths more stringent.</string>
+            </property>
            </widget>
           </item>
           <item row="2" column="1">
@@ -4096,6 +4268,10 @@ discrepancy (bases):</string>
               <width>16</width>
               <height>16</height>
              </size>
+            </property>
+            <property name="toolTip">
+             <string>This is a minimum value for the fraction of a BLAST query which is covered by a BLAST query path. Paths that cover less of the query than this setting will not be included in the query's paths.&lt;br&gt;&lt;br&gt;
+                                                   Set to a higher value to make BLAST query paths more stringent.</string>
             </property>
            </widget>
           </item>
@@ -4240,6 +4416,11 @@ discrepancy (bases):</string>
               <width>16</width>
               <height>16</height>
              </size>
+            </property>
+            <property name="toolTip">
+             <string>Bandage will not attempt to find query paths for BLAST queries with more hits than this setting. BLAST query path searches can be very slow when there are too many hits, so this setting prevents performance problems.&lt;br&gt;&lt;br&gt;
+                                                 Set to 0 to turn off all BLAST query path finding.&lt;br&gt;&lt;br&gt;
+                                                 Set to a larger value to enable query path searches for BLAST queries with many hits (can be slow).</string>
             </property>
            </widget>
           </item>

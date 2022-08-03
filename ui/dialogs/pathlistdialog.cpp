@@ -60,8 +60,6 @@ PathListDialog::PathListDialog(const AssemblyGraph &graph,
     ui->pathsView->horizontalHeader()->setStretchLastSection(true);
 
     connect(ui->nodeEdit, &QLineEdit::editingFinished, this, &PathListDialog::refineByNode);
-    ui->refineInfoText->setInfoText("Refine path list to include only those that contain ANY of the entered nodes\n"
-                                    "If a single node is selected, its position is shown as well");
 }
 
 PathListDialog::~PathListDialog() {

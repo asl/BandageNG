@@ -115,8 +115,6 @@ MainWindow::MainWindow(QString fileToLoadOnStartup, bool drawGraphAfterLoad) :
     m_scene = new BandageGraphicsScene(this);
     g_graphicsView->setScene(m_scene);
 
-    setInfoTexts();
-
     //Nothing is selected yet, so this will hide the appropriate labels.
     selectionChanged();
 
@@ -693,11 +691,11 @@ void MainWindow::graphScopeChanged()
         setDepthRangeWidgetVisibility(false);
         setPathSelectionWidgetVisibility(false);
 
-        ui->nodeDistanceInfoText->setInfoText("Nodes will be drawn if they are specified in the above list or are "
+        ui->nodeDistanceInfoText->setToolTip("<html>Nodes will be drawn if they are specified in the above list or are "
                                               "within this many steps of those nodes.<br><br>"
                                               "A value of 0 will result in only the specified nodes being drawn. "
                                               "A large value will result in large sections of the graph around "
-                                              "the specified nodes being drawn.");
+                                              "the specified nodes being drawn.</html>");
 
         ui->graphDrawingGridLayout->addWidget(ui->startingNodesInfoText, 1, 0, 1, 1);
         ui->graphDrawingGridLayout->addWidget(ui->startingNodesLabel, 1, 1, 1, 1);
@@ -724,11 +722,11 @@ void MainWindow::graphScopeChanged()
         setDepthRangeWidgetVisibility(false);
         setPathSelectionWidgetVisibility(true);
 
-        ui->nodeDistanceInfoText->setInfoText("Nodes will be drawn if they are specified in the above list or are "
+        ui->nodeDistanceInfoText->setToolTip("<html>Nodes will be drawn if they are specified in the above list or are "
                                               "within this many steps of those nodes.<br><br>"
                                               "A value of 0 will result in only the specified nodes being drawn. "
                                               "A large value will result in large sections of the graph around "
-                                              "the specified nodes being drawn.");
+                                              "the specified nodes being drawn.</html>");
 
         ui->graphDrawingGridLayout->addWidget(ui->pathSelectionInfoText, 1, 0, 1, 1);
         ui->graphDrawingGridLayout->addWidget(ui->pathSelectionLabel,    1, 1, 1, 1);
@@ -752,11 +750,11 @@ void MainWindow::graphScopeChanged()
         setDepthRangeWidgetVisibility(false);
         setPathSelectionWidgetVisibility(false);
 
-        ui->nodeDistanceInfoText->setInfoText("Nodes will be drawn if they contain a BLAST hit or are within this "
+        ui->nodeDistanceInfoText->setToolTip("<html>Nodes will be drawn if they contain a BLAST hit or are within this "
                                               "many steps of nodes with a BLAST hit.<br><br>"
                                               "A value of 0 will result in only nodes with BLAST hits being drawn. "
                                               "A large value will result in large sections of the graph around "
-                                              "nodes with BLAST hits being drawn.");
+                                              "nodes with BLAST hits being drawn.</html>");
 
         ui->graphDrawingGridLayout->addWidget(ui->nodeDistanceInfoText, 1, 0, 1, 1);
         ui->graphDrawingGridLayout->addWidget(ui->nodeDistanceLabel, 1, 1, 1, 1);
@@ -1792,134 +1790,6 @@ void MainWindow::blastQueryChanged()
     g_graphicsView->viewport()->update();
 }
 
-
-void MainWindow::setInfoTexts()
-{
-    QString control = "Ctrl";
-    QString settingsDialogTitle = "settings";
-#ifdef Q_OS_MAC
-    QString command(QChar(0x2318));
-    control = command;
-    settingsDialogTitle = "preferences";
-#endif
-
-    ui->graphInformationInfoText->setInfoText("Node codes, edge count and total length are calculated using single "
-                                              "nodes, not double nodes.<br><br>"
-                                              "For example, node 5+ and node 5- would only be counted once.");
-    ui->graphScopeInfoText->setInfoText("This controls how much of the assembly graph will be drawn:<ul>"
-                                        "<li>'Entire graph': all nodes in the graph will be drawn. This is "
-                                        "appropriate for smaller graphs, but large graphs may take "
-                                        "longer and use large amounts of memory to draw in their entirety.</li>"
-                                        "<li>'Around nodes': you can specify nodes and a distance to "
-                                        "limit the drawing to a smaller region of the graph.</li>"
-                                        "<li>'Around BLAST hits': if you have conducted a BLAST search "
-                                        "on this graph, this option will draw the region(s) of the graph "
-                                        "around nodes that contain hits.</li></ul>");
-    ui->startingNodesInfoText->setInfoText("Enter a comma-delimited list of node names here. This will "
-                                           "define which regions of the graph will be drawn.<br><br>"
-                                           "When in double mode, you can include '+' or '-' at the end "
-                                           "of the node name to specify which strand to draw. If you do "
-                                           "not include '+' or '-', then nodes for both strands will be drawn.");
-    ui->startingNodesMatchTypeInfoText->setInfoText("When 'Exact' match is used, the graph will only be drawn around nodes "
-                                                    "that exactly match your above input.<br><br>"
-                                                    "When 'Partial' match is used, the graph will be drawn around "
-                                                    "nodes where any part of their name matches your above input.");
-    ui->selectionSearchNodesMatchTypeInfoText->setInfoText("When 'Exact' match is used, nodes will only be selected if "
-                                                           "their name exactly matches your input above.<br><br>"
-                                                           "When 'Partial' match is used, nodes will be selected if any "
-                                                           "part of their name matches your input above.");
-    ui->nodeStyleInfoText->setInfoText("'Single' mode will only one node for each positive/negative pair. "
-                                       "This produces a simpler graph visualisation, but "
-                                       "strand-specific sequences and directionality will be less clear.<br><br>"
-                                       "'Double' mode will draw both nodes and their complement nodes. The nodes "
-                                       "will show directionality with an arrow head. They will initially be "
-                                       "drawn on top of each other, but can be manually moved to separate them.");
-    ui->drawGraphInfoText->setInfoText("Clicking this button will conduct the graph layout and draw the graph to "
-                                       "the screen. This process is fast for small graphs but can be "
-                                       "resource-intensive for large graphs.<br><br>"
-                                       "The layout algorithm uses a random seed, so each time this button is "
-                                       "clicked you will give different layouts of the same graph.");
-    ui->zoomInfoText->setInfoText("This value controls how large the graph appears in Bandage. The zoom level "
-                                  "can also be changed by:<ul>"
-                                  "<li>Holding the " + control + " key and using the mouse wheel over the graph.</li>"
-                                  "<li>Clicking on the graph display and then using the '+' and '-' keys.</li></ul>");
-    ui->nodeWidthInfoText->setInfoText("This is the average width for each node. The exact width for each node is "
-                                       "also influenced by the node's depth. The effect of depth on width "
-                                       "can be adjusted in Bandage " + settingsDialogTitle + ".");
-    ui->nodeColourInfoText->setInfoText("This controls the colour of the nodes in the graph:<ul>"
-                                        "<li>'Random colours': Nodes will be coloured randomly. Each time this is "
-                                        "selected, new random colours will be chosen. Negative nodes (visible "
-                                        "in 'Double' mode) will be a darker shade of their complement positive "
-                                        "nodes.</li>"
-                                        "<li>'Uniform colour': For graphs drawn with the 'Entire graph' scope, all "
-                                        "nodes will be the same colour. For graphs drawn with the 'Around nodes' "
-                                        "scope, your specified nodes will be drawn in a separate colour. For "
-                                        "graphs drawn with the 'Around BLAST hits' scope, nodes with BLAST hits "
-                                        "will be drawn in a separate colour.</li>"
-                                        "<li>'Colour by depth': Node colours will be defined by their "
-                                        "depth. The details of this relationship are configurable in "
-                                        "Bandage " + settingsDialogTitle + ".</li>"
-                                        "<li>'BLAST hits (rainbow)': Nodes will be drawn in a light grey colour "
-                                        "and BLAST hits for the currently selected query will be drawn using a "
-                                        "rainbow. Red indicates the start of the query sequence and violet "
-                                        "indicates the end.</li>"
-                                        "<li>'BLAST hits (solid)': Nodes will be drawn in a light grey colour "
-                                        "and BLAST hits for the currently selected query will be drawn using "
-                                        "the query's colour. Query colours can be specified in the 'Create/view"
-                                        "BLAST search' window.</li>"
-                                        "<li>'Colour by contiguity': This option will display a 'Determine "
-                                        "contiguity button. When pressed, the nodes will be coloured based "
-                                        "on their contiguity with the selected node(s).</li>"
-                                        "<li>'Custom colours': Nodes will be coloured using colours of your "
-                                        "choice. Select one or more nodes and then click the 'Set colour' button "
-                                        "to define their colour.</li></ul>"
-                                        "See the 'Colours' section of the Bandage " + settingsDialogTitle + " "
-                                        "to control various colouring options.");
-    ui->contiguityInfoText->setInfoText("Select one or more nodes and then click this button. Bandage will "
-                                        "then colour which other nodes in the graph are likely to be contiguous "
-                                        "with your selected node(s).");
-    ui->nodeLabelsInfoText->setInfoText("Tick any of the node labelling options to display those labels over "
-                                        "nodes in the graph.<br><br>"
-                                        "'Name', 'Length' and 'Depth' labels are created automatically. "
-                                        "'Custom' labels must be assigned by clicking the 'Set "
-                                        "label' button when one or more nodes are selected.<br><br>"
-                                        "When 'BLAST hits' labels are shown, they are displayed over any "
-                                        "BLAST hits present in the node.<br><br>"
-                                        "The 'CSV data' option allows you to import custom labels. To use this, "
-                                        "you must first load a CSV file (using the 'Load CSV label data' item in "
-                                        "the 'File' menu) which contains the node names in the first column and "
-                                        "custom labels in subsequent columns. The CSV file must also contain a "
-                                        "header row.");
-    ui->nodeFontInfoText->setInfoText("Click the 'Font' button to choose the font used for node labels. The "
-                                      "colour of the font is configurable in Bandage's " + settingsDialogTitle + ".<br><br>"
-                                      "Ticking 'Text outline' will surround the text with a white outline. "
-                                      "This can help to make text more readable, but will obscure more of the "
-                                      "underlying graph. The thickness of the text outline is configurable in "
-                                      "Bandage's " + settingsDialogTitle + ".");
-    ui->blastSearchInfoText->setInfoText("Click this button to open a dialog where a BLAST search for one "
-                                         "or more queries can be carried out on the graph's nodes.<br><br>"
-                                         "After a BLAST search is complete, it will be possible to use the "
-                                         "'Around BLAST hits' graph scope and the 'BLAST "
-                                         "hits' colour modes.");
-    ui->blastQueryInfoText->setInfoText("After a BLAST search is completed, you can select a query here for use "
-                                        "with the 'Around BLAST hits' graph scope and the 'BLAST "
-                                        "hits' colour modes.");
-    ui->selectionSearchInfoText->setInfoText("Type a comma-delimited list of one or mode node numbers and then click "
-                                             "the 'Find node(s)' button to search for nodes in the graph. "
-                                             "If the search is successful, the view will zoom to the found nodes "
-                                             "and they will be selected.");
-    ui->setColourAndLabelInfoText->setInfoText("Custom colours and labels can be applied to selected nodes using "
-                                               "these buttons. They will only be visible when the colouring "
-                                               "mode is set to 'Custom colours' and the 'Custom' label option "
-                                               "is ticked.");
-    ui->minDepthInfoText->setInfoText("This is the lower bound for the depth range. Nodes with a read "
-                                          "depth less than this value will not be drawn.");
-    ui->maxDepthInfoText->setInfoText("This is the upper bound for the depth range. Nodes with a read "
-                                          "depth greater than this value will not be drawn.");
-}
-
-
-
 void MainWindow::setUiState(UiState uiState)
 {
     m_uiState = uiState;
@@ -1981,30 +1851,25 @@ void MainWindow::showHidePanels()
 }
 
 
-void MainWindow::bringSelectedNodesToFront()
-{
+void MainWindow::bringSelectedNodesToFront() {
     m_scene->blockSignals(true);
 
     std::vector<DeBruijnNode *> selectedNodes = m_scene->getSelectedNodes();
-    if (selectedNodes.empty())
-    {
-        QMessageBox::information(this, "No nodes selected", "You must first select nodes in the graph before using "
-                                                            "the 'Bring selected nodes to front' function.");
+    if (selectedNodes.empty()) {
+        QMessageBox::information(this, "No nodes selected",
+                                 "You must first select nodes in the graph before using "
+                                      "the 'Bring selected nodes to front' function.");
         return;
     }
 
     double topZ = m_scene->getTopZValue();
     double newZ = topZ + 1.0;
 
-    for (auto & selectedNode : selectedNodes)
-    {
-        GraphicsItemNode * graphicsItemNode = selectedNode->getGraphicsItemNode();
-
-        if (graphicsItemNode == nullptr)
-            continue;
-
-        graphicsItemNode->setZValue(newZ);
+    for (auto *selectedNode : selectedNodes) {
+        if (GraphicsItemNode * graphicsItemNode = selectedNode->getGraphicsItemNode())
+            graphicsItemNode->setZValue(newZ);
     }
+
     m_scene->blockSignals(false);
     g_graphicsView->viewport()->update();
 }
@@ -2115,41 +1980,29 @@ void MainWindow::selectNodesWithDeadEnds()
 }
 
 
-void MainWindow::selectAll()
-{
+void MainWindow::selectAll() {
     m_scene->blockSignals(true);
-    QList<QGraphicsItem *> allItems = m_scene->items();
-    for (auto item : allItems)
-    {
+    for (auto *item : m_scene->items())
         item->setSelected(true);
-    }
     m_scene->blockSignals(false);
     g_graphicsView->viewport()->update();
     selectionChanged();
 }
 
 
-void MainWindow::selectNone()
-{
+void MainWindow::selectNone() {
     m_scene->blockSignals(true);
-    QList<QGraphicsItem *> allItems = m_scene->items();
-    for (auto item : allItems)
-    {
+    for (auto *item : m_scene->items())
         item->setSelected(false);
-    }
     m_scene->blockSignals(false);
     g_graphicsView->viewport()->update();
     selectionChanged();
 }
 
-void MainWindow::invertSelection()
-{
+void MainWindow::invertSelection() {
     m_scene->blockSignals(true);
-    QList<QGraphicsItem *> allItems = m_scene->items();
-    for (auto item : allItems)
-    {
+    for (auto item : m_scene->items())
         item->setSelected(!item->isSelected());
-    }
     m_scene->blockSignals(false);
     g_graphicsView->viewport()->update();
     selectionChanged();
@@ -2206,8 +2059,7 @@ void MainWindow::selectBasedOnContiguity(ContiguityStatus targetContiguityStatus
     m_scene->blockSignals(true);
     m_scene->clearSelection();
 
-    for (auto &entry : g_assemblyGraph->m_deBruijnGraphNodes) {
-        DeBruijnNode * node = entry;
+    for (auto *node : g_assemblyGraph->m_deBruijnGraphNodes) {
         GraphicsItemNode * graphicsItemNode = node->getGraphicsItemNode();
 
         if (graphicsItemNode == nullptr)
@@ -2216,8 +2068,7 @@ void MainWindow::selectBasedOnContiguity(ContiguityStatus targetContiguityStatus
         //For single nodes, choose the greatest contiguity status of this
         //node and its complement.
         ContiguityStatus nodeContiguityStatus = node->getContiguityStatus();
-        if (!g_settings->doubleMode)
-        {
+        if (!g_settings->doubleMode) {
             ContiguityStatus twinContiguityStatus = node->getReverseComplement()->getContiguityStatus();
             if (twinContiguityStatus < nodeContiguityStatus)
                 nodeContiguityStatus = twinContiguityStatus;

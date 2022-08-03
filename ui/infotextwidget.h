@@ -20,23 +20,17 @@
 #define INFOTEXTWIDGET_H
 
 #include <QWidget>
-#include <QString>
 
 class InfoTextWidget : public QWidget
 {
     Q_OBJECT
 public:
     explicit InfoTextWidget(QWidget * parent);
-    explicit InfoTextWidget(QWidget * parent, const QString& infoText);
-
-    void setInfoText(const QString& infoText);
 
 protected:
-    void paintEvent(QPaintEvent *);
-    void mousePressEvent(QMouseEvent * event);
-    
-private:
-    QString m_infoText;
+    void paintEvent(QPaintEvent *) override;
+    void mousePressEvent(QMouseEvent * event) override;
+    bool event(QEvent *event) override;
 };
 
 #endif // INFOTEXTWIDGET_H

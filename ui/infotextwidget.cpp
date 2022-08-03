@@ -17,41 +17,44 @@
 
 
 #include "infotextwidget.h"
+
 #include <QPainter>
 #include <QToolTip>
 #include <QMouseEvent>
+#include <QRegularExpression>
 
-InfoTextWidget::InfoTextWidget(QWidget * parent) :
-    QWidget(parent)
-{
+InfoTextWidget::InfoTextWidget(QWidget * parent)
+ : QWidget(parent) {
     setFixedSize(16, 16);
     setMouseTracking(true);
 }
 
-InfoTextWidget::InfoTextWidget(QWidget * parent, const QString& infoText) :
-    QWidget(parent)
-{
-    setFixedSize(16, 16);
-    setMouseTracking(true);
-    setInfoText(infoText);
+bool InfoTextWidget::event(QEvent *event) {
+    if (event->type() == QEvent::ToolTipChange) {
+#ifdef Q_OS_MAC
+        QString control(QChar(0x2318));
+        QString settingsDialogTitle = "preferences";
+#else
+        QString control = "Ctrl";
+    QString settingsDialogTitle = "settings";
+#endif
+        QString toolTip = this->toolTip()
+                .replace(QRegularExpression(QStringLiteral("%SETTINGS%")), settingsDialogTitle)
+                .replace(QRegularExpression(QStringLiteral("%CONTROL%")), control);
+        if (toolTip != this->toolTip()) {
+            setToolTip(toolTip);
+            return true;
+        }
+    }
+
+    return QWidget::event(event);
 }
 
-void InfoTextWidget::setInfoText(const QString& infoText)
-{
-    //Convert text to a rich text format, which will let QToolTip wrap the text.
-    m_infoText = "<html>" + infoText + "</html>";
-}
-
-
-void InfoTextWidget::paintEvent(QPaintEvent * /*event*/)
-{
+void InfoTextWidget::paintEvent(QPaintEvent * /*event*/) {
     QPainter painter(this);
 
-    QPixmap infoIcon;
-    if (isEnabled())
-        infoIcon = QPixmap(":/icons/information-256.png");
-    else
-        infoIcon = QPixmap(":/icons/information-256-inactive.png");
+    QPixmap infoIcon(isEnabled() ?
+                     ":/icons/information-256.png" : ":/icons/information-256-inactive.png");
 
     //This scaling using the device pixel ratio was necessary to make the labels look right on a MacBook retina display.
     double scaledWidth = width() * devicePixelRatio();
@@ -69,7 +72,6 @@ void InfoTextWidget::paintEvent(QPaintEvent * /*event*/)
 }
 
 
-void InfoTextWidget::mousePressEvent(QMouseEvent * event)
-{
-    QToolTip::showText(event->globalPosition().toPoint(), m_infoText);
+void InfoTextWidget::mousePressEvent(QMouseEvent * event) {
+    QToolTip::showText(event->globalPosition().toPoint(), toolTip());
 }

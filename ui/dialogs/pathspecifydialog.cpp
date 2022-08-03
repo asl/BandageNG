@@ -43,11 +43,6 @@ PathSpecifyDialog::PathSpecifyDialog(QWidget *parent) :
     g_memory->pathDialogIsVisible = true;
     checkPathValidity();
 
-    ui->circularPathInfoText->setInfoText("Tick this box to indicate that the path is circular, i.e. there is an edge connecting the "
-                                          "last node in the list to the first.<br><br>"
-                                          "Circular paths must contain the entirety of their nodes and therefore cannot contain "
-                                          "start/end positions.");
-
     connect(ui->pathTextEdit, SIGNAL(textChanged()), this, SLOT(checkPathValidity()));
     connect(ui->pathTextEdit, SIGNAL(textChanged()), g_graphicsView->viewport(), SLOT(update()));
     connect(ui->circularPathCheckBox, SIGNAL(toggled(bool)), this, SLOT(checkPathValidity()));

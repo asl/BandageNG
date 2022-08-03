@@ -44,7 +44,7 @@ MyProgressDialog::MyProgressDialog(QWidget * parent, const QString& message, boo
     setFixedHeight(sizeHint().height());
     setFixedWidth(sizeHint().width() * 1.2);
 
-    ui->cancelInfoText->setInfoText(cancelInfoText);
+    ui->cancelInfoText->setToolTip("<html>" + cancelInfoText + "</html>");
 
     connect(ui->cancelButton, SIGNAL(clicked()), this, SLOT(cancel()));
 }

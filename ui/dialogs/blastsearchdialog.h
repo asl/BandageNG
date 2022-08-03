@@ -58,7 +58,7 @@ private:
 
     void setUiStep(BlastUiState blastUiState);
     void clearBlastHits();
-    void setInfoTexts();
+
     void loadBlastQueriesFromFastaFile(const QString& fullFileName);
     void buildBlastDatabase(bool separateThread);
     void runBlastSearches(bool separateThread);
