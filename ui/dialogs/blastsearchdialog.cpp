@@ -19,37 +19,39 @@
 #include "blastsearchdialog.h"
 #include "ui_blastsearchdialog.h"
 
-#include <QFileDialog>
-#include <QFile>
-#include <QString>
+#include "enteroneblastquerydialog.h"
+
 #include "blast/blasthit.h"
 #include "blast/blastquery.h"
-#include <QStandardItemModel>
-#include "program/globals.h"
-#include "program/settings.h"
-#include "program/memory.h"
-#include "graph/debruijnnode.h"
-#include <QMessageBox>
-#include <QDir>
-#include "enteroneblastquerydialog.h"
-#include "graph/assemblygraph.h"
 #include "blast/blastsearch.h"
-#include <QProcessEnvironment>
-#include <QThread>
 #include "blast/buildblastdatabaseworker.h"
 #include "blast/runblastsearchworker.h"
+
+#include "graph/debruijnnode.h"
+#include "graph/assemblygraph.h"
+#include "graph/annotationsmanager.h"
+
 #include "myprogressdialog.h"
-#include "ui/widgets/colourbutton.h"
-#include <QSet>
 #include "tablewidgetitemname.h"
 #include "tablewidgetitemint.h"
 #include "tablewidgetitemdouble.h"
 #include "tablewidgetitemshown.h"
-#include <QCheckBox>
+#include "ui/widgets/colourbutton.h"
 #include "querypathspushbutton.h"
 #include "querypathsdialog.h"
 #include "blasthitfiltersdialog.h"
-#include "graph/annotationsmanager.h"
+
+#include "program/globals.h"
+#include "program/settings.h"
+#include "program/memory.h"
+
+#include <QFileDialog>
+#include <QFile>
+#include <QString>
+#include <QStandardItemModel>
+#include <QMessageBox>
+#include <QSet>
+#include <QCheckBox>
 
 BlastSearchDialog::BlastSearchDialog(QWidget *parent, const QString& autoQuery) :
     QDialog(parent),
@@ -435,11 +437,11 @@ void BlastSearchDialog::loadBlastQueriesFromFastaFileButtonClicked()
 {
     QStringList fullFileNames = QFileDialog::getOpenFileNames(this, "Load queries FASTA", g_memory->rememberedPath);
 
-    if (!fullFileNames.empty()) //User did not hit cancel
-    {
-        for (const auto & fullFileName : fullFileNames)
-            loadBlastQueriesFromFastaFile(fullFileName);
-    }
+    if (fullFileNames.empty()) //User did hit cancel
+        return;
+
+    for (const auto & fullFileName : fullFileNames)
+        loadBlastQueriesFromFastaFile(fullFileName);
 }
 
 void BlastSearchDialog::loadBlastQueriesFromFastaFile(const QString& fullFileName)
@@ -458,7 +460,7 @@ void BlastSearchDialog::loadBlastQueriesFromFastaFile(const QString& fullFileNam
     }
 
     progress->close();
-    delete progress;
+    progress->deleteLater();
 
     if (queriesLoaded == 0)
         QMessageBox::information(this, "No queries loaded", "No queries could be loaded from the specified file.");
