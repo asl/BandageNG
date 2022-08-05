@@ -19,8 +19,11 @@
 #include "blastqueries.h"
 #include "blastsearch.h"
 
+#include "graph/assemblygraph.h"
+
 #include "program/globals.h"
 #include "program/settings.h"
+
 #include <QTextStream>
 #include <unordered_set>
 
@@ -44,8 +47,7 @@ BlastQuery *BlastQueries::getQueryFromName(QString queryName) {
 }
 
 
-void BlastQueries::addQuery(BlastQuery * newQuery)
-{
+void BlastQueries::addQuery(BlastQuery * newQuery) {
     newQuery->setName(getUniqueName(newQuery->getName()));
 
     //Give the new query a colour
@@ -156,4 +158,15 @@ bool BlastQueries::isQueryPresent(const BlastQuery * query) const {
 void BlastQueries::findQueryPaths() {
     for (auto *query : m_queries)
         query->findQueryPaths();
+}
+
+BlastHits BlastQueries::allHits() const {
+    BlastHits res;
+
+    for (const auto *query : m_queries) {
+        const auto &hits = query->getHits();
+        res.insert(res.end(), hits.begin(), hits.end());
+    }
+
+    return res;
 }

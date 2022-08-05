@@ -572,38 +572,44 @@ void BandageTests::blastSearchFilters()
 
     //First do the search with no filters
     g_blastSearch->doAutoBlastSearch();
-    int unfilteredHitCount = g_blastSearch->m_allHits.size();
+    auto allHits = g_blastSearch->m_blastQueries.allHits();
+    int unfilteredHitCount = allHits.size();
 
     //Now filter by e-value.
     g_settings->blastEValueFilter.on = true;
     g_settings->blastEValueFilter = SciNot(1.0, -5);
     g_blastSearch->doAutoBlastSearch();
-    QCOMPARE(g_blastSearch->m_allHits.size(), 14);
-    QCOMPARE(g_blastSearch->m_allHits.size() < unfilteredHitCount, true);
+    allHits = g_blastSearch->m_blastQueries.allHits();
+    QCOMPARE(allHits.size(), 14);
+    QCOMPARE(allHits.size() < unfilteredHitCount, true);
 
     //Now add a bit score filter.
     g_settings->blastBitScoreFilter.on = true;
     g_settings->blastBitScoreFilter = 100.0;
     g_blastSearch->doAutoBlastSearch();
-    QCOMPARE(g_blastSearch->m_allHits.size(), 9);
+    allHits = g_blastSearch->m_blastQueries.allHits();
+    QCOMPARE(allHits.size(), 9);
 
     //Now add an alignment length filter.
     g_settings->blastAlignmentLengthFilter.on = true;
     g_settings->blastAlignmentLengthFilter = 100;
     g_blastSearch->doAutoBlastSearch();
-    QCOMPARE(g_blastSearch->m_allHits.size(), 8);
+    allHits = g_blastSearch->m_blastQueries.allHits();
+    QCOMPARE(allHits.size(), 8);
 
     //Now add an identity filter.
     g_settings->blastIdentityFilter.on = true;
     g_settings->blastIdentityFilter = 50.0;
     g_blastSearch->doAutoBlastSearch();
-    QCOMPARE(g_blastSearch->m_allHits.size(), 7);
+    allHits = g_blastSearch->m_blastQueries.allHits();
+    QCOMPARE(allHits.size(), 7);
 
     //Now add a query coverage filter.
     g_settings->blastQueryCoverageFilter.on = true;
     g_settings->blastQueryCoverageFilter = 90.0;
     g_blastSearch->doAutoBlastSearch();
-    QCOMPARE(g_blastSearch->m_allHits.size(), 5);
+    allHits = g_blastSearch->m_blastQueries.allHits();
+    QCOMPARE(allHits.size(), 5);
 }
 
 

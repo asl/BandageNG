@@ -33,6 +33,8 @@ enum QuerySequenceType {
     PROTEIN
 };
 
+using BlastHits = std::vector<std::shared_ptr<BlastHit>>;
+
 class BlastQuery : public QObject
 {
     Q_OBJECT
@@ -58,7 +60,7 @@ public:
     bool isShown() const {return m_shown;}
     bool isHidden() const {return !m_shown;}
 
-    //MODIFIERS
+    // MODIFIERS
     void setName(QString newName) {m_name = std::move(newName);}
     void addHit(std::shared_ptr<BlastHit> newHit) {m_hits.emplace_back(std::move(newHit));}
     void clearSearchResults();
@@ -72,12 +74,12 @@ public slots:
 private:
     QString m_name;
     QString m_sequence;
-    std::vector<std::shared_ptr<BlastHit>> m_hits;
-    bool m_searchedFor;
-    QColor m_colour;
+    BlastHits m_hits;
     QuerySequenceType m_sequenceType;
-    std::vector<BlastQueryPath> m_paths;
+    bool m_searchedFor;
     bool m_shown;
+    QColor m_colour;
+    std::vector<BlastQueryPath> m_paths;
 
     void autoSetSequenceType();
 };

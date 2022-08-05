@@ -20,6 +20,7 @@
 #define BUILDBLASTDATABASEWORKER_H
 
 #include <QObject>
+#include <QTemporaryDir>
 
 class AssemblyGraph;
 class QProcess;
@@ -34,13 +35,16 @@ class BuildBlastDatabaseWorker : public QObject
     Q_OBJECT
 
 public:
-    BuildBlastDatabaseWorker(QString makeblastdbCommand, const AssemblyGraph &graph);
+    BuildBlastDatabaseWorker(QString makeblastdbCommand, const AssemblyGraph &graph,
+                             const QTemporaryDir &workdir);
     QString m_error;
 
 private:
     QString m_makeblastdbCommand;
-    QProcess *m_makeblastdb;
     const AssemblyGraph &m_graph;
+    const QTemporaryDir &m_workdir;
+
+    QProcess *m_makeblastdb = nullptr;
     bool m_cancelBuildBlastDatabase = false;
 
 public slots:

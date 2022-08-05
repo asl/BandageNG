@@ -49,13 +49,13 @@ public:
     int getQueryPathCount() const ;
     int getQueryCount(QuerySequenceType sequenceType) const ;
     bool isQueryPresent(const BlastQuery * query) const;
+    BlastHits allHits() const;
 
     void findQueryPaths();
-
-    std::vector<QColor> m_presetColours;
-
 private:
     QString getUniqueName(QString name);
+
+    std::vector<QColor> m_presetColours;
 };
 
 #endif // BLASTQUERIES_H

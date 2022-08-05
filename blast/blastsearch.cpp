@@ -42,125 +42,14 @@ BlastSearch::~BlastSearch()
     m_blastQueries.clearAllQueries();
 }
 
-void BlastSearch::clearBlastHits()
-{
-    m_allHits.clear();
+void BlastSearch::clearBlastHits() {
     m_blastQueries.clearSearchResults();
 }
 
-void BlastSearch::cleanUp()
-{
+void BlastSearch::cleanUp() {
     clearBlastHits();
     m_blastQueries.clearAllQueries();
     emptyTempDirectory();
-}
-
-static QString getNodeNameFromString(const QString &nodeString) {
-    QStringList nodeStringParts = nodeString.split("_");
-
-    // The node string format should look like this:
-    // NODE_nodename_length_123_cov_1.23
-    if (nodeStringParts.size() < 6)
-        return "";
-
-    if (nodeStringParts.size() == 6)
-        return nodeStringParts[1];
-
-    // If the code got here, there are more than 6 parts.  This means there are
-    // underscores in the node name (happens a lot with Trinity graphs).  So we
-    // need to pull out the parts which constitute the name.
-    int underscoreCount = nodeStringParts.size() - 6;
-    QString nodeName = "";
-    for (int i = 0; i <= underscoreCount; ++i) {
-        nodeName += nodeStringParts[1+i];
-        if (i < underscoreCount)
-            nodeName += "_";
-    }
-
-    return nodeName;
-}
-
-// This function uses the contents of blastOutput (the raw output from the
-// BLAST search) to construct the BlastHit objects.
-// It looks at the filters to possibly exclude hits which fail to meet user-
-// defined thresholds.
-void BlastSearch::buildHitsFromBlastOutput(QString blastOutput)
-{
-    QStringList blastHitList = blastOutput.split("\n", Qt::SkipEmptyParts);
-
-    for (const auto &hitString : blastHitList) {
-        QStringList alignmentParts = hitString.split('\t');
-
-        if (alignmentParts.size() < 12)
-            continue;
-
-        QString queryName = alignmentParts[0];
-        QString nodeLabel = alignmentParts[1];
-        double percentIdentity = alignmentParts[2].toDouble();
-        int alignmentLength = alignmentParts[3].toInt();
-        int numberMismatches = alignmentParts[4].toInt();
-        int numberGapOpens = alignmentParts[5].toInt();
-        int queryStart = alignmentParts[6].toInt();
-        int queryEnd = alignmentParts[7].toInt();
-        int nodeStart = alignmentParts[8].toInt();
-        int nodeEnd = alignmentParts[9].toInt();
-        SciNot eValue(alignmentParts[10]);
-        double bitScore = alignmentParts[11].toDouble();
-
-        //Only save BLAST hits that are on forward strands.
-        if (nodeStart > nodeEnd)
-            continue;
-
-        QString nodeName = getNodeNameFromString(nodeLabel);
-        DeBruijnNode *node = nullptr;
-        auto it = g_assemblyGraph->m_deBruijnGraphNodes.find(nodeName.toStdString());
-        if (it == g_assemblyGraph->m_deBruijnGraphNodes.end())
-            continue;
-
-        node = it.value();
-
-        BlastQuery * query = m_blastQueries.getQueryFromName(queryName);
-        if (query == nullptr)
-            continue;
-
-        // Check the user-defined filters.
-        if (g_settings->blastAlignmentLengthFilter.on &&
-            alignmentLength < g_settings->blastAlignmentLengthFilter)
-            continue;
-
-        if (g_settings->blastIdentityFilter.on &&
-            percentIdentity < g_settings->blastIdentityFilter)
-            continue;
-
-        if (g_settings->blastEValueFilter.on &&
-            eValue > g_settings->blastEValueFilter)
-            continue;
-
-        if (g_settings->blastBitScoreFilter.on &&
-            bitScore < g_settings->blastBitScoreFilter)
-            continue;
-
-        auto hit = std::make_shared<BlastHit>(query, node, percentIdentity, alignmentLength,
-                                              numberMismatches, numberGapOpens, queryStart, queryEnd,
-                                              nodeStart, nodeEnd, eValue, bitScore);
-
-        if (g_settings->blastQueryCoverageFilter.on) {
-            double hitCoveragePercentage = 100.0 * hit->getQueryCoverageFraction();
-            if (hitCoveragePercentage < g_settings->blastQueryCoverageFilter)
-                continue;
-        }
-
-        m_allHits.emplace_back(hit);
-        query->addHit(std::move(hit));
-    }
-}
-
-
-//This function looks at each BLAST query and tries to find a path through
-//the graph which covers the maximal amount of the query.
-void BlastSearch::findQueryPaths()
-{
-    m_blastQueries.findQueryPaths();
 }
 
 #ifdef Q_OS_WIN32
@@ -220,18 +109,7 @@ bool BlastSearch::findProgram(const QString &programName, QString * command)
 
 
 void BlastSearch::clearSomeQueries(const std::vector<BlastQuery *> &queriesToRemove) {
-    // Remove any hits that are for queries that will be deleted.
-    std::unordered_set<BlastQuery*> toRemove(queriesToRemove.begin(), queriesToRemove.end());
-
-    for (auto it = m_allHits.begin(); it != m_allHits.end(); ) {
-        BlastQuery * hitQuery = (*it)->m_query;
-        if (toRemove.count(hitQuery))
-            it = m_allHits.erase(it);
-        else
-            ++it;
-    }
-
-    //Now actually delete the queries.
+    // Now actually delete the queries.
     m_blastQueries.clearSomeQueries(queriesToRemove);
 }
 
@@ -253,7 +131,8 @@ QString BlastSearch::doAutoBlastSearch() {
     if (!findProgram("makeblastdb", &makeblastdbCommand))
         return "Error: The program makeblastdb was not found.  Please install NCBI BLAST to use this feature.";
 
-    BuildBlastDatabaseWorker buildBlastDatabaseWorker(makeblastdbCommand, *g_assemblyGraph);
+    BuildBlastDatabaseWorker buildBlastDatabaseWorker(makeblastdbCommand, *g_assemblyGraph,
+                                                      m_tempDirectory);
     if (!buildBlastDatabaseWorker.buildBlastDatabase())
         return buildBlastDatabaseWorker.m_error;
 
@@ -266,8 +145,8 @@ QString BlastSearch::doAutoBlastSearch() {
     if (!findProgram("tblastn", &tblastnCommand))
         return "Error: The program tblastn was not found.  Please install NCBI BLAST to use this feature.";
 
-    RunBlastSearchWorker runBlastSearchWorker(blastnCommand, tblastnCommand, g_settings->blastSearchParameters);
-    if (!runBlastSearchWorker.runBlastSearch())
+    RunBlastSearchWorker runBlastSearchWorker(blastnCommand, tblastnCommand, g_settings->blastSearchParameters, g_blastSearch->m_tempDirectory);
+    if (!runBlastSearchWorker.runBlastSearch(g_blastSearch->m_blastQueries))
         return runBlastSearchWorker.m_error;
 
     blastQueryChanged("all");

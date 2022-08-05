@@ -25,8 +25,6 @@
 #include <QAbstractTableModel>
 #include <QStyledItemDelegate>
 
-#include "program/globals.h"
-
 class BlastQuery;
 class BlastQueries;
 class BlastHit;
@@ -84,7 +82,7 @@ public:
 class HitsListModel : public QAbstractTableModel {
     Q_OBJECT
 public:
-    explicit HitsListModel(BlastHits &hits,
+    explicit HitsListModel(BlastQueries &queries,
                            QObject *parent = nullptr);
 
     int rowCount(const QModelIndex &) const override;
@@ -92,11 +90,13 @@ public:
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
     QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
 
-    void update() { startUpdate(); endUpdate(); }
+    void update(BlastQueries &queries);
+    void clear() { m_hits.clear(); }
     void startUpdate() { beginResetModel(); }
     void endUpdate() { endResetModel(); }
+    bool empty() const { return m_hits.empty(); }
 
-    BlastHits &m_hits;
+    BlastHits m_hits;
 };
 
 class BlastSearchDialog : public QDialog {

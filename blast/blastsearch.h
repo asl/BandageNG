@@ -35,8 +35,6 @@
 class QProcess;
 
 
-using BlastHits = std::vector<std::shared_ptr<BlastHit>>;
-
 class BlastSearch {
 public:
     explicit BlastSearch(const QDir &workDir = QDir::temp());
@@ -44,7 +42,6 @@ public:
 
     BlastQueries m_blastQueries;
     QTemporaryDir m_tempDirectory;
-    BlastHits m_allHits;
 
     static bool findProgram(const QString& programName, QString * command);
     int loadBlastQueriesFromFastaFile(QString fullFileName);
@@ -53,8 +50,7 @@ public:
 
     void clearBlastHits();
     void cleanUp();
-    void buildHitsFromBlastOutput(QString blastOutput);
-    void findQueryPaths();
+
     void clearSomeQueries(const std::vector<BlastQuery *> &queriesToRemove);
     void emptyTempDirectory() const;
     QString doAutoBlastSearch();

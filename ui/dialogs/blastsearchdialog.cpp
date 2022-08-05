@@ -100,7 +100,7 @@ BlastSearchDialog::BlastSearchDialog(QWidget *parent, const QString& autoQuery) 
     connect(queryPathsDelegate, &PathButtonDelegate::queryPathSelectionChanged,
             [this] { emit queryPathSelectionChanged(); });
 
-    m_hitsListModel = new HitsListModel(g_blastSearch->m_allHits, ui->blastHitsTable);
+    m_hitsListModel = new HitsListModel(g_blastSearch->m_blastQueries, ui->blastHitsTable);
     auto *proxyHModel = new QSortFilterProxyModel(ui->blastHitsTable);
     proxyHModel->setSourceModel(m_hitsListModel);
     ui->blastHitsTable->setModel(proxyHModel);
@@ -140,7 +140,7 @@ BlastSearchDialog::BlastSearchDialog(QWidget *parent, const QString& autoQuery) 
     }
 
     // If results already exist, display them and move to step 4.
-    if (!g_blastSearch->m_allHits.empty()) {
+    if (!m_hitsListModel->empty()) {
         updateTables();
         setUiStep(BLAST_SEARCH_COMPLETE);
     }
@@ -213,15 +213,15 @@ void BlastSearchDialog::clearBlastHits() {
 }
 
 void BlastSearchDialog::fillTablesAfterBlastSearch() {
-    if (g_blastSearch->m_allHits.empty())
-        QMessageBox::information(this, "No hits", "No BLAST hits were found for the given queries and parameters.");
-
     updateTables();
+
+    if (m_hitsListModel->empty())
+        QMessageBox::information(this, "No hits", "No BLAST hits were found for the given queries and parameters.");
 }
 
 void BlastSearchDialog::updateTables() {
     m_queriesListModel->update();
-    m_hitsListModel->update();
+    m_hitsListModel->update(g_blastSearch->m_blastQueries);
     ui->blastQueriesTable->resizeColumnsToContents();
     ui->blastHitsTable->resizeColumnsToContents();
 }
@@ -249,7 +249,7 @@ void BlastSearchDialog::buildBlastDatabase(bool separateThread) {
 
     if (separateThread) {
         m_buildBlastDatabaseThread = new QThread;
-        auto * buildBlastDatabaseWorker = new BuildBlastDatabaseWorker(m_makeblastdbCommand, *g_assemblyGraph);
+        auto * buildBlastDatabaseWorker = new BuildBlastDatabaseWorker(m_makeblastdbCommand, *g_assemblyGraph, g_blastSearch->m_tempDirectory);
         buildBlastDatabaseWorker->moveToThread(m_buildBlastDatabaseThread);
 
         connect(progress, SIGNAL(halt()), buildBlastDatabaseWorker, SLOT(cancel()));
@@ -262,7 +262,7 @@ void BlastSearchDialog::buildBlastDatabase(bool separateThread) {
 
         m_buildBlastDatabaseThread->start();
     } else {
-        BuildBlastDatabaseWorker buildBlastDatabaseWorker(m_makeblastdbCommand, *g_assemblyGraph);
+        BuildBlastDatabaseWorker buildBlastDatabaseWorker(m_makeblastdbCommand, *g_assemblyGraph, g_blastSearch->m_tempDirectory);
         buildBlastDatabaseWorker.buildBlastDatabase();
         progress->close();
         delete progress;
@@ -385,11 +385,16 @@ void BlastSearchDialog::runBlastSearches(bool separateThread) {
 
     if (separateThread) {
         m_blastSearchThread = new QThread;
-        auto * runBlastSearchWorker = new RunBlastSearchWorker(m_blastnCommand, m_tblastnCommand, ui->parametersLineEdit->text().simplified());
+        auto * runBlastSearchWorker = new RunBlastSearchWorker(m_blastnCommand, m_tblastnCommand,
+                                                               ui->parametersLineEdit->text().simplified(),
+                                                               g_blastSearch->m_tempDirectory);
         runBlastSearchWorker->moveToThread(m_blastSearchThread);
 
         connect(progress, SIGNAL(halt()), runBlastSearchWorker, SLOT(cancel()));
-        connect(m_blastSearchThread, SIGNAL(started()), runBlastSearchWorker, SLOT(runBlastSearch()));
+        connect(m_blastSearchThread, &QThread::started,
+                [runBlastSearchWorker]() {
+                    runBlastSearchWorker->runBlastSearch(g_blastSearch->m_blastQueries);
+        });
         connect(runBlastSearchWorker, SIGNAL(finishedSearch(QString)), m_blastSearchThread, SLOT(quit()));
         connect(runBlastSearchWorker, SIGNAL(finishedSearch(QString)), runBlastSearchWorker, SLOT(deleteLater()));
         connect(runBlastSearchWorker, SIGNAL(finishedSearch(QString)), this, SLOT(runBlastSearchFinished(QString)));
@@ -398,8 +403,10 @@ void BlastSearchDialog::runBlastSearches(bool separateThread) {
 
         m_blastSearchThread->start();
     } else {
-        RunBlastSearchWorker runBlastSearchWorker(m_blastnCommand, m_tblastnCommand, ui->parametersLineEdit->text().simplified());
-        runBlastSearchWorker.runBlastSearch();
+        RunBlastSearchWorker runBlastSearchWorker(m_blastnCommand, m_tblastnCommand,
+                                                  ui->parametersLineEdit->text().simplified(),
+                                                  g_blastSearch->m_tempDirectory);
+        runBlastSearchWorker.runBlastSearch(g_blastSearch->m_blastQueries);
         progress->close();
         delete progress;
         runBlastSearchFinished(runBlastSearchWorker.m_error);
@@ -810,8 +817,10 @@ bool PathButtonDelegate::editorEvent(QEvent *event, QAbstractItemModel *model, c
     return QStyledItemDelegate::editorEvent(event, model, option, index);
 }
 
-HitsListModel::HitsListModel(BlastHits &hits, QObject *parent)
- : m_hits(hits) {}
+HitsListModel::HitsListModel(BlastQueries &queries, QObject *parent)
+ : QAbstractTableModel(parent) {
+    update(queries);
+}
 
 int HitsListModel::columnCount(const QModelIndex &) const {
     return int(HitsColumns::TotalHitColumns);
@@ -913,4 +922,13 @@ QVariant HitsListModel::headerData(int section, Qt::Orientation orientation, int
         case HitsColumns::BitScore:
             return "Bit\nscore";
     }
+}
+
+void HitsListModel::update(BlastQueries &queries) {
+    startUpdate();
+    clear();
+
+    m_hits = queries.allHits();
+
+    endUpdate();
 }

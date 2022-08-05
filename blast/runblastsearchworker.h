@@ -23,8 +23,10 @@
 
 #include <QObject>
 #include <QString>
+#include <QTemporaryDir>
 
 class QProcess;
+class BlastQueries;
 
 //This class carries out the task of running blastn and/or
 //tblastn.
@@ -36,19 +38,23 @@ class RunBlastSearchWorker : public QObject
     Q_OBJECT
 
 public:
-    RunBlastSearchWorker(QString blastnCommand, QString tblastnCommand, QString parameters);
+    RunBlastSearchWorker(QString blastnCommand, QString tblastnCommand, QString parameters, const QTemporaryDir &workdir);
     QString m_error;
 
 private:
     QString m_blastnCommand;
     QString m_tblastnCommand;
     QString m_parameters;
-    QProcess *m_blast;
+    const QTemporaryDir &m_tempDirectory;
+
+    QProcess *m_blast = nullptr;
     bool m_cancelRunBlastSearch = false;
-    QString runOneBlastSearch(QuerySequenceType sequenceType, bool * success);
+
+    QString runOneBlastSearch(QuerySequenceType sequenceType, const BlastQueries &queries,
+                              bool * success);
 
 public slots:
-    bool runBlastSearch();
+    bool runBlastSearch(BlastQueries &queries);
     void cancel();
 
 signals:

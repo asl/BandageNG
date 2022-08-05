@@ -19,28 +19,36 @@
 #include "runblastsearchworker.h"
 #include "blastsearch.h"
 
+#include "graph/assemblygraph.h"
+
 #include "program/globals.h"
+#include "program/settings.h"
 
 #include <QTemporaryFile>
 #include <QProcess>
 
-RunBlastSearchWorker::RunBlastSearchWorker(QString blastnCommand, QString tblastnCommand, QString parameters)
-        : m_blastnCommand(blastnCommand), m_tblastnCommand(tblastnCommand), m_parameters(parameters), m_blast(nullptr) {}
+RunBlastSearchWorker::RunBlastSearchWorker(QString blastnCommand, QString tblastnCommand, QString parameters,
+                                           const QTemporaryDir &workdir)
+        : m_blastnCommand(blastnCommand), m_tblastnCommand(tblastnCommand), m_parameters(parameters),
+          m_tempDirectory(workdir) {}
 
 
-bool RunBlastSearchWorker::runBlastSearch() {
+static void buildHitsFromBlastOutput(QString blastOutput,
+                                     BlastQueries &queries);
+
+    bool RunBlastSearchWorker::runBlastSearch(BlastQueries &queries) {
     m_cancelRunBlastSearch = false;
     bool success = false;
 
     QString blastOutput;
-    if (g_blastSearch->m_blastQueries.getQueryCount(NUCLEOTIDE) > 0 && !m_cancelRunBlastSearch) {
-        blastOutput += runOneBlastSearch(NUCLEOTIDE, &success);
+    if (queries.getQueryCount(NUCLEOTIDE) > 0 && !m_cancelRunBlastSearch) {
+        blastOutput += runOneBlastSearch(NUCLEOTIDE, queries, &success);
         if (!success)
             return false;
     }
 
-    if (g_blastSearch->m_blastQueries.getQueryCount(PROTEIN) > 0 && !m_cancelRunBlastSearch) {
-        blastOutput += runOneBlastSearch(PROTEIN, &success);
+    if (queries.getQueryCount(PROTEIN) > 0 && !m_cancelRunBlastSearch) {
+        blastOutput += runOneBlastSearch(PROTEIN, queries, &success);
         if (!success)
             return false;
     }
@@ -51,10 +59,10 @@ bool RunBlastSearchWorker::runBlastSearch() {
         return false;
     }
 
-    //If the code got here, then the search completed successfully.
-    g_blastSearch->buildHitsFromBlastOutput(blastOutput);
-    g_blastSearch->findQueryPaths();
-    g_blastSearch->m_blastQueries.searchOccurred();
+    // If the code got here, then the search completed successfully.
+    buildHitsFromBlastOutput(blastOutput, queries);
+    queries.findQueryPaths();
+    queries.searchOccurred();
     m_error = "";
     emit finishedSearch(m_error);
 
@@ -75,20 +83,22 @@ static void writeQueryFile(QFile *file,
     }
 }
 
-QString RunBlastSearchWorker::runOneBlastSearch(QuerySequenceType sequenceType, bool * success) {
-    QTemporaryFile tmpFile(g_blastSearch->m_tempDirectory.filePath(sequenceType == NUCLEOTIDE ?
-                                            "nucl_queries.XXXXXX.fasta" : "prot_queries.XXXXXX.fasta"));
+QString RunBlastSearchWorker::runOneBlastSearch(QuerySequenceType sequenceType,
+                                                const BlastQueries &queries,
+                                                bool * success) {
+    QTemporaryFile tmpFile(m_tempDirectory.filePath(sequenceType == NUCLEOTIDE ?
+                           "nucl_queries.XXXXXX.fasta" : "prot_queries.XXXXXX.fasta"));
     if (!tmpFile.open()) {
         m_error = "Failed to create temporary query file";
         *success = false;
         return "";
     }
 
-    writeQueryFile(&tmpFile, g_blastSearch->m_blastQueries, sequenceType);
+    writeQueryFile(&tmpFile, queries, sequenceType);
 
     QStringList blastOptions;
     blastOptions << "-query" << tmpFile.fileName()
-                 << "-db" << (g_blastSearch->m_tempDirectory.filePath("all_nodes.fasta"))
+                 << "-db" << m_tempDirectory.filePath("all_nodes.fasta")
                  << "-outfmt" << "6";
     blastOptions << m_parameters.split(" ", Qt::SkipEmptyParts);
     
@@ -127,5 +137,104 @@ void RunBlastSearchWorker::cancel() {
         m_blast->kill();
         m_blast->deleteLater();
         m_blast = nullptr;
+    }
+}
+
+static QString getNodeNameFromString(const QString &nodeString) {
+    QStringList nodeStringParts = nodeString.split("_");
+
+    // The node string format should look like this:
+    // NODE_nodename_length_123_cov_1.23
+    if (nodeStringParts.size() < 6)
+        return "";
+
+    if (nodeStringParts.size() == 6)
+        return nodeStringParts[1];
+
+    // If the code got here, there are more than 6 parts.  This means there are
+    // underscores in the node name (happens a lot with Trinity graphs).  So we
+    // need to pull out the parts which constitute the name.
+    int underscoreCount = nodeStringParts.size() - 6;
+    QString nodeName = "";
+    for (int i = 0; i <= underscoreCount; ++i) {
+        nodeName += nodeStringParts[1+i];
+        if (i < underscoreCount)
+            nodeName += "_";
+    }
+
+    return nodeName;
+}
+
+// This function uses the contents of blastOutput (the raw output from the
+// BLAST search) to construct the BlastHit objects.
+// It looks at the filters to possibly exclude hits which fail to meet user-
+// defined thresholds.
+static void buildHitsFromBlastOutput(QString blastOutput,
+                                     BlastQueries &queries) {
+    QStringList blastHitList = blastOutput.split("\n", Qt::SkipEmptyParts);
+
+    for (const auto &hitString : blastHitList) {
+        QStringList alignmentParts = hitString.split('\t');
+
+        if (alignmentParts.size() < 12)
+            continue;
+
+        QString queryName = alignmentParts[0];
+        QString nodeLabel = alignmentParts[1];
+        double percentIdentity = alignmentParts[2].toDouble();
+        int alignmentLength = alignmentParts[3].toInt();
+        int numberMismatches = alignmentParts[4].toInt();
+        int numberGapOpens = alignmentParts[5].toInt();
+        int queryStart = alignmentParts[6].toInt();
+        int queryEnd = alignmentParts[7].toInt();
+        int nodeStart = alignmentParts[8].toInt();
+        int nodeEnd = alignmentParts[9].toInt();
+        SciNot eValue(alignmentParts[10]);
+        double bitScore = alignmentParts[11].toDouble();
+
+        //Only save BLAST hits that are on forward strands.
+        if (nodeStart > nodeEnd)
+            continue;
+
+        QString nodeName = getNodeNameFromString(nodeLabel);
+        DeBruijnNode *node = nullptr;
+        auto it = g_assemblyGraph->m_deBruijnGraphNodes.find(nodeName.toStdString());
+        if (it == g_assemblyGraph->m_deBruijnGraphNodes.end())
+            continue;
+
+        node = it.value();
+
+        BlastQuery *query = queries.getQueryFromName(queryName);
+        if (query == nullptr)
+            continue;
+
+        // Check the user-defined filters.
+        if (g_settings->blastAlignmentLengthFilter.on &&
+            alignmentLength < g_settings->blastAlignmentLengthFilter)
+            continue;
+
+        if (g_settings->blastIdentityFilter.on &&
+            percentIdentity < g_settings->blastIdentityFilter)
+            continue;
+
+        if (g_settings->blastEValueFilter.on &&
+            eValue > g_settings->blastEValueFilter)
+            continue;
+
+        if (g_settings->blastBitScoreFilter.on &&
+            bitScore < g_settings->blastBitScoreFilter)
+            continue;
+
+        auto hit = std::make_shared<BlastHit>(query, node, percentIdentity, alignmentLength,
+                                              numberMismatches, numberGapOpens, queryStart, queryEnd,
+                                              nodeStart, nodeEnd, eValue, bitScore);
+
+        if (g_settings->blastQueryCoverageFilter.on) {
+            double hitCoveragePercentage = 100.0 * hit->getQueryCoverageFraction();
+            if (hitCoveragePercentage < g_settings->blastQueryCoverageFilter)
+                continue;
+        }
+
+        query->addHit(std::move(hit));
     }
 }

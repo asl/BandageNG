@@ -17,25 +17,22 @@
 
 
 #include "buildblastdatabaseworker.h"
-#include "blastsearch.h"
 
-#include "graph/debruijnnode.h"
 #include "graph/assemblygraph.h"
-
-#include "program/globals.h"
 
 #include <QProcess>
 #include <QFile>
 #include <QTextStream>
 
 BuildBlastDatabaseWorker::BuildBlastDatabaseWorker(QString makeblastdbCommand,
-                                                   const AssemblyGraph &graph)
-        : m_makeblastdbCommand(makeblastdbCommand), m_makeblastdb(nullptr), m_graph(graph) {}
+                                                   const AssemblyGraph &graph,
+                                                   const QTemporaryDir &workdir)
+        : m_makeblastdbCommand(makeblastdbCommand), m_graph(graph), m_workdir(workdir) {}
 
 bool BuildBlastDatabaseWorker::buildBlastDatabase() {
     m_cancelBuildBlastDatabase = false;
 
-    QFile file(g_blastSearch->m_tempDirectory.filePath("all_nodes.fasta"));
+    QFile file(m_workdir.filePath("all_nodes.fasta"));
     if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
         emit finishedBuild("Failed to open: " + file.fileName());
         return false;
@@ -68,7 +65,7 @@ bool BuildBlastDatabaseWorker::buildBlastDatabase() {
     }
 
     QStringList makeBlastdbOptions;
-    makeBlastdbOptions << "-in" << (g_blastSearch->m_tempDirectory.filePath("all_nodes.fasta"))
+    makeBlastdbOptions << "-in" << m_workdir.filePath("all_nodes.fasta")
                        << "-dbtype" << "nucl";
     
     m_makeblastdb = new QProcess();
