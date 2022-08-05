@@ -21,6 +21,9 @@
 
 #include <QObject>
 
+class AssemblyGraph;
+class QProcess;
+
 //This class carries out the task of running makeblastdb on
 //the graph's nodes.
 //It is a separate class because when run from the GUI, this
@@ -31,14 +34,18 @@ class BuildBlastDatabaseWorker : public QObject
     Q_OBJECT
 
 public:
-    BuildBlastDatabaseWorker(QString makeblastdbCommand);
+    BuildBlastDatabaseWorker(QString makeblastdbCommand, const AssemblyGraph &graph);
     QString m_error;
 
 private:
     QString m_makeblastdbCommand;
+    QProcess *m_makeblastdb;
+    const AssemblyGraph &m_graph;
+    bool m_cancelBuildBlastDatabase = false;
 
 public slots:
     bool buildBlastDatabase();
+    void cancel();
 
 signals:
     void finishedBuild(QString error);

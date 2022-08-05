@@ -236,8 +236,7 @@ void BlastSearch::clearSomeQueries(const std::vector<BlastQuery *> &queriesToRem
     m_blastQueries.clearSomeQueries(queriesToRemove);
 }
 
-void BlastSearch::emptyTempDirectory() const
-{
+void BlastSearch::emptyTempDirectory() const {
     QDir tempDirectory(m_tempDirectory.path());
     tempDirectory.setNameFilters(QStringList() << "*.*");
     tempDirectory.setFilter(QDir::Files);
@@ -255,7 +254,7 @@ QString BlastSearch::doAutoBlastSearch() {
     if (!findProgram("makeblastdb", &makeblastdbCommand))
         return "Error: The program makeblastdb was not found.  Please install NCBI BLAST to use this feature.";
 
-    BuildBlastDatabaseWorker buildBlastDatabaseWorker(makeblastdbCommand);
+    BuildBlastDatabaseWorker buildBlastDatabaseWorker(makeblastdbCommand, *g_assemblyGraph);
     if (!buildBlastDatabaseWorker.buildBlastDatabase())
         return buildBlastDatabaseWorker.m_error;
 
@@ -279,8 +278,7 @@ QString BlastSearch::doAutoBlastSearch() {
 
 
 //This function returns the number of queries loaded from the FASTA file.
-int BlastSearch::loadBlastQueriesFromFastaFile(QString fullFileName)
-{
+int BlastSearch::loadBlastQueriesFromFastaFile(QString fullFileName) {
     int queriesBefore = int(m_blastQueries.m_queries.size());
 
     std::vector<QString> queryNames;
@@ -305,8 +303,7 @@ int BlastSearch::loadBlastQueriesFromFastaFile(QString fullFileName)
 }
 
 
-QString BlastSearch::cleanQueryName(QString queryName)
-{
+QString BlastSearch::cleanQueryName(QString queryName) {
     //Replace whitespace with underscores
     queryName = queryName.replace(QRegularExpression("\\s"), "_");
 
@@ -320,8 +317,7 @@ QString BlastSearch::cleanQueryName(QString queryName)
     return queryName;
 }
 
-void BlastSearch::blastQueryChanged(const QString &queryName)
-{
+void BlastSearch::blastQueryChanged(const QString &queryName) {
     g_annotationsManager->removeGroupByName(g_settings->blastAnnotationGroupName);
 
     std::vector<BlastQuery *> queries;
@@ -331,8 +327,7 @@ void BlastSearch::blastQueryChanged(const QString &queryName)
         queries = m_blastQueries.m_queries;
 
     //If only one query is selected, then just display that one.
-    else
-    {
+    else {
         BlastQuery * query = m_blastQueries.getQueryFromName(queryName);
         if (query != nullptr)
             queries.push_back(query);
@@ -340,8 +335,7 @@ void BlastSearch::blastQueryChanged(const QString &queryName)
 
     //We now filter out any queries that have been hidden by the user.
     std::vector<BlastQuery *> shownQueries;
-    for (auto query : queries)
-    {
+    for (auto *query : queries) {
         if (query->isShown())
             shownQueries.push_back(query);
     }

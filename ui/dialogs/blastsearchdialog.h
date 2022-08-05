@@ -137,7 +137,7 @@ private slots:
 
     void blastDatabaseBuildFinished(const QString& error);
     void runBlastSearchFinished(const QString& error);
-    void buildBlastDatabaseCancelled();
+
     void runBlastSearchCancelled();
 
     void openFiltersDialog();

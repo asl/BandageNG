@@ -118,8 +118,7 @@ void BlastQueries::clearSearchResults() {
 }
 
 
-int BlastQueries::getQueryCount() const
-{
+int BlastQueries::getQueryCount() const {
     return int(m_queries.size());
 }
 

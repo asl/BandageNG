@@ -54,7 +54,7 @@ public:
     const auto &getPaths() const {return m_paths;}
     size_t getPathCount() const {return m_paths.size();}
     QString getTypeString() const;
-    double fractionCoveredByHits(const QList<BlastHit *> * hitsToCheck = 0) const;
+    double fractionCoveredByHits(const std::vector<BlastHit*> &hitsToCheck = {}) const;
     bool isShown() const {return m_shown;}
     bool isHidden() const {return !m_shown;}
 

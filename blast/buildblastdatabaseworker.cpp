@@ -28,21 +28,22 @@
 #include <QFile>
 #include <QTextStream>
 
-BuildBlastDatabaseWorker::BuildBlastDatabaseWorker(QString makeblastdbCommand)
-        : m_makeblastdbCommand(makeblastdbCommand) {}
+BuildBlastDatabaseWorker::BuildBlastDatabaseWorker(QString makeblastdbCommand,
+                                                   const AssemblyGraph &graph)
+        : m_makeblastdbCommand(makeblastdbCommand), m_makeblastdb(nullptr), m_graph(graph) {}
 
 bool BuildBlastDatabaseWorker::buildBlastDatabase() {
-    g_blastSearch->m_cancelBuildBlastDatabase = false;
+    m_cancelBuildBlastDatabase = false;
 
     QFile file(g_blastSearch->m_tempDirectory.filePath("all_nodes.fasta"));
     if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
         emit finishedBuild("Failed to open: " + file.fileName());
         return false;
     }
-    QTextStream out(&file);
 
-    for (const auto *node : g_assemblyGraph->m_deBruijnGraphNodes) {
-        if (g_blastSearch->m_cancelBuildBlastDatabase) {
+    QTextStream out(&file);
+    for (const auto *node : m_graph.m_deBruijnGraphNodes) {
+        if (m_cancelBuildBlastDatabase) {
             emit finishedBuild("Build cancelled.");
             return false;
         }
@@ -53,7 +54,7 @@ bool BuildBlastDatabaseWorker::buildBlastDatabase() {
 
     // Make sure the graph has sequences to BLAST.
     bool atLeastOneSequence = false;
-    for (const auto *node : g_assemblyGraph->m_deBruijnGraphNodes) {
+    for (const auto *node : m_graph.m_deBruijnGraphNodes) {
         if (!node->sequenceIsMissing()) {
             atLeastOneSequence = true;
             break;
@@ -70,24 +71,30 @@ bool BuildBlastDatabaseWorker::buildBlastDatabase() {
     makeBlastdbOptions << "-in" << (g_blastSearch->m_tempDirectory.filePath("all_nodes.fasta"))
                        << "-dbtype" << "nucl";
     
-    g_blastSearch->m_makeblastdb = new QProcess();
-    g_blastSearch->m_makeblastdb->start(m_makeblastdbCommand,
-                                        makeBlastdbOptions);
+    m_makeblastdb = new QProcess();
+    m_makeblastdb->start(m_makeblastdbCommand, makeBlastdbOptions);
 
-    bool finished = g_blastSearch->m_makeblastdb->waitForFinished(-1);
+    bool finished = m_makeblastdb->waitForFinished(-1);
 
-    if (g_blastSearch->m_makeblastdb->exitCode() != 0 || !finished) {
+    if (m_makeblastdb->exitCode() != 0 || !finished) {
         m_error = "There was a problem building the BLAST database";
-        QString stdErr = g_blastSearch->m_makeblastdb->readAllStandardError();
+        QString stdErr = m_makeblastdb->readAllStandardError();
         m_error += stdErr.isEmpty() ? "." : ":\n\n" + stdErr;
-    } else if (g_blastSearch->m_cancelBuildBlastDatabase)
+    } else if (m_cancelBuildBlastDatabase)
         m_error = "Build cancelled.";
     else
         m_error = "";
 
     emit finishedBuild(m_error);
 
-    g_blastSearch->m_makeblastdb->deleteLater();
-    g_blastSearch->m_makeblastdb = nullptr;
+    m_makeblastdb->deleteLater();
+    m_makeblastdb = nullptr;
     return m_error.isEmpty();
+}
+
+void BuildBlastDatabaseWorker::cancel() {
+    m_cancelBuildBlastDatabase = true;
+
+    if (m_makeblastdb)
+        m_makeblastdb->kill();
 }

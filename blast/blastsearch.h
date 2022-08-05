@@ -45,7 +45,6 @@ public:
 
     BlastQueries m_blastQueries;
     QString m_blastOutput;
-    bool m_cancelBuildBlastDatabase{};
     bool m_cancelRunBlastSearch{};
     QProcess *m_makeblastdb{};
     QProcess *m_blast{};

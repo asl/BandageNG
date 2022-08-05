@@ -28,23 +28,18 @@
 #include <limits>
 
 BlastQueryPath::BlastQueryPath(Path path, BlastQuery * query) :
-    m_path(std::move(path)), m_query(query)
-{
-
+    m_path(std::move(path)), m_query(query) {
     //This function follows the path, returning the BLAST hits it finds for the
     //query.  It requires that the hits occur in order, i.e. that each hit in
     //the path begins later in the query than the previous hit.
 
     BlastHit * previousHit = nullptr;
     const auto &pathNodes = m_path.nodes();
-    for (int i = 0; i < pathNodes.size(); ++i)
-    {
+    for (int i = 0; i < pathNodes.size(); ++i) {
         DeBruijnNode * node = pathNodes[i];
 
-        QList<BlastHit *> hitsThisNode;
-        std::vector<std::shared_ptr<BlastHit>> queryHits = query->getHits();
-        for (auto &queryHit : queryHits)
-        {
+        std::vector<BlastHit*> hitsThisNode;
+        for (auto &queryHit : query->getHits()) {
             BlastHit * hit = queryHit.get();
             if (hit->m_node->getName() == node->getName())
                 hitsThisNode.push_back(hit);
@@ -55,18 +50,15 @@ BlastQueryPath::BlastQueryPath(Path path, BlastQuery * query) :
                       return a->m_queryStart < b->m_queryStart;
                   });
 
-        for (auto *hit : hitsThisNode)
-        {
-            //First check to make sure the hits are within the path.  This means
-            //if we are in the first or last nodes of the path, we need to make
-            //sure that our hit is contained within the start/end positions.
-            if ( (i != 0 || hit->m_nodeStart >= m_path.getStartLocation().getPosition()) &&
-                    (i != pathNodes.size() - 1 || hit->m_nodeEnd <= m_path.getEndLocation().getPosition()))
-            {
-                //Now make sure that the hit follows the previous hit in the
-                //query.
-                if (previousHit == nullptr || hit->m_queryStart > previousHit->m_queryStart)
-                {
+        for (auto *hit : hitsThisNode) {
+            // First check to make sure the hits are within the path.  This means
+            // if we are in the first or last nodes of the path, we need to make
+            // sure that our hit is contained within the start/end positions.
+            if ((i != 0 || hit->m_nodeStart >= m_path.getStartLocation().getPosition()) &&
+                 (i != pathNodes.size() - 1 || hit->m_nodeEnd <= m_path.getEndLocation().getPosition())) {
+                // Now make sure that the hit follows the previous hit in the
+                // query.
+                if (previousHit == nullptr || hit->m_queryStart > previousHit->m_queryStart) {
                     m_hits.push_back(hit);
                     previousHit = hit;
                 }
@@ -79,24 +71,19 @@ BlastQueryPath::BlastQueryPath(Path path, BlastQuery * query) :
 
 
 
-double BlastQueryPath::getMeanHitPercIdentity() const
-{
+double BlastQueryPath::getMeanHitPercIdentity() const {
     int totalHitLength = 0;
     double sum = 0.0;
 
-    for (int i = 0; i < m_hits.size(); ++i)
-    {
-        int hitLength = m_hits[i]->m_alignmentLength;
+    for (const auto *hit : m_hits) {
+        int hitLength = hit->m_alignmentLength;
         totalHitLength += hitLength;
 
-        double hitIdentity = m_hits[i]->m_percentIdentity;
+        double hitIdentity = hit->m_percentIdentity;
         sum += hitIdentity * hitLength;
     }
 
-    if (totalHitLength == 0)
-        return 0.0;
-    else
-        return sum / totalHitLength;
+    return totalHitLength == 0 ? 0.0 : sum / totalHitLength;
 }
 
 
@@ -106,13 +93,11 @@ double BlastQueryPath::getMeanHitPercIdentity() const
 //multiplies the e-values together. If the hits overlap each other, then
 //this function reduces the e-values accoringly (effectively to prevent
 //the overlapping region from being counted twice).
-SciNot BlastQueryPath::getEvalueProduct() const
-{
+SciNot BlastQueryPath::getEvalueProduct() const {
     double coefficientProduct = 1.0;
     int exponentSum = 0;
 
-    for (int i = 0; i < m_hits.size(); ++i)
-    {
+    for (int i = 0; i < m_hits.size(); ++i) {
         BlastHit * thisHit = m_hits[i];
         SciNot thisHitEValue = thisHit->m_eValue;
         double eValueLenToRemove = 0.0;
@@ -180,8 +165,7 @@ int BlastQueryPath::getHitOverlap(BlastHit * hit1, BlastHit * hit2) const
 //This function looks at the length of the given path and compares it to how
 //long the path should be for the hits it contains (i.e. if the path perfectly
 //matched up the query).
-double BlastQueryPath::getRelativeLengthDiscrepancy() const
-{
+double BlastQueryPath::getRelativeLengthDiscrepancy() const {
     if (m_hits.empty())
         return std::numeric_limits<double>::max();
 
@@ -195,8 +179,7 @@ double BlastQueryPath::getRelativeLengthDiscrepancy() const
 //This function gets the length of the path relative to the how long it should
 //be.  A value of 1 means a perfect match; less than 1 means it is too short;
 //more than 1 means it is too long.
-double BlastQueryPath::getRelativePathLength() const
-{
+double BlastQueryPath::getRelativePathLength() const {
     return double(m_path.getLength()) / getHitQueryLength();
 }
 
@@ -204,14 +187,12 @@ double BlastQueryPath::getRelativePathLength() const
 //This function gets the difference between how long the path is vs how long it
 //should be.  A value of 0 means a perfect match; less than 0 means it is too
 //short; more than 0 means it is too long.
-int BlastQueryPath::getAbsolutePathLengthDifference() const
-{
+int BlastQueryPath::getAbsolutePathLengthDifference() const {
     return m_path.getLength() - getHitQueryLength();
 }
 
 
-QString BlastQueryPath::getAbsolutePathLengthDifferenceString(bool commas) const
-{
+QString BlastQueryPath::getAbsolutePathLengthDifferenceString(bool commas) const {
     int lengthDisc = getAbsolutePathLengthDifference();
     QString lengthDiscSign = "";
     if (lengthDisc > 0)
@@ -225,8 +206,7 @@ QString BlastQueryPath::getAbsolutePathLengthDifferenceString(bool commas) const
 
 //This function returns the fraction of the query that is covered by the entire
 //path.
-double BlastQueryPath::getPathQueryCoverage() const
-{
+double BlastQueryPath::getPathQueryCoverage() const {
     if (m_hits.empty())
         return 0.0;
 
@@ -243,17 +223,14 @@ double BlastQueryPath::getPathQueryCoverage() const
 
 //This function returns the fraction of the query that is covered by hits in the
 //path.
-double BlastQueryPath::getHitsQueryCoverage() const
-{
-    return m_query->fractionCoveredByHits(&m_hits);
+double BlastQueryPath::getHitsQueryCoverage() const {
+    return m_query->fractionCoveredByHits(m_hits);
 }
-
 
 //This function returns the length of the query which is covered by the path.
 //It is returned in bp, whether or not the query is a protein or nucleotide
 //sequence.
-int BlastQueryPath::getHitQueryLength() const
-{
+int BlastQueryPath::getHitQueryLength() const {
     int queryStart = m_hits.front()->m_queryStart;
     int queryEnd = m_hits.back()->m_queryEnd;
     int hitQueryLength = queryEnd - queryStart + 1;
@@ -264,29 +241,24 @@ int BlastQueryPath::getHitQueryLength() const
     return hitQueryLength;
 }
 
-
-
-int BlastQueryPath::getTotalHitMismatches() const
-{
+int BlastQueryPath::getTotalHitMismatches() const {
     int total = 0;
-    for (int i = 0; i < m_hits.size(); ++i)
-        total += m_hits[i]->m_numberMismatches;
+    for (const auto *hit : m_hits)
+        total += hit->m_numberMismatches;
     return total;
 }
 
-int BlastQueryPath::getTotalHitGapOpens() const
-{
+int BlastQueryPath::getTotalHitGapOpens() const {
     int total = 0;
-    for (int i = 0; i < m_hits.size(); ++i)
-        total += m_hits[i]->m_numberGapOpens;
+    for (const auto *hit : m_hits)
+        total += hit->m_numberGapOpens;
     return total;
 }
 
 
 //This function is used for sorting the paths for a query from best to worst.
 //it uses < to mean 'better than'.
-bool BlastQueryPath::operator<(BlastQueryPath const &other) const
-{
+bool BlastQueryPath::operator<(BlastQueryPath const &other) const {
     //First we compare using the E-value product.  This seems to value stronger
     //hits as well as paths with fewer, longer hits.
     SciNot aEValueProduct = getEvalueProduct();

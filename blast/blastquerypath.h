@@ -37,7 +37,7 @@ public:
 
     //ACCESSORS
     Path getPath() const {return m_path;}
-    QList<BlastHit *> getHits() const {return m_hits;}
+    const auto& getHits() const {return m_hits;}
     SciNot getEvalueProduct() const;
     double getMeanHitPercIdentity() const;
     double getRelativeLengthDiscrepancy() const;
@@ -54,7 +54,7 @@ public:
 private:
     Path m_path;
     BlastQuery * m_query;
-    QList<BlastHit *> m_hits;
+    std::vector<BlastHit*> m_hits;
 
     int getHitQueryLength() const;
     int getHitOverlap(BlastHit * hit1, BlastHit * hit2) const;

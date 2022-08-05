@@ -36,6 +36,7 @@ public:
 
     BlastQuery * getQueryFromName(QString queryName);
 
+    bool empty() const { return m_queries.empty(); };
     void addQuery(BlastQuery * newQuery);
     QString renameQuery(BlastQuery * newQuery, QString newName);
     void clearAllQueries();

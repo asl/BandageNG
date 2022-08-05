@@ -134,7 +134,7 @@ BlastSearchDialog::BlastSearchDialog(QWidget *parent, const QString& autoQuery) 
     }
 
     // If queries already exist, display them and move to step 3.
-    if (!g_blastSearch->m_blastQueries.m_queries.empty()) {
+    if (!g_blastSearch->m_blastQueries.empty()) {
         updateTables();
         setUiStep(READY_FOR_BLAST_SEARCH);
     }
@@ -249,10 +249,10 @@ void BlastSearchDialog::buildBlastDatabase(bool separateThread) {
 
     if (separateThread) {
         m_buildBlastDatabaseThread = new QThread;
-        auto * buildBlastDatabaseWorker = new BuildBlastDatabaseWorker(m_makeblastdbCommand);
+        auto * buildBlastDatabaseWorker = new BuildBlastDatabaseWorker(m_makeblastdbCommand, *g_assemblyGraph);
         buildBlastDatabaseWorker->moveToThread(m_buildBlastDatabaseThread);
 
-        connect(progress, SIGNAL(halt()), this, SLOT(buildBlastDatabaseCancelled()));
+        connect(progress, SIGNAL(halt()), buildBlastDatabaseWorker, SLOT(cancel()));
         connect(m_buildBlastDatabaseThread, SIGNAL(started()), buildBlastDatabaseWorker, SLOT(buildBlastDatabase()));
         connect(buildBlastDatabaseWorker, SIGNAL(finishedBuild(QString)), m_buildBlastDatabaseThread, SLOT(quit()));
         connect(buildBlastDatabaseWorker, SIGNAL(finishedBuild(QString)), buildBlastDatabaseWorker, SLOT(deleteLater()));
@@ -262,7 +262,7 @@ void BlastSearchDialog::buildBlastDatabase(bool separateThread) {
 
         m_buildBlastDatabaseThread->start();
     } else {
-        BuildBlastDatabaseWorker buildBlastDatabaseWorker(m_makeblastdbCommand);
+        BuildBlastDatabaseWorker buildBlastDatabaseWorker(m_makeblastdbCommand, *g_assemblyGraph);
         buildBlastDatabaseWorker.buildBlastDatabase();
         progress->close();
         delete progress;
@@ -277,13 +277,6 @@ void BlastSearchDialog::blastDatabaseBuildFinished(const QString& error) {
         setUiStep(BLAST_DB_NOT_YET_BUILT);
     } else
         setUiStep(BLAST_DB_BUILT_BUT_NO_QUERIES);
-}
-
-
-void BlastSearchDialog::buildBlastDatabaseCancelled() {
-    g_blastSearch->m_cancelBuildBlastDatabase = true;
-    if (g_blastSearch->m_makeblastdb != nullptr)
-        g_blastSearch->m_makeblastdb->kill();
 }
 
 void BlastSearchDialog::loadBlastQueriesFromFastaFileButtonClicked() {
@@ -350,7 +343,7 @@ void BlastSearchDialog::clearSelectedQueries() {
     QItemSelectionModel * select = ui->blastQueriesTable->selectionModel();
     QModelIndexList selection = select->selectedIndexes();
 
-    if (selection.size() == g_blastSearch->m_blastQueries.m_queries.size()) {
+    if (selection.size() == g_blastSearch->m_blastQueries.getQueryCount()) {
         clearAllQueries();
         return;
     }

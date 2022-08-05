@@ -228,7 +228,7 @@ void BlastQuery::findQueryPaths() {
 //If a list of BLAST hits is passed to the function, it only looks in those
 //hits.  If no such list is passed, it looks in all hits for this query.
 // http://stackoverflow.com/questions/5276686/merging-ranges-in-c
-double BlastQuery::fractionCoveredByHits(const QList<BlastHit *> * hitsToCheck) const
+double BlastQuery::fractionCoveredByHits(const std::vector<BlastHit *> &hitsToCheck) const
 {
     int hitBases = 0;
     int queryLength = getLength();
@@ -236,14 +236,13 @@ double BlastQuery::fractionCoveredByHits(const QList<BlastHit *> * hitsToCheck) 
         return 0.0;
 
     std::vector<std::pair<int, int> > ranges;
-    if (hitsToCheck == nullptr) {
+    if (hitsToCheck.empty()) {
         for (const auto &m_hit : m_hits) {
             BlastHit * hit = m_hit.get();
             ranges.emplace_back(hit->m_queryStart - 1, hit->m_queryEnd);
         }
-    }
-    else {
-        for (auto hit : *hitsToCheck) {
+    } else {
+        for (auto *hit : hitsToCheck) {
             ranges.emplace_back(hit->m_queryStart - 1, hit->m_queryEnd);
         }
     }
@@ -256,8 +255,7 @@ double BlastQuery::fractionCoveredByHits(const QList<BlastHit *> * hitsToCheck) 
     std::vector<std::pair<int, int> > mergedRanges;
     auto it = ranges.begin();
     std::pair<int,int> current = *(it)++;
-    while (it != ranges.end())
-    {
+    while (it != ranges.end()) {
         if (current.second >= it->first) {
             current.second = std::max(current.second, it->second);
         } else {

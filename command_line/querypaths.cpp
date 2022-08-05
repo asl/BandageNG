@@ -202,7 +202,7 @@ int bandageQueryPaths(QStringList arguments)
             //along with its ID to save later.
             if (hitsFasta)
             {
-                QList<BlastHit *> hits = queryPath.getHits();
+                const auto &hits = queryPath.getHits();
                 for (int k = 0; k < hits.size(); ++k)
                 {
                     BlastHit * hit = hits[k];
