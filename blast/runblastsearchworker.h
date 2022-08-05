@@ -21,7 +21,6 @@
 
 #include "blastquery.h"
 
-#include <QObject>
 #include <QString>
 #include <QTemporaryDir>
 
@@ -33,10 +32,8 @@ class BlastQueries;
 //It is a separate class because when run from the GUI, this
 //process takes place in a separate thread.
 
-class RunBlastSearchWorker : public QObject
-{
+class RunBlastSearchWorker : public QObject {
     Q_OBJECT
-
 public:
     RunBlastSearchWorker(QString blastnCommand, QString tblastnCommand, QString parameters, const QTemporaryDir &workdir);
     QString m_error;

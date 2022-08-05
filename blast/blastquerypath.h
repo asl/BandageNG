@@ -28,10 +28,8 @@
 
 class BlastQuery;
 
-class BlastQueryPath
-{
+class BlastQueryPath {
 public:
-
     //CREATORS
     BlastQueryPath(Path path, BlastQuery * query);
 

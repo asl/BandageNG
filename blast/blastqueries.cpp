@@ -46,7 +46,6 @@ BlastQuery *BlastQueries::getQueryFromName(QString queryName) {
     return *res;
 }
 
-
 void BlastQueries::addQuery(BlastQuery * newQuery) {
     newQuery->setName(getUniqueName(newQuery->getName()));
 
@@ -58,22 +57,18 @@ void BlastQueries::addQuery(BlastQuery * newQuery) {
     m_queries.push_back(newQuery);
 }
 
-
 //This function renames the query.  It returns the name given, because that
 //might not be exactly the same as the name passed to the function if it
 //wasn't unique.
-QString BlastQueries::renameQuery(BlastQuery * newQuery, QString newName)
-{
+QString BlastQueries::renameQuery(BlastQuery * newQuery, QString newName) {
     newQuery->setName(getUniqueName(newName));
     return newQuery->getName();
 }
 
-
 //This function looks at the name, and if it is not unique, it adds a suffix
 //to make it unique.  Also make sure it's not "all" or "none", as those will
 //conflict with viewing all queries at once or no queries.
-QString BlastQueries::getUniqueName(QString name)
-{
+QString BlastQueries::getUniqueName(QString name) {
     //If the query name ends in a semicolon, remove it.  Ending semicolons
     //mess with BLAST.
     if (name.endsWith(';'))
@@ -91,10 +86,9 @@ QString BlastQueries::getUniqueName(QString name)
     return finalName;
 }
 
-void BlastQueries::clearAllQueries()
-{
-    for (size_t i = 0; i < m_queries.size(); ++i)
-        delete m_queries[i];
+void BlastQueries::clearAllQueries() {
+    for (auto *query : m_queries)
+        delete query;
     m_queries.clear();
 }
 

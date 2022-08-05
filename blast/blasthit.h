@@ -28,8 +28,7 @@
 class DeBruijnNode;
 class BlastQuery;
 
-class BlastHit
-{
+class BlastHit {
 public:
     BlastHit(BlastQuery * query, DeBruijnNode * node,
              double percentIdentity, int alignmentLength,

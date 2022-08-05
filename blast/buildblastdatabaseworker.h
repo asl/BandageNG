@@ -19,7 +19,6 @@
 #ifndef BUILDBLASTDATABASEWORKER_H
 #define BUILDBLASTDATABASEWORKER_H
 
-#include <QObject>
 #include <QTemporaryDir>
 
 class AssemblyGraph;
@@ -30,10 +29,8 @@ class QProcess;
 //It is a separate class because when run from the GUI, this
 //process takes place in a separate thread.
 
-class BuildBlastDatabaseWorker : public QObject
-{
+class BuildBlastDatabaseWorker : public QObject {
     Q_OBJECT
-
 public:
     BuildBlastDatabaseWorker(QString makeblastdbCommand, const AssemblyGraph &graph,
                              const QTemporaryDir &workdir);

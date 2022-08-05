@@ -35,10 +35,7 @@ enum QuerySequenceType {
 
 using BlastHits = std::vector<std::shared_ptr<BlastHit>>;
 
-class BlastQuery : public QObject
-{
-    Q_OBJECT
-
+class BlastQuery : public QObject {
 public:
     //CREATORS
     BlastQuery(QString name, QString sequence);
@@ -67,7 +64,6 @@ public:
     void setAsSearchedFor() {m_searchedFor = true;}
     void findQueryPaths();
 
-public slots:
     void setColour(QColor newColour) {m_colour = newColour;}
     void setShown(bool newShown) {m_shown = newShown;}
 

@@ -19,22 +19,15 @@
 #ifndef BLASTSEARCH_H
 #define BLASTSEARCH_H
 
-#include "blasthit.h"
 #include "blastqueries.h"
 
-#include <QString>
 #include <QDir>
+#include <QString>
 #include <QTemporaryDir>
-
-#include <vector>
 
 //This is a class to hold all BLAST search related stuff.
 //An instance of it is made available to the whole program
 //as a global.
-
-class QProcess;
-
-
 class BlastSearch {
 public:
     explicit BlastSearch(const QDir &workDir = QDir::temp());

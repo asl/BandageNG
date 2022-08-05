@@ -24,17 +24,15 @@
 #include <utility>
 #include <vector>
 
-BlastQuery::BlastQuery(QString name, QString sequence) :
-    m_name(std::move(name)), m_sequence(std::move(sequence)), m_searchedFor(false), m_shown(true)
-{
+BlastQuery::BlastQuery(QString name, QString sequence)
+    : m_name(std::move(name)), m_sequence(std::move(sequence)), m_searchedFor(false), m_shown(true) {
     autoSetSequenceType();
 }
 
 
 //This function looks at the query sequence to decide if it is
 //a nucleotide or protein sequence.
-void BlastQuery::autoSetSequenceType()
-{
+void BlastQuery::autoSetSequenceType() {
     //If the sequence contains a letter that's in the protein
     //alphabet but not in the extended DNA alphabet, then it's
     //a protein
@@ -70,18 +68,15 @@ void BlastQuery::autoSetSequenceType()
 }
 
 
-QString BlastQuery::getTypeString() const
-{
+QString BlastQuery::getTypeString() const {
     return (m_sequenceType == NUCLEOTIDE ? "nucl" : "prot");
 }
 
 
-void BlastQuery::clearSearchResults()
-{
+void BlastQuery::clearSearchResults() {
     m_searchedFor = false;
     m_hits.clear();
 }
-
 
 //This function tries to find the paths through the graph which cover the query.
 void BlastQuery::findQueryPaths() {
@@ -219,8 +214,7 @@ void BlastQuery::findQueryPaths() {
 //If a list of BLAST hits is passed to the function, it only looks in those
 //hits.  If no such list is passed, it looks in all hits for this query.
 // http://stackoverflow.com/questions/5276686/merging-ranges-in-c
-double BlastQuery::fractionCoveredByHits(const std::vector<BlastHit *> &hitsToCheck) const
-{
+double BlastQuery::fractionCoveredByHits(const std::vector<BlastHit *> &hitsToCheck) const {
     int hitBases = 0;
     int queryLength = getLength();
     if (queryLength == 0)

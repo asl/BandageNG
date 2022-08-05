@@ -26,8 +26,7 @@
 // This class manages all BLAST queries. It holds BlastQuery
 // objects
 
-class BlastQueries
-{
+class BlastQueries {
 public:
     BlastQueries();
     ~BlastQueries();

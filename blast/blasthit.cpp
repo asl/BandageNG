@@ -45,8 +45,7 @@ BlastHit::BlastHit(BlastQuery * query, DeBruijnNode * node,
 }
 
 
-double BlastHit::getQueryCoverageFraction() const
-{
+double BlastHit::getQueryCoverageFraction() const {
     int queryRegionSize = m_queryEnd - m_queryStart + 1;
     int queryLength = m_query->getLength();
 
@@ -57,19 +56,15 @@ double BlastHit::getQueryCoverageFraction() const
 }
 
 
-GraphLocation BlastHit::getHitStart() const
-{
+GraphLocation BlastHit::getHitStart() const {
     return {m_node, m_nodeStart};
 }
 
-GraphLocation BlastHit::getHitEnd() const
-{
+GraphLocation BlastHit::getHitEnd() const {
     return {m_node, m_nodeEnd};
 }
 
-
 //This function returns the node sequence for this hit.
-QByteArray BlastHit::getNodeSequence() const
-{
+QByteArray BlastHit::getNodeSequence() const {
     return utils::sequenceToQByteArray(m_node->getSequence().Subseq(m_nodeStart-1, m_nodeEnd));
 }
