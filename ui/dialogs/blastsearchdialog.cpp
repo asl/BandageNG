@@ -78,11 +78,8 @@ enum class HitsColumns : unsigned {
     TotalHitColumns = BitScore + 1
 };
 
-BlastSearchDialog::BlastSearchDialog(QWidget *parent, const QString& autoQuery) :
-    QDialog(parent),
-    ui(new Ui::BlastSearchDialog),
-    m_makeblastdbCommand("makeblastdb"), m_blastnCommand("blastn"),
-    m_tblastnCommand("tblastn") {
+BlastSearchDialog::BlastSearchDialog(QWidget *parent, const QString& autoQuery)
+ : QDialog(parent), ui(new Ui::BlastSearchDialog) {
     ui->setupUi(this);
 
     setWindowFlags(windowFlags() | Qt::Tool);
@@ -233,7 +230,8 @@ void BlastSearchDialog::buildBlastDatabaseInThread() {
 void BlastSearchDialog::buildBlastDatabase(bool separateThread) {
     setUiStep(BLAST_DB_BUILD_IN_PROGRESS);
 
-    if (!g_blastSearch->findProgram("makeblastdb", &m_makeblastdbCommand)) {
+    QString makeblastdbCommand;
+    if (!g_blastSearch->findProgram("makeblastdb", &makeblastdbCommand)) {
         QMessageBox::warning(this, "Error", "The program makeblastdb was not found.  Please install NCBI BLAST to use this feature.");
         setUiStep(BLAST_DB_NOT_YET_BUILT);
         return;
@@ -248,21 +246,21 @@ void BlastSearchDialog::buildBlastDatabase(bool separateThread) {
     progress->show();
 
     if (separateThread) {
-        m_buildBlastDatabaseThread = new QThread;
-        auto * buildBlastDatabaseWorker = new BuildBlastDatabaseWorker(m_makeblastdbCommand, *g_assemblyGraph, g_blastSearch->m_tempDirectory);
-        buildBlastDatabaseWorker->moveToThread(m_buildBlastDatabaseThread);
+        auto * buildBlastDatabaseThread = new QThread;
+        auto * buildBlastDatabaseWorker = new BuildBlastDatabaseWorker(makeblastdbCommand, *g_assemblyGraph, g_blastSearch->m_tempDirectory);
+        buildBlastDatabaseWorker->moveToThread(buildBlastDatabaseThread);
 
         connect(progress, SIGNAL(halt()), buildBlastDatabaseWorker, SLOT(cancel()));
-        connect(m_buildBlastDatabaseThread, SIGNAL(started()), buildBlastDatabaseWorker, SLOT(buildBlastDatabase()));
-        connect(buildBlastDatabaseWorker, SIGNAL(finishedBuild(QString)), m_buildBlastDatabaseThread, SLOT(quit()));
+        connect(buildBlastDatabaseThread, SIGNAL(started()), buildBlastDatabaseWorker, SLOT(buildBlastDatabase()));
+        connect(buildBlastDatabaseWorker, SIGNAL(finishedBuild(QString)), buildBlastDatabaseThread, SLOT(quit()));
         connect(buildBlastDatabaseWorker, SIGNAL(finishedBuild(QString)), buildBlastDatabaseWorker, SLOT(deleteLater()));
         connect(buildBlastDatabaseWorker, SIGNAL(finishedBuild(QString)), this, SLOT(blastDatabaseBuildFinished(QString)));
-        connect(m_buildBlastDatabaseThread, SIGNAL(finished()), m_buildBlastDatabaseThread, SLOT(deleteLater()));
-        connect(m_buildBlastDatabaseThread, SIGNAL(finished()), progress, SLOT(deleteLater()));
+        connect(buildBlastDatabaseThread, SIGNAL(finished()), buildBlastDatabaseThread, SLOT(deleteLater()));
+        connect(buildBlastDatabaseThread, SIGNAL(finished()), progress, SLOT(deleteLater()));
 
-        m_buildBlastDatabaseThread->start();
+        buildBlastDatabaseThread->start();
     } else {
-        BuildBlastDatabaseWorker buildBlastDatabaseWorker(m_makeblastdbCommand, *g_assemblyGraph, g_blastSearch->m_tempDirectory);
+        BuildBlastDatabaseWorker buildBlastDatabaseWorker(makeblastdbCommand, *g_assemblyGraph, g_blastSearch->m_tempDirectory);
         buildBlastDatabaseWorker.buildBlastDatabase();
         progress->close();
         delete progress;
@@ -365,12 +363,13 @@ void BlastSearchDialog::runBlastSearchesInThread() {
 void BlastSearchDialog::runBlastSearches(bool separateThread) {
     setUiStep(BLAST_SEARCH_IN_PROGRESS);
 
-    if (!g_blastSearch->findProgram("blastn", &m_blastnCommand)) {
+    QString blastnCommand, tblastnCommand;
+    if (!g_blastSearch->findProgram("blastn", &blastnCommand)) {
         QMessageBox::warning(this, "Error", "The program blastn was not found.  Please install NCBI BLAST to use this feature.");
         setUiStep(READY_FOR_BLAST_SEARCH);
         return;
     }
-    if (!g_blastSearch->findProgram("tblastn", &m_tblastnCommand)) {
+    if (!g_blastSearch->findProgram("tblastn", &tblastnCommand)) {
         QMessageBox::warning(this, "Error", "The program tblastn was not found.  Please install NCBI BLAST to use this feature.");
         setUiStep(READY_FOR_BLAST_SEARCH);
         return;
@@ -384,26 +383,26 @@ void BlastSearchDialog::runBlastSearches(bool separateThread) {
     progress->show();
 
     if (separateThread) {
-        m_blastSearchThread = new QThread;
-        auto * runBlastSearchWorker = new RunBlastSearchWorker(m_blastnCommand, m_tblastnCommand,
+        auto blastSearchThread = new QThread;
+        auto * runBlastSearchWorker = new RunBlastSearchWorker(blastnCommand, tblastnCommand,
                                                                ui->parametersLineEdit->text().simplified(),
                                                                g_blastSearch->m_tempDirectory);
-        runBlastSearchWorker->moveToThread(m_blastSearchThread);
+        runBlastSearchWorker->moveToThread(blastSearchThread);
 
         connect(progress, SIGNAL(halt()), runBlastSearchWorker, SLOT(cancel()));
-        connect(m_blastSearchThread, &QThread::started,
+        connect(blastSearchThread, &QThread::started,
                 [runBlastSearchWorker]() {
                     runBlastSearchWorker->runBlastSearch(g_blastSearch->m_blastQueries);
         });
-        connect(runBlastSearchWorker, SIGNAL(finishedSearch(QString)), m_blastSearchThread, SLOT(quit()));
+        connect(runBlastSearchWorker, SIGNAL(finishedSearch(QString)), blastSearchThread, SLOT(quit()));
         connect(runBlastSearchWorker, SIGNAL(finishedSearch(QString)), runBlastSearchWorker, SLOT(deleteLater()));
         connect(runBlastSearchWorker, SIGNAL(finishedSearch(QString)), this, SLOT(runBlastSearchFinished(QString)));
-        connect(m_blastSearchThread, SIGNAL(finished()), m_blastSearchThread, SLOT(deleteLater()));
-        connect(m_blastSearchThread, SIGNAL(finished()), progress, SLOT(deleteLater()));
+        connect(blastSearchThread, SIGNAL(finished()), blastSearchThread, SLOT(deleteLater()));
+        connect(blastSearchThread, SIGNAL(finished()), progress, SLOT(deleteLater()));
 
-        m_blastSearchThread->start();
+        blastSearchThread->start();
     } else {
-        RunBlastSearchWorker runBlastSearchWorker(m_blastnCommand, m_tblastnCommand,
+        RunBlastSearchWorker runBlastSearchWorker(blastnCommand, tblastnCommand,
                                                   ui->parametersLineEdit->text().simplified(),
                                                   g_blastSearch->m_tempDirectory);
         runBlastSearchWorker.runBlastSearch(g_blastSearch->m_blastQueries);
@@ -412,8 +411,6 @@ void BlastSearchDialog::runBlastSearches(bool separateThread) {
         runBlastSearchFinished(runBlastSearchWorker.m_error);
     }
 }
-
-
 
 void BlastSearchDialog::runBlastSearchFinished(const QString& error) {
     if (!error.isEmpty()) {

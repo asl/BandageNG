@@ -108,11 +108,6 @@ public:
 private:
     Ui::BlastSearchDialog *ui;
 
-    QString m_makeblastdbCommand;
-    QString m_blastnCommand;
-    QString m_tblastnCommand;
-    QThread *m_buildBlastDatabaseThread;
-    QThread *m_blastSearchThread;
     QueriesListModel *m_queriesListModel;
     HitsListModel *m_hitsListModel;
 
