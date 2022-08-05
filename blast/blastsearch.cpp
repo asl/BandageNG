@@ -217,8 +217,7 @@ bool BlastSearch::findProgram(const QString &programName, QString * command)
 
 
 
-void BlastSearch::clearSomeQueries(const std::vector<BlastQuery *> &queriesToRemove)
-{
+void BlastSearch::clearSomeQueries(const std::vector<BlastQuery *> &queriesToRemove) {
     // Remove any hits that are for queries that will be deleted.
     std::unordered_set<BlastQuery*> toRemove(queriesToRemove.begin(), queriesToRemove.end());
 

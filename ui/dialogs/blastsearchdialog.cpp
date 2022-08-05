@@ -32,12 +32,6 @@
 #include "graph/annotationsmanager.h"
 
 #include "myprogressdialog.h"
-#include "tablewidgetitemname.h"
-#include "tablewidgetitemint.h"
-#include "tablewidgetitemdouble.h"
-#include "tablewidgetitemshown.h"
-#include "ui/widgets/colourbutton.h"
-#include "querypathspushbutton.h"
 #include "querypathsdialog.h"
 #include "blasthitfiltersdialog.h"
 
@@ -48,34 +42,78 @@
 #include <QFileDialog>
 #include <QFile>
 #include <QString>
-#include <QStandardItemModel>
 #include <QMessageBox>
-#include <QSet>
 #include <QCheckBox>
+#include <QColorDialog>
+#include <QPainter>
+#include <QSortFilterProxyModel>
+
+enum class QueriesHitColumns : unsigned {
+    Color = 0,
+    Show = 1,
+    QueryName = 2,
+    Type = 3,
+    Length = 4,
+    Hits = 5,
+    QueryCover = 6,
+    Paths = 7,
+    TotalHitColumns = Paths + 1
+};
+
+enum class HitsColumns : unsigned {
+    Color = 0,
+    QueryName = 1,
+    NodeName = 2,
+    PercentIdentity = 3,
+    AlignmentLength = 4,
+    QueryCover = 5,
+    Mismatches = 6,
+    GapOpens = 7,
+    QueryStart = 8,
+    QueryEnd = 9,
+    NodeStart = 10,
+    NodeEnd = 11,
+    Evalue = 12,
+    BitScore = 13,
+    TotalHitColumns = BitScore + 1
+};
 
 BlastSearchDialog::BlastSearchDialog(QWidget *parent, const QString& autoQuery) :
     QDialog(parent),
     ui(new Ui::BlastSearchDialog),
     m_makeblastdbCommand("makeblastdb"), m_blastnCommand("blastn"),
-    m_tblastnCommand("tblastn"), m_queryPathsDialog(nullptr)
-{
+    m_tblastnCommand("tblastn") {
     ui->setupUi(this);
 
     setWindowFlags(windowFlags() | Qt::Tool);
 
-    ui->blastHitsTableWidget->m_smallFirstColumn = true;
-    ui->blastQueriesTableWidget->m_smallFirstColumn = true;
-    ui->blastQueriesTableWidget->m_smallSecondColumn = true;
+    m_queriesListModel = new QueriesListModel(g_blastSearch->m_blastQueries,
+                                              ui->blastQueriesTable);
+    auto *proxyQModel = new QSortFilterProxyModel(ui->blastQueriesTable);
+    proxyQModel->setSourceModel(m_queriesListModel);
+    ui->blastQueriesTable->setModel(proxyQModel);
+    ui->blastQueriesTable->setSortingEnabled(true);
+
+    auto *queryPathsDelegate = new PathButtonDelegate(ui->blastQueriesTable);
+    ui->blastQueriesTable->setItemDelegateForColumn(int(QueriesHitColumns::Paths),
+                                                    queryPathsDelegate);
+    connect(queryPathsDelegate, &PathButtonDelegate::queryPathSelectionChanged,
+            [this] { emit queryPathSelectionChanged(); });
+
+    m_hitsListModel = new HitsListModel(g_blastSearch->m_allHits, ui->blastHitsTable);
+    auto *proxyHModel = new QSortFilterProxyModel(ui->blastHitsTable);
+    proxyHModel->setSourceModel(m_hitsListModel);
+    ui->blastHitsTable->setModel(proxyHModel);
+    ui->blastHitsTable->setSortingEnabled(true);
 
     setFilterText();
 
-    //Load any previous parameters the user might have entered when previously using this dialog.
+    // Load any previous parameters the user might have entered when previously using this dialog.
     ui->parametersLineEdit->setText(g_settings->blastSearchParameters);
 
-    //If the dialog is given an autoQuery parameter, then it will
-    //carry out the entire process on its own.
-    if (autoQuery != "")
-    {
+    // If the dialog is given an autoQuery parameter, then it will
+    // carry out the entire process on its own.
+    if (!autoQuery.isEmpty()) {
         buildBlastDatabase(false);
         clearAllQueries();
         loadBlastQueriesFromFastaFile(autoQuery);
@@ -84,47 +122,28 @@ BlastSearchDialog::BlastSearchDialog(QWidget *parent, const QString& autoQuery) 
         return;
     }
 
-    //Prepare the query and hits tables
-    ui->blastHitsTableWidget->setHorizontalHeaderLabels(QStringList() << "" << "Query\nname" << "Node\nname" <<
-                                                        "Percent\nidentity" << "Alignment\nlength" << "Query\ncover" << "Mis-\nmatches" <<
-                                                        "Gap\nopens" << "Query\nstart" << "Query\nend" << "Node\nstart" <<
-                                                        "Node\nend" <<"E-\nvalue" << "Bit\nscore");
-    QFont font = ui->blastQueriesTableWidget->horizontalHeader()->font();
-    font.setBold(true);
-    ui->blastQueriesTableWidget->horizontalHeader()->setFont(font);
-    ui->blastHitsTableWidget->horizontalHeader()->setFont(font);
-
-
     //If a BLAST database already exists, move to step 2.
-    QFile databaseFile =g_blastSearch->m_tempDirectory.filePath("all_nodes.fasta");
+    QFile databaseFile = g_blastSearch->m_tempDirectory.filePath("all_nodes.fasta");
     if (databaseFile.exists())
         setUiStep(BLAST_DB_BUILT_BUT_NO_QUERIES);
-
     //If there isn't a BLAST database, clear the entire temporary directory
     //and move to step 1.
-    else
-    {
+    else {
         g_blastSearch->emptyTempDirectory();
         setUiStep(BLAST_DB_NOT_YET_BUILT);
     }
 
-    //If queries already exist, display them and move to step 3.
-    if (!g_blastSearch->m_blastQueries.m_queries.empty())
-    {
-        fillQueriesTable();
+    // If queries already exist, display them and move to step 3.
+    if (!g_blastSearch->m_blastQueries.m_queries.empty()) {
+        updateTables();
         setUiStep(READY_FOR_BLAST_SEARCH);
     }
 
-    //If results already exist, display them and move to step 4.
-    if (!g_blastSearch->m_allHits.empty())
-    {
-        fillHitsTable();
+    // If results already exist, display them and move to step 4.
+    if (!g_blastSearch->m_allHits.empty()) {
+        updateTables();
         setUiStep(BLAST_SEARCH_COMPLETE);
     }
-
-    //Call this function to disable rows in either table that are for queries
-    //the user has hidden.
-    queryShownChanged();
 
     connect(ui->buildBlastDatabaseButton, SIGNAL(clicked()), this, SLOT(buildBlastDatabaseInThread()));
     connect(ui->loadQueriesFromFastaButton, SIGNAL(clicked()), this, SLOT(loadBlastQueriesFromFastaFileButtonClicked()));
@@ -132,247 +151,89 @@ BlastSearchDialog::BlastSearchDialog(QWidget *parent, const QString& autoQuery) 
     connect(ui->clearAllQueriesButton, SIGNAL(clicked()), this, SLOT(clearAllQueries()));
     connect(ui->clearSelectedQueriesButton, SIGNAL(clicked(bool)), this, SLOT(clearSelectedQueries()));
     connect(ui->runBlastSearchButton, SIGNAL(clicked()), this, SLOT(runBlastSearchesInThread()));
-    connect(ui->blastQueriesTableWidget, SIGNAL(cellChanged(int,int)), this, SLOT(queryCellChanged(int,int)));
-    connect(ui->blastQueriesTableWidget, SIGNAL(itemSelectionChanged()), this, SLOT(queryTableSelectionChanged()));
+
+    connect(ui->blastQueriesTable->selectionModel(),
+        &QItemSelectionModel::selectionChanged,
+        [this]() {
+            auto *select = ui->blastQueriesTable->selectionModel();
+            ui->clearSelectedQueriesButton->setEnabled(select->hasSelection());
+        });
+
+    connect(ui->blastQueriesTable,
+            &QTableView::clicked,
+            m_queriesListModel,
+            [this](const QModelIndex &index) {
+                if (!index.isValid())
+                    return;
+
+                auto column = QueriesHitColumns(index.column());
+                if (column != QueriesHitColumns::Color)
+                    return;
+
+                if (auto *query = m_queriesListModel->query(index)) {
+                    QColor chosenColour = QColorDialog::getColor(query->getColour(),
+                                                                 this,
+                                                                 "Query color", QColorDialog::ShowAlphaChannel);
+                    if (!chosenColour.isValid())
+                        return;
+
+                    m_queriesListModel->setColor(index, chosenColour);
+
+                    this->activateWindow(); // FIXME: why do we really need this? :(
+                }
+            });
+
+    connect(m_queriesListModel, &QueriesListModel::dataChanged,
+            [this]() {
+                emit blastChanged();
+            });
+
+    // This is weird: we need to propagate data changes to proxies
+    connect(m_queriesListModel, &QueriesListModel::dataChanged,
+            [proxyHModel, proxyQModel](const QModelIndex &topLeft, const QModelIndex &bottomRight) {
+                emit proxyQModel->dataChanged(proxyQModel->mapFromSource(topLeft), proxyQModel->mapFromSource(bottomRight));
+                emit proxyHModel->dataChanged(QModelIndex(), QModelIndex());
+            });
+
     connect(ui->blastFiltersButton, SIGNAL(clicked(bool)), this, SLOT(openFiltersDialog()));
 }
 
-BlastSearchDialog::~BlastSearchDialog()
-{
+BlastSearchDialog::~BlastSearchDialog() {
     delete ui;
-    deleteQueryPathsDialog();
 }
 
-
-
-void BlastSearchDialog::afterWindowShow()
-{
-    ui->blastQueriesTableWidget->resizeColumns();
-    ui->blastHitsTableWidget->resizeColumns();
+void BlastSearchDialog::afterWindowShow() {
+    updateTables();
 }
 
-void BlastSearchDialog::clearBlastHits()
-{
+void BlastSearchDialog::clearBlastHits() {
     g_blastSearch->clearBlastHits();
-    deleteQueryPathsDialog();
-    ui->blastHitsTableWidget->clearContents();
-    while (ui->blastHitsTableWidget->rowCount() > 0)
-        ui->blastHitsTableWidget->removeRow(0);
     g_annotationsManager->removeGroupByName(g_settings->blastAnnotationGroupName);
+    updateTables();
 }
 
-void BlastSearchDialog::fillTablesAfterBlastSearch()
-{
+void BlastSearchDialog::fillTablesAfterBlastSearch() {
     if (g_blastSearch->m_allHits.empty())
         QMessageBox::information(this, "No hits", "No BLAST hits were found for the given queries and parameters.");
 
-    fillQueriesTable();
-    fillHitsTable();
+    updateTables();
 }
 
-
-void BlastSearchDialog::fillQueriesTable()
-{
-    //Turn off table widget signals for this function so the
-    //queryCellChanged slot doesn't get called.
-    ui->blastQueriesTableWidget->blockSignals(true);
-    ui->blastQueriesTableWidget->setSortingEnabled(false);
-
-    ui->blastQueriesTableWidget->clearContents();
-
-    int queryCount = int(g_blastSearch->m_blastQueries.m_queries.size());
-    if (queryCount == 0)
-        return;
-
-    ui->blastQueriesTableWidget->setRowCount(queryCount);
-
-    for (int i = 0; i < queryCount; ++i)
-        makeQueryRow(i);
-
-    ui->blastQueriesTableWidget->resizeColumns();
-    ui->blastQueriesTableWidget->setSortingEnabled(true);
-
-    ui->blastQueriesTableWidget->setSortingEnabled(true);
-    ui->blastQueriesTableWidget->blockSignals(false);
+void BlastSearchDialog::updateTables() {
+    m_queriesListModel->update();
+    m_hitsListModel->update();
+    ui->blastQueriesTable->resizeColumnsToContents();
+    ui->blastHitsTable->resizeColumnsToContents();
 }
 
-void BlastSearchDialog::makeQueryRow(int row)
-{
-    if (row >= int(g_blastSearch->m_blastQueries.m_queries.size()))
-        return;
-
-    BlastQuery * query = g_blastSearch->m_blastQueries.m_queries[row];
-
-    auto * name = new TableWidgetItemName(query);
-    name->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable);
-
-    auto * type = new QTableWidgetItem(query->getTypeString());
-    type->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
-
-    int queryLength = query->getLength();
-    auto * length = new TableWidgetItemInt(formatIntForDisplay(queryLength), queryLength);
-    length->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
-
-    //If the search hasn't yet been run, some of the columns will just have
-    //a dash.
-    TableWidgetItemInt * hits;
-    TableWidgetItemDouble * percent;
-    QTableWidgetItem * paths;
-
-    QueryPathsPushButton * pathsButton = nullptr;
-    if (query->wasSearchedFor())
-    {
-        int hitCount = query->hitCount();
-        hits = new TableWidgetItemInt(formatIntForDisplay(hitCount), hitCount);
-        percent = new TableWidgetItemDouble(formatDoubleForDisplay(100.0 * query->fractionCoveredByHits(), 2) + "%", query->fractionCoveredByHits());
-
-        //The path count isn't displayed in the TableWidgetItem because it will
-        //be shown in a button which will bring up a separate dialog showing a
-        //table of the paths.
-        int pathCount = query->getPathCount();
-        paths = new TableWidgetItemInt("", pathCount);
-        paths->setFlags(Qt::ItemIsEnabled);
-        pathsButton = new QueryPathsPushButton(pathCount, query);
-        connect(pathsButton, SIGNAL(showPathsDialog(BlastQuery*)), this, SLOT(showPathsDialog(BlastQuery*)));
-    }
-    else
-    {
-        hits = new TableWidgetItemInt("-", 0);
-        percent = new TableWidgetItemDouble("-", 0.0);
-        paths = new QTableWidgetItem("-");
-    }
-
-    hits->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
-    percent->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
-    paths->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
-
-    auto * colour = new QTableWidgetItem(query->getColour().name());
-    auto * colourButton = new ColourButton();
-    colourButton->setColour(query->getColour());
-    connect(colourButton, SIGNAL(colourChosen(QColor)), query, SLOT(setColour(QColor)));
-    connect(colourButton, SIGNAL(colourChosen(QColor)), this, SLOT(fillHitsTable()));
-
-    auto * showCheckBoxWidget = new QWidget;
-    auto * showCheckBox = new QCheckBox();
-    auto * layout = new QHBoxLayout(showCheckBoxWidget);
-    layout->addWidget(showCheckBox);
-    layout->setAlignment(Qt::AlignCenter);
-    layout->setContentsMargins(0, 0, 0, 0);
-    showCheckBoxWidget->setLayout(layout);
-    bool queryShown = query->isShown();
-    showCheckBox->setChecked(queryShown);
-    QTableWidgetItem * show = new TableWidgetItemShown(queryShown);
-    show->setFlags(Qt::ItemIsEnabled);
-    connect(showCheckBox, SIGNAL(toggled(bool)), query, SLOT(setShown(bool)));
-    connect(showCheckBox, SIGNAL(toggled(bool)), this, SLOT(queryShownChanged()));
-
-    ui->blastQueriesTableWidget->setCellWidget(row, 0, colourButton);
-    ui->blastQueriesTableWidget->setCellWidget(row, 1, showCheckBoxWidget);
-    ui->blastQueriesTableWidget->setItem(row, 0, colour);
-    ui->blastQueriesTableWidget->setItem(row, 1, show);
-    ui->blastQueriesTableWidget->setItem(row, 2, name);
-    ui->blastQueriesTableWidget->setItem(row, 3, type);
-    ui->blastQueriesTableWidget->setItem(row, 4, length);
-    ui->blastQueriesTableWidget->setItem(row, 5, hits);
-    ui->blastQueriesTableWidget->setItem(row, 6, percent);
-    ui->blastQueriesTableWidget->setItem(row, 7, paths);
-    if (pathsButton != nullptr)
-        ui->blastQueriesTableWidget->setCellWidget(row, 7, pathsButton);
-}
-
-
-void BlastSearchDialog::fillHitsTable()
-{
-    ui->blastHitsTableWidget->clearContents();
-    ui->blastHitsTableWidget->setSortingEnabled(false);
-
-    int hitCount = g_blastSearch->m_allHits.size();
-    ui->blastHitsTableWidget->setRowCount(hitCount);
-
-    if (hitCount == 0)
-        return;
-
-    for (int i = 0; i < hitCount; ++i)
-    {
-        const BlastHit &hit = *g_blastSearch->m_allHits[i];
-        const BlastQuery &hitQuery = *hit.m_query;
-
-        auto *queryColour = new QTableWidgetItem(hitQuery.getColour().name());
-        queryColour->setFlags(Qt::ItemIsEnabled);
-        queryColour->setBackground(hitQuery.getColour());
-
-        auto *queryName = new QTableWidgetItem(hitQuery.getName());
-        queryName->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
-
-        auto *nodeName = new QTableWidgetItem(hit.m_node->getName());
-        nodeName->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
-
-        auto *percentIdentity = new TableWidgetItemDouble(formatDoubleForDisplay(hit.m_percentIdentity, 2) + "%", hit.m_percentIdentity);
-        percentIdentity->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
-
-        auto *alignmentLength = new TableWidgetItemInt(formatIntForDisplay(hit.m_alignmentLength), hit.m_alignmentLength);
-        alignmentLength->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
-
-        double queryCoverPercent = 100.0 * hit.getQueryCoverageFraction();
-        auto *queryCover = new TableWidgetItemDouble(formatDoubleForDisplay(queryCoverPercent, 2) + "%", queryCoverPercent);
-        queryCover->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
-
-        auto *numberMismatches = new TableWidgetItemInt(formatIntForDisplay(hit.m_numberMismatches), hit.m_numberMismatches);
-        numberMismatches->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
-
-        auto *numberGapOpens = new TableWidgetItemInt(formatIntForDisplay(hit.m_numberGapOpens), hit.m_numberGapOpens);
-        numberGapOpens->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
-
-        auto *queryStart = new TableWidgetItemInt(formatIntForDisplay(hit.m_queryStart), hit.m_queryStart);
-        queryStart->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
-
-        auto *queryEnd = new TableWidgetItemInt(formatIntForDisplay(hit.m_queryEnd), hit.m_queryEnd);
-        queryEnd->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
-
-        auto *nodeStart = new TableWidgetItemInt(formatIntForDisplay(hit.m_nodeStart), hit.m_nodeStart);
-        nodeStart->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
-
-        auto *nodeEnd = new TableWidgetItemInt(formatIntForDisplay(hit.m_nodeEnd), hit.m_nodeEnd);
-        nodeEnd->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
-
-        auto *eValue = new TableWidgetItemDouble(hit.m_eValue.asString(false), hit.m_eValue.toDouble());
-        eValue->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
-
-        auto *bitScore = new TableWidgetItemDouble(QString::number(hit.m_bitScore), hit.m_bitScore);
-        bitScore->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
-
-        ui->blastHitsTableWidget->setItem(i, 0, queryColour);
-        ui->blastHitsTableWidget->setItem(i, 1, queryName);
-        ui->blastHitsTableWidget->setItem(i, 2, nodeName);
-        ui->blastHitsTableWidget->setItem(i, 3, percentIdentity);
-        ui->blastHitsTableWidget->setItem(i, 4, alignmentLength);
-        ui->blastHitsTableWidget->setItem(i, 5, queryCover);
-        ui->blastHitsTableWidget->setItem(i, 6, numberMismatches);
-        ui->blastHitsTableWidget->setItem(i, 7, numberGapOpens);
-        ui->blastHitsTableWidget->setItem(i, 8, queryStart);
-        ui->blastHitsTableWidget->setItem(i, 9, queryEnd);
-        ui->blastHitsTableWidget->setItem(i, 10, nodeStart);
-        ui->blastHitsTableWidget->setItem(i, 11, nodeEnd);
-        ui->blastHitsTableWidget->setItem(i, 12, eValue);
-        ui->blastHitsTableWidget->setItem(i, 13, bitScore);
-    }
-
-    ui->blastHitsTableWidget->resizeColumns();
-    ui->blastHitsTableWidget->setEnabled(true);
-    ui->blastHitsTableWidget->setSortingEnabled(true);
-}
-
-void BlastSearchDialog::buildBlastDatabaseInThread()
-{
+void BlastSearchDialog::buildBlastDatabaseInThread() {
     buildBlastDatabase(true);
 }
 
-void BlastSearchDialog::buildBlastDatabase(bool separateThread)
-{
+void BlastSearchDialog::buildBlastDatabase(bool separateThread) {
     setUiStep(BLAST_DB_BUILD_IN_PROGRESS);
 
-    if (!g_blastSearch->findProgram("makeblastdb", &m_makeblastdbCommand))
-    {
+    if (!g_blastSearch->findProgram("makeblastdb", &m_makeblastdbCommand)) {
         QMessageBox::warning(this, "Error", "The program makeblastdb was not found.  Please install NCBI BLAST to use this feature.");
         setUiStep(BLAST_DB_NOT_YET_BUILT);
         return;
@@ -386,8 +247,7 @@ void BlastSearchDialog::buildBlastDatabase(bool separateThread)
     progress->setWindowModality(Qt::WindowModal);
     progress->show();
 
-    if (separateThread)
-    {
+    if (separateThread) {
         m_buildBlastDatabaseThread = new QThread;
         auto * buildBlastDatabaseWorker = new BuildBlastDatabaseWorker(m_makeblastdbCommand);
         buildBlastDatabaseWorker->moveToThread(m_buildBlastDatabaseThread);
@@ -401,9 +261,7 @@ void BlastSearchDialog::buildBlastDatabase(bool separateThread)
         connect(m_buildBlastDatabaseThread, SIGNAL(finished()), progress, SLOT(deleteLater()));
 
         m_buildBlastDatabaseThread->start();
-    }
-    else
-    {
+    } else {
         BuildBlastDatabaseWorker buildBlastDatabaseWorker(m_makeblastdbCommand);
         buildBlastDatabaseWorker.buildBlastDatabase();
         progress->close();
@@ -413,51 +271,44 @@ void BlastSearchDialog::buildBlastDatabase(bool separateThread)
 }
 
 
-
-void BlastSearchDialog::blastDatabaseBuildFinished(const QString& error)
-{
-    if (error != "")
-    {
+void BlastSearchDialog::blastDatabaseBuildFinished(const QString& error) {
+    if (!error.isEmpty()) {
         QMessageBox::warning(this, "Error", error);
         setUiStep(BLAST_DB_NOT_YET_BUILT);
-    }
-    else
+    } else
         setUiStep(BLAST_DB_BUILT_BUT_NO_QUERIES);
 }
 
 
-void BlastSearchDialog::buildBlastDatabaseCancelled()
-{
+void BlastSearchDialog::buildBlastDatabaseCancelled() {
     g_blastSearch->m_cancelBuildBlastDatabase = true;
     if (g_blastSearch->m_makeblastdb != nullptr)
         g_blastSearch->m_makeblastdb->kill();
 }
 
-void BlastSearchDialog::loadBlastQueriesFromFastaFileButtonClicked()
-{
+void BlastSearchDialog::loadBlastQueriesFromFastaFileButtonClicked() {
     QStringList fullFileNames = QFileDialog::getOpenFileNames(this, "Load queries FASTA", g_memory->rememberedPath);
 
     if (fullFileNames.empty()) //User did hit cancel
         return;
 
-    for (const auto & fullFileName : fullFileNames)
+    for (const auto &fullFileName : fullFileNames)
         loadBlastQueriesFromFastaFile(fullFileName);
 }
 
-void BlastSearchDialog::loadBlastQueriesFromFastaFile(const QString& fullFileName)
-{
+void BlastSearchDialog::loadBlastQueriesFromFastaFile(const QString& fullFileName) {
     auto * progress = new MyProgressDialog(this, "Loading queries...", false);
     progress->setWindowModality(Qt::WindowModal);
     progress->show();
 
     int queriesLoaded = g_blastSearch->loadBlastQueriesFromFastaFile(fullFileName);
-    if (queriesLoaded > 0)
-    {
+    if (queriesLoaded > 0) {
         clearBlastHits();
-        fillQueriesTable();
+
         g_memory->rememberedPath = QFileInfo(fullFileName).absolutePath();
         setUiStep(READY_FOR_BLAST_SEARCH);
     }
+    updateTables();
 
     progress->close();
     progress->deleteLater();
@@ -467,9 +318,7 @@ void BlastSearchDialog::loadBlastQueriesFromFastaFile(const QString& fullFileNam
 }
 
 
-
-void BlastSearchDialog::enterQueryManually()
-{
+void BlastSearchDialog::enterQueryManually() {
     EnterOneBlastQueryDialog enterOneBlastQueryDialog(this);
     if (!enterOneBlastQueryDialog.exec())
         return;
@@ -477,80 +326,58 @@ void BlastSearchDialog::enterQueryManually()
     QString queryName = g_blastSearch->cleanQueryName(enterOneBlastQueryDialog.getName());
     g_blastSearch->m_blastQueries.addQuery(new BlastQuery(queryName,
                                                           enterOneBlastQueryDialog.getSequence()));
+    updateTables();
     clearBlastHits();
-    fillQueriesTable();
 
     setUiStep(READY_FOR_BLAST_SEARCH);
 }
 
-
-
-void BlastSearchDialog::clearAllQueries()
-{
-    g_blastSearch->m_blastQueries.clearAllQueries();
-    ui->blastQueriesTableWidget->clearContents();
+void BlastSearchDialog::clearAllQueries() {
     ui->clearAllQueriesButton->setEnabled(false);
 
-    while (ui->blastQueriesTableWidget->rowCount() > 0)
-        ui->blastQueriesTableWidget->removeRow(0);
+    g_blastSearch->m_blastQueries.clearAllQueries();
 
     clearBlastHits();
+    updateTables();
+
     setUiStep(BLAST_DB_BUILT_BUT_NO_QUERIES);
     emit blastChanged();
 }
 
-
-void BlastSearchDialog::clearSelectedQueries()
-{
-    //Use the table selection to figure out which queries are to be removed.
-    //The table cell containing the query name also has a pointer to the
-    //actual query, and that's what we use.
+void BlastSearchDialog::clearSelectedQueries() {
+    // Use the table selection to figure out which queries are to be removed.
     std::vector<BlastQuery *> queriesToRemove;
-    QItemSelectionModel * select = ui->blastQueriesTableWidget->selectionModel();
+    QItemSelectionModel * select = ui->blastQueriesTable->selectionModel();
     QModelIndexList selection = select->selectedIndexes();
-    QSet<int> rowsWithSelectionSet;
-    for (const auto & i : selection)
-        rowsWithSelectionSet.insert(i.row());
-    for (auto row : rowsWithSelectionSet) {
-        QTableWidgetItem * tableWidgetItem = ui->blastQueriesTableWidget->item(row, 2);
-        auto * queryNameItem = dynamic_cast<TableWidgetItemName *>(tableWidgetItem);
-        if (queryNameItem == nullptr)
-            continue;
-        BlastQuery * query = queryNameItem->getQuery();
-        queriesToRemove.push_back(query);
-    }
 
-    if (queriesToRemove.size() == g_blastSearch->m_blastQueries.m_queries.size())
-    {
+    if (selection.size() == g_blastSearch->m_blastQueries.m_queries.size()) {
         clearAllQueries();
         return;
     }
 
+    for (const auto &index : selection)
+        queriesToRemove.push_back(g_blastSearch->m_blastQueries.m_queries[index.row()]);
     g_blastSearch->clearSomeQueries(queriesToRemove);
 
-    fillQueriesTable();
-    fillHitsTable();
+    updateTables();
+
     emit blastChanged();
 }
 
-void BlastSearchDialog::runBlastSearchesInThread()
-{
+void BlastSearchDialog::runBlastSearchesInThread() {
     runBlastSearches(true);
 }
 
 
-void BlastSearchDialog::runBlastSearches(bool separateThread)
-{
+void BlastSearchDialog::runBlastSearches(bool separateThread) {
     setUiStep(BLAST_SEARCH_IN_PROGRESS);
 
-    if (!g_blastSearch->findProgram("blastn", &m_blastnCommand))
-    {
+    if (!g_blastSearch->findProgram("blastn", &m_blastnCommand)) {
         QMessageBox::warning(this, "Error", "The program blastn was not found.  Please install NCBI BLAST to use this feature.");
         setUiStep(READY_FOR_BLAST_SEARCH);
         return;
     }
-    if (!g_blastSearch->findProgram("tblastn", &m_tblastnCommand))
-    {
+    if (!g_blastSearch->findProgram("tblastn", &m_tblastnCommand)) {
         QMessageBox::warning(this, "Error", "The program tblastn was not found.  Please install NCBI BLAST to use this feature.");
         setUiStep(READY_FOR_BLAST_SEARCH);
         return;
@@ -559,12 +386,11 @@ void BlastSearchDialog::runBlastSearches(bool separateThread)
     clearBlastHits();
 
     auto * progress = new MyProgressDialog(this, "Running BLAST search...", separateThread, "Cancel search", "Cancelling search...",
-                                                       "Clicking this button will stop the BLAST search.");
+                                           "Clicking this button will stop the BLAST search.");
     progress->setWindowModality(Qt::WindowModal);
     progress->show();
 
-    if (separateThread)
-    {
+    if (separateThread) {
         m_blastSearchThread = new QThread;
         auto * runBlastSearchWorker = new RunBlastSearchWorker(m_blastnCommand, m_tblastnCommand, ui->parametersLineEdit->text().simplified());
         runBlastSearchWorker->moveToThread(m_blastSearchThread);
@@ -578,9 +404,7 @@ void BlastSearchDialog::runBlastSearches(bool separateThread)
         connect(m_blastSearchThread, SIGNAL(finished()), progress, SLOT(deleteLater()));
 
         m_blastSearchThread->start();
-    }
-    else
-    {
+    } else {
         RunBlastSearchWorker runBlastSearchWorker(m_blastnCommand, m_tblastnCommand, ui->parametersLineEdit->text().simplified());
         runBlastSearchWorker.runBlastSearch();
         progress->close();
@@ -591,15 +415,11 @@ void BlastSearchDialog::runBlastSearches(bool separateThread)
 
 
 
-void BlastSearchDialog::runBlastSearchFinished(const QString& error)
-{
-    if (error != "")
-    {
+void BlastSearchDialog::runBlastSearchFinished(const QString& error) {
+    if (!error.isEmpty()) {
         QMessageBox::warning(this, "Error", error);
         setUiStep(READY_FOR_BLAST_SEARCH);
-    }
-    else
-    {
+    } else {
         fillTablesAfterBlastSearch();
         g_settings->blastSearchParameters = ui->parametersLineEdit->text().simplified();
         setUiStep(BLAST_SEARCH_COMPLETE);
@@ -608,63 +428,11 @@ void BlastSearchDialog::runBlastSearchFinished(const QString& error)
     emit blastChanged();
 }
 
-
-void BlastSearchDialog::runBlastSearchCancelled()
-{
+void BlastSearchDialog::runBlastSearchCancelled() {
     g_blastSearch->m_cancelRunBlastSearch = true;
-    if (g_blastSearch->m_blast != nullptr)
+    if (g_blastSearch->m_blast)
         g_blastSearch->m_blast->kill();
 }
-
-
-
-void BlastSearchDialog::queryCellChanged(int row, int column)
-{
-    //Suspend signals for this function, as it is might change
-    //the cell value again if the new name isn't unique.
-    ui->blastQueriesTableWidget->blockSignals(true);
-
-    //If a query name was changed, then we adjust that query name elsewhere.
-    if (column == 2)
-    {
-        QString newName = ui->blastQueriesTableWidget->item(row, column)->text();
-        BlastQuery * query = g_blastSearch->m_blastQueries.m_queries[row];
-
-        if (newName != query->getName())
-        {
-            QString uniqueName = g_blastSearch->m_blastQueries.renameQuery(query, newName);
-
-            //It's possible that the user gave the query a non-unique name, in which
-            //case we now have to adjust it.
-            if (uniqueName != newName)
-                ui->blastQueriesTableWidget->item(row, column)->setText(uniqueName);
-
-            //Resize the query table columns, as the name new might take up more or less space.
-            ui->blastQueriesTableWidget->resizeColumns();
-
-            //Rebuild the hits table, if necessary, to show the new name.
-            if (query->hasHits())
-                fillHitsTable();
-
-            emit blastChanged();
-        }
-    }
-
-    ui->blastQueriesTableWidget->blockSignals(false);
-}
-
-
-void BlastSearchDialog::queryTableSelectionChanged()
-{
-    //If there are any selected items, then the 'Clear selected' button
-    //should be enabled.
-    QItemSelectionModel * select = ui->blastQueriesTableWidget->selectionModel();
-    bool hasSelection = select->hasSelection();
-
-    ui->clearSelectedQueriesButton->setEnabled(hasSelection);
-}
-
-
 
 void BlastSearchDialog::setUiStep(BlastUiState blastUiState)
 {
@@ -679,7 +447,7 @@ void BlastSearchDialog::setUiStep(BlastUiState blastUiState)
         ui->step2Label->setEnabled(false);
         ui->loadQueriesFromFastaButton->setEnabled(false);
         ui->enterQueryManuallyButton->setEnabled(false);
-        ui->blastQueriesTableWidget->setEnabled(false);
+        ui->blastQueriesTable->setEnabled(false);
         ui->blastQueriesTableInfoText->setEnabled(false);
         ui->step3Label->setEnabled(false);
         ui->parametersLabel->setEnabled(false);
@@ -696,7 +464,7 @@ void BlastSearchDialog::setUiStep(BlastUiState blastUiState)
         ui->enterQueryManuallyInfoText->setEnabled(false);
         ui->clearAllQueriesInfoText->setEnabled(false);
         ui->clearSelectedQueriesInfoText->setEnabled(false);
-        ui->blastHitsTableWidget->setEnabled(false);
+        ui->blastHitsTable->setEnabled(false);
         ui->blastSearchWidget->setEnabled(false);
         ui->blastHitsTableInfoText->setEnabled(false);
         break;
@@ -707,7 +475,7 @@ void BlastSearchDialog::setUiStep(BlastUiState blastUiState)
         ui->step2Label->setEnabled(false);
         ui->loadQueriesFromFastaButton->setEnabled(false);
         ui->enterQueryManuallyButton->setEnabled(false);
-        ui->blastQueriesTableWidget->setEnabled(false);
+        ui->blastQueriesTable->setEnabled(false);
         ui->blastQueriesTableInfoText->setEnabled(false);
         ui->step3Label->setEnabled(false);
         ui->parametersLabel->setEnabled(false);
@@ -724,7 +492,7 @@ void BlastSearchDialog::setUiStep(BlastUiState blastUiState)
         ui->enterQueryManuallyInfoText->setEnabled(false);
         ui->clearAllQueriesInfoText->setEnabled(false);
         ui->clearSelectedQueriesInfoText->setEnabled(false);
-        ui->blastHitsTableWidget->setEnabled(false);
+        ui->blastHitsTable->setEnabled(false);
         ui->blastSearchWidget->setEnabled(false);
         ui->blastHitsTableInfoText->setEnabled(false);
         break;
@@ -735,7 +503,7 @@ void BlastSearchDialog::setUiStep(BlastUiState blastUiState)
         ui->step2Label->setEnabled(true);
         ui->loadQueriesFromFastaButton->setEnabled(true);
         ui->enterQueryManuallyButton->setEnabled(true);
-        ui->blastQueriesTableWidget->setEnabled(true);
+        ui->blastQueriesTable->setEnabled(true);
         ui->blastQueriesTableInfoText->setEnabled(true);
         ui->step3Label->setEnabled(false);
         ui->parametersLabel->setEnabled(false);
@@ -752,7 +520,7 @@ void BlastSearchDialog::setUiStep(BlastUiState blastUiState)
         ui->enterQueryManuallyInfoText->setEnabled(true);
         ui->clearSelectedQueriesInfoText->setEnabled(false);
         ui->clearSelectedQueriesInfoText->setEnabled(false);
-        ui->blastHitsTableWidget->setEnabled(false);
+        ui->blastHitsTable->setEnabled(false);
         ui->blastSearchWidget->setEnabled(false);
         ui->blastHitsTableInfoText->setEnabled(false);
         break;
@@ -763,14 +531,13 @@ void BlastSearchDialog::setUiStep(BlastUiState blastUiState)
         ui->step2Label->setEnabled(true);
         ui->loadQueriesFromFastaButton->setEnabled(true);
         ui->enterQueryManuallyButton->setEnabled(true);
-        ui->blastQueriesTableWidget->setEnabled(true);
+        ui->blastQueriesTable->setEnabled(true);
         ui->blastQueriesTableInfoText->setEnabled(true);
         ui->step3Label->setEnabled(true);
         ui->parametersLabel->setEnabled(true);
         ui->parametersLineEdit->setEnabled(true);
         ui->runBlastSearchButton->setEnabled(true);
         ui->clearAllQueriesButton->setEnabled(true);
-        queryTableSelectionChanged();
         ui->hitsLabel->setEnabled(false);
         ui->step1TickLabel->setPixmap(tick);
         ui->step2TickLabel->setPixmap(tick);
@@ -780,7 +547,7 @@ void BlastSearchDialog::setUiStep(BlastUiState blastUiState)
         ui->enterQueryManuallyInfoText->setEnabled(true);
         ui->clearAllQueriesInfoText->setEnabled(true);
         ui->clearSelectedQueriesInfoText->setEnabled(true);
-        ui->blastHitsTableWidget->setEnabled(false);
+        ui->blastHitsTable->setEnabled(false);
         ui->blastSearchWidget->setEnabled(true);
         ui->blastHitsTableInfoText->setEnabled(false);
         break;
@@ -791,14 +558,13 @@ void BlastSearchDialog::setUiStep(BlastUiState blastUiState)
         ui->step2Label->setEnabled(true);
         ui->loadQueriesFromFastaButton->setEnabled(true);
         ui->enterQueryManuallyButton->setEnabled(true);
-        ui->blastQueriesTableWidget->setEnabled(true);
+        ui->blastQueriesTable->setEnabled(true);
         ui->blastQueriesTableInfoText->setEnabled(true);
         ui->step3Label->setEnabled(true);
         ui->parametersLabel->setEnabled(true);
         ui->parametersLineEdit->setEnabled(true);
         ui->runBlastSearchButton->setEnabled(false);
         ui->clearAllQueriesButton->setEnabled(true);
-        queryTableSelectionChanged();
         ui->hitsLabel->setEnabled(false);
         ui->step1TickLabel->setPixmap(tick);
         ui->step2TickLabel->setPixmap(tick);
@@ -808,7 +574,7 @@ void BlastSearchDialog::setUiStep(BlastUiState blastUiState)
         ui->enterQueryManuallyInfoText->setEnabled(true);
         ui->clearAllQueriesInfoText->setEnabled(true);
         ui->clearSelectedQueriesInfoText->setEnabled(true);
-        ui->blastHitsTableWidget->setEnabled(false);
+        ui->blastHitsTable->setEnabled(false);
         ui->blastSearchWidget->setEnabled(true);
         ui->blastHitsTableInfoText->setEnabled(false);
         break;
@@ -819,14 +585,13 @@ void BlastSearchDialog::setUiStep(BlastUiState blastUiState)
         ui->step2Label->setEnabled(true);
         ui->loadQueriesFromFastaButton->setEnabled(true);
         ui->enterQueryManuallyButton->setEnabled(true);
-        ui->blastQueriesTableWidget->setEnabled(true);
+        ui->blastQueriesTable->setEnabled(true);
         ui->blastQueriesTableInfoText->setEnabled(true);
         ui->step3Label->setEnabled(true);
         ui->parametersLabel->setEnabled(true);
         ui->parametersLineEdit->setEnabled(true);
         ui->runBlastSearchButton->setEnabled(true);
         ui->clearAllQueriesButton->setEnabled(true);
-        queryTableSelectionChanged();
         ui->hitsLabel->setEnabled(true);
         ui->step1TickLabel->setPixmap(tick);
         ui->step2TickLabel->setPixmap(tick);
@@ -836,109 +601,14 @@ void BlastSearchDialog::setUiStep(BlastUiState blastUiState)
         ui->enterQueryManuallyInfoText->setEnabled(true);
         ui->clearAllQueriesInfoText->setEnabled(true);
         ui->clearSelectedQueriesInfoText->setEnabled(true);
-        ui->blastHitsTableWidget->setEnabled(true);
+        ui->blastHitsTable->setEnabled(true);
         ui->blastSearchWidget->setEnabled(true);
         ui->blastHitsTableInfoText->setEnabled(true);
         break;
     }
 }
 
-//This function is called whenever a user changed the 'Show' tick box for a
-//query.  It does three things:
-// 1) Updates the 'shown' status of the TableWidgetItem so the table can be
-//    sorted by that column.
-// 2) Colours the QTableWidgetItems in the query table to match the query's
-//    'shown' status.
-// 3) Colours the QTableWidgetItems in the hits table to match the hit's query's
-//    'shown' status.
-void BlastSearchDialog::queryShownChanged()
-{
-    ui->blastQueriesTableWidget->blockSignals(true);
-
-    QTableWidgetItem tempItem;
-    QColor shownColour = tempItem.foreground().color();
-    QColor hiddenColour = QColor(150, 150, 150);
-
-    for (int i = 0; i < ui->blastQueriesTableWidget->rowCount(); ++i)
-    {
-        QString queryName = ui->blastQueriesTableWidget->item(i, 2)->text();
-        BlastQuery * query = g_blastSearch->m_blastQueries.getQueryFromName(queryName);
-        if (query == nullptr)
-            continue;
-        
-        QTableWidgetItem * item = ui->blastQueriesTableWidget->item(i, 1);
-        auto * shownItem = dynamic_cast<TableWidgetItemShown *>(item);
-
-        if (shownItem == nullptr)
-            continue;
-        shownItem->m_shown = query->isShown();
-
-        QColor colour = shownColour;
-        if (query->isHidden())
-            colour = hiddenColour;
-        ui->blastQueriesTableWidget->item(i, 2)->setForeground(colour);
-        ui->blastQueriesTableWidget->item(i, 3)->setForeground(colour);
-        ui->blastQueriesTableWidget->item(i, 4)->setForeground(colour);
-        ui->blastQueriesTableWidget->item(i, 5)->setForeground(colour);
-        ui->blastQueriesTableWidget->item(i, 6)->setForeground(colour);
-        ui->blastQueriesTableWidget->item(i, 7)->setForeground(colour);
-    }
-
-    for (int i = 0; i < ui->blastHitsTableWidget->rowCount(); ++i)
-    {
-        QString queryName = ui->blastHitsTableWidget->item(i, 1)->text();
-        BlastQuery * query = g_blastSearch->m_blastQueries.getQueryFromName(queryName);
-        if (query == nullptr)
-            continue;
-
-        QColor colour = shownColour;
-        if (query->isHidden())
-            colour = hiddenColour;
-
-        ui->blastHitsTableWidget->item(i, 1)->setForeground(colour);
-        ui->blastHitsTableWidget->item(i, 2)->setForeground(colour);
-        ui->blastHitsTableWidget->item(i, 3)->setForeground(colour);
-        ui->blastHitsTableWidget->item(i, 4)->setForeground(colour);
-        ui->blastHitsTableWidget->item(i, 5)->setForeground(colour);
-        ui->blastHitsTableWidget->item(i, 6)->setForeground(colour);
-        ui->blastHitsTableWidget->item(i, 7)->setForeground(colour);
-        ui->blastHitsTableWidget->item(i, 8)->setForeground(colour);
-        ui->blastHitsTableWidget->item(i, 9)->setForeground(colour);
-        ui->blastHitsTableWidget->item(i, 10)->setForeground(colour);
-        ui->blastHitsTableWidget->item(i, 11)->setForeground(colour);
-        ui->blastHitsTableWidget->item(i, 12)->setForeground(colour);
-    }
-
-    ui->blastQueriesTableWidget->blockSignals(false);
-    emit blastChanged();
-}
-
-
-
-void BlastSearchDialog::showPathsDialog(BlastQuery * query)
-{
-    deleteQueryPathsDialog();
-
-    m_queryPathsDialog = new QueryPathsDialog(this, query);
-
-    connect(m_queryPathsDialog, SIGNAL(selectionChanged()), this, SLOT(queryPathSelectionChangedSlot()));
-
-    m_queryPathsDialog->show();
-}
-
-void BlastSearchDialog::deleteQueryPathsDialog()
-{
-    delete m_queryPathsDialog;
-    m_queryPathsDialog = nullptr;
-}
-
-void BlastSearchDialog::queryPathSelectionChangedSlot()
-{
-    emit queryPathSelectionChanged();
-}
-
-void BlastSearchDialog::openFiltersDialog()
-{
+void BlastSearchDialog::openFiltersDialog() {
     BlastHitFiltersDialog filtersDialog(this);
     filtersDialog.setWidgetsFromSettings();
 
@@ -949,7 +619,311 @@ void BlastSearchDialog::openFiltersDialog()
     setFilterText();
 }
 
-void BlastSearchDialog::setFilterText()
-{
+void BlastSearchDialog::setFilterText() {
     ui->blastHitFiltersLabel->setText("Current filters: " + BlastHitFiltersDialog::getFilterText());
+}
+
+QueriesListModel::QueriesListModel(BlastQueries &queries, QObject *parent)
+  : m_queries(queries), QAbstractTableModel(parent) {}
+
+int QueriesListModel::rowCount(const QModelIndex &) const {
+    return m_queries.getQueryCount();
+}
+
+int QueriesListModel::columnCount(const QModelIndex &) const {
+    return int(QueriesHitColumns::TotalHitColumns);
+}
+
+QVariant QueriesListModel::data(const QModelIndex &index, int role) const {
+    if (!index.isValid())
+        return {};
+
+    auto *query = this->query(index);
+    if (!query)
+        return {};
+
+    auto column = QueriesHitColumns(index.column());
+    if (role == Qt::BackgroundRole) {
+        if (query->isHidden()) // Hide disabled queries
+            return QColor(150, 150, 150);
+        else if (column == QueriesHitColumns::Color)
+            return query->getColour();
+    }
+
+    if (role == Qt::CheckStateRole) {
+        if (column == QueriesHitColumns::Show)
+            return query->isShown() ? Qt::Checked : Qt::Unchecked;
+    }
+
+    if (role == Qt::TextAlignmentRole) {
+        if (column == QueriesHitColumns::Show)
+            return Qt::AlignCenter;
+    }
+
+    if (role == Qt::EditRole && column == QueriesHitColumns::QueryName)
+        return query->getName();
+
+    if (role != Qt::DisplayRole)
+        return {};
+
+    switch (column) {
+        default:
+            return {};
+        case QueriesHitColumns::QueryName:
+            return query->getName();
+        case QueriesHitColumns::Type:
+            return query->getTypeString();
+        case QueriesHitColumns::Length:
+            return query->getLength();
+        case QueriesHitColumns::Hits:
+            if (query->wasSearchedFor())
+                return query->hitCount();
+            return "-";
+        case QueriesHitColumns::QueryCover:
+            if (query->wasSearchedFor())
+                return formatDoubleForDisplay(100.0 * query->fractionCoveredByHits(), 2) + "%";
+            return "-";
+        case QueriesHitColumns::Paths:
+            if (query->wasSearchedFor())
+                return query->getPathCount();
+            return "-";
+    }
+};
+
+QVariant QueriesListModel::headerData(int section, Qt::Orientation orientation, int role) const {
+    if (role == Qt::TextAlignmentRole && orientation == Qt::Horizontal)
+        return Qt::AlignCenter;
+
+    if (role != Qt::DisplayRole)
+        return {};
+
+    if (orientation == Qt::Vertical)
+        return QString::number(section + 1);
+
+    switch (QueriesHitColumns(section)) {
+        default:
+            return {};
+        case QueriesHitColumns::Show:
+            return "Show";
+        case QueriesHitColumns::QueryName:
+            return "Query name";
+        case QueriesHitColumns::Type:
+            return "Type";
+        case QueriesHitColumns::Length:
+            return "Length";
+        case QueriesHitColumns::Hits:
+            return "Hits";
+        case QueriesHitColumns::QueryCover:
+            return "Query cover";
+        case QueriesHitColumns::Paths:
+            return "Paths";
+    }
+}
+
+Qt::ItemFlags QueriesListModel::flags(const QModelIndex &index) const {
+    if (!index.isValid())
+        return Qt::ItemIsEnabled;
+
+    auto column = QueriesHitColumns(index.column());
+    if (column == QueriesHitColumns::Show)
+        return QAbstractTableModel::flags(index) | Qt::ItemIsUserCheckable;
+    else if (column == QueriesHitColumns::QueryName)
+        return QAbstractTableModel::flags(index) | Qt::ItemIsEditable;
+    else if (column == QueriesHitColumns::Color || column == QueriesHitColumns::Paths)
+        return Qt::ItemIsEnabled;
+
+    return QAbstractTableModel::flags(index);
+}
+
+bool QueriesListModel::setData(const QModelIndex &index, const QVariant &value, int role) {
+    if (!index.isValid())
+        return false;
+
+    auto *query = this->query(index);
+    if (!query)
+        return false;
+
+    auto column = QueriesHitColumns(index.column());
+    if (role == Qt::CheckStateRole && column == QueriesHitColumns::Show) { // Implement query shown checkbox
+        query->setShown(value.toBool());
+        emit dataChanged(index, QModelIndex()); // Here we need to refresh the whole row
+        return true;
+    } else if (role == Qt::EditRole && column == QueriesHitColumns::QueryName) { // Change query name
+        QString newName = value.toString();
+        if (newName != query->getName()) {
+            m_queries.renameQuery(query, newName);
+            emit dataChanged(index, index);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+BlastQuery *QueriesListModel::query(const QModelIndex &index) const {
+    if (!index.isValid() || index.row() >= m_queries.getQueryCount())
+        return nullptr;
+
+    return m_queries.m_queries[index.row()];
+}
+
+void QueriesListModel::setColor(const QModelIndex &index, QColor color) {
+    if (!index.isValid())
+        return;
+
+    auto column = QueriesHitColumns(index.column());
+    if (column != QueriesHitColumns::Color)
+        return;
+
+    if (auto *query = this->query(index)) {
+        query->setColour(color);
+        emit dataChanged(index, index);
+    };
+}
+
+void PathButtonDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
+    const auto *model = qobject_cast<const QSortFilterProxyModel*>(index.model());
+    auto *query = qobject_cast<const QueriesListModel*>(model->sourceModel())->query(model->mapToSource(index));
+    if (query && query->wasSearchedFor()) {
+        QStyleOptionButton btn;
+        btn.features = QStyleOptionButton::None;
+        btn.rect = option.rect;
+        btn.state = option.state | QStyle::State_Enabled | QStyle::State_Raised;
+        btn.text = QString::number(query->getPathCount());
+
+        QStyle *style = option.widget ? option.widget->style() : QApplication::style();
+        style->drawControl(QStyle::CE_PushButton, &btn, painter);
+        return;
+    }
+
+    QStyledItemDelegate::paint(painter, option, index);
+}
+
+bool PathButtonDelegate::editorEvent(QEvent *event, QAbstractItemModel *model, const QStyleOptionViewItem &option,
+                                     const QModelIndex &index) {
+    if (event->type() == QEvent::MouseButtonRelease) {
+        const auto *proxyModel = qobject_cast<const QSortFilterProxyModel*>(model);
+        auto *query = qobject_cast<const QueriesListModel*>(proxyModel->sourceModel())->query(proxyModel->mapToSource(index));
+        if (query && query->wasSearchedFor()) {
+            auto *queryPathsDialog = new QueryPathsDialog(nullptr, query);
+
+            connect(queryPathsDialog,
+                    &QueryPathsDialog::selectionChanged,
+                    [this]() {
+                        emit queryPathSelectionChanged();
+                    });
+
+            connect(queryPathsDialog, &QueryPathsDialog::finished,
+                    queryPathsDialog, &QueryPathsDialog::deleteLater);
+
+            queryPathsDialog->show();
+        }
+    }
+
+    return QStyledItemDelegate::editorEvent(event, model, option, index);
+}
+
+HitsListModel::HitsListModel(BlastHits &hits, QObject *parent)
+ : m_hits(hits) {}
+
+int HitsListModel::columnCount(const QModelIndex &) const {
+    return int(HitsColumns::TotalHitColumns);
+}
+
+int HitsListModel::rowCount(const QModelIndex &) const {
+    return m_hits.size();
+}
+
+QVariant HitsListModel::data(const QModelIndex &index, int role) const {
+    if (!index.isValid() || index.row() >= m_hits.size())
+        return {};
+
+    auto column = HitsColumns(index.column());
+    const auto &hit = *m_hits[index.row()];
+    const auto &hitQuery = *hit.m_query;
+
+    if (role == Qt::BackgroundRole) {
+        if (hitQuery.isHidden()) // Hide disabled queries
+            return QColor(150, 150, 150);
+        else if (column == HitsColumns::Color)
+            return hitQuery.getColour();
+    }
+
+    if (role != Qt::DisplayRole)
+        return {};
+
+    switch (column) {
+        default:
+            return {};
+        case HitsColumns::QueryName:
+            return hitQuery.getName();
+        case HitsColumns::NodeName:
+            return hit.m_node->getName();
+        case HitsColumns::PercentIdentity:
+            return formatDoubleForDisplay(hit.m_percentIdentity, 2) + "%";
+        case HitsColumns::AlignmentLength:
+            return hit.m_alignmentLength;
+        case HitsColumns::QueryCover:
+            return formatDoubleForDisplay(100.0 * hit.getQueryCoverageFraction(), 2) + "%";
+        case HitsColumns::Mismatches:
+            return hit.m_numberMismatches;
+        case HitsColumns::GapOpens:
+            return hit.m_numberGapOpens;
+        case HitsColumns::QueryStart:
+            return hit.m_queryStart;
+        case HitsColumns::QueryEnd:
+            return hit.m_queryEnd;
+        case HitsColumns::NodeStart:
+            return hit.m_nodeStart;
+        case HitsColumns::NodeEnd:
+            return hit.m_nodeEnd;
+        case HitsColumns::Evalue:
+            return hit.m_eValue.asString(false);
+        case HitsColumns::BitScore:
+            return hit.m_bitScore;
+    }
+
+    return {};
+}
+
+QVariant HitsListModel::headerData(int section, Qt::Orientation orientation, int role) const {
+    if (role == Qt::TextAlignmentRole && orientation == Qt::Horizontal)
+        return Qt::AlignCenter;
+
+    if (role != Qt::DisplayRole)
+        return {};
+
+    if (orientation == Qt::Vertical)
+        return QString::number(section + 1);
+
+    switch (HitsColumns(section)) {
+        default:
+            return {};
+        case HitsColumns::QueryName:
+            return "Query\nname";
+        case HitsColumns::NodeName:
+            return "Node\nname";
+        case HitsColumns::PercentIdentity:
+            return "Percent\nidentity";
+        case HitsColumns::AlignmentLength:
+            return "Alignment\nlength";
+        case HitsColumns::QueryCover:
+            return "Query\ncover";
+        case HitsColumns::Mismatches:
+            return "Mis-\nmatches";
+        case HitsColumns::GapOpens:
+            return "Gap\nopens";
+        case HitsColumns::QueryStart:
+            return "Query\nstart";
+        case HitsColumns::QueryEnd:
+            return "Query\nend";
+        case HitsColumns::NodeStart:
+            return "Node\nstart";
+        case HitsColumns::NodeEnd:
+            return "Node\nend";
+        case HitsColumns::Evalue:
+            return "E-\nvalue";
+        case HitsColumns::BitScore:
+            return "Bit\nscore";
+    }
 }

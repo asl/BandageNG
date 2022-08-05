@@ -27,8 +27,7 @@
 BlastQueries::BlastQueries()
 : m_presetColours{getPresetColours()} {}
 
-BlastQueries::~BlastQueries()
-{
+BlastQueries::~BlastQueries() {
     clearAllQueries();
 }
 

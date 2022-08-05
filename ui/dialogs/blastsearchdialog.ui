@@ -56,78 +56,7 @@
        </widget>
       </item>
       <item>
-       <widget class="MyTableWidget" name="blastHitsTableWidget">
-        <column>
-         <property name="text">
-          <string/>
-         </property>
-        </column>
-        <column>
-         <property name="text">
-          <string>Query name</string>
-         </property>
-        </column>
-        <column>
-         <property name="text">
-          <string>Node name</string>
-         </property>
-        </column>
-        <column>
-         <property name="text">
-          <string>Percent identity</string>
-         </property>
-        </column>
-        <column>
-         <property name="text">
-          <string>Alignment length</string>
-         </property>
-        </column>
-        <column>
-         <property name="text">
-          <string>Query cover</string>
-         </property>
-        </column>
-        <column>
-         <property name="text">
-          <string>Mismatches</string>
-         </property>
-        </column>
-        <column>
-         <property name="text">
-          <string>Gap opens</string>
-         </property>
-        </column>
-        <column>
-         <property name="text">
-          <string>Query start</string>
-         </property>
-        </column>
-        <column>
-         <property name="text">
-          <string>Query end</string>
-         </property>
-        </column>
-        <column>
-         <property name="text">
-          <string>Node start</string>
-         </property>
-        </column>
-        <column>
-         <property name="text">
-          <string>Node end</string>
-         </property>
-        </column>
-        <column>
-         <property name="text">
-          <string>E-value</string>
-         </property>
-        </column>
-        <column>
-         <property name="text">
-          <string>Bit score</string>
-         </property>
-        </column>
-       </widget>
+       <widget class="QTableView" name="blastHitsTable"/>
       </item>
      </layout>
     </widget>
@@ -577,48 +506,7 @@
        </widget>
       </item>
       <item>
-       <widget class="MyTableWidget" name="blastQueriesTableWidget">
-        <column>
-         <property name="text">
-          <string/>
-         </property>
-        </column>
-        <column>
-         <property name="text">
-          <string>Show</string>
-         </property>
-        </column>
-        <column>
-         <property name="text">
-          <string>Query name</string>
-         </property>
-        </column>
-        <column>
-         <property name="text">
-          <string>Type</string>
-         </property>
-        </column>
-        <column>
-         <property name="text">
-          <string>Length</string>
-         </property>
-        </column>
-        <column>
-         <property name="text">
-          <string>Hits</string>
-         </property>
-        </column>
-        <column>
-         <property name="text">
-          <string>Query cover</string>
-         </property>
-        </column>
-        <column>
-         <property name="text">
-          <string>Paths</string>
-         </property>
-        </column>
-       </widget>
+       <widget class="QTableView" name="blastQueriesTable"/>
       </item>
      </layout>
     </widget>
@@ -779,11 +667,6 @@
    <header>infotextwidget.h</header>
    <container>1</container>
   </customwidget>
-  <customwidget>
-   <class>MyTableWidget</class>
-   <extends>QTableWidget</extends>
-   <header>mytablewidget.h</header>
-  </customwidget>
  </customwidgets>
  <tabstops>
   <tabstop>buildBlastDatabaseButton</tabstop>
@@ -791,11 +674,11 @@
   <tabstop>enterQueryManuallyButton</tabstop>
   <tabstop>clearSelectedQueriesButton</tabstop>
   <tabstop>clearAllQueriesButton</tabstop>
-  <tabstop>blastQueriesTableWidget</tabstop>
+  <tabstop>blastQueriesTable</tabstop>
   <tabstop>parametersLineEdit</tabstop>
   <tabstop>blastFiltersButton</tabstop>
   <tabstop>runBlastSearchButton</tabstop>
-  <tabstop>blastHitsTableWidget</tabstop>
+  <tabstop>blastHitsTable</tabstop>
  </tabstops>
  <resources/>
  <connections>

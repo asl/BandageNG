@@ -34,6 +34,9 @@
 
 class QProcess;
 
+
+using BlastHits = std::vector<std::shared_ptr<BlastHit>>;
+
 class BlastSearch
 {
 public:
@@ -47,7 +50,7 @@ public:
     QProcess *m_makeblastdb{};
     QProcess *m_blast{};
     QTemporaryDir m_tempDirectory;
-    std::vector<std::shared_ptr<BlastHit>> m_allHits;
+    BlastHits m_allHits;
 
     static bool findProgram(const QString& programName, QString * command);
     int loadBlastQueriesFromFastaFile(QString fullFileName);

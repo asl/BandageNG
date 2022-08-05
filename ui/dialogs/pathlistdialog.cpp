@@ -78,7 +78,7 @@ void PathListDialog::refineByNode() {
         return;
     }
 
-    auto *model = dynamic_cast<PathListModel*>(ui->pathsView->model());
+    auto *model = qobject_cast<PathListModel*>(ui->pathsView->model());
     model->refinePathOrder(nodes);
 
     // Resort

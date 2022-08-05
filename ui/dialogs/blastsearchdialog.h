@@ -20,14 +20,18 @@
 #define BLASTSEARCHDIALOG_H
 
 #include <QDialog>
-#include <QMap>
 #include <QThread>
 #include <QProcess>
+#include <QAbstractTableModel>
+#include <QStyledItemDelegate>
+
 #include "program/globals.h"
 
-class DeBruijnNode;
 class BlastQuery;
-class QueryPathsDialog;
+class BlastQueries;
+class BlastHit;
+
+using BlastHits = std::vector<std::shared_ptr<BlastHit>>;
 
 namespace Ui {
 class BlastSearchDialog;
@@ -37,6 +41,63 @@ enum BlastUiState {BLAST_DB_NOT_YET_BUILT, BLAST_DB_BUILD_IN_PROGRESS,
     BLAST_DB_BUILT_BUT_NO_QUERIES,
     READY_FOR_BLAST_SEARCH, BLAST_SEARCH_IN_PROGRESS,
     BLAST_SEARCH_COMPLETE};
+
+class PathButtonDelegate : public QStyledItemDelegate {
+    Q_OBJECT
+    Q_DISABLE_COPY(PathButtonDelegate)
+public:
+    explicit PathButtonDelegate(QObject* parent = nullptr)
+            : QStyledItemDelegate(parent)
+    {}
+
+    void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
+    bool editorEvent(QEvent *event, QAbstractItemModel *model,
+                     const QStyleOptionViewItem &option, const QModelIndex &index) override;
+
+signals:
+    void queryPathSelectionChanged();
+};
+
+class QueriesListModel : public QAbstractTableModel {
+    Q_OBJECT
+public:
+    explicit QueriesListModel(BlastQueries &queries,
+                              QObject *parent = nullptr);
+
+    int rowCount(const QModelIndex &) const override;
+    int columnCount(const QModelIndex &) const override;
+    QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
+    QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
+    Qt::ItemFlags flags(const QModelIndex &index) const override;
+    bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole) override;
+
+    void setColor(const QModelIndex &index, QColor color);
+    void update() { startUpdate(); endUpdate(); }
+    void startUpdate() { beginResetModel(); }
+    void endUpdate() { endResetModel(); }
+
+    BlastQuery *query(const QModelIndex &index) const;
+
+    BlastQueries &m_queries;
+};
+
+class HitsListModel : public QAbstractTableModel {
+Q_OBJECT
+public:
+    explicit HitsListModel(BlastHits &hits,
+                           QObject *parent = nullptr);
+
+    int rowCount(const QModelIndex &) const override;
+    int columnCount(const QModelIndex &) const override;
+    QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
+    QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
+
+    void update() { startUpdate(); endUpdate(); }
+    void startUpdate() { beginResetModel(); }
+    void endUpdate() { endResetModel(); }
+
+    BlastHits &m_hits;
+};
 
 class BlastSearchDialog : public QDialog
 {
@@ -48,13 +109,14 @@ public:
 
 private:
     Ui::BlastSearchDialog *ui;
-    QMap<long long, DeBruijnNode*> * m_deBruijnGraphNodes;
+
     QString m_makeblastdbCommand;
     QString m_blastnCommand;
     QString m_tblastnCommand;
-    QThread * m_buildBlastDatabaseThread;
-    QThread * m_blastSearchThread;
-    QueryPathsDialog * m_queryPathsDialog;
+    QThread *m_buildBlastDatabaseThread;
+    QThread *m_blastSearchThread;
+    QueriesListModel *m_queriesListModel;
+    HitsListModel *m_hitsListModel;
 
     void setUiStep(BlastUiState blastUiState);
     void clearBlastHits();
@@ -62,8 +124,6 @@ private:
     void loadBlastQueriesFromFastaFile(const QString& fullFileName);
     void buildBlastDatabase(bool separateThread);
     void runBlastSearches(bool separateThread);
-    void makeQueryRow(int row);
-    void deleteQueryPathsDialog();
     void setFilterText();
 
 private slots:
@@ -75,17 +135,13 @@ private slots:
     void clearSelectedQueries();
     void runBlastSearchesInThread();
     void fillTablesAfterBlastSearch();
-    void fillQueriesTable();
-    void fillHitsTable();
+    void updateTables();
+
     void blastDatabaseBuildFinished(const QString& error);
     void runBlastSearchFinished(const QString& error);
     void buildBlastDatabaseCancelled();
     void runBlastSearchCancelled();
-    void queryCellChanged(int row, int column);
-    void queryTableSelectionChanged();
-    void queryShownChanged();
-    void showPathsDialog(BlastQuery * query);
-    void queryPathSelectionChangedSlot();
+
     void openFiltersDialog();
 
 signals:

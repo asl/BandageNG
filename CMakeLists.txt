@@ -62,12 +62,9 @@ set(LIB_SOURCES
         ui/dialogs/pathspecifydialog.cpp
         ui/dialogs/querypathsdialog.cpp
         ui/querypathsequencecopybutton.cpp
-        ui/querypathspushbutton.cpp
         ui/dialogs/settingsdialog.cpp
         ui/tablewidgetitemdouble.cpp
         ui/tablewidgetitemint.cpp
-        ui/tablewidgetitemname.cpp
-        ui/tablewidgetitemshown.cpp
         ui/widgets/verticallabel.cpp
         ui/widgets/verticalscrollarea.cpp
         graph/nodecolorer.cpp
