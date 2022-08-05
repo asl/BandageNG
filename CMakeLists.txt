@@ -52,7 +52,7 @@ set(LIB_SOURCES
         ui/dialogs/pathlistdialog.cpp
         ui/graphicsviewzoom.cpp
         ui/dialogs/graphinfodialog.cpp
-        ui/infotextwidget.cpp
+        ui/widgets/infotextwidget.cpp
         ui/mainwindow.cpp
         ui/bandagegraphicsscene.cpp
         ui/bandagegraphicsview.cpp
