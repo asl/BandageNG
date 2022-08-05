@@ -685,7 +685,7 @@ QVariant QueriesListModel::data(const QModelIndex &index, int role) const {
             return "-";
         case QueriesHitColumns::Paths:
             if (query->wasSearchedFor())
-                return query->getPathCount();
+                return unsigned(query->getPathCount());
             return "-";
     }
 };
@@ -805,7 +805,7 @@ bool PathButtonDelegate::editorEvent(QEvent *event, QAbstractItemModel *model, c
         const auto *proxyModel = qobject_cast<const QSortFilterProxyModel*>(model);
         auto *query = qobject_cast<const QueriesListModel*>(proxyModel->sourceModel())->query(proxyModel->mapToSource(index));
         if (query && query->wasSearchedFor()) {
-            auto *queryPathsDialog = new QueryPathsDialog(nullptr, query);
+            auto *queryPathsDialog = new QueryPathsDialog(query, nullptr);
 
             connect(queryPathsDialog,
                     &QueryPathsDialog::selectionChanged,

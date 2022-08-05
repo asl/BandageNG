@@ -82,7 +82,7 @@ public:
 };
 
 class HitsListModel : public QAbstractTableModel {
-Q_OBJECT
+    Q_OBJECT
 public:
     explicit HitsListModel(BlastHits &hits,
                            QObject *parent = nullptr);
@@ -99,10 +99,8 @@ public:
     BlastHits &m_hits;
 };
 
-class BlastSearchDialog : public QDialog
-{
+class BlastSearchDialog : public QDialog {
     Q_OBJECT
-
 public:
     explicit BlastSearchDialog(QWidget *parent = nullptr, const QString& autoQuery = "");
     ~BlastSearchDialog() override;

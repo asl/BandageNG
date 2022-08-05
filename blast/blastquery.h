@@ -51,8 +51,8 @@ public:
     bool wasSearchedFor() const {return m_searchedFor;}
     QColor getColour() const {return m_colour;}
     QuerySequenceType getSequenceType() const {return m_sequenceType;}
-    QList<BlastQueryPath> getPaths() const {return m_paths;}
-    int getPathCount() const {return m_paths.size();}
+    const auto &getPaths() const {return m_paths;}
+    size_t getPathCount() const {return m_paths.size();}
     QString getTypeString() const;
     double fractionCoveredByHits(const QList<BlastHit *> * hitsToCheck = 0) const;
     bool isShown() const {return m_shown;}
@@ -76,7 +76,7 @@ private:
     bool m_searchedFor;
     QColor m_colour;
     QuerySequenceType m_sequenceType;
-    QList<BlastQueryPath> m_paths;
+    std::vector<BlastQueryPath> m_paths;
     bool m_shown;
 
     void autoSetSequenceType();

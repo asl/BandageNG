@@ -19,7 +19,12 @@
 #ifndef QUERYPATHSDIALOG_H
 #define QUERYPATHSDIALOG_H
 
+#include "blast/blastquerypath.h"
+
 #include <QDialog>
+#include <QAbstractTableModel>
+#include <QStyledItemDelegate>
+#include <QItemSelection>
 
 class BlastQuery;
 
@@ -27,20 +32,48 @@ namespace Ui {
 class QueryPathsDialog;
 }
 
+class CopyPathSequenceDelegate : public QStyledItemDelegate {
+Q_OBJECT
+    Q_DISABLE_COPY(CopyPathSequenceDelegate)
+public:
+    explicit CopyPathSequenceDelegate(QObject* parent = nullptr)
+            : QStyledItemDelegate(parent)
+    {}
+
+    void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
+    bool editorEvent(QEvent *event, QAbstractItemModel *model,
+                     const QStyleOptionViewItem &option, const QModelIndex &index) override;
+};
+
+class QueryPathsModel : public QAbstractTableModel {
+    Q_OBJECT
+public:
+    explicit QueryPathsModel(const BlastQuery *query,
+                             QObject *parent = nullptr);
+
+    int rowCount(const QModelIndex &) const override;
+    int columnCount(const QModelIndex &) const override;
+    QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
+    QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
+    Qt::ItemFlags flags(const QModelIndex &index) const override;
+
+    std::vector<BlastQueryPath> m_queryPaths;
+};
+
 class QueryPathsDialog : public QDialog
 {
     Q_OBJECT
 
 public:
-    explicit QueryPathsDialog(QWidget *parent, BlastQuery * query);
+    explicit QueryPathsDialog(BlastQuery *query, QWidget *parent = nullptr);
     ~QueryPathsDialog() override;
 
 private:
     Ui::QueryPathsDialog *ui;
-
+    QueryPathsModel *m_queryPathsModel;
 private slots:
     void hidden();
-    void tableSelectionChanged();
+    void tableSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected);
 
 signals:
     void selectionChanged();

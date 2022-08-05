@@ -20,15 +20,29 @@
 #include "ui_querypathsdialog.h"
 
 #include "blast/blastquery.h"
-#include "blast/blastquerypath.h"
-#include "tablewidgetitemint.h"
-#include "tablewidgetitemdouble.h"
 #include "program/globals.h"
 #include "program/memory.h"
-#include <QTableWidgetItem>
-#include "querypathsequencecopybutton.h"
 
-QueryPathsDialog::QueryPathsDialog(QWidget * parent, BlastQuery * query) :
+#include <QSortFilterProxyModel>
+#include <QClipboard>
+
+
+enum class QueryPathsColumns : int {
+    PathString = 0,
+    Length = 1,
+    QueryCoveragePath = 2,
+    QueryCoverageHits = 3,
+    PercIdentity = 4,
+    Mismatches = 5,
+    GapOpens = 6,
+    RelativeLength = 7,
+    LengthDisc = 8,
+    Evalue = 9,
+    Copy = 10,
+    TotalColumns = Copy + 1
+};
+
+QueryPathsDialog::QueryPathsDialog(BlastQuery *query, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::QueryPathsDialog)
 {
@@ -36,15 +50,9 @@ QueryPathsDialog::QueryPathsDialog(QWidget * parent, BlastQuery * query) :
     setWindowFlags(windowFlags() | Qt::Tool);
 
     connect(this, SIGNAL(rejected()), this, SLOT(hidden()));
-    connect(ui->tableWidget, SIGNAL(itemSelectionChanged()), this, SLOT(tableSelectionChanged()));
 
     g_memory->queryPathDialogIsVisible = true;
     g_memory->queryPaths.clear();
-
-    ui->tableWidget->setHorizontalHeaderLabels(QStringList() << "Path" << "Length\n(bp)" << "Query\ncovered\nby path" <<
-                                               "Query\ncovered\nby hits" << "Mean hit\nidentity"  << "Total\nhit mis-\nmatches" <<
-                                               "Total\nhit gap\nopens" << "Relative\nlength" << "Length\ndiscre-\npancy" <<
-                                               "E-value\nproduct" << "Copy sequence\nto clipboard");
 
     QString queryDescription = "Query name: " + query->getName();
     queryDescription += "      type: " + query->getTypeString();
@@ -55,134 +63,177 @@ QueryPathsDialog::QueryPathsDialog(QWidget * parent, BlastQuery * query) :
         queryDescription += " bp";
     ui->queryLabel->setText(queryDescription);
 
-    ui->tableWidget->clearContents();
-    ui->tableWidget->setSortingEnabled(false);
+    auto *proxyModel = new QSortFilterProxyModel(ui->tableView);
+    m_queryPathsModel = new QueryPathsModel(query, ui->tableView);
+    proxyModel->setSourceModel(m_queryPathsModel);
+    ui->tableView->setModel(proxyModel);
+    ui->tableView->setItemDelegateForColumn(int(QueryPathsColumns::Copy),
+                                            new CopyPathSequenceDelegate(ui->tableView));
+    ui->tableView->setWordWrap(true);
+    ui->tableView->setSortingEnabled(true);
+    ui->tableView->horizontalHeader()->setStretchLastSection(true);
+    ui->tableView->resizeColumnsToContents();
 
-    int pathCount = query->getPathCount();
-    ui->tableWidget->setRowCount(pathCount);
-
-    if (pathCount == 0)
-        return;
-
-    QList<BlastQueryPath> paths = query->getPaths();
-
-    for (int i = 0; i < pathCount; ++i)
-    {
-        BlastQueryPath * queryPath = &paths[i];
-
-        auto * pathString = new QTableWidgetItem(queryPath->getPath().getString(true));
-        pathString->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
-
-        int length = queryPath->getPath().getLength();
-        auto * pathLength = new TableWidgetItemInt(formatIntForDisplay(length), length);
-        pathLength->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
-
-        double queryCoveragePath = queryPath->getPathQueryCoverage();
-        auto * pathQueryCoveragePath = new TableWidgetItemDouble(formatDoubleForDisplay(100.0 * queryCoveragePath, 2) + "%", queryCoveragePath);
-        pathQueryCoveragePath->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
-        pathLength->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
-
-        double queryCoverageHits = queryPath->getHitsQueryCoverage();
-        auto * pathQueryCoverageHits = new TableWidgetItemDouble(formatDoubleForDisplay(100.0 * queryCoverageHits, 2) + "%", queryCoverageHits);
-        pathQueryCoverageHits->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
-
-        double percIdentity = queryPath->getMeanHitPercIdentity();
-        auto * pathPercIdentity = new TableWidgetItemDouble(formatDoubleForDisplay(percIdentity, 2) + "%", percIdentity);
-        pathPercIdentity->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
-
-        int mismatches = queryPath->getTotalHitMismatches();
-        auto * pathMismatches = new TableWidgetItemInt(formatIntForDisplay(mismatches), mismatches);
-        pathMismatches->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
-
-        int gapOpens = queryPath->getTotalHitGapOpens();
-        auto * pathGapOpens = new TableWidgetItemInt(formatIntForDisplay(gapOpens), gapOpens);
-        pathGapOpens->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
-
-        double relativeLength = queryPath->getRelativePathLength();
-        auto * pathRelativeLength = new TableWidgetItemDouble(formatDoubleForDisplay(100.0 * relativeLength, 2) + "%", relativeLength);
-        pathRelativeLength->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
-
-        int lengthDisc = queryPath->getAbsolutePathLengthDifference();
-        QString lengthDiscString = queryPath->getAbsolutePathLengthDifferenceString(true);
-        auto * pathLengthDisc = new TableWidgetItemInt(lengthDiscString, lengthDisc);
-        pathLengthDisc->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
-
-        SciNot evalueProduct = queryPath->getEvalueProduct();
-        auto * pathEvalueProduct = new TableWidgetItemDouble(evalueProduct.asString(false), evalueProduct.toDouble());
-        pathEvalueProduct->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
-
-        QByteArray pathSequence = queryPath->getPath().getPathSequence();
-        QString pathStart;
-        if (pathSequence.length() <= 8)
-            pathStart = pathSequence;
-        else
-            pathStart = pathSequence.left(8) + "...";
-
-        auto * sequenceCopy = new QTableWidgetItem(pathStart);
-        auto * sequenceCopyButton = new QueryPathSequenceCopyButton(pathSequence, pathStart);
-
-        ui->tableWidget->setItem(i, 0, pathString);
-        ui->tableWidget->setItem(i, 1, pathLength);
-        ui->tableWidget->setItem(i, 2, pathQueryCoveragePath);
-        ui->tableWidget->setItem(i, 3, pathQueryCoverageHits);
-        ui->tableWidget->setItem(i, 4, pathPercIdentity);
-        ui->tableWidget->setItem(i, 5, pathMismatches);
-        ui->tableWidget->setItem(i, 6, pathGapOpens);
-        ui->tableWidget->setItem(i, 7, pathRelativeLength);
-        ui->tableWidget->setItem(i, 8, pathLengthDisc);
-        ui->tableWidget->setItem(i, 9, pathEvalueProduct);
-        ui->tableWidget->setItem(i, 10, sequenceCopy);
-        ui->tableWidget->setCellWidget(i, 10, sequenceCopyButton);
-    }
-
-    ui->tableWidget->resizeColumns();
-    ui->tableWidget->setSortingEnabled(true);
+    connect(ui->tableView->selectionModel(),
+            &QItemSelectionModel::selectionChanged,
+            this,
+            &QueryPathsDialog::tableSelectionChanged);
 }
 
-QueryPathsDialog::~QueryPathsDialog()
-{
+QueryPathsDialog::~QueryPathsDialog() {
     delete ui;
     g_memory->queryPathDialogIsVisible = false;
 }
 
 
-void QueryPathsDialog::hidden()
-{
+void QueryPathsDialog::hidden() {
     g_memory->queryPathDialogIsVisible = false;
     emit selectionChanged();
 }
 
-
-void QueryPathsDialog::tableSelectionChanged()
-{
-    QList<QTableWidgetSelectionRange> selection = ui->tableWidget->selectedRanges();
-    int totalSelectedRows = 0;
-    for (auto & i : selection)
-        totalSelectedRows += i.rowCount();
-
+void QueryPathsDialog::tableSelectionChanged(const QItemSelection &selected,
+                                             const QItemSelection &deselected) {
     g_memory->queryPaths.clear();
 
-    QList<int> selectedRows;
-    for (auto & i : selection)
-    {
-        QTableWidgetSelectionRange * selectionRange = &i;
-        int top = selectionRange->topRow();
-        int bottom = selectionRange->bottomRow();
-
-        for (int row = top; row <= bottom; ++row)
-        {
-            if (!selectedRows.contains(row))
-                selectedRows.push_back(row);
-        }
-    }
-
-    for (int row : selectedRows)
-    {
-        QString pathString = ui->tableWidget->item(row, 0)->text();
-        QString pathStringFailure;
-        g_memory->queryPaths.push_back(Path::makeFromString(pathString, *g_assemblyGraph,
-                                                            false, &pathStringFailure));
+    for (const auto &index : selected.indexes()) {
+        const auto *proxyModel = qobject_cast<const QSortFilterProxyModel *>(index.model());
+        const auto &queryPath = m_queryPathsModel->m_queryPaths[proxyModel->mapToSource(index).row()];
+        g_memory->queryPaths.emplace_back(queryPath.getPath());
     }
 
     emit selectionChanged();
+}
+
+QueryPathsModel::QueryPathsModel(const BlastQuery *query, QObject *parent)
+  : m_queryPaths(query->getPaths()), QAbstractTableModel(parent) {}
+
+int QueryPathsModel::rowCount(const QModelIndex &) const {
+    return m_queryPaths.size();
+}
+
+int QueryPathsModel::columnCount(const QModelIndex &) const {
+    return int(QueryPathsColumns::TotalColumns);
+}
+
+QVariant QueryPathsModel::headerData(int section, Qt::Orientation orientation, int role) const {
+    if (role == Qt::TextAlignmentRole && orientation == Qt::Horizontal)
+        return Qt::AlignCenter;
+
+    if (role != Qt::DisplayRole)
+        return {};
+
+    if (orientation == Qt::Vertical)
+        return QString::number(section + 1);
+
+    switch (QueryPathsColumns(section)) {
+        default:
+            return {};
+        case QueryPathsColumns::PathString:
+            return "Path";
+        case QueryPathsColumns::Length:
+            return "Length";
+        case QueryPathsColumns::QueryCoveragePath:
+            return "Query\ncovered\nby path";
+        case QueryPathsColumns::QueryCoverageHits:
+            return "Query\ncovered\nby hits";
+        case QueryPathsColumns::PercIdentity:
+            return "IDY";
+        case QueryPathsColumns::Mismatches:
+            return "Mismatches";
+        case QueryPathsColumns::GapOpens:
+            return "Gaps";
+        case QueryPathsColumns::RelativeLength:
+            return "Relative\nlength";
+        case QueryPathsColumns::LengthDisc:
+            return "Length\ndiscrepancy";
+        case QueryPathsColumns::Evalue:
+            return "E-value";
+        case QueryPathsColumns::Copy:
+            return "Copy sequence\nto clipboard";
+    }
+
+    return {};
+}
+
+QVariant QueryPathsModel::data(const QModelIndex &index, int role) const {
+    if (!index.isValid() || index.row() >= m_queryPaths.size())
+        return {};
+
+    auto column = QueryPathsColumns(index.column());
+    const auto &queryPath = m_queryPaths[index.row()];
+
+    if (role != Qt::DisplayRole)
+        return {};
+
+    switch (column) {
+        default:
+            return {};
+        case QueryPathsColumns::PathString:
+            return queryPath.getPath().getString(true);
+        case QueryPathsColumns::Length:
+            return queryPath.getPath().getLength();
+        case QueryPathsColumns::QueryCoveragePath:
+            return formatDoubleForDisplay(100.0 * queryPath.getPathQueryCoverage(), 2) + "%";
+        case QueryPathsColumns::QueryCoverageHits:
+            return formatDoubleForDisplay(100.0 * queryPath.getHitsQueryCoverage(), 2) + "%";
+        case QueryPathsColumns::PercIdentity:
+            return formatDoubleForDisplay(queryPath.getMeanHitPercIdentity(), 2) + "%";
+        case QueryPathsColumns::Mismatches:
+            return queryPath.getTotalHitMismatches();
+        case QueryPathsColumns::GapOpens:
+            return queryPath.getTotalHitGapOpens();
+        case QueryPathsColumns::RelativeLength:
+            return formatDoubleForDisplay(100.0 * queryPath.getRelativePathLength(), 2) + "%";
+        case QueryPathsColumns::LengthDisc:
+            return queryPath.getAbsolutePathLengthDifferenceString(true);
+        case QueryPathsColumns::Evalue:
+            return queryPath.getEvalueProduct().asString(false);
+        case QueryPathsColumns::Copy: {
+            QByteArray pathSequence = queryPath.getPath().getPathSequence();
+            return pathSequence.length() < 8 ? pathSequence : pathSequence.left(8) + "...";
+        }
+    }
+
+    return {};
+}
+
+Qt::ItemFlags QueryPathsModel::flags(const QModelIndex &index) const {
+    if (!index.isValid())
+        return Qt::ItemIsEnabled;
+
+    auto column = QueryPathsColumns(index.column());
+    if (column == QueryPathsColumns::Copy)
+        return Qt::ItemIsEnabled;
+
+    return QAbstractTableModel::flags(index);
+}
+
+void CopyPathSequenceDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
+    const auto *proxyModel = qobject_cast<const QSortFilterProxyModel*>(index.model());
+    const auto *model = qobject_cast<const QueryPathsModel*>(proxyModel->sourceModel());
+    const auto &queryPath = model->m_queryPaths[proxyModel->mapToSource(index).row()];
+
+    QStyleOptionButton btn;
+    btn.features = QStyleOptionButton::None;
+    btn.rect = option.rect;
+    btn.state = option.state | QStyle::State_Enabled | QStyle::State_Raised;
+
+    QByteArray pathSequence = queryPath.getPath().getPathSequence();
+    btn.text = pathSequence.length() < 8 ? pathSequence : pathSequence.left(8) + "...";
+
+    QStyle *style = option.widget ? option.widget->style() : QApplication::style();
+    style->drawControl(QStyle::CE_PushButton, &btn, painter);
+}
+
+bool CopyPathSequenceDelegate::editorEvent(QEvent *event, QAbstractItemModel *model, const QStyleOptionViewItem &option,
+                                           const QModelIndex &index) {
+    if (event->type() == QEvent::MouseButtonRelease) {
+        const auto *proxyModel = qobject_cast<const QSortFilterProxyModel*>(model);
+        const auto *dataModel = qobject_cast<const QueryPathsModel*>(proxyModel->sourceModel());
+        const auto &queryPath = dataModel->m_queryPaths[proxyModel->mapToSource(index).row()];
+
+        QApplication::clipboard()->setText(queryPath.getPath().getPathSequence());
+    }
+
+    return QStyledItemDelegate::editorEvent(event, model, option, index);
 }

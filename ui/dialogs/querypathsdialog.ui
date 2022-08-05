@@ -43,65 +43,6 @@
      </property>
     </widget>
    </item>
-   <item row="1" column="0" colspan="2">
-    <widget class="MyTableWidget" name="tableWidget">
-     <column>
-      <property name="text">
-       <string>Path</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Length (bp)</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Query covered by path</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Query covered by hits</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Identity</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Mismatches</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Gap opens</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Relative length</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Length discrepancy</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>E-value product</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Copy sequence to clipboard</string>
-      </property>
-     </column>
-    </widget>
-   </item>
    <item row="2" column="0" colspan="2">
     <widget class="QDialogButtonBox" name="buttonBox">
      <property name="orientation">
@@ -112,6 +53,9 @@
      </property>
     </widget>
    </item>
+   <item row="1" column="0" colspan="2">
+    <widget class="QTableView" name="tableView"/>
+   </item>
   </layout>
  </widget>
  <customwidgets>
@@ -120,11 +64,6 @@
    <extends>QWidget</extends>
    <header>infotextwidget.h</header>
    <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>MyTableWidget</class>
-   <extends>QTableWidget</extends>
-   <header>mytablewidget.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

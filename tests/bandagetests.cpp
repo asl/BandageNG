@@ -1390,24 +1390,16 @@ void BandageTests::blastQueryPaths()
     g_settings->blastEValueFilter.on = true;
     g_settings->blastEValueFilter = SciNot(1.0, -5);
 
-    QList<BlastQueryPath> query1Paths;
-    QList<BlastQueryPath> query2Paths;
-    QList<BlastQueryPath> query3Paths;
-    QList<BlastQueryPath> query4Paths;
-    QList<BlastQueryPath> query5Paths;
-    QList<BlastQueryPath> query6Paths;
-    QList<BlastQueryPath> query7Paths;
-
     //With the default settings, queries 1 to 5 should each have one path and
     //queries 6 and 7 should have 0 (because of their large inserts).
     g_blastSearch->doAutoBlastSearch();
-    query1Paths = g_blastSearch->m_blastQueries.m_queries[0]->getPaths();
-    query2Paths = g_blastSearch->m_blastQueries.m_queries[1]->getPaths();
-    query3Paths = g_blastSearch->m_blastQueries.m_queries[2]->getPaths();
-    query4Paths = g_blastSearch->m_blastQueries.m_queries[3]->getPaths();
-    query5Paths = g_blastSearch->m_blastQueries.m_queries[4]->getPaths();
-    query6Paths = g_blastSearch->m_blastQueries.m_queries[5]->getPaths();
-    query7Paths = g_blastSearch->m_blastQueries.m_queries[6]->getPaths();
+    auto query1Paths = g_blastSearch->m_blastQueries.m_queries[0]->getPaths();
+    auto query2Paths = g_blastSearch->m_blastQueries.m_queries[1]->getPaths();
+    auto query3Paths = g_blastSearch->m_blastQueries.m_queries[2]->getPaths();
+    auto query4Paths = g_blastSearch->m_blastQueries.m_queries[3]->getPaths();
+    auto query5Paths = g_blastSearch->m_blastQueries.m_queries[4]->getPaths();
+    auto query6Paths = g_blastSearch->m_blastQueries.m_queries[5]->getPaths();
+    auto query7Paths = g_blastSearch->m_blastQueries.m_queries[6]->getPaths();
     QCOMPARE(query1Paths.size(), 1);
     QCOMPARE(query2Paths.size(), 1);
     QCOMPARE(query3Paths.size(), 1);

@@ -52,7 +52,7 @@ PathListDialog::PathListDialog(const AssemblyGraph &graph,
     // Ensure our "Close" is not default
     ui->buttonBox->button(QDialogButtonBox::Close)->setAutoDefault(false);
 
-    ui->pathsView->setModel(new PathListModel(graph, startNodes));
+    ui->pathsView->setModel(new PathListModel(graph, startNodes, ui->pathsView));
     ui->pathsView->sortByColumn(1, Qt::DescendingOrder);
     ui->pathsView->setSortingEnabled(true);
     ui->pathsView->setColumnHidden(Columns::NodePosition, startNodes.size() != 1);

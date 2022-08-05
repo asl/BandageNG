@@ -169,13 +169,9 @@ int bandageQueryPaths(QStringList arguments)
     QList<QString> hitSequenceIDs;
     QList<QByteArray> hitSequences;
 
-    for (auto query : g_blastSearch->m_blastQueries.m_queries)
-    {
-        QList<BlastQueryPath> queryPaths = query->getPaths();
-
-        for (int j = 0; j < queryPaths.size(); ++j)
-        {
-            BlastQueryPath queryPath = queryPaths[j];
+    for (const auto *query : g_blastSearch->m_blastQueries.m_queries) {
+        unsigned num = 0;
+        for (const auto & queryPath : query->getPaths()) {
             Path path = queryPath.getPath();
 
             tableOut << query->getName() << "\t";
@@ -194,14 +190,12 @@ int bandageQueryPaths(QStringList arguments)
             //sequence along with its ID to save later, and store the ID here.
             //Otherwise, just include the sequence in this table.
             QByteArray sequence = path.getPathSequence();
-            QString pathSequenceID = query->getName() + "_" + QString::number(j+1);
-            if (pathFasta)
-            {
+            QString pathSequenceID = query->getName() + "_" + QString::number(++num);
+            if (pathFasta){
                 pathSequenceIDs.push_back(pathSequenceID);
                 pathSequences.push_back(sequence);
                 tableOut << pathSequenceID << "\n";
-            }
-            else
+            } else
                 tableOut << sequence << "\n";
 
             //If we are also saving the hit sequences, save the hit sequence

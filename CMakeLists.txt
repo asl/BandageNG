@@ -57,14 +57,10 @@ set(LIB_SOURCES
         ui/bandagegraphicsscene.cpp
         ui/bandagegraphicsview.cpp
         ui/dialogs/myprogressdialog.cpp
-        ui/mytablewidget.cpp
         ui/nodewidthvisualaid.cpp
         ui/dialogs/pathspecifydialog.cpp
         ui/dialogs/querypathsdialog.cpp
-        ui/querypathsequencecopybutton.cpp
         ui/dialogs/settingsdialog.cpp
-        ui/tablewidgetitemdouble.cpp
-        ui/tablewidgetitemint.cpp
         ui/widgets/verticallabel.cpp
         ui/widgets/verticalscrollarea.cpp
         graph/nodecolorer.cpp

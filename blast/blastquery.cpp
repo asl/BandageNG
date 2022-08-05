@@ -84,9 +84,8 @@ void BlastQuery::clearSearchResults()
 
 
 //This function tries to find the paths through the graph which cover the query.
-void BlastQuery::findQueryPaths()
-{
-    m_paths = QList<BlastQueryPath>();
+void BlastQuery::findQueryPaths() {
+    m_paths.clear();
     if (m_hits.size() > g_settings->maxHitsForQueryPath)
         return;
 
