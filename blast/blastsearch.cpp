@@ -124,29 +124,32 @@ void BlastSearch::buildHitsFromBlastOutput()
         if (query == nullptr)
             continue;
 
+        // Check the user-defined filters.
+        if (g_settings->blastAlignmentLengthFilter.on &&
+            alignmentLength < g_settings->blastAlignmentLengthFilter)
+            continue;
+
+        if (g_settings->blastIdentityFilter.on &&
+            percentIdentity < g_settings->blastIdentityFilter)
+            continue;
+
+        if (g_settings->blastEValueFilter.on &&
+            eValue > g_settings->blastEValueFilter)
+            continue;
+
+        if (g_settings->blastBitScoreFilter.on &&
+            bitScore < g_settings->blastBitScoreFilter)
+            continue;
+
         auto hit = std::make_shared<BlastHit>(query, node, percentIdentity, alignmentLength,
                                               numberMismatches, numberGapOpens, queryStart, queryEnd,
                                               nodeStart, nodeEnd, eValue, bitScore);
 
-        //Check the user-defined filters.
-        if (g_settings->blastAlignmentLengthFilter.on &&
-                alignmentLength < g_settings->blastAlignmentLengthFilter)
-            continue;
-        if (g_settings->blastQueryCoverageFilter.on)
-        {
+        if (g_settings->blastQueryCoverageFilter.on) {
             double hitCoveragePercentage = 100.0 * hit->getQueryCoverageFraction();
             if (hitCoveragePercentage < g_settings->blastQueryCoverageFilter)
                 continue;
         }
-        if (g_settings->blastIdentityFilter.on &&
-                percentIdentity < g_settings->blastIdentityFilter)
-            continue;
-        if (g_settings->blastEValueFilter.on &&
-                eValue > g_settings->blastEValueFilter)
-                continue;
-        if (g_settings->blastBitScoreFilter.on &&
-                bitScore < g_settings->blastBitScoreFilter)
-            continue;
 
         m_allHits.emplace_back(hit);
         query->addHit(std::move(hit));
