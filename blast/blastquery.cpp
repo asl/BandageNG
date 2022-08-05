@@ -97,8 +97,7 @@ void BlastQuery::findQueryPaths() {
     //start.
     QList<BlastHit *> possibleStarts;
     double acceptableStartFraction = 1.0 - g_settings->minQueryCoveredByPath;
-    for (auto &m_hit : m_hits)
-    {
+    for (auto &m_hit : m_hits) {
         BlastHit * hit = m_hit.get();
         if (hit->m_queryStartFraction <= acceptableStartFraction)
             possibleStarts.push_back(hit);
@@ -107,8 +106,7 @@ void BlastQuery::findQueryPaths() {
     //Find all possible path ends.
     QList<BlastHit *> possibleEnds;
     double acceptableEndFraction = g_settings->minQueryCoveredByPath;
-    for (auto &m_hit : m_hits)
-    {
+    for (auto &m_hit : m_hits) {
         BlastHit * hit = m_hit.get();
         if (hit->m_queryEndFraction >= acceptableEndFraction)
             possibleEnds.push_back(hit);
@@ -116,12 +114,10 @@ void BlastQuery::findQueryPaths() {
 
     //For each possible start, find paths to each possible end.
     QList<Path> possiblePaths;
-    for (auto start : possibleStarts)
-    {
+    for (auto start : possibleStarts) {
         GraphLocation startLocation = start->getHitStart();
 
-        for (auto end : possibleEnds)
-        {
+        for (auto end : possibleEnds) {
             GraphLocation endLocation = end->getHitEnd();
 
             //Assuming there is a path from the start hit to the end hit,
@@ -130,8 +126,7 @@ void BlastQuery::findQueryPaths() {
             int partialQueryLength = queryLength;
             int pathStart = start->m_queryStart - 1;
             int pathEnd = end->m_queryEnd;
-            if (m_sequenceType == PROTEIN)
-            {
+            if (m_sequenceType == PROTEIN) {
                 pathStart *= 3;
                 pathEnd *= 3;
             }
@@ -176,8 +171,7 @@ void BlastQuery::findQueryPaths() {
     //We now want to throw out any paths for which the hits fail to meet the
     //thresholds in settings.
     QList<BlastQueryPath> sufficientCoveragePaths;
-    for (int i = 0; i < blastQueryPaths.size(); ++i)
-    {
+    for (int i = 0; i < blastQueryPaths.size(); ++i) {
         if (blastQueryPaths[i].getPathQueryCoverage() < g_settings->minQueryCoveredByPath)
             continue;
         if (g_settings->minQueryCoveredByHits.on && blastQueryPaths[i].getHitsQueryCoverage() < g_settings->minQueryCoveredByHits)
@@ -200,17 +194,14 @@ void BlastQuery::findQueryPaths() {
 
     //We now want to throw out any paths which are sub-paths of other, larger
     //paths.
-    for (int i = 0; i < sufficientCoveragePaths.size(); ++i)
-    {
+    for (int i = 0; i < sufficientCoveragePaths.size(); ++i) {
         bool throwOut = false;
-        for (int j = 0; j < sufficientCoveragePaths.size(); ++j)
-        {
+        for (int j = 0; j < sufficientCoveragePaths.size(); ++j) {
             //No need to compare a path with itself.
             if (i == j)
                 continue;
 
-            if (sufficientCoveragePaths[i].getPath().hasNodeSubset(sufficientCoveragePaths[j].getPath()))
-            {
+            if (sufficientCoveragePaths[i].getPath().hasNodeSubset(sufficientCoveragePaths[j].getPath())) {
                 throwOut = true;
                 break;
             }
