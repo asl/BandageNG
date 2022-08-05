@@ -388,7 +388,7 @@ void BlastSearchDialog::runBlastSearches(bool separateThread) {
         auto * runBlastSearchWorker = new RunBlastSearchWorker(m_blastnCommand, m_tblastnCommand, ui->parametersLineEdit->text().simplified());
         runBlastSearchWorker->moveToThread(m_blastSearchThread);
 
-        connect(progress, SIGNAL(halt()), this, SLOT(runBlastSearchCancelled()));
+        connect(progress, SIGNAL(halt()), runBlastSearchWorker, SLOT(cancel()));
         connect(m_blastSearchThread, SIGNAL(started()), runBlastSearchWorker, SLOT(runBlastSearch()));
         connect(runBlastSearchWorker, SIGNAL(finishedSearch(QString)), m_blastSearchThread, SLOT(quit()));
         connect(runBlastSearchWorker, SIGNAL(finishedSearch(QString)), runBlastSearchWorker, SLOT(deleteLater()));
@@ -419,12 +419,6 @@ void BlastSearchDialog::runBlastSearchFinished(const QString& error) {
     }
 
     emit blastChanged();
-}
-
-void BlastSearchDialog::runBlastSearchCancelled() {
-    g_blastSearch->m_cancelRunBlastSearch = true;
-    if (g_blastSearch->m_blast)
-        g_blastSearch->m_blast->kill();
 }
 
 void BlastSearchDialog::setUiStep(BlastUiState blastUiState)

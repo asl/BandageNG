@@ -24,6 +24,8 @@
 #include <QObject>
 #include <QString>
 
+class QProcess;
+
 //This class carries out the task of running blastn and/or
 //tblastn.
 //It is a separate class because when run from the GUI, this
@@ -41,10 +43,13 @@ private:
     QString m_blastnCommand;
     QString m_tblastnCommand;
     QString m_parameters;
+    QProcess *m_blast;
+    bool m_cancelRunBlastSearch = false;
     QString runOneBlastSearch(QuerySequenceType sequenceType, bool * success);
 
 public slots:
     bool runBlastSearch();
+    void cancel();
 
 signals:
     void finishedSearch(QString error);

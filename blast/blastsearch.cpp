@@ -46,7 +46,6 @@ void BlastSearch::clearBlastHits()
 {
     m_allHits.clear();
     m_blastQueries.clearSearchResults();
-    m_blastOutput = "";
 }
 
 void BlastSearch::cleanUp()
@@ -81,13 +80,13 @@ static QString getNodeNameFromString(const QString &nodeString) {
     return nodeName;
 }
 
-// This function uses the contents of m_blastOutput (the raw output from the
+// This function uses the contents of blastOutput (the raw output from the
 // BLAST search) to construct the BlastHit objects.
 // It looks at the filters to possibly exclude hits which fail to meet user-
 // defined thresholds.
-void BlastSearch::buildHitsFromBlastOutput()
+void BlastSearch::buildHitsFromBlastOutput(QString blastOutput)
 {
-    QStringList blastHitList = m_blastOutput.split("\n", Qt::SkipEmptyParts);
+    QStringList blastHitList = blastOutput.split("\n", Qt::SkipEmptyParts);
 
     for (const auto &hitString : blastHitList) {
         QStringList alignmentParts = hitString.split('\t');

@@ -95,6 +95,9 @@ bool BuildBlastDatabaseWorker::buildBlastDatabase() {
 void BuildBlastDatabaseWorker::cancel() {
     m_cancelBuildBlastDatabase = true;
 
-    if (m_makeblastdb)
+    if (m_makeblastdb) {
         m_makeblastdb->kill();
+        m_makeblastdb->deleteLater();
+        m_makeblastdb = nullptr;
+    }
 }

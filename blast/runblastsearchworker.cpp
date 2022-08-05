@@ -25,34 +25,34 @@
 #include <QProcess>
 
 RunBlastSearchWorker::RunBlastSearchWorker(QString blastnCommand, QString tblastnCommand, QString parameters)
-        : m_blastnCommand(blastnCommand), m_tblastnCommand(tblastnCommand), m_parameters(parameters) {}
+        : m_blastnCommand(blastnCommand), m_tblastnCommand(tblastnCommand), m_parameters(parameters), m_blast(nullptr) {}
 
 
 bool RunBlastSearchWorker::runBlastSearch() {
-    g_blastSearch->m_cancelRunBlastSearch = false;
+    m_cancelRunBlastSearch = false;
+    bool success = false;
 
-    bool success;
-
-    if (g_blastSearch->m_blastQueries.getQueryCount(NUCLEOTIDE) > 0) {
-        g_blastSearch->m_blastOutput += runOneBlastSearch(NUCLEOTIDE, &success);
+    QString blastOutput;
+    if (g_blastSearch->m_blastQueries.getQueryCount(NUCLEOTIDE) > 0 && !m_cancelRunBlastSearch) {
+        blastOutput += runOneBlastSearch(NUCLEOTIDE, &success);
         if (!success)
             return false;
     }
 
-    if (g_blastSearch->m_blastQueries.getQueryCount(PROTEIN) > 0 && !g_blastSearch->m_cancelRunBlastSearch) {
-        g_blastSearch->m_blastOutput += runOneBlastSearch(PROTEIN, &success);
+    if (g_blastSearch->m_blastQueries.getQueryCount(PROTEIN) > 0 && !m_cancelRunBlastSearch) {
+        blastOutput += runOneBlastSearch(PROTEIN, &success);
         if (!success)
             return false;
     }
 
-    if (g_blastSearch->m_cancelRunBlastSearch) {
+    if (m_cancelRunBlastSearch) {
         m_error = "BLAST search cancelled.";
         emit finishedSearch(m_error);
         return false;
     }
 
     //If the code got here, then the search completed successfully.
-    g_blastSearch->buildHitsFromBlastOutput();
+    g_blastSearch->buildHitsFromBlastOutput(blastOutput);
     g_blastSearch->findQueryPaths();
     g_blastSearch->m_blastQueries.searchOccurred();
     m_error = "";
@@ -92,19 +92,19 @@ QString RunBlastSearchWorker::runOneBlastSearch(QuerySequenceType sequenceType, 
                  << "-outfmt" << "6";
     blastOptions << m_parameters.split(" ", Qt::SkipEmptyParts);
     
-    g_blastSearch->m_blast = new QProcess();
-    g_blastSearch->m_blast->start(sequenceType == NUCLEOTIDE ? m_blastnCommand : m_tblastnCommand,
-                                  blastOptions);
+    m_blast = new QProcess();
+    m_blast->start(sequenceType == NUCLEOTIDE ? m_blastnCommand : m_tblastnCommand,
+                   blastOptions);
 
-    bool finished = g_blastSearch->m_blast->waitForFinished(-1);
+    bool finished = m_blast->waitForFinished(-1);
 
-    if (g_blastSearch->m_blast->exitCode() != 0 || !finished) {
-        if (g_blastSearch->m_cancelRunBlastSearch) {
+    if (m_blast->exitCode() != 0 || !finished) {
+        if (m_cancelRunBlastSearch) {
             m_error = "BLAST search cancelled.";
             emit finishedSearch(m_error);
         } else {
             m_error = "There was a problem running the BLAST search";
-            QString stdErr = g_blastSearch->m_blast->readAllStandardError();
+            QString stdErr = m_blast->readAllStandardError();
             m_error += stdErr.isEmpty() ? "." : ":\n\n" + stdErr;
             emit finishedSearch(m_error);
         }
@@ -112,10 +112,20 @@ QString RunBlastSearchWorker::runOneBlastSearch(QuerySequenceType sequenceType, 
         return "";
     }
 
-    QString blastOutput = g_blastSearch->m_blast->readAllStandardOutput();
-    g_blastSearch->m_blast->deleteLater();
-    g_blastSearch->m_blast = nullptr;
+    QString blastOutput = m_blast->readAllStandardOutput();
+    m_blast->deleteLater();
+    m_blast = nullptr;
 
     *success = true;
     return blastOutput;
+}
+
+void RunBlastSearchWorker::cancel() {
+    m_cancelRunBlastSearch = true;
+
+    if (m_blast) {
+        m_blast->kill();
+        m_blast->deleteLater();
+        m_blast = nullptr;
+    }
 }
