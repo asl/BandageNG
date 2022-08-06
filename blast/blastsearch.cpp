@@ -150,7 +150,7 @@ QString BlastSearch::doAutoBlastSearch() {
 
 //This function returns the number of queries loaded from the FASTA file.
 int BlastSearch::loadBlastQueriesFromFastaFile(QString fullFileName) {
-    int queriesBefore = int(m_blastQueries.m_queries.size());
+    int queriesBefore = int(m_blastQueries.getQueryCount());
 
     std::vector<QString> queryNames;
     std::vector<QByteArray> querySequences;
@@ -169,7 +169,7 @@ int BlastSearch::loadBlastQueriesFromFastaFile(QString fullFileName) {
                                 querySequences[i]));
     }
 
-    int queriesAfter = int(m_blastQueries.m_queries.size());
+    int queriesAfter = int(m_blastQueries.getQueryCount());
     return queriesAfter - queriesBefore;
 }
 
@@ -195,12 +195,10 @@ void BlastSearch::blastQueryChanged(const QString &queryName) {
 
     //If "all" is selected, then we'll display each of the BLAST queries
     if (queryName == "all")
-        queries = m_blastQueries.m_queries;
-
+        queries = m_blastQueries.queries();
     //If only one query is selected, then just display that one.
     else {
-        BlastQuery * query = m_blastQueries.getQueryFromName(queryName);
-        if (query != nullptr)
+        if (BlastQuery * query = m_blastQueries.getQueryFromName(queryName))
             queries.push_back(query);
     }
 

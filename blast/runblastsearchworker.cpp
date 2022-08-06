@@ -74,7 +74,7 @@ static void writeQueryFile(QFile *file,
                            const BlastQueries &queries,
                            QuerySequenceType sequenceType) {
     QTextStream out(file);
-    for (const auto *query: queries.m_queries) {
+    for (const auto *query: queries.queries()) {
         if (query->getSequenceType() != sequenceType)
             continue;
 

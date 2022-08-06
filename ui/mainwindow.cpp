@@ -1718,7 +1718,7 @@ void MainWindow::blastChanged()
         if (ui->blastQueryComboBox->count() > 1)
             --blastQueryIndex;
         if (blastQueryIndex < g_blastSearch->m_blastQueries.getQueryCount())
-            queryBefore = g_blastSearch->m_blastQueries.m_queries[blastQueryIndex];
+            queryBefore = g_blastSearch->m_blastQueries.queries()[blastQueryIndex];
     }
 
     //Rebuild the query combo box, in case the user changed the queries or
@@ -1728,8 +1728,7 @@ void MainWindow::blastChanged()
     //Look to see if the query selected before is still present.  If so,
     //set the combo box to have that query selected.  If not (or if no
     //query was previously selected), leave the combo box a index 0.
-    if (queryBefore != nullptr && g_blastSearch->m_blastQueries.isQueryPresent(queryBefore))
-    {
+    if (queryBefore && g_blastSearch->m_blastQueries.isQueryPresent(queryBefore)) {
         int indexOfQuery = ui->blastQueryComboBox->findText(queryBefore->getName());
         if (indexOfQuery != -1)
             ui->blastQueryComboBox->setCurrentIndex(indexOfQuery);
@@ -1740,12 +1739,10 @@ void MainWindow::blastChanged()
 }
 
 
-void MainWindow::setupBlastQueryComboBox()
-{
+void MainWindow::setupBlastQueryComboBox() {
     ui->blastQueryComboBox->clear();
     QStringList comboBoxItems;
-    for (auto & query : g_blastSearch->m_blastQueries.m_queries)
-    {
+    for (auto & query : g_blastSearch->m_blastQueries.queries()) {
         if (query->hasHits())
             comboBoxItems.push_back(query->getName());
     }
@@ -1753,21 +1750,16 @@ void MainWindow::setupBlastQueryComboBox()
     if (comboBoxItems.size() > 1)
         comboBoxItems.push_front("all");
 
-    if (!comboBoxItems.empty())
-    {
+    if (!comboBoxItems.empty()) {
         ui->blastQueryComboBox->addItems(comboBoxItems);
         ui->blastQueryComboBox->setEnabled(true);
-    }
-    else
-    {
+    } else {
         ui->blastQueryComboBox->addItem("none");
         ui->blastQueryComboBox->setEnabled(false);
     }
 }
 
-
-void MainWindow::blastQueryChanged()
-{
+void MainWindow::blastQueryChanged() {
     g_blastSearch->blastQueryChanged(ui->blastQueryComboBox->currentText());
     g_graphicsView->viewport()->update();
 }

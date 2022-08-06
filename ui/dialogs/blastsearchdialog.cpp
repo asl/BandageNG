@@ -757,7 +757,7 @@ BlastQuery *QueriesListModel::query(const QModelIndex &index) const {
     if (!index.isValid() || index.row() >= m_queries.getQueryCount())
         return nullptr;
 
-    return m_queries.m_queries[index.row()];
+    return m_queries.query(index.row());
 }
 
 void QueriesListModel::setColor(const QModelIndex &index, QColor color) {

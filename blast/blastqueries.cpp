@@ -30,7 +30,7 @@ BlastQueries::~BlastQueries() {
     clearAllQueries();
 }
 
-BlastQuery *BlastQueries::getQueryFromName(QString queryName) {
+BlastQuery *BlastQueries::getQueryFromName(QString queryName) const {
     auto res =
             std::find_if(m_queries.begin(), m_queries.end(),
                          [&](const auto *query) { return queryName == query->getName(); });

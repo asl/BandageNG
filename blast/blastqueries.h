@@ -31,9 +31,7 @@ public:
     BlastQueries();
     ~BlastQueries();
 
-    std::vector<BlastQuery *> m_queries;
-
-    BlastQuery * getQueryFromName(QString queryName);
+    BlastQuery * getQueryFromName(QString queryName) const;
 
     bool empty() const { return m_queries.empty(); };
     void addQuery(BlastQuery * newQuery);
@@ -49,11 +47,16 @@ public:
     size_t getQueryCount(QuerySequenceType sequenceType) const ;
     bool isQueryPresent(const BlastQuery * query) const;
     BlastHits allHits() const;
+    const auto &queries() const { return m_queries; }
+    auto &queries() { return m_queries; }
+    BlastQuery *query(size_t idx) { return m_queries[idx]; }
+    const BlastQuery *query(size_t idx) const { return m_queries[idx]; }
 
     void findQueryPaths();
 private:
     QString getUniqueName(QString name);
 
+    std::vector<BlastQuery *> m_queries;
     std::vector<QColor> m_presetColours;
 };
 

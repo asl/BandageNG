@@ -169,7 +169,7 @@ int bandageQueryPaths(QStringList arguments)
     QList<QString> hitSequenceIDs;
     QList<QByteArray> hitSequences;
 
-    for (const auto *query : g_blastSearch->m_blastQueries.m_queries) {
+    for (const auto *query : g_blastSearch->m_blastQueries.queries()) {
         unsigned num = 0;
         for (const auto & queryPath : query->getPaths()) {
             Path path = queryPath.getPath();
