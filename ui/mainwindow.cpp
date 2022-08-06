@@ -221,7 +221,7 @@ void MainWindow::afterMainWindowShow() {
         return;
 
     //If the user passed a filename as a command line argument, try to open it now.
-    if (m_fileToLoadOnStartup != "") {
+    if (!m_fileToLoadOnStartup.isEmpty()) {
         auto start = std::chrono::system_clock::now();
         loadGraph(m_fileToLoadOnStartup);
         auto end = std::chrono::system_clock::now();
@@ -230,33 +230,31 @@ void MainWindow::afterMainWindowShow() {
     }
 
     //If a BLAST query filename is present, do the BLAST search now automatically.
-    if (g_settings->blastQueryFilename != "") {
+    if (!g_settings->blastQueryFilename.isEmpty()) {
         BlastSearchDialog blastSearchDialog(g_blastSearch.get(), this, g_settings->blastQueryFilename);
         setupBlastQueryComboBox();
     }
 
     //If the draw option was used and the graph appears to have loaded (i.e. there
     //is at least one node), then draw the graph.
-    if (m_fileToLoadOnStartup != "" && m_drawGraphAfterLoad && !g_assemblyGraph->m_deBruijnGraphNodes.empty())
+    if (!m_fileToLoadOnStartup.isEmpty() && m_drawGraphAfterLoad && !g_assemblyGraph->m_deBruijnGraphNodes.empty())
         drawGraph();
 
     //If a csv query filename is present, pull the info automatically.
-    if (g_settings->csvFilename != "")
+    if (!g_settings->csvFilename.isEmpty())
         loadCSV(g_settings->csvFilename);
 
     m_alreadyShown = true;
 }
 
-MainWindow::~MainWindow()
-{
+MainWindow::~MainWindow() {
     cleanUp();
     delete m_graphicsViewZoom;
     delete ui;
 }
 
 
-void MainWindow::cleanUp()
-{
+void MainWindow::cleanUp() {
     ui->blastQueryComboBox->clear();
     ui->blastQueryComboBox->addItem("none");
 
@@ -268,8 +266,7 @@ void MainWindow::cleanUp()
     g_memory->userSpecifiedPathString = "";
     g_memory->userSpecifiedPathCircular = false;
 
-    if (m_blastSearchDialog != nullptr)
-    {
+    if (m_blastSearchDialog) {
         delete m_blastSearchDialog;
         m_blastSearchDialog = nullptr;
     }
@@ -281,8 +278,7 @@ void MainWindow::cleanUp()
     switchColourScheme(RANDOM_COLOURS);
 }
 
-void MainWindow::loadCSV(QString fullFileName)
-{
+void MainWindow::loadCSV(QString fullFileName) {
     QString selectedFilter = "Comma separated value (*.csv)";
     if (fullFileName == "")
         fullFileName = QFileDialog::getOpenFileName(this, "Load CSV", g_memory->rememberedPath,
@@ -293,8 +289,7 @@ void MainWindow::loadCSV(QString fullFileName)
         return; // user clicked on cancel
 
     QString errormsg;
-    try
-    {
+    try {
         MyProgressDialog progress(this, "Loading CSV...", false);
         progress.setWindowModality(Qt::WindowModal);
         progress.show();
@@ -309,10 +304,7 @@ void MainWindow::loadCSV(QString fullFileName)
             g_settings->displayNodeCsvDataCol = 0;
             switchColourScheme(coloursLoaded ? CUSTOM_COLOURS : CSV_COLUMN);
         }
-    }
-
-    catch (...)
-    {
+    } catch (...) {
         QString errorTitle = "Error loading CSV";
         QString errorMessage = "There was an error when attempting to load:\n"
                                + fullFileName + "\n\n"
@@ -322,8 +314,7 @@ void MainWindow::loadCSV(QString fullFileName)
 }
 
 
-void MainWindow::loadGraph(QString fullFileName)
-{
+void MainWindow::loadGraph(QString fullFileName) {
     QString selectedFilter = "Any supported graph (*)";
     if (fullFileName.isEmpty())
         fullFileName =
