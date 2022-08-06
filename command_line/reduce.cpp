@@ -108,12 +108,9 @@ int bandageReduce(QStringList arguments)
     QString errorTitle;
     QString errorMessage;
     std::vector<DeBruijnNode *> startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage,
-                                                                                  g_settings->doubleMode,
                                                                                   g_settings->startingNodes,
                                                                                   "all", "");
-
-    if (errorMessage != "")
-    {
+    if (!errorMessage.isEmpty()) {
         err << errorMessage << Qt::endl;
         return 1;
     }

@@ -137,35 +137,31 @@ int bandageImage(QStringList arguments)
     QString errorTitle;
     QString errorMessage;
     std::vector<DeBruijnNode *> startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage,
-                                                                                  g_settings->doubleMode,
                                                                                   g_settings->startingNodes,
                                                                                   "all", "");
+    if (!errorMessage.isEmpty()) {
+        err << errorMessage << Qt::endl;
+        return 1;
+    }
 
-    QString errormsg;
-    QStringList columns;
-    bool coloursLoaded = false;
     QString csvPath = parseColorsOption(arguments);
-    if (csvPath != "")
-    {
-        if(!g_assemblyGraph->loadCSV(csvPath, &columns, &errormsg, &coloursLoaded))
-        {
+    if (csvPath != "") {
+        QString errormsg;
+        QStringList columns;
+        bool coloursLoaded = false;
+
+        if (!g_assemblyGraph->loadCSV(csvPath, &columns, &errormsg, &coloursLoaded)) {
             err << errormsg << Qt::endl;
             return 1;
         }
 
-        if(!coloursLoaded)
-        {
+        if (!coloursLoaded) {
             err << csvPath << " didn't contain color" << Qt::endl;
             return 1;
         }
          g_settings->initializeColorer(CUSTOM_COLOURS);
     }
 
-    if (errorMessage != "")
-    {
-        err << errorMessage << Qt::endl;
-        return 1;
-    }
 
     g_assemblyGraph->markNodesToDraw(startingNodes, g_settings->nodeDistance);
     BandageGraphicsScene scene;

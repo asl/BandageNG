@@ -134,7 +134,6 @@ public:
     bool loadCSV(const QString& filename, QStringList * columns, QString * errormsg, bool * coloursLoaded);
     std::vector<DeBruijnNode *> getStartingNodes(QString * errorTitle,
                                                  QString * errorMessage,
-                                                 bool doubleMode,
                                                  const QString& nodesList,
                                                  const QString& blastQueryName,
                                                  const QString& pathName) const;

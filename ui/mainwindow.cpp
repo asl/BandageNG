@@ -849,9 +849,9 @@ void MainWindow::drawGraph()
 {
     QString errorTitle;
     QString errorMessage;
+    g_settings->doubleMode = ui->doubleNodesRadioButton->isChecked();
     // FIXME: this function actually resets drawn status!!!!!
     std::vector<DeBruijnNode *> startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage,
-                                                                                  ui->doubleNodesRadioButton->isChecked(),
                                                                                   ui->startingNodesLineEdit->text(),
                                                                                   ui->blastQueryComboBox->currentText(),
                                                                                   ui->pathSelectionLineEdit->displayText());

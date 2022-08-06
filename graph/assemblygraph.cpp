@@ -572,7 +572,8 @@ void AssemblyGraph::markNodesToDraw(const std::vector<DeBruijnNode *>& startingN
                 entry->setAsDrawn();
         }
     }
-    else { //The scope is either around specified nodes, around nodes with BLAST hits or a depth range.
+    else {
+        //The scope is either around specified nodes, around nodes with BLAST hits or a depth range.
         // Distance is only used for around nodes and around blast scopes, not
         // for the depth range scope.
         if (g_settings->graphScope == DEPTH_RANGE)
@@ -623,10 +624,8 @@ static std::vector<DeBruijnNode *> getNodesFromBlastHits(const BlastSearch &blas
 
 // FIXME: This does not belong here!
 std::vector<DeBruijnNode *>
-AssemblyGraph::getStartingNodes(QString * errorTitle, QString * errorMessage, bool doubleMode,
+AssemblyGraph::getStartingNodes(QString * errorTitle, QString * errorMessage,
                                 const QString& nodesList, const QString& blastQueryName, const QString& pathName) const {
-    g_settings->doubleMode = doubleMode;
-
     switch (g_settings->graphScope) {
         default:
             return {};
@@ -666,7 +665,6 @@ AssemblyGraph::getStartingNodes(QString * errorTitle, QString * errorMessage, bo
                 *errorTitle = "No BLAST hits";
                 *errorMessage = "To draw the graph around BLAST hits, you must first conduct a BLAST search.";
             }
-
             return startingNodes;
         }
         case DEPTH_RANGE: {
