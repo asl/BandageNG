@@ -103,7 +103,7 @@ add_library(BandageIo STATIC
 target_link_libraries(BandageIo PRIVATE Qt6::Gui Qt6::Widgets foonathan::lexy)
 
 # FIXME: Untagle this
-add_library(BandageLib STATIC ${LIB_SOURCES} ${FORMS} program/colormap.cpp graph/gfawriter.cpp graph/gfawriter.h graph/fastawriter.cpp graph/io.cpp)
+add_library(BandageLib STATIC ${LIB_SOURCES} ${FORMS} program/colormap.cpp graph/gfawriter.cpp graph/gfawriter.h graph/fastawriter.cpp graph/io.cpp graph/graphscope.cpp)
 target_link_libraries(BandageLib PRIVATE BandageLayout BandageIo Qt6::Concurrent Qt6::Widgets Qt6::Svg ZLIB::ZLIB)
 target_include_directories(BandageLib INTERFACE ".")
 

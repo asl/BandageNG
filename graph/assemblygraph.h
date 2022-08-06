@@ -23,6 +23,7 @@
 #include "debruijnedge.h"
 #include "path.h"
 #include "annotation.h"
+#include "graphscope.h"
 
 #include "io/gfa.h"
 
@@ -119,7 +120,7 @@ public:
     void resetEdges();
     double getMeanDepth(bool drawnNodesOnly = false);
     static double getMeanDepth(const std::vector<DeBruijnNode *> &nodes);
-    static double getMeanDepth(const QList<DeBruijnNode *>& nodes);
+
     void resetNodeContiguityStatus();
     void determineGraphInfo();
     void clearGraphInfo();
@@ -128,15 +129,11 @@ public:
                                   double depthPower, double depthEffectOnWidth);
 
     bool loadGraphFromFile(const QString& filename);
-    void markNodesToDraw(const std::vector<DeBruijnNode *>& startingNodes,
-                         int nodeDistance);
+    void markNodesToDraw(GraphScope scope,
+                         const std::vector<DeBruijnNode *>& startingNodes = {},
+                         int nodeDistance = 0);
 
     bool loadCSV(const QString& filename, QStringList * columns, QString * errormsg, bool * coloursLoaded);
-    std::vector<DeBruijnNode *> getStartingNodes(QString * errorTitle,
-                                                 QString * errorMessage,
-                                                 const QString& nodesList,
-                                                 const QString& blastQueryName,
-                                                 const QString& pathName) const;
 
     static bool checkIfStringHasNodes(QString nodesString);
     static QString generateNodesNotFoundErrorMessage(std::vector<QString> nodesNotInGraph,
@@ -200,10 +197,11 @@ public:
 
     QString getUniqueNodeName(QString baseName) const;
     QString getNodeNameFromString(QString string) const;
+
+    std::vector<DeBruijnNode *> getNodesInDepthRange(double min, double max) const;
 private:
     std::vector<DeBruijnNode *> getNodesFromListExact(const QStringList& nodesList, std::vector<QString> * nodesNotInGraph) const;
     std::vector<DeBruijnNode *> getNodesFromListPartial(const QStringList& nodesList, std::vector<QString> * nodesNotInGraph) const;
-    std::vector<DeBruijnNode *> getNodesInDepthRange(double min, double max) const;
     std::vector<int> makeOverlapCountVector();
     void clearAllCsvData();
     QString getNewNodeName(QString oldNodeName) const;

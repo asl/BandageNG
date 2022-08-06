@@ -136,9 +136,11 @@ int bandageImage(QStringList arguments)
 
     QString errorTitle;
     QString errorMessage;
-    std::vector<DeBruijnNode *> startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage,
-                                                                                  g_settings->startingNodes,
-                                                                                  "all", "");
+    std::vector<DeBruijnNode *> startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
+                                                                        *g_assemblyGraph, g_settings->graphScope,
+                                                                        g_settings->startingNodes,
+                                                                        g_blastSearch->m_blastQueries, "all",
+                                                                        "");
     if (!errorMessage.isEmpty()) {
         err << errorMessage << Qt::endl;
         return 1;
@@ -163,7 +165,8 @@ int bandageImage(QStringList arguments)
     }
 
 
-    g_assemblyGraph->markNodesToDraw(startingNodes, g_settings->nodeDistance);
+    g_assemblyGraph->markNodesToDraw(g_settings->graphScope,
+                                     startingNodes, g_settings->nodeDistance);
     BandageGraphicsScene scene;
     {
         GraphLayoutStorage layout =

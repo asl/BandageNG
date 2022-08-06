@@ -21,6 +21,7 @@
 
 #include "graph/debruijnnode.h"
 #include "graph/nodecolorer.h"
+#include "graph/graphscope.h"
 
 #include "layout/graphlayout.h"
 #include "program/globals.h"

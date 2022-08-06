@@ -107,15 +107,18 @@ int bandageReduce(QStringList arguments)
 
     QString errorTitle;
     QString errorMessage;
-    std::vector<DeBruijnNode *> startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage,
-                                                                                  g_settings->startingNodes,
-                                                                                  "all", "");
+    auto startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
+                                                 *g_assemblyGraph, g_settings->graphScope,
+                                                 g_settings->startingNodes,
+                                                 g_blastSearch->m_blastQueries, "all",
+                                                 "");
     if (!errorMessage.isEmpty()) {
         err << errorMessage << Qt::endl;
         return 1;
     }
 
-    g_assemblyGraph->markNodesToDraw(startingNodes, g_settings->nodeDistance);
+    g_assemblyGraph->markNodesToDraw(g_settings->graphScope,
+                                     startingNodes, g_settings->nodeDistance);
 
     if (!gfa::saveVisibleGraph(outputFilename, *g_assemblyGraph)) {
         err << "Bandage was unable to save the graph file." << Qt::endl;

@@ -31,8 +31,6 @@ class BlastSearch;
 class AssemblyGraph;
 class AnnotationsManager;
 
-enum GraphScope {WHOLE_GRAPH, AROUND_NODE, AROUND_PATHS, AROUND_BLAST_HITS, DEPTH_RANGE};
-
 // Some of the program's common components are made global, so they don't have
 // to be passed around as parameters.
 // FIXME: This is bad. Factor this out when possible

@@ -22,6 +22,8 @@
 #include "globals.h"
 #include "scinot.h"
 #include "colormap.h"
+#include "graph/graphscope.h"
+
 // FIXME: This needs to be properly factored out
 #include "graph/nodecolorer.h"
 

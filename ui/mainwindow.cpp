@@ -845,26 +845,25 @@ void MainWindow::setupPathSelectionLineEdit(QLineEdit *lineEdit) {
 }
 
 
-void MainWindow::drawGraph()
-{
+void MainWindow::drawGraph() {
     QString errorTitle;
     QString errorMessage;
     g_settings->doubleMode = ui->doubleNodesRadioButton->isChecked();
     // FIXME: this function actually resets drawn status!!!!!
-    std::vector<DeBruijnNode *> startingNodes = g_assemblyGraph->getStartingNodes(&errorTitle, &errorMessage,
-                                                                                  ui->startingNodesLineEdit->text(),
-                                                                                  ui->blastQueryComboBox->currentText(),
-                                                                                  ui->pathSelectionLineEdit->displayText());
+    auto startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
+                                                 *g_assemblyGraph, g_settings->graphScope,
+                                                 ui->startingNodesLineEdit->text(),
+                                                 g_blastSearch->m_blastQueries, ui->blastQueryComboBox->currentText(),
+                                                 ui->pathSelectionLineEdit->displayText());
 
-    if (errorMessage != "")
-    {
+    if (!errorMessage.isEmpty()) {
         QMessageBox::information(this, errorTitle, errorMessage);
         return;
     }
 
     resetScene();
     g_assemblyGraph->resetNodes();
-    g_assemblyGraph->markNodesToDraw(startingNodes, g_settings->nodeDistance);
+    g_assemblyGraph->markNodesToDraw(g_settings->graphScope, startingNodes, g_settings->nodeDistance);
     layoutGraph();
 }
 

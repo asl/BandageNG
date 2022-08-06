@@ -251,26 +251,6 @@ double AssemblyGraph::getMeanDepth(const std::vector<DeBruijnNode *> &nodes)
 }
 
 
-double AssemblyGraph::getMeanDepth(const QList<DeBruijnNode *>& nodes)
-{
-    int nodeCount = 0;
-    long double depthSum = 0.0;
-    long long totalLength = 0;
-
-    for (auto node : nodes)
-    {
-        ++nodeCount;
-        totalLength += node->getLength();
-        depthSum += node->getLength() * node->getDepth();
-    }
-
-    if (totalLength == 0)
-        return 0.0;
-    else
-        return depthSum / totalLength;
-}
-
-
 void AssemblyGraph::resetNodeContiguityStatus() {
     for (auto &entry : m_deBruijnGraphNodes) {
         entry->resetContiguityStatus();
@@ -563,20 +543,19 @@ bool AssemblyGraph::loadGraphFromFile(const QString& filename) {
 
 //The startingNodes and nodeDistance parameters are only used if the graph scope
 //is not WHOLE_GRAPH.
-void AssemblyGraph::markNodesToDraw(const std::vector<DeBruijnNode *>& startingNodes, int nodeDistance) {
-    if (g_settings->graphScope == WHOLE_GRAPH) {
+void AssemblyGraph::markNodesToDraw(GraphScope scope,
+                                    const std::vector<DeBruijnNode *>& startingNodes, int nodeDistance) {
+    if (scope == WHOLE_GRAPH) {
         for (auto &entry : m_deBruijnGraphNodes) {
             //If double mode is off, only positive nodes are drawn.  If it's
             //on, all nodes are drawn.
             if (entry->isPositiveNode() || g_settings->doubleMode)
                 entry->setAsDrawn();
         }
-    }
-    else {
-        //The scope is either around specified nodes, around nodes with BLAST hits or a depth range.
-        // Distance is only used for around nodes and around blast scopes, not
-        // for the depth range scope.
-        if (g_settings->graphScope == DEPTH_RANGE)
+    } else {
+        // The scope is either around specified nodes, around nodes with BLAST hits or a depth range.
+        // Distance is only used for around nodes and around blast scopes, not for the depth range scope.
+        if (scope == DEPTH_RANGE)
             nodeDistance = 0;
 
         for (auto *node : startingNodes) {
@@ -593,70 +572,6 @@ void AssemblyGraph::markNodesToDraw(const std::vector<DeBruijnNode *>& startingN
     // Then loop through each edge determining its drawn status
     for (auto &entry : m_deBruijnGraphEdges)
         entry.second->determineIfDrawn();
-}
-
-// FIXME: This does not belong here!
-std::vector<DeBruijnNode *>
-AssemblyGraph::getStartingNodes(QString * errorTitle, QString * errorMessage,
-                                const QString& nodesList, const QString& blastQueryName, const QString& pathName) const {
-    switch (g_settings->graphScope) {
-        default:
-            return {};
-        case AROUND_NODE: {
-            if (checkIfStringHasNodes(nodesList)) {
-                *errorTitle = "No starting nodes";
-                *errorMessage = "Please enter at least one node when drawing the graph using the 'Around node(s)' scope. "
-                                "Separate multiple nodes with commas.";
-                return {};
-            }
-
-            // Make sure the nodes the user typed in are actually in the graph.
-            std::vector<QString> nodesNotInGraph;
-            std::vector<DeBruijnNode *> nodesInGraph = getNodesFromString(nodesList,
-                                                                          g_settings->startingNodesExactMatch,
-                                                                          &nodesNotInGraph);
-            if (!nodesNotInGraph.empty()) {
-                *errorTitle = "Nodes not found";
-                *errorMessage = generateNodesNotFoundErrorMessage(nodesNotInGraph, g_settings->startingNodesExactMatch);
-            }
-
-            return nodesInGraph;
-        }
-        case AROUND_PATHS: {
-            auto pathIt = m_deBruijnGraphPaths.find(pathName.toStdString());
-            if (pathIt == m_deBruijnGraphPaths.end()) {
-                *errorTitle = "Invalid path";
-                *errorMessage = "No path with such name is loaded";
-                return {};
-            }
-
-            return (*pathIt)->nodes();
-        }
-        case AROUND_BLAST_HITS: {
-            std::vector<DeBruijnNode *> startingNodes = g_blastSearch->m_blastQueries.getNodesFromHits(blastQueryName);
-            if (startingNodes.empty()) {
-                *errorTitle = "No BLAST hits";
-                *errorMessage = "To draw the graph around BLAST hits, you must first conduct a BLAST search.";
-            }
-            return startingNodes;
-        }
-        case DEPTH_RANGE: {
-            if (g_settings->minDepthRange > g_settings->maxDepthRange) {
-                *errorTitle = "Invalid depth range";
-                *errorMessage = "The maximum depth must be greater than or equal to the minimum depth.";
-                return {};
-            }
-
-            auto startingNodes = getNodesInDepthRange(g_settings->minDepthRange, g_settings->maxDepthRange);
-            if (startingNodes.empty()) {
-                *errorTitle = "No nodes in range";
-                *errorMessage = "There are no nodes with depths in the specified range.";
-            }
-            return startingNodes;
-        }
-    }
-
-    return {};
 }
 
 static QStringList removeNullStringsFromList(const QStringList& in) {
