@@ -51,6 +51,7 @@ public:
     auto &queries() { return m_queries; }
     BlastQuery *query(size_t idx) { return m_queries[idx]; }
     const BlastQuery *query(size_t idx) const { return m_queries[idx]; }
+    std::vector<DeBruijnNode *> getNodesFromHits(const QString& queryName = "") const;
 
     void findQueryPaths();
 private:

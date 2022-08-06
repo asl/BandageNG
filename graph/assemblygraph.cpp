@@ -595,33 +595,6 @@ void AssemblyGraph::markNodesToDraw(const std::vector<DeBruijnNode *>& startingN
         entry.second->determineIfDrawn();
 }
 
-// FIXME: this does not belong here
-static std::vector<DeBruijnNode *> getNodesFromBlastHits(const BlastSearch &blastSearch,
-                                                         const QString& queryName) {
-    std::vector<DeBruijnNode *> returnVector;
-
-    if (blastSearch.m_blastQueries.empty())
-        return returnVector;
-
-    std::vector<BlastQuery *> queries;
-
-    //If "all" is selected, then we'll display nodes with hits from any query
-    if (queryName == "all")
-        queries = blastSearch.m_blastQueries.queries();
-
-        //If only one query is selected, then we just display nodes with hits from that query
-    else
-        queries.push_back(blastSearch.m_blastQueries.getQueryFromName(queryName));
-
-    // Add pointers to nodes that have a hit for the selected target(s).
-    for (auto *currentQuery: queries) {
-        for (const auto &hit: currentQuery->getHits())
-            returnVector.push_back(hit->m_node);
-    }
-
-    return returnVector;
-}
-
 // FIXME: This does not belong here!
 std::vector<DeBruijnNode *>
 AssemblyGraph::getStartingNodes(QString * errorTitle, QString * errorMessage,
@@ -660,7 +633,7 @@ AssemblyGraph::getStartingNodes(QString * errorTitle, QString * errorMessage,
             return (*pathIt)->nodes();
         }
         case AROUND_BLAST_HITS: {
-            std::vector<DeBruijnNode *> startingNodes = getNodesFromBlastHits(*g_blastSearch, blastQueryName);
+            std::vector<DeBruijnNode *> startingNodes = g_blastSearch->m_blastQueries.getNodesFromHits(blastQueryName);
             if (startingNodes.empty()) {
                 *errorTitle = "No BLAST hits";
                 *errorMessage = "To draw the graph around BLAST hits, you must first conduct a BLAST search.";

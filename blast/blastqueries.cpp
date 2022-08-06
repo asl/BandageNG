@@ -157,3 +157,26 @@ BlastHits BlastQueries::allHits() const {
 
     return res;
 }
+
+std::vector<DeBruijnNode *> BlastQueries::getNodesFromHits(const QString& queryName) const {
+    std::vector<DeBruijnNode *> returnVector;
+
+    if (empty())
+        return returnVector;
+
+    // If "all" is selected, then we'll display nodes with hits from any query
+    if (queryName == "all" || queryName.isEmpty()) {
+        // Add pointers to nodes that have a hit for the selected target(s).
+        for (auto *currentQuery: m_queries) {
+            for (const auto &hit: currentQuery->getHits())
+                returnVector.push_back(hit->m_node);
+        }
+    } else {
+        if (BlastQuery *query = getQueryFromName(queryName)) {
+            for (const auto &hit: query->getHits())
+                returnVector.push_back(hit->m_node);
+        }
+    }
+
+    return returnVector;
+}
