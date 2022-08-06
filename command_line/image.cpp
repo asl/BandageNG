@@ -136,11 +136,12 @@ int bandageImage(QStringList arguments)
 
     QString errorTitle;
     QString errorMessage;
+    auto scope = graph::scope(g_settings->graphScope,
+                              g_settings->startingNodes,
+                              g_blastSearch->m_blastQueries, "all",
+                              "");
     std::vector<DeBruijnNode *> startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
-                                                                        *g_assemblyGraph, g_settings->graphScope,
-                                                                        g_settings->startingNodes,
-                                                                        g_blastSearch->m_blastQueries, "all",
-                                                                        "");
+                                                                        *g_assemblyGraph, scope);
     if (!errorMessage.isEmpty()) {
         err << errorMessage << Qt::endl;
         return 1;

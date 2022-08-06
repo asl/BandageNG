@@ -849,12 +849,14 @@ void MainWindow::drawGraph() {
     QString errorTitle;
     QString errorMessage;
     g_settings->doubleMode = ui->doubleNodesRadioButton->isChecked();
-    // FIXME: this function actually resets drawn status!!!!!
+
+    auto scope = graph::scope(g_settings->graphScope,
+                              ui->startingNodesLineEdit->text(),
+                              g_blastSearch->m_blastQueries, ui->blastQueryComboBox->currentText(),
+                              ui->pathSelectionLineEdit->displayText());
+
     auto startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
-                                                 *g_assemblyGraph, g_settings->graphScope,
-                                                 ui->startingNodesLineEdit->text(),
-                                                 g_blastSearch->m_blastQueries, ui->blastQueryComboBox->currentText(),
-                                                 ui->pathSelectionLineEdit->displayText());
+                                                 *g_assemblyGraph, scope);
 
     if (!errorMessage.isEmpty()) {
         QMessageBox::information(this, errorTitle, errorMessage);

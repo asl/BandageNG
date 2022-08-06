@@ -27,15 +27,12 @@
 namespace graph {
     std::vector<DeBruijnNode *>
     getStartingNodes(QString *errorTitle, QString *errorMessage,
-                     const AssemblyGraph &graph, GraphScope graphScope,
-                     const QString &nodesList,
-                     const BlastQueries &blastQueries, const QString &blastQueryName,
-                     const QString &pathName) {
-        switch (graphScope) {
+                     const AssemblyGraph &graph, const Scope &graphScope) {
+        switch (graphScope.graphScope()) {
             default:
                 return {};
             case AROUND_NODE: {
-                if (AssemblyGraph::checkIfStringHasNodes(nodesList)) {
+                if (AssemblyGraph::checkIfStringHasNodes(graphScope.nodeList())) {
                     *errorTitle = "No starting nodes";
                     *errorMessage = "Please enter at least one node when drawing the graph using the 'Around node(s)' scope. "
                                     "Separate multiple nodes with commas.";
@@ -44,7 +41,7 @@ namespace graph {
 
                 // Make sure the nodes the user typed in are actually in the graph.
                 std::vector<QString> nodesNotInGraph;
-                std::vector<DeBruijnNode *> nodesInGraph = graph.getNodesFromString(nodesList,
+                std::vector<DeBruijnNode *> nodesInGraph = graph.getNodesFromString(graphScope.nodeList(),
                                                                                     g_settings->startingNodesExactMatch,
                                                                                     &nodesNotInGraph);
                 if (!nodesNotInGraph.empty()) {
@@ -56,7 +53,7 @@ namespace graph {
                 return nodesInGraph;
             }
             case AROUND_PATHS: {
-                auto pathIt = graph.m_deBruijnGraphPaths.find(pathName.toStdString());
+                auto pathIt = graph.m_deBruijnGraphPaths.find(graphScope.path().toStdString());
                 if (pathIt == graph.m_deBruijnGraphPaths.end()) {
                     *errorTitle = "Invalid path";
                     *errorMessage = "No path with such name is loaded";
@@ -66,7 +63,7 @@ namespace graph {
                 return (*pathIt)->nodes();
             }
             case AROUND_BLAST_HITS: {
-                std::vector<DeBruijnNode *> startingNodes = blastQueries.getNodesFromHits(blastQueryName);
+                std::vector<DeBruijnNode *> startingNodes = graphScope.queries().getNodesFromHits(graphScope.queryName());
                 if (startingNodes.empty()) {
                     *errorTitle = "No BLAST hits";
                     *errorMessage = "To draw the graph around BLAST hits, you must first conduct a BLAST search.";
@@ -74,13 +71,13 @@ namespace graph {
                 return startingNodes;
             }
             case DEPTH_RANGE: {
-                if (g_settings->minDepthRange > g_settings->maxDepthRange) {
+                if (graphScope.minDepth() > graphScope.maxDepth()) {
                     *errorTitle = "Invalid depth range";
                     *errorMessage = "The maximum depth must be greater than or equal to the minimum depth.";
                     return {};
                 }
 
-                auto startingNodes = graph.getNodesInDepthRange(g_settings->minDepthRange, g_settings->maxDepthRange);
+                auto startingNodes = graph.getNodesInDepthRange(graphScope.minDepth(), graphScope.maxDepth());
                 if (startingNodes.empty()) {
                     *errorTitle = "No nodes in range";
                     *errorMessage = "There are no nodes with depths in the specified range.";
@@ -92,4 +89,28 @@ namespace graph {
         return {};
     }
 
+    Scope scope(GraphScope graphScope, const QString &nodesList,
+                const BlastQueries &blastQueries, const QString &blastQueryName,
+                const QString &pathName) {
+        switch (graphScope) {
+            case WHOLE_GRAPH:
+                return Scope::wholeGraph();
+            case AROUND_NODE:
+                return Scope::aroundNodes(nodesList);
+            case AROUND_PATHS:
+                return Scope::aroundPath(pathName);
+            case AROUND_BLAST_HITS:
+                return Scope::aroundHits(blastQueries, blastQueryName);
+            case DEPTH_RANGE:
+                return Scope::depthRange(g_settings->minDepthRange, g_settings->maxDepthRange);
+        }
+    }
+
+    Scope Scope::aroundHits(const BlastQueries &queries, QString queryName) {
+        Scope res;
+        res.scope = AROUND_BLAST_HITS;
+        res.opt = std::make_pair(std::ref(queries), queryName);
+
+        return res;
+    }
 }
