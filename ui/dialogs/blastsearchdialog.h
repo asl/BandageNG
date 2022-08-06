@@ -20,14 +20,13 @@
 #define BLASTSEARCHDIALOG_H
 
 #include <QDialog>
-#include <QThread>
-#include <QProcess>
 #include <QAbstractTableModel>
 #include <QStyledItemDelegate>
 
 class BlastQuery;
 class BlastQueries;
 class BlastHit;
+class BlastSearch;
 
 using BlastHits = std::vector<std::shared_ptr<BlastHit>>;
 
@@ -102,12 +101,14 @@ public:
 class BlastSearchDialog : public QDialog {
     Q_OBJECT
 public:
-    explicit BlastSearchDialog(QWidget *parent = nullptr, const QString& autoQuery = "");
+    explicit BlastSearchDialog(BlastSearch *blastSearch,
+                               QWidget *parent = nullptr, const QString& autoQuery = "");
     ~BlastSearchDialog() override;
 
 private:
     Ui::BlastSearchDialog *ui;
 
+    BlastSearch *m_blastSearch;
     QueriesListModel *m_queriesListModel;
     HitsListModel *m_hitsListModel;
 

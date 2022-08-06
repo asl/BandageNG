@@ -216,8 +216,7 @@ MainWindow::MainWindow(QString fileToLoadOnStartup, bool drawGraphAfterLoad) :
 //This function runs after the MainWindow has been shown.  This code is not
 //included in the constructor because it can perform a BLAST search, which
 //will fill the BLAST query combo box and screw up widget sizes.
-void MainWindow::afterMainWindowShow()
-{
+void MainWindow::afterMainWindowShow() {
     if (m_alreadyShown)
         return;
 
@@ -231,9 +230,8 @@ void MainWindow::afterMainWindowShow()
     }
 
     //If a BLAST query filename is present, do the BLAST search now automatically.
-    if (g_settings->blastQueryFilename != "")
-    {
-        BlastSearchDialog blastSearchDialog(this, g_settings->blastQueryFilename);
+    if (g_settings->blastQueryFilename != "") {
+        BlastSearchDialog blastSearchDialog(g_blastSearch.get(), this, g_settings->blastQueryFilename);
         setupBlastQueryComboBox();
     }
 
@@ -244,13 +242,9 @@ void MainWindow::afterMainWindowShow()
 
     //If a csv query filename is present, pull the info automatically.
     if (g_settings->csvFilename != "")
-    {
         loadCSV(g_settings->csvFilename);
-    }
 
     m_alreadyShown = true;
-
-//    close();
 }
 
 MainWindow::~MainWindow()
@@ -1705,12 +1699,10 @@ void MainWindow::openAboutDialog()
 }
 
 
-void MainWindow::openBlastSearchDialog()
-{
-    //If a BLAST search dialog does not currently exist, make it.
-    if (m_blastSearchDialog == nullptr)
-    {
-        m_blastSearchDialog = new BlastSearchDialog(this);
+void MainWindow::openBlastSearchDialog() {
+    // If a BLAST search dialog does not currently exist, make it.
+    if (!m_blastSearchDialog) {
+        m_blastSearchDialog = new BlastSearchDialog(g_blastSearch.get(), this);
         connect(m_blastSearchDialog, SIGNAL(blastChanged()), this, SLOT(blastChanged()));
         connect(m_blastSearchDialog, SIGNAL(queryPathSelectionChanged()), g_graphicsView->viewport(), SLOT(update()));
     }
@@ -1730,8 +1722,7 @@ void MainWindow::blastChanged()
     //then maybe the user changed the name of the currently selected query, and
     //that's why we didn't find it.  In that case, try to find it using the
     //index.
-    if (queryBefore == nullptr && blastQueryText != "none" && blastQueryText != "all")
-    {
+    if (queryBefore == nullptr && blastQueryText != "none" && blastQueryText != "all") {
         int blastQueryIndex = ui->blastQueryComboBox->currentIndex();
         if (ui->blastQueryComboBox->count() > 1)
             --blastQueryIndex;

@@ -138,8 +138,8 @@ QString BlastSearch::doAutoBlastSearch() {
     if (!findProgram("tblastn", &tblastnCommand))
         return "Error: The program tblastn was not found.  Please install NCBI BLAST to use this feature.";
 
-    RunBlastSearchWorker runBlastSearchWorker(blastnCommand, tblastnCommand, g_settings->blastSearchParameters, g_blastSearch->m_tempDirectory);
-    if (!runBlastSearchWorker.runBlastSearch(g_blastSearch->m_blastQueries))
+    RunBlastSearchWorker runBlastSearchWorker(blastnCommand, tblastnCommand, g_settings->blastSearchParameters, m_tempDirectory);
+    if (!runBlastSearchWorker.runBlastSearch(m_blastQueries))
         return runBlastSearchWorker.m_error;
 
     blastQueryChanged("all");
