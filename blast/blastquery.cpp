@@ -37,29 +37,28 @@ void BlastQuery::autoSetSequenceType() {
     //alphabet but not in the extended DNA alphabet, then it's
     //a protein
     if (m_sequence.contains('e') || m_sequence.contains('E') ||
-            m_sequence.contains('f') || m_sequence.contains('F') ||
-            m_sequence.contains('i') || m_sequence.contains('I') ||
-            m_sequence.contains('l') || m_sequence.contains('L') ||
-            m_sequence.contains('p') || m_sequence.contains('P') ||
-            m_sequence.contains('q') || m_sequence.contains('Q'))
-    {
+        m_sequence.contains('f') || m_sequence.contains('F') ||
+        m_sequence.contains('i') || m_sequence.contains('I') ||
+        m_sequence.contains('l') || m_sequence.contains('L') ||
+        m_sequence.contains('p') || m_sequence.contains('P') ||
+        m_sequence.contains('q') || m_sequence.contains('Q')) {
         m_sequenceType = PROTEIN;
         return;
     }
 
-    //If the code got here, then it's a bit trickier.  It could
-    //possibly be an extended alphabet DNA sequence or a protein
-    //sequence without particular amino acids.
+    // If the code got here, then it's a bit trickier.  It could
+    // possibly be an extended alphabet DNA sequence or a protein
+    // sequence without particular amino acids.
 
-    //Look to see if A, C, G, T and N make up 75% or more of
-    //the sequence.  If so, it's DNA.  If not, it's
-    //protein.
-    int length = m_sequence.length();
-    int nuclLetters = m_sequence.count('a') + m_sequence.count('A') +
-            m_sequence.count('c') + m_sequence.count('C') +
-            m_sequence.count('g') + m_sequence.count('G') +
-            m_sequence.count('t') + m_sequence.count('T') +
-            m_sequence.count('n') + m_sequence.count('N');
+    // Look to see if A, C, G, T and N make up 75% or more of
+    // the sequence.  If so, it's DNA.  If not, it's
+    // protein.
+    size_t length = m_sequence.length();
+    size_t nuclLetters = m_sequence.count('a') + m_sequence.count('A') +
+                         m_sequence.count('c') + m_sequence.count('C') +
+                         m_sequence.count('g') + m_sequence.count('G') +
+                         m_sequence.count('t') + m_sequence.count('T') +
+                         m_sequence.count('n') + m_sequence.count('N');
 
     if (double(nuclLetters) / length >= 0.75)
         m_sequenceType = NUCLEOTIDE;
@@ -72,13 +71,12 @@ QString BlastQuery::getTypeString() const {
     return (m_sequenceType == NUCLEOTIDE ? "nucl" : "prot");
 }
 
-
 void BlastQuery::clearSearchResults() {
     m_searchedFor = false;
     m_hits.clear();
 }
 
-//This function tries to find the paths through the graph which cover the query.
+// This function tries to find the paths through the graph which cover the query.
 void BlastQuery::findQueryPaths() {
     m_paths.clear();
     if (m_hits.size() > g_settings->maxHitsForQueryPath)

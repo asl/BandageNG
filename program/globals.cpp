@@ -18,9 +18,6 @@
 
 #include "globals.h"
 #include <QLocale>
-#include <QDir>
-#include <QTextStream>
-#include <QApplication>
 #include <cmath>
 
 QSharedPointer<Settings> g_settings;
@@ -32,20 +29,22 @@ QSharedPointer<AssemblyGraph> g_assemblyGraph;
 std::shared_ptr<AnnotationsManager> g_annotationsManager;
 
 
-QString formatIntForDisplay(int num)
-{
+QString formatIntForDisplay(int num) {
     QLocale locale;
     return locale.toString(num);
 }
 
-QString formatIntForDisplay(long long num)
-{
+QString formatIntForDisplay(long long num) {
     QLocale locale;
     return locale.toString(num);
 }
 
-QString formatDoubleForDisplay(double num, int decimalPlacesToDisplay)
-{
+QString formatIntForDisplay(size_t num) {
+    QLocale locale;
+    return locale.toString(num);
+}
+
+QString formatDoubleForDisplay(double num, int decimalPlacesToDisplay) {
     //Add a bit for rounding
     double addValue = 0.5 / pow(10, decimalPlacesToDisplay);
     num += addValue;
@@ -56,8 +55,7 @@ QString formatDoubleForDisplay(double num, int decimalPlacesToDisplay)
     QString final;
     bool pastDecimalPoint = false;
     int numbersPastDecimalPoint = 0;
-    for (auto withComma : withCommas)
-    {
+    for (auto withComma : withCommas) {
         final += withComma;
 
         if (pastDecimalPoint)
@@ -73,15 +71,13 @@ QString formatDoubleForDisplay(double num, int decimalPlacesToDisplay)
 }
 
 
-QString formatDepthForDisplay(double depth)
-{
+QString formatDepthForDisplay(double depth) {
     if (depth == 0.0)
         return "0.0x";
 
     int decimals = 1;
     double multipliedDepth = fabs(depth);
-    while (multipliedDepth < 10.0)
-    {
+    while (multipliedDepth < 10.0) {
         multipliedDepth *= 10.0;
         decimals += 1;
     }

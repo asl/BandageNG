@@ -44,7 +44,6 @@ public:
     void clearBlastHits();
     void cleanUp();
 
-    void clearSomeQueries(const std::vector<BlastQuery *> &queriesToRemove);
     void emptyTempDirectory() const;
     QString doAutoBlastSearch();
 };

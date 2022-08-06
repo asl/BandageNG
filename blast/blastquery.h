@@ -43,9 +43,9 @@ public:
     //ACCESSORS
     QString getName() const {return m_name;}
     QString getSequence() const {return m_sequence;}
-    int getLength() const {return m_sequence.length();}
+    size_t getLength() const {return m_sequence.length();}
     bool hasHits() const {return !m_hits.empty();}
-    int hitCount() const {return m_hits.size();}
+    size_t hitCount() const {return m_hits.size();}
     const std::vector<std::shared_ptr<BlastHit>> &getHits() const {return m_hits;}
     bool wasSearchedFor() const {return m_searchedFor;}
     QColor getColour() const {return m_colour;}

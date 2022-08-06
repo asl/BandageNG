@@ -36,8 +36,7 @@
 BlastSearch::BlastSearch(const QDir &workDir) :
     m_blastQueries(), m_tempDirectory(workDir.filePath("bandage_temp_XXXXXX")) {}
 
-BlastSearch::~BlastSearch()
-{
+BlastSearch::~BlastSearch() {
     clearBlastHits();
     m_blastQueries.clearAllQueries();
 }
@@ -106,12 +105,6 @@ bool BlastSearch::findProgram(const QString &programName, QString * command)
 }
 #endif
 
-
-
-void BlastSearch::clearSomeQueries(const std::vector<BlastQuery *> &queriesToRemove) {
-    // Now actually delete the queries.
-    m_blastQueries.clearSomeQueries(queriesToRemove);
-}
 
 void BlastSearch::emptyTempDirectory() const {
     QDir tempDirectory(m_tempDirectory.path());

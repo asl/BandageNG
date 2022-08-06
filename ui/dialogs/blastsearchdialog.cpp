@@ -326,7 +326,7 @@ void BlastSearchDialog::enterQueryManually() {
 void BlastSearchDialog::clearAllQueries() {
     ui->clearAllQueriesButton->setEnabled(false);
 
-    g_blastSearch->m_blastQueries.clearAllQueries();
+    m_queriesListModel->m_queries.clearAllQueries();
 
     clearBlastHits();
     updateTables();
@@ -337,18 +337,18 @@ void BlastSearchDialog::clearAllQueries() {
 
 void BlastSearchDialog::clearSelectedQueries() {
     // Use the table selection to figure out which queries are to be removed.
-    std::vector<BlastQuery *> queriesToRemove;
-    QItemSelectionModel * select = ui->blastQueriesTable->selectionModel();
+    QItemSelectionModel *select = ui->blastQueriesTable->selectionModel();
     QModelIndexList selection = select->selectedIndexes();
 
-    if (selection.size() == g_blastSearch->m_blastQueries.getQueryCount()) {
+    if (selection.size() == m_queriesListModel->m_queries.getQueryCount()) {
         clearAllQueries();
         return;
     }
 
+    std::vector<BlastQuery *> queriesToRemove;
     for (const auto &index : selection)
-        queriesToRemove.push_back(g_blastSearch->m_blastQueries.m_queries[index.row()]);
-    g_blastSearch->clearSomeQueries(queriesToRemove);
+        queriesToRemove.push_back(m_queriesListModel->query(index));
+    m_queriesListModel->m_queries.clearSomeQueries(queriesToRemove);
 
     updateTables();
 
@@ -665,10 +665,10 @@ QVariant QueriesListModel::data(const QModelIndex &index, int role) const {
         case QueriesHitColumns::Type:
             return query->getTypeString();
         case QueriesHitColumns::Length:
-            return query->getLength();
+            return unsigned(query->getLength());
         case QueriesHitColumns::Hits:
             if (query->wasSearchedFor())
-                return query->hitCount();
+                return unsigned(query->hitCount());
             return "-";
         case QueriesHitColumns::QueryCover:
             if (query->wasSearchedFor())

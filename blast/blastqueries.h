@@ -43,10 +43,10 @@ public:
     void searchOccurred();
     void clearSearchResults();
 
-    int getQueryCount() const;
-    int getQueryCountWithAtLeastOnePath() const;
-    int getQueryPathCount() const ;
-    int getQueryCount(QuerySequenceType sequenceType) const ;
+    size_t getQueryCount() const;
+    size_t getQueryCountWithAtLeastOnePath() const;
+    size_t getQueryPathCount() const ;
+    size_t getQueryCount(QuerySequenceType sequenceType) const ;
     bool isQueryPresent(const BlastQuery * query) const;
     BlastHits allHits() const;
 

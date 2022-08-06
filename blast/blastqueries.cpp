@@ -17,14 +17,10 @@
 
 
 #include "blastqueries.h"
-#include "blastsearch.h"
-
-#include "graph/assemblygraph.h"
 
 #include "program/globals.h"
 #include "program/settings.h"
 
-#include <QTextStream>
 #include <unordered_set>
 
 BlastQueries::BlastQueries()
@@ -33,7 +29,6 @@ BlastQueries::BlastQueries()
 BlastQueries::~BlastQueries() {
     clearAllQueries();
 }
-
 
 BlastQuery *BlastQueries::getQueryFromName(QString queryName) {
     auto res =
@@ -49,17 +44,15 @@ BlastQuery *BlastQueries::getQueryFromName(QString queryName) {
 void BlastQueries::addQuery(BlastQuery * newQuery) {
     newQuery->setName(getUniqueName(newQuery->getName()));
 
-    //Give the new query a colour
-    int colourIndex = int(m_queries.size());
-    colourIndex %= m_presetColours.size();
-    newQuery->setColour(m_presetColours[colourIndex]);
+    // Give the new query a colour
+    newQuery->setColour(m_presetColours[m_queries.size() % m_presetColours.size()]);
 
     m_queries.push_back(newQuery);
 }
 
-//This function renames the query.  It returns the name given, because that
-//might not be exactly the same as the name passed to the function if it
-//wasn't unique.
+// This function renames the query.  It returns the name given, because that
+// might not be exactly the same as the name passed to the function if it
+// wasn't unique.
 QString BlastQueries::renameQuery(BlastQuery * newQuery, QString newName) {
     newQuery->setName(getUniqueName(newName));
     return newQuery->getName();
@@ -114,11 +107,11 @@ void BlastQueries::clearSearchResults() {
 }
 
 
-int BlastQueries::getQueryCount() const {
-    return int(m_queries.size());
+size_t BlastQueries::getQueryCount() const {
+    return m_queries.size();
 }
 
-int BlastQueries::getQueryCountWithAtLeastOnePath() const {
+size_t BlastQueries::getQueryCountWithAtLeastOnePath() const {
     int count = 0;
     for (const auto *query : m_queries)
         count += (query->getPathCount() > 0);
@@ -126,15 +119,15 @@ int BlastQueries::getQueryCountWithAtLeastOnePath() const {
     return count;
 }
 
-int BlastQueries::getQueryPathCount() const {
-    int count = 0;
+size_t BlastQueries::getQueryPathCount() const {
+    size_t count = 0;
     for (const auto *query : m_queries)
         count += query->getPathCount();
     return count;
 }
 
-int BlastQueries::getQueryCount(QuerySequenceType sequenceType) const {
-    int count = 0;
+size_t BlastQueries::getQueryCount(QuerySequenceType sequenceType) const {
+    size_t count = 0;
     for (const auto *query : m_queries)
         count += (query->getSequenceType() == sequenceType);
     return count;
@@ -147,8 +140,8 @@ bool BlastQueries::isQueryPresent(const BlastQuery * query) const {
     return std::find(m_queries.begin(), m_queries.end(), query) != m_queries.end();
 }
 
-//This function looks at each BLAST query and tries to find a path through
-//the graph which covers the maximal amount of the query.
+// This function looks at each BLAST query and tries to find a path through
+// the graph which covers the maximal amount of the query.
 void BlastQueries::findQueryPaths() {
     for (auto *query : m_queries)
         query->findQueryPaths();
