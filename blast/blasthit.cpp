@@ -33,17 +33,23 @@ BlastHit::BlastHit(BlastQuery * query, DeBruijnNode * node,
     m_numberMismatches(numberMismatches), m_numberGapOpens(numberGapOpens),
     m_queryStart(queryStart), m_queryEnd(queryEnd),
     m_nodeStart(nodeStart), m_nodeEnd(nodeEnd),
-    m_eValue(eValue), m_bitScore(bitScore)
-{
-    int nodeLength = m_node->getLength();
-    int queryLength = m_query->getLength();
+    m_eValue(eValue), m_bitScore(bitScore) { }
 
-    m_nodeStartFraction = double(nodeStart - 1) / nodeLength;
-    m_nodeEndFraction = double(nodeEnd) / nodeLength;
-    m_queryStartFraction = double(queryStart - 1) / queryLength;
-    m_queryEndFraction = double(queryEnd) / queryLength;
+double BlastHit::nodeStartFraction() const {
+    return double(m_nodeStart - 1) / m_node->getLength();
 }
 
+double BlastHit::nodeEndFraction() const {
+    return double(m_nodeEnd - 1) / m_node->getLength();
+}
+
+double BlastHit::queryStartFraction() const {
+    return double(m_queryStart - 1) / m_query->getLength();
+}
+
+double BlastHit::queryEndFraction() const {
+    return double(m_queryEnd - 1) / m_query->getLength();
+}
 
 double BlastHit::getQueryCoverageFraction() const {
     int queryRegionSize = m_queryEnd - m_queryStart + 1;

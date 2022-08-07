@@ -46,7 +46,7 @@ public:
     size_t getLength() const {return m_sequence.length();}
     bool hasHits() const {return !m_hits.empty();}
     size_t hitCount() const {return m_hits.size();}
-    const std::vector<std::shared_ptr<BlastHit>> &getHits() const {return m_hits;}
+    const auto &getHits() const {return m_hits;}
     bool wasSearchedFor() const {return m_searchedFor;}
     QColor getColour() const {return m_colour;}
     QuerySequenceType getSequenceType() const {return m_sequenceType;}

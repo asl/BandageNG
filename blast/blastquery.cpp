@@ -92,7 +92,7 @@ void BlastQuery::findQueryPaths() {
     double acceptableStartFraction = 1.0 - g_settings->minQueryCoveredByPath;
     for (auto &m_hit : m_hits) {
         BlastHit * hit = m_hit.get();
-        if (hit->m_queryStartFraction <= acceptableStartFraction)
+        if (hit->queryStartFraction() <= acceptableStartFraction)
             possibleStarts.push_back(hit);
     }
 
@@ -101,7 +101,7 @@ void BlastQuery::findQueryPaths() {
     double acceptableEndFraction = g_settings->minQueryCoveredByPath;
     for (auto &m_hit : m_hits) {
         BlastHit * hit = m_hit.get();
-        if (hit->m_queryEndFraction >= acceptableEndFraction)
+        if (hit->queryEndFraction() >= acceptableEndFraction)
             possibleEnds.push_back(hit);
     }
 

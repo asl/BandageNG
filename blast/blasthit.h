@@ -49,16 +49,17 @@ public:
     SciNot m_eValue;
     double m_bitScore;
 
-    double m_nodeStartFraction;
-    double m_nodeEndFraction;
-    double m_queryStartFraction;
-    double m_queryEndFraction;
-
     double getQueryCoverageFraction() const;
     GraphLocation getHitStart() const;
     GraphLocation getHitEnd() const;
     QByteArray getNodeSequence() const;
     int getNodeLength() const {return m_nodeEnd - m_nodeStart + 1;}
+
+    double nodeStartFraction() const;
+    double nodeEndFraction() const;
+    double queryStartFraction() const;
+    double queryEndFraction() const;
+
 };
 
 #endif // BLASTHIT_H

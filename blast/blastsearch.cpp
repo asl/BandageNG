@@ -197,10 +197,8 @@ void BlastSearch::blastQueryChanged(const QString &queryName) {
     if (queryName == "all")
         queries = m_blastQueries.queries();
     //If only one query is selected, then just display that one.
-    else {
-        if (BlastQuery * query = m_blastQueries.getQueryFromName(queryName))
-            queries.push_back(query);
-    }
+    else if (BlastQuery * query = m_blastQueries.getQueryFromName(queryName))
+        queries.push_back(query);
 
     //We now filter out any queries that have been hidden by the user.
     std::vector<BlastQuery *> shownQueries;
@@ -221,8 +219,8 @@ void BlastSearch::blastQueryChanged(const QString &queryName) {
                                 hit->m_nodeEnd,
                                 query->getName().toStdString()));
                 annotation->addView(std::make_unique<SolidView>(1.0, query->getColour()));
-                annotation->addView(std::make_unique<RainbowBlastHitView>(hit->m_queryStartFraction,
-                                                                          hit->m_queryEndFraction));
+                annotation->addView(std::make_unique<RainbowBlastHitView>(hit->queryStartFraction(),
+                                                                          hit->queryEndFraction()));
             }
         }
     }
