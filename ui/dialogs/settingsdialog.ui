@@ -4489,7 +4489,7 @@ discrepancy (bases):</string>
   <customwidget>
    <class>InfoTextWidget</class>
    <extends>QWidget</extends>
-   <header>infotextwidget.h</header>
+   <header>widgets/infotextwidget.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>

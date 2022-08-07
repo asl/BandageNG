@@ -2869,7 +2869,7 @@ then colour which other nodes in the graph are likely to be contiguous
   <customwidget>
    <class>InfoTextWidget</class>
    <extends>QWidget</extends>
-   <header>infotextwidget.h</header>
+   <header>widgets/infotextwidget.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>
