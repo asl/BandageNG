@@ -105,6 +105,9 @@ namespace graph {
             case DEPTH_RANGE:
                 return Scope::depthRange(minDepthRange, maxDepthRange);
         }
+
+        assert(0 && "Invalid scope!");
+        return Scope::wholeGraph();
     }
 
     Scope Scope::aroundHits(const BlastQueries &queries, const QString& queryName,
