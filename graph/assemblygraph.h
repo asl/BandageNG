@@ -129,9 +129,8 @@ public:
                                   double depthPower, double depthEffectOnWidth);
 
     bool loadGraphFromFile(const QString& filename);
-    void markNodesToDraw(GraphScope scope,
-                         const std::vector<DeBruijnNode *>& startingNodes = {},
-                         int nodeDistance = 0);
+    void markNodesToDraw(const graph::Scope &scope,
+                         const std::vector<DeBruijnNode *>& startingNodes = {});
 
     bool loadCSV(const QString& filename, QStringList * columns, QString * errormsg, bool * coloursLoaded);
 

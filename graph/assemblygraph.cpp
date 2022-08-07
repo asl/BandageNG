@@ -543,9 +543,9 @@ bool AssemblyGraph::loadGraphFromFile(const QString& filename) {
 
 //The startingNodes and nodeDistance parameters are only used if the graph scope
 //is not WHOLE_GRAPH.
-void AssemblyGraph::markNodesToDraw(GraphScope scope,
-                                    const std::vector<DeBruijnNode *>& startingNodes, int nodeDistance) {
-    if (scope == WHOLE_GRAPH) {
+void AssemblyGraph::markNodesToDraw(const graph::Scope &scope,
+                                    const std::vector<DeBruijnNode *>& startingNodes) {
+    if (scope.graphScope() == WHOLE_GRAPH) {
         for (auto &entry : m_deBruijnGraphNodes) {
             //If double mode is off, only positive nodes are drawn.  If it's
             //on, all nodes are drawn.
@@ -553,11 +553,6 @@ void AssemblyGraph::markNodesToDraw(GraphScope scope,
                 entry->setAsDrawn();
         }
     } else {
-        // The scope is either around specified nodes, around nodes with BLAST hits or a depth range.
-        // Distance is only used for around nodes and around blast scopes, not for the depth range scope.
-        if (scope == DEPTH_RANGE)
-            nodeDistance = 0;
-
         for (auto *node : startingNodes) {
             //If we are in single mode, make sure that each node is positive.
             if (!g_settings->doubleMode && node->isNegativeNode())
@@ -565,7 +560,7 @@ void AssemblyGraph::markNodesToDraw(GraphScope scope,
 
             node->setAsDrawn();
             node->setAsSpecial();
-            node->labelNeighbouringNodesAsDrawn(nodeDistance);
+            node->labelNeighbouringNodesAsDrawn(scope.distance());
         }
     }
 

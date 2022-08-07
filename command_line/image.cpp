@@ -166,8 +166,7 @@ int bandageImage(QStringList arguments)
     }
 
 
-    g_assemblyGraph->markNodesToDraw(g_settings->graphScope,
-                                     startingNodes, g_settings->nodeDistance);
+    g_assemblyGraph->markNodesToDraw(scope, startingNodes);
     BandageGraphicsScene scene;
     {
         GraphLayoutStorage layout =

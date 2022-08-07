@@ -118,8 +118,7 @@ int bandageReduce(QStringList arguments)
         return 1;
     }
 
-    g_assemblyGraph->markNodesToDraw(g_settings->graphScope,
-                                     startingNodes, g_settings->nodeDistance);
+    g_assemblyGraph->markNodesToDraw(scope, startingNodes);
 
     if (!gfa::saveVisibleGraph(outputFilename, *g_assemblyGraph)) {
         err << "Bandage was unable to save the graph file." << Qt::endl;

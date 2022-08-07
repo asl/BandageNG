@@ -5,7 +5,7 @@
 // Bandage is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+// (at your m_option) any later version.
 
 // Bandage is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -35,79 +35,85 @@ enum GraphScope {
 
 namespace graph {
     class Scope {
-        GraphScope scope;
+        GraphScope m_scope;
         std::variant<
                 std::nullptr_t, // whole graph
                 QString, // path or node
                 std::pair<std::reference_wrapper<const BlastQueries>, QString>, // hits
                 std::pair<double, double> // depth
-        > opt;
+        > m_opt;
+        unsigned m_distance;
     public:
-        GraphScope graphScope() const { return scope; }
+        GraphScope graphScope() const { return m_scope; }
+
+        unsigned distance() const { return m_distance; }
 
         double minDepth() const {
-            return std::get<std::pair<double, double>>(opt).first;
+            return std::get<std::pair<double, double>>(m_opt).first;
         }
 
         double maxDepth() const {
-            return std::get<std::pair<double, double>>(opt).second;
+            return std::get<std::pair<double, double>>(m_opt).second;
         }
 
         const BlastQueries &queries() const {
-            return std::get<std::pair<std::reference_wrapper<const BlastQueries>, QString>>(opt).first.get();
+            return std::get<std::pair<std::reference_wrapper<const BlastQueries>, QString>>(m_opt).first.get();
         };
 
         QString queryName() const {
-            return std::get<std::pair<std::reference_wrapper<const BlastQueries>, QString>>(opt).second;
+            return std::get<std::pair<std::reference_wrapper<const BlastQueries>, QString>>(m_opt).second;
         };
 
         QString nodeList() const {
-            return std::get<QString>(opt);
+            return std::get<QString>(m_opt);
         }
 
         QString path() const {
-            return std::get<QString>(opt);
+            return std::get<QString>(m_opt);
         }
 
         static Scope wholeGraph() {
             return {};
         }
 
-        static Scope aroundNodes(QString nodeList) {
+        static Scope aroundNodes(QString nodeList, unsigned distance = 0) {
             Scope res;
-            res.scope = AROUND_NODE;
-            res.opt = nodeList;
+            res.m_scope = AROUND_NODE;
+            res.m_opt = nodeList;
+            res.m_distance = distance;
 
             return res;
         }
 
-        static Scope aroundPath(QString pathList) {
+        static Scope aroundPath(QString pathList, unsigned distance = 0) {
             Scope res;
-            res.scope = AROUND_PATHS;
-            res.opt = pathList;
+            res.m_scope = AROUND_PATHS;
+            res.m_opt = pathList;
+            res.m_distance = distance;
 
             return res;
         }
 
         static Scope depthRange(double min, double max) {
             Scope res;
-            res.scope = DEPTH_RANGE;
-            res.opt = std::make_pair(min, max);
+            res.m_scope = DEPTH_RANGE;
+            res.m_opt = std::make_pair(min, max);
 
             return res;
         }
 
-        static Scope aroundHits(const BlastQueries &queries, QString queryName);
+        static Scope aroundHits(const BlastQueries &queries, const QString& queryName,
+                                unsigned distance = 0);
 
     private:
         Scope()
-                : scope(WHOLE_GRAPH), opt{nullptr} {}
+                : m_scope(WHOLE_GRAPH), m_opt{nullptr}, m_distance(0) {}
     };
 
     Scope scope(GraphScope graphScope,
                 const QString& nodesList,
                 const BlastQueries &blastQueries, const QString& blastQueryName,
-                const QString& pathName);
+                const QString& pathName, unsigned distance = 0);
 
     std::vector<DeBruijnNode *>
     getStartingNodes(QString * errorTitle, QString * errorMessage,

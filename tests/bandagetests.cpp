@@ -621,147 +621,171 @@ void BandageTests::graphScope()
     QString errorTitle;
     QString errorMessage;
     int drawnNodes;
-    std::vector<DeBruijnNode *> startingNodes;
 
-    g_settings->doubleMode = false;
-    startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
-                                            *g_assemblyGraph,
-                                            graph::Scope::wholeGraph());
-    g_assemblyGraph->resetNodes();
-    g_assemblyGraph->markNodesToDraw(WHOLE_GRAPH, startingNodes, g_settings->nodeDistance);
-    drawnNodes = g_assemblyGraph->getDrawnNodeCount();
-    QCOMPARE(drawnNodes, 44);
+    {
+        g_settings->doubleMode = false;
+        auto scope = graph::Scope::wholeGraph();
+        auto startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
+                                                     *g_assemblyGraph, scope);
+        g_assemblyGraph->resetNodes();
+        g_assemblyGraph->markNodesToDraw(scope, startingNodes);
+        drawnNodes = g_assemblyGraph->getDrawnNodeCount();
+        QCOMPARE(drawnNodes, 44);
+    }
 
-    g_settings->doubleMode = true;
-    startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
-                                            *g_assemblyGraph,
-                                            graph::Scope::wholeGraph());
+    {
+        g_settings->doubleMode = true;
+        auto scope = graph::Scope::wholeGraph();
+        auto startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
+                                                     *g_assemblyGraph, scope);
 
-    g_assemblyGraph->resetNodes();
-    g_assemblyGraph->markNodesToDraw(WHOLE_GRAPH, startingNodes, g_settings->nodeDistance);
-    drawnNodes = g_assemblyGraph->getDrawnNodeCount();
-    QCOMPARE(drawnNodes, 88);
+        g_assemblyGraph->resetNodes();
+        g_assemblyGraph->markNodesToDraw(scope, startingNodes);
+        drawnNodes = g_assemblyGraph->getDrawnNodeCount();
+        QCOMPARE(drawnNodes, 88);
+    }
 
-    g_settings->nodeDistance = 0;
-    g_settings->doubleMode = false;
-    startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
-                                            *g_assemblyGraph,
-                                            graph::Scope::aroundNodes("1"));
-    g_assemblyGraph->resetNodes();
-    g_assemblyGraph->markNodesToDraw(AROUND_NODE, startingNodes, g_settings->nodeDistance);
-    drawnNodes = g_assemblyGraph->getDrawnNodeCount();
-    QCOMPARE(drawnNodes, 1);
+    {
+        g_settings->doubleMode = false;
+        auto scope = graph::Scope::aroundNodes("1");
+        auto startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
+                                                     *g_assemblyGraph, scope);
+        g_assemblyGraph->resetNodes();
+        g_assemblyGraph->markNodesToDraw(scope, startingNodes);
+        drawnNodes = g_assemblyGraph->getDrawnNodeCount();
+        QCOMPARE(drawnNodes, 1);
+    }
 
-    g_settings->nodeDistance = 0;
-    g_settings->doubleMode = true;
-    startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
-                                            *g_assemblyGraph,
-                                            graph::Scope::aroundNodes("1"));
-    g_assemblyGraph->resetNodes();
-    g_assemblyGraph->markNodesToDraw(AROUND_NODE, startingNodes, g_settings->nodeDistance);
-    drawnNodes = g_assemblyGraph->getDrawnNodeCount();
-    QCOMPARE(drawnNodes, 2);
+    {
+        g_settings->doubleMode = true;
+        auto scope = graph::Scope::aroundNodes("1");
+        auto startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
+                                                     *g_assemblyGraph, scope);
+        g_assemblyGraph->resetNodes();
+        g_assemblyGraph->markNodesToDraw(scope, startingNodes);
+        drawnNodes = g_assemblyGraph->getDrawnNodeCount();
+        QCOMPARE(drawnNodes, 2);
+    }
+    {
+        g_settings->doubleMode = true;
+        auto scope = graph::Scope::aroundNodes("1+");
+        auto startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
+                                                     *g_assemblyGraph,
+                                                     scope);
+        g_assemblyGraph->resetNodes();
+        g_assemblyGraph->markNodesToDraw(scope, startingNodes);
+        drawnNodes = g_assemblyGraph->getDrawnNodeCount();
+        QCOMPARE(drawnNodes, 1);
+    }
 
-    g_settings->doubleMode = true;
-    startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
-                                            *g_assemblyGraph,
-                                            graph::Scope::aroundNodes("1+"));
-    g_assemblyGraph->resetNodes();
-    g_assemblyGraph->markNodesToDraw(AROUND_NODE, startingNodes, g_settings->nodeDistance);
-    drawnNodes = g_assemblyGraph->getDrawnNodeCount();
-    QCOMPARE(drawnNodes, 1);
+    {
+        g_settings->doubleMode = false;
+        auto scope = graph::Scope::aroundNodes("1", 1);
+        auto startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
+                                                     *g_assemblyGraph, scope);
+        g_assemblyGraph->resetNodes();
+        g_assemblyGraph->markNodesToDraw(scope, startingNodes);
+        drawnNodes = g_assemblyGraph->getDrawnNodeCount();
+        QCOMPARE(drawnNodes, 3);
+    }
 
-    g_settings->nodeDistance = 1;
-    g_settings->doubleMode = false;
-    startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
-                                            *g_assemblyGraph,
-                                            graph::Scope::aroundNodes("1"));
-    g_assemblyGraph->resetNodes();
-    g_assemblyGraph->markNodesToDraw(AROUND_NODE, startingNodes, g_settings->nodeDistance);
-    drawnNodes = g_assemblyGraph->getDrawnNodeCount();
-    QCOMPARE(drawnNodes, 3);
+    {
+        g_settings->doubleMode = false;
+        auto scope = graph::Scope::aroundNodes("1", 2);
+        auto startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
+                                                     *g_assemblyGraph, scope);
+        g_assemblyGraph->resetNodes();
+        g_assemblyGraph->markNodesToDraw(scope, startingNodes);
+        drawnNodes = g_assemblyGraph->getDrawnNodeCount();
+        QCOMPARE(drawnNodes, 10);
+    }
 
-    g_settings->nodeDistance = 2;
-    g_settings->doubleMode = false;
-    startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
-                                            *g_assemblyGraph,
-                                            graph::Scope::aroundNodes("1"));
-    g_assemblyGraph->resetNodes();
-    g_assemblyGraph->markNodesToDraw(AROUND_NODE, startingNodes, g_settings->nodeDistance);
-    drawnNodes = g_assemblyGraph->getDrawnNodeCount();
-    QCOMPARE(drawnNodes, 10);
+    {
+        g_settings->doubleMode = false;
+        auto scope = graph::Scope::depthRange(0.0, 211.0);
+        auto startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
+                                                     *g_assemblyGraph, scope);
+        g_assemblyGraph->resetNodes();
+        g_assemblyGraph->markNodesToDraw(scope, startingNodes);
+        drawnNodes = g_assemblyGraph->getDrawnNodeCount();
+        QCOMPARE(drawnNodes, 43);
+    }
 
-    g_settings->nodeDistance = 0;
-    g_settings->doubleMode = false;
-    startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
-                                            *g_assemblyGraph,
-                                            graph::Scope::depthRange(0.0, 211.0));
-    g_assemblyGraph->resetNodes();
-    g_assemblyGraph->markNodesToDraw(DEPTH_RANGE, startingNodes, g_settings->nodeDistance);
-    drawnNodes = g_assemblyGraph->getDrawnNodeCount();
-    QCOMPARE(drawnNodes, 43);
+    {
+        g_settings->nodeDistance = 10; // this should be ignored everywhere
+        g_settings->doubleMode = false;
+        auto scope = graph::Scope::depthRange(0.0, 211.0);
+        auto startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
+                                                     *g_assemblyGraph, scope
+        );
+        g_assemblyGraph->resetNodes();
+        g_assemblyGraph->markNodesToDraw(scope, startingNodes);
+        drawnNodes = g_assemblyGraph->getDrawnNodeCount();
+        QCOMPARE(drawnNodes, 43);
+    }
 
-    g_settings->nodeDistance = 10;
-    g_settings->doubleMode = false;
-    startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
-                                            *g_assemblyGraph,
-                                            graph::Scope::depthRange(0.0, 211.0));
-    g_assemblyGraph->resetNodes();
-    g_assemblyGraph->markNodesToDraw(DEPTH_RANGE, startingNodes, g_settings->nodeDistance);
-    drawnNodes = g_assemblyGraph->getDrawnNodeCount();
-    QCOMPARE(drawnNodes, 43);
+    {
+        g_settings->doubleMode = false;
+        auto scope = graph::Scope::depthRange(211.0, 1000.0);
+        auto startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
+                                                     *g_assemblyGraph,
+                                                     scope);
+        g_assemblyGraph->resetNodes();
+        g_assemblyGraph->markNodesToDraw(scope, startingNodes);
+        drawnNodes = g_assemblyGraph->getDrawnNodeCount();
+        QCOMPARE(drawnNodes, 1);
+    }
 
-    g_settings->nodeDistance = 0;
-    g_settings->doubleMode = false;
-    startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
-                                            *g_assemblyGraph,
-                                            graph::Scope::depthRange(211.0, 1000.0));
-    g_assemblyGraph->resetNodes();
-    g_assemblyGraph->markNodesToDraw(DEPTH_RANGE, startingNodes, g_settings->nodeDistance);
-    drawnNodes = g_assemblyGraph->getDrawnNodeCount();
-    QCOMPARE(drawnNodes, 1);
+    {
+        g_settings->doubleMode = false;
+        auto scope = graph::Scope::depthRange(40.0, 211.0);
+        auto startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
+                                                     *g_assemblyGraph, scope
+        );
+        g_assemblyGraph->resetNodes();
+        g_assemblyGraph->markNodesToDraw(scope, startingNodes);
+        drawnNodes = g_assemblyGraph->getDrawnNodeCount();
+        QCOMPARE(drawnNodes, 42);
+    }
 
-    g_settings->nodeDistance = 0;
-    g_settings->doubleMode = false;
-    startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
-                                            *g_assemblyGraph,
-                                            graph::Scope::depthRange(40.0, 211.0));
-    g_assemblyGraph->resetNodes();
-    g_assemblyGraph->markNodesToDraw(DEPTH_RANGE,startingNodes, g_settings->nodeDistance);
-    drawnNodes = g_assemblyGraph->getDrawnNodeCount();
-    QCOMPARE(drawnNodes, 42);
+    {
+        g_settings->blastQueryFilename = testFile("test_queries1.fasta");
+        g_blastSearch->doAutoBlastSearch();
 
-    g_settings->blastQueryFilename = testFile("test_queries1.fasta");
-    g_blastSearch->doAutoBlastSearch();
+        g_settings->doubleMode = false;
+        auto scope = graph::Scope::aroundHits(g_blastSearch->m_blastQueries, "all");
+        auto startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
+                                                     *g_assemblyGraph,
+                                                     scope);
+        g_assemblyGraph->resetNodes();
+        g_assemblyGraph->markNodesToDraw(scope, startingNodes);
+        drawnNodes = g_assemblyGraph->getDrawnNodeCount();
+        QCOMPARE(drawnNodes, 1);
+    }
 
-    g_settings->doubleMode = false;
-    startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
-                                            *g_assemblyGraph,
-                                            graph::Scope::aroundHits(g_blastSearch->m_blastQueries, "all"));
-    g_assemblyGraph->resetNodes();
-    g_assemblyGraph->markNodesToDraw(AROUND_BLAST_HITS, startingNodes, g_settings->nodeDistance);
-    drawnNodes = g_assemblyGraph->getDrawnNodeCount();
-    QCOMPARE(drawnNodes, 1);
+    {
+        g_settings->doubleMode = false;
+        auto scope = graph::Scope::aroundHits(g_blastSearch->m_blastQueries, "all", 1);
+        auto startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
+                                                     *g_assemblyGraph,
+                                                     scope);
+        g_assemblyGraph->resetNodes();
+        g_assemblyGraph->markNodesToDraw(scope, startingNodes);
+        drawnNodes = g_assemblyGraph->getDrawnNodeCount();
+        QCOMPARE(drawnNodes, 3);
+    }
 
-    g_settings->nodeDistance = 1;
-    g_settings->doubleMode = false;
-    startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
-                                            *g_assemblyGraph,
-                                            graph::Scope::aroundHits(g_blastSearch->m_blastQueries, "all"));
-    g_assemblyGraph->resetNodes();
-    g_assemblyGraph->markNodesToDraw(AROUND_BLAST_HITS, startingNodes, g_settings->nodeDistance);
-    drawnNodes = g_assemblyGraph->getDrawnNodeCount();
-    QCOMPARE(drawnNodes, 3);
-
-    g_settings->nodeDistance = 2;
-    g_settings->doubleMode = false;
-    startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
-                                            *g_assemblyGraph,
-                                            graph::Scope::aroundHits(g_blastSearch->m_blastQueries, "all"));
-    g_assemblyGraph->resetNodes();
-    g_assemblyGraph->markNodesToDraw(AROUND_BLAST_HITS, startingNodes, g_settings->nodeDistance);
-    drawnNodes = g_assemblyGraph->getDrawnNodeCount();
-    QCOMPARE(drawnNodes, 9);
+    {
+        g_settings->doubleMode = false;
+        auto scope = graph::Scope::aroundHits(g_blastSearch->m_blastQueries, "all", 2);
+        auto startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
+                                                     *g_assemblyGraph,
+                                                     scope);
+        g_assemblyGraph->resetNodes();
+        g_assemblyGraph->markNodesToDraw(scope, startingNodes);
+        drawnNodes = g_assemblyGraph->getDrawnNodeCount();
+        QCOMPARE(drawnNodes, 9);
+    }
 
     GraphLayout layout(*g_assemblyGraph);
     layout::io::load(testFile("test.layout"), layout);
@@ -779,14 +803,13 @@ void BandageTests::graphLayout() {
     QString errorMessage;
 
     {
-        g_settings->nodeDistance = 0;
         g_settings->doubleMode = false;
+        auto scope = graph::Scope::wholeGraph();
         auto startingNodes =
                 graph::getStartingNodes(&errorTitle, &errorMessage,
-                                        *g_assemblyGraph,
-                                        graph::Scope::wholeGraph());
+                                        *g_assemblyGraph, scope);
         g_assemblyGraph->resetNodes();
-        g_assemblyGraph->markNodesToDraw(WHOLE_GRAPH, startingNodes, g_settings->nodeDistance);
+        g_assemblyGraph->markNodesToDraw(scope, startingNodes);
         QCOMPARE(g_assemblyGraph->getDrawnNodeCount(), 44);
 
         auto layout = GraphLayoutWorker(g_settings->graphLayoutQuality,
@@ -797,14 +820,13 @@ void BandageTests::graphLayout() {
     }
 
     {
-        g_settings->nodeDistance = 0;
         g_settings->doubleMode = true;
+        auto scope = graph::Scope::wholeGraph();
         auto startingNodes =
                 graph::getStartingNodes(&errorTitle, &errorMessage,
-                                        *g_assemblyGraph,
-                                        graph::Scope::wholeGraph());
+                                        *g_assemblyGraph, scope);
         g_assemblyGraph->resetNodes();
-        g_assemblyGraph->markNodesToDraw(WHOLE_GRAPH, startingNodes, g_settings->nodeDistance);
+        g_assemblyGraph->markNodesToDraw(scope, startingNodes);
         QCOMPARE(g_assemblyGraph->getDrawnNodeCount(), 88);
 
         auto layout = GraphLayoutWorker(g_settings->graphLayoutQuality,

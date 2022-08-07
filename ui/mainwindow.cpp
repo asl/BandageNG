@@ -853,7 +853,8 @@ void MainWindow::drawGraph() {
     auto scope = graph::scope(g_settings->graphScope,
                               ui->startingNodesLineEdit->text(),
                               g_blastSearch->m_blastQueries, ui->blastQueryComboBox->currentText(),
-                              ui->pathSelectionLineEdit->displayText());
+                              ui->pathSelectionLineEdit->displayText(),
+                              g_settings->nodeDistance);
 
     auto startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
                                                  *g_assemblyGraph, scope);
@@ -865,7 +866,7 @@ void MainWindow::drawGraph() {
 
     resetScene();
     g_assemblyGraph->resetNodes();
-    g_assemblyGraph->markNodesToDraw(g_settings->graphScope, startingNodes, g_settings->nodeDistance);
+    g_assemblyGraph->markNodesToDraw(scope, startingNodes);
     layoutGraph();
 }
 

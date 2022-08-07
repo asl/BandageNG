@@ -91,25 +91,27 @@ namespace graph {
 
     Scope scope(GraphScope graphScope, const QString &nodesList,
                 const BlastQueries &blastQueries, const QString &blastQueryName,
-                const QString &pathName) {
+                const QString &pathName, unsigned distance) {
         switch (graphScope) {
             case WHOLE_GRAPH:
                 return Scope::wholeGraph();
             case AROUND_NODE:
-                return Scope::aroundNodes(nodesList);
+                return Scope::aroundNodes(nodesList, distance);
             case AROUND_PATHS:
-                return Scope::aroundPath(pathName);
+                return Scope::aroundPath(pathName, distance);
             case AROUND_BLAST_HITS:
-                return Scope::aroundHits(blastQueries, blastQueryName);
+                return Scope::aroundHits(blastQueries, blastQueryName, distance);
             case DEPTH_RANGE:
                 return Scope::depthRange(g_settings->minDepthRange, g_settings->maxDepthRange);
         }
     }
 
-    Scope Scope::aroundHits(const BlastQueries &queries, QString queryName) {
+    Scope Scope::aroundHits(const BlastQueries &queries, const QString& queryName,
+                            unsigned distance) {
         Scope res;
-        res.scope = AROUND_BLAST_HITS;
-        res.opt = std::make_pair(std::ref(queries), queryName);
+        res.m_scope = AROUND_BLAST_HITS;
+        res.m_opt = std::make_pair(std::ref(queries), queryName);
+        res.m_distance = distance;
 
         return res;
     }
