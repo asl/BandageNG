@@ -44,7 +44,7 @@ Settings::Settings()
     edgeWidth = FloatSetting(1.5, 0.1, 100);
     outlineThickness = FloatSetting(0.0, 0.0, 100.0);
     selectionThickness = 1.0;
-    arrowheadsInSingleMode = true;
+    arrowheadsInSingleMode = false;
     textOutlineThickness = FloatSetting(1.5, 0.0, 10.0);
 
     blastRainbowPartsPerQuery = 100;

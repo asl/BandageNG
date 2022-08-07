@@ -145,6 +145,13 @@ static QPointF getCentre(const Container &linePoints) {
     return {};
 }
 
+static bool anyNodeDisplayText() {
+    return g_settings->displayNodeCustomLabels ||
+           g_settings->displayNodeNames ||
+           g_settings->displayNodeLengths ||
+           g_settings->displayNodeDepth ||
+           g_settings->displayNodeCsvData;
+}
 
 void GraphicsItemNode::paint(QPainter * painter, const QStyleOptionGraphicsItem *, QWidget *)
 {
@@ -812,6 +819,18 @@ void GraphicsItemNode::queryPathHighlightNode(QPainter * painter)
     }
 }
 
+static void pathHighlightNode3(QPainter * painter,
+                               QPainterPath highlightPath) {
+    QBrush shadingBrush(g_settings->pathHighlightShadingColour);
+    painter->fillPath(highlightPath, shadingBrush);
+
+    highlightPath = highlightPath.simplified();
+    QPen outlinePen(QBrush(g_settings->pathHighlightOutlineColour),
+                    g_settings->selectionThickness, Qt::SolidLine,
+                    Qt::SquareCap, Qt::RoundJoin);
+    painter->setPen(outlinePen);
+    painter->drawPath(highlightPath);
+}
 
 void GraphicsItemNode::pathHighlightNode2(QPainter * painter,
                                           DeBruijnNode * node,
@@ -839,20 +858,6 @@ void GraphicsItemNode::pathHighlightNode2(QPainter * painter,
         pathHighlightNode3(painter, buildPartialHighlightPath(0.0, path->getEndFraction(), reverse));
 }
 
-
-void GraphicsItemNode::pathHighlightNode3(QPainter * painter,
-                                          QPainterPath highlightPath)
-{
-    QBrush shadingBrush(g_settings->pathHighlightShadingColour);
-    painter->fillPath(highlightPath, shadingBrush);
-
-    highlightPath = highlightPath.simplified();
-    QPen outlinePen(QBrush(g_settings->pathHighlightOutlineColour),
-                    g_settings->selectionThickness, Qt::SolidLine,
-                    Qt::SquareCap, Qt::RoundJoin);
-    painter->setPen(outlinePen);
-    painter->drawPath(highlightPath);
-}
 
 
 QPainterPath GraphicsItemNode::buildPartialHighlightPath(double startFraction,
@@ -887,14 +892,4 @@ QPainterPath GraphicsItemNode::buildPartialHighlightPath(double startFraction,
         highlightPath = highlightPath.intersected(shape());
 
     return highlightPath;
-}
-
-
-bool GraphicsItemNode::anyNodeDisplayText()
-{
-    return g_settings->displayNodeCustomLabels ||
-            g_settings->displayNodeNames ||
-            g_settings->displayNodeLengths ||
-            g_settings->displayNodeDepth ||
-            g_settings->displayNodeCsvData;
 }

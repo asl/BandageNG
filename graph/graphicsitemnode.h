@@ -91,9 +91,6 @@ public:
     double indexToFraction(int64_t pos) const;
 
 private:
-    static void pathHighlightNode3(QPainter * painter, QPainterPath highlightPath);
-    static bool anyNodeDisplayText();
-
     void exactPathHighlightNode(QPainter * painter);
     void queryPathHighlightNode(QPainter * painter);
     void pathHighlightNode2(QPainter * painter, DeBruijnNode * node, bool reverse, Path * path);
