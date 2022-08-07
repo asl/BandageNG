@@ -122,7 +122,7 @@ BlastSearchDialog::BlastSearchDialog(BlastSearch *blastSearch,
     }
 
     // If a BLAST database already exists, move to step 2.
-    QFile databaseFile = m_blastSearch->m_tempDirectory.filePath("all_nodes.fasta");
+    QFile databaseFile = m_blastSearch->temporaryDir().filePath("all_nodes.fasta");
     if (databaseFile.exists())
         setUiStep(BLAST_DB_BUILT_BUT_NO_QUERIES);
     //If there isn't a BLAST database, clear the entire temporary directory
@@ -249,7 +249,7 @@ void BlastSearchDialog::buildBlastDatabase(bool separateThread) {
 
     if (separateThread) {
         auto * buildBlastDatabaseThread = new QThread;
-        auto * buildBlastDatabaseWorker = new BuildBlastDatabaseWorker(makeblastdbCommand, *g_assemblyGraph, m_blastSearch->m_tempDirectory);
+        auto * buildBlastDatabaseWorker = new BuildBlastDatabaseWorker(makeblastdbCommand, *g_assemblyGraph, m_blastSearch->temporaryDir());
         buildBlastDatabaseWorker->moveToThread(buildBlastDatabaseThread);
 
         connect(progress, SIGNAL(halt()), buildBlastDatabaseWorker, SLOT(cancel()));
@@ -262,7 +262,7 @@ void BlastSearchDialog::buildBlastDatabase(bool separateThread) {
 
         buildBlastDatabaseThread->start();
     } else {
-        BuildBlastDatabaseWorker buildBlastDatabaseWorker(makeblastdbCommand, *g_assemblyGraph, m_blastSearch->m_tempDirectory);
+        BuildBlastDatabaseWorker buildBlastDatabaseWorker(makeblastdbCommand, *g_assemblyGraph, m_blastSearch->temporaryDir());
         buildBlastDatabaseWorker.buildBlastDatabase();
         progress->close();
         delete progress;
@@ -388,7 +388,7 @@ void BlastSearchDialog::runBlastSearches(bool separateThread) {
         auto blastSearchThread = new QThread;
         auto * runBlastSearchWorker = new RunBlastSearchWorker(blastnCommand, tblastnCommand,
                                                                ui->parametersLineEdit->text().simplified(),
-                                                               m_blastSearch->m_tempDirectory);
+                                                               m_blastSearch->temporaryDir());
         runBlastSearchWorker->moveToThread(blastSearchThread);
 
         connect(progress, SIGNAL(halt()), runBlastSearchWorker, SLOT(cancel()));
@@ -406,7 +406,7 @@ void BlastSearchDialog::runBlastSearches(bool separateThread) {
     } else {
         RunBlastSearchWorker runBlastSearchWorker(blastnCommand, tblastnCommand,
                                                   ui->parametersLineEdit->text().simplified(),
-                                                  m_blastSearch->m_tempDirectory);
+                                                  m_blastSearch->temporaryDir());
         runBlastSearchWorker.runBlastSearch(m_blastSearch->queries());
         progress->close();
         delete progress;

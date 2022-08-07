@@ -33,8 +33,6 @@ public:
     explicit BlastSearch(const QDir &workDir = QDir::temp());
     ~BlastSearch();
 
-    QTemporaryDir m_tempDirectory;
-
     [[nodiscard]] const auto &queries() const { return m_blastQueries; }
     auto &queries() { return m_blastQueries; }
     [[nodiscard]] const auto &query(size_t idx) const { return m_blastQueries[idx]; }
@@ -55,11 +53,15 @@ public:
     void clearBlastHits();
     void cleanUp();
 
+    bool ready() const { return m_tempDirectory.isValid(); }
+    [[nodiscard]] const QTemporaryDir &temporaryDir() const { return m_tempDirectory; }
+
     void emptyTempDirectory() const;
     QString doAutoBlastSearch();
 
 private:
     BlastQueries m_blastQueries;
+    QTemporaryDir m_tempDirectory;
 };
 
 #endif // BLASTSEARCH_H

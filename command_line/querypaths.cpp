@@ -118,16 +118,14 @@ int bandageQueryPaths(QStringList arguments)
         return 1;
     out << "done" << Qt::endl;
 
-    if (!g_blastSearch->m_tempDirectory.isValid())
-    {
-        err << "Error creating temporary directory for BLAST files: " << g_blastSearch->m_tempDirectory.errorString() << Qt::endl;
+    if (!g_blastSearch->ready()) {
+        err << "Error creating temporary directory for BLAST files: " << g_blastSearch->temporaryDir().errorString() << Qt::endl;
         return 1;
     }
 
     out << "(" << QDateTime::currentDateTime().toString("dd MMM yyyy hh:mm:ss") << ") Running BLAST search... " << Qt::flush;
     QString blastError = g_blastSearch->doAutoBlastSearch();
-    if (blastError != "")
-    {
+    if (!blastError.isEmpty()) {
         err << Qt::endl << blastError << Qt::endl;
         return 1;
     }

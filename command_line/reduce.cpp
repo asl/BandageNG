@@ -87,12 +87,9 @@ int bandageReduce(QStringList arguments)
 
     parseSettings(arguments);
 
-    bool blastUsed = isOptionPresent("--query", &arguments);
-    if (blastUsed)
-    {
-        if (!g_blastSearch->m_tempDirectory.isValid())
-        {
-            err << "Error creating temporary directory for BLAST files: " << g_blastSearch->m_tempDirectory.errorString() << Qt::endl;
+    if (isOptionPresent("--query", &arguments)) {
+        if (!g_blastSearch->ready()) {
+            err << "Error creating temporary directory for BLAST files: " << g_blastSearch->temporaryDir().errorString() << Qt::endl;
             return 1;
         }
 

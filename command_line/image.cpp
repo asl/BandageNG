@@ -115,20 +115,14 @@ int bandageImage(QStringList arguments)
     //properly.
     g_absoluteZoom = 10.0;
 
-    bool blastUsed = isOptionPresent("--query", &arguments);
-
-    if (blastUsed)
-    {
-        if (!g_blastSearch->m_tempDirectory.isValid())
-        {
-            err << "Error creating temporary directory for BLAST files: " << g_blastSearch->m_tempDirectory.errorString() << Qt::endl;
+    if (isOptionPresent("--query", &arguments)) {
+        if (!g_blastSearch->ready()) {
+            err << "Error creating temporary directory for BLAST files: " << g_blastSearch->temporaryDir().errorString() << Qt::endl;
             return 1;
         }
 
         QString blastError = g_blastSearch->doAutoBlastSearch();
-
-        if (blastError != "")
-        {
+        if (!blastError.isEmpty()) {
             err << blastError << Qt::endl;
             return 1;
         }
