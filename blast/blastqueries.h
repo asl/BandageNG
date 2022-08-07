@@ -33,7 +33,15 @@ public:
 
     BlastQuery * getQueryFromName(QString queryName) const;
 
-    bool empty() const { return m_queries.empty(); };
+    bool empty() const { return m_queries.empty(); }
+    const auto &operator[](size_t idx) const { return m_queries[idx]; }
+    auto &operator[](size_t idx) { return m_queries[idx]; }
+
+    auto begin() { return m_queries.begin(); }
+    const auto begin() const { return m_queries.begin(); }
+    auto end() { return m_queries.end(); }
+    const auto end() const { return m_queries.end(); }
+
     void addQuery(BlastQuery * newQuery);
     QString renameQuery(BlastQuery * newQuery, QString newName);
     void clearAllQueries();
@@ -44,7 +52,7 @@ public:
     size_t getQueryCount() const;
     size_t getQueryCountWithAtLeastOnePath() const;
     size_t getQueryPathCount() const ;
-    size_t getQueryCount(QuerySequenceType sequenceType) const ;
+    size_t getQueryCount(QuerySequenceType sequenceType) const;
     bool isQueryPresent(const BlastQuery * query) const;
     BlastHits allHits() const;
     const auto &queries() const { return m_queries; }

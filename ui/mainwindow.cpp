@@ -853,7 +853,7 @@ void MainWindow::drawGraph() {
     auto scope = graph::scope(g_settings->graphScope,
                               ui->startingNodesLineEdit->text(),
                               ui->minDepthSpinBox->value(), ui->maxDepthSpinBox->value(),
-                              g_blastSearch->m_blastQueries, ui->blastQueryComboBox->currentText(),
+                              g_blastSearch->queries(), ui->blastQueryComboBox->currentText(),
                               ui->pathSelectionLineEdit->displayText(),
                               ui->nodeDistanceSpinBox->value());
 
@@ -1714,7 +1714,7 @@ void MainWindow::openBlastSearchDialog() {
 void MainWindow::blastChanged()
 {
     QString blastQueryText = ui->blastQueryComboBox->currentText();
-    BlastQuery * queryBefore = g_blastSearch->m_blastQueries.getQueryFromName(blastQueryText);
+    BlastQuery * queryBefore = g_blastSearch->queries().getQueryFromName(blastQueryText);
 
     //If we didn't find a currently selected query, but it isn't "none" or "all",
     //then maybe the user changed the name of the currently selected query, and
@@ -1724,8 +1724,8 @@ void MainWindow::blastChanged()
         int blastQueryIndex = ui->blastQueryComboBox->currentIndex();
         if (ui->blastQueryComboBox->count() > 1)
             --blastQueryIndex;
-        if (blastQueryIndex < g_blastSearch->m_blastQueries.getQueryCount())
-            queryBefore = g_blastSearch->m_blastQueries.queries()[blastQueryIndex];
+        if (blastQueryIndex < g_blastSearch->queries().getQueryCount())
+            queryBefore = g_blastSearch->query(blastQueryIndex);
     }
 
     //Rebuild the query combo box, in case the user changed the queries or
@@ -1735,7 +1735,7 @@ void MainWindow::blastChanged()
     //Look to see if the query selected before is still present.  If so,
     //set the combo box to have that query selected.  If not (or if no
     //query was previously selected), leave the combo box a index 0.
-    if (queryBefore && g_blastSearch->m_blastQueries.isQueryPresent(queryBefore)) {
+    if (queryBefore && g_blastSearch->isQueryPresent(queryBefore)) {
         int indexOfQuery = ui->blastQueryComboBox->findText(queryBefore->getName());
         if (indexOfQuery != -1)
             ui->blastQueryComboBox->setCurrentIndex(indexOfQuery);
@@ -1749,7 +1749,7 @@ void MainWindow::blastChanged()
 void MainWindow::setupBlastQueryComboBox() {
     ui->blastQueryComboBox->clear();
     QStringList comboBoxItems;
-    for (auto & query : g_blastSearch->m_blastQueries.queries()) {
+    for (auto &query : g_blastSearch->queries()) {
         if (query->hasHits())
             comboBoxItems.push_back(query->getName());
     }

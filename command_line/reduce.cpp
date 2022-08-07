@@ -110,7 +110,7 @@ int bandageReduce(QStringList arguments)
     auto scope = graph::scope(g_settings->graphScope,
                               g_settings->startingNodes,
                               g_settings->minDepthRange, g_settings->maxDepthRange,
-                              g_blastSearch->m_blastQueries, "all",
+                              g_blastSearch->queries(), "all",
                               "", g_settings->nodeDistance);
     auto startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
                                                  *g_assemblyGraph, scope);

@@ -169,7 +169,7 @@ int bandageQueryPaths(QStringList arguments)
     QList<QString> hitSequenceIDs;
     QList<QByteArray> hitSequences;
 
-    for (const auto *query : g_blastSearch->m_blastQueries.queries()) {
+    for (const auto *query : g_blastSearch->queries()) {
         unsigned num = 0;
         for (const auto & queryPath : query->getPaths()) {
             Path path = queryPath.getPath();
@@ -249,9 +249,9 @@ int bandageQueryPaths(QStringList arguments)
     if (hitsFasta)
         out << "              " + hitsFastaFilename << Qt::endl;
 
-    out << Qt::endl << "Summary: Total BLAST queries:           " << g_blastSearch->m_blastQueries.getQueryCount() << Qt::endl;
-    out << "         Queries with found paths:      " << g_blastSearch->m_blastQueries.getQueryCountWithAtLeastOnePath() << Qt::endl;
-    out << "         Total query paths:             " << g_blastSearch->m_blastQueries.getQueryPathCount() << Qt::endl;
+    out << Qt::endl << "Summary: Total BLAST queries:           " << g_blastSearch->getQueryCount() << Qt::endl;
+    out << "         Queries with found paths:      " << g_blastSearch->getQueryCountWithAtLeastOnePath() << Qt::endl;
+    out << "         Total query paths:             " << g_blastSearch->getQueryPathCount() << Qt::endl;
 
     out << Qt::endl << "Elapsed time: " << getElapsedTime(startTime, QDateTime::currentDateTime()) << Qt::endl;
 

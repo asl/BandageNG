@@ -86,7 +86,7 @@ BlastSearchDialog::BlastSearchDialog(BlastSearch *blastSearch,
 
     setWindowFlags(windowFlags() | Qt::Tool);
 
-    m_queriesListModel = new QueriesListModel(m_blastSearch->m_blastQueries,
+    m_queriesListModel = new QueriesListModel(m_blastSearch->queries(),
                                               ui->blastQueriesTable);
     auto *proxyQModel = new QSortFilterProxyModel(ui->blastQueriesTable);
     proxyQModel->setSourceModel(m_queriesListModel);
@@ -99,7 +99,7 @@ BlastSearchDialog::BlastSearchDialog(BlastSearch *blastSearch,
     connect(queryPathsDelegate, &PathButtonDelegate::queryPathSelectionChanged,
             [this] { emit queryPathSelectionChanged(); });
 
-    m_hitsListModel = new HitsListModel(m_blastSearch->m_blastQueries, ui->blastHitsTable);
+    m_hitsListModel = new HitsListModel(m_blastSearch->queries(), ui->blastHitsTable);
     auto *proxyHModel = new QSortFilterProxyModel(ui->blastHitsTable);
     proxyHModel->setSourceModel(m_hitsListModel);
     ui->blastHitsTable->setModel(proxyHModel);
@@ -133,7 +133,7 @@ BlastSearchDialog::BlastSearchDialog(BlastSearch *blastSearch,
     }
 
     // If queries already exist, display them and move to step 3.
-    if (!m_blastSearch->m_blastQueries.empty()) {
+    if (!m_blastSearch->queries().empty()) {
         updateTables();
         setUiStep(READY_FOR_BLAST_SEARCH);
     }
@@ -220,7 +220,7 @@ void BlastSearchDialog::fillTablesAfterBlastSearch() {
 
 void BlastSearchDialog::updateTables() {
     m_queriesListModel->update();
-    m_hitsListModel->update(m_blastSearch->m_blastQueries);
+    m_hitsListModel->update(m_blastSearch->queries());
     ui->blastQueriesTable->resizeColumnsToContents();
     ui->blastHitsTable->resizeColumnsToContents();
 }
@@ -317,8 +317,8 @@ void BlastSearchDialog::enterQueryManually() {
         return;
 
     QString queryName = BlastSearch::cleanQueryName(enterOneBlastQueryDialog.getName());
-    m_blastSearch->m_blastQueries.addQuery(new BlastQuery(queryName,
-                                                          enterOneBlastQueryDialog.getSequence()));
+    m_blastSearch->addQuery(new BlastQuery(queryName,
+                                           enterOneBlastQueryDialog.getSequence()));
     updateTables();
     clearBlastHits();
 
@@ -394,7 +394,7 @@ void BlastSearchDialog::runBlastSearches(bool separateThread) {
         connect(progress, SIGNAL(halt()), runBlastSearchWorker, SLOT(cancel()));
         connect(blastSearchThread, &QThread::started,
                 [runBlastSearchWorker, this]() {
-                    runBlastSearchWorker->runBlastSearch(m_blastSearch->m_blastQueries);
+                    runBlastSearchWorker->runBlastSearch(m_blastSearch->queries());
         });
         connect(runBlastSearchWorker, SIGNAL(finishedSearch(QString)), blastSearchThread, SLOT(quit()));
         connect(runBlastSearchWorker, SIGNAL(finishedSearch(QString)), runBlastSearchWorker, SLOT(deleteLater()));
@@ -407,7 +407,7 @@ void BlastSearchDialog::runBlastSearches(bool separateThread) {
         RunBlastSearchWorker runBlastSearchWorker(blastnCommand, tblastnCommand,
                                                   ui->parametersLineEdit->text().simplified(),
                                                   m_blastSearch->m_tempDirectory);
-        runBlastSearchWorker.runBlastSearch(m_blastSearch->m_blastQueries);
+        runBlastSearchWorker.runBlastSearch(m_blastSearch->queries());
         progress->close();
         delete progress;
         runBlastSearchFinished(runBlastSearchWorker.m_error);
