@@ -88,21 +88,19 @@ void BlastQuery::findQueryPaths() {
 
     //Find all possible path starts within an acceptable distance from the query
     //start.
-    QList<BlastHit *> possibleStarts;
+    std::vector<BlastHit *> possibleStarts;
     double acceptableStartFraction = 1.0 - g_settings->minQueryCoveredByPath;
-    for (auto &m_hit : m_hits) {
-        BlastHit * hit = m_hit.get();
-        if (hit->queryStartFraction() <= acceptableStartFraction)
-            possibleStarts.push_back(hit);
+    for (auto &hit : m_hits) {
+        if (hit.queryStartFraction() <= acceptableStartFraction)
+            possibleStarts.push_back(&hit);
     }
 
     //Find all possible path ends.
-    QList<BlastHit *> possibleEnds;
+    std::vector<BlastHit *> possibleEnds;
     double acceptableEndFraction = g_settings->minQueryCoveredByPath;
-    for (auto &m_hit : m_hits) {
-        BlastHit * hit = m_hit.get();
-        if (hit->queryEndFraction() >= acceptableEndFraction)
-            possibleEnds.push_back(hit);
+    for (auto &hit : m_hits) {
+        if (hit.queryEndFraction() >= acceptableEndFraction)
+            possibleEnds.push_back(&hit);
     }
 
     //For each possible start, find paths to each possible end.
@@ -164,25 +162,25 @@ void BlastQuery::findQueryPaths() {
     //We now want to throw out any paths for which the hits fail to meet the
     //thresholds in settings.
     QList<BlastQueryPath> sufficientCoveragePaths;
-    for (int i = 0; i < blastQueryPaths.size(); ++i) {
-        if (blastQueryPaths[i].getPathQueryCoverage() < g_settings->minQueryCoveredByPath)
+    for (auto & blastQueryPath : blastQueryPaths) {
+        if (blastQueryPath.getPathQueryCoverage() < g_settings->minQueryCoveredByPath)
             continue;
-        if (g_settings->minQueryCoveredByHits.on && blastQueryPaths[i].getHitsQueryCoverage() < g_settings->minQueryCoveredByHits)
+        if (g_settings->minQueryCoveredByHits.on && blastQueryPath.getHitsQueryCoverage() < g_settings->minQueryCoveredByHits)
             continue;
-        if (g_settings->maxEValueProduct.on && blastQueryPaths[i].getEvalueProduct() > g_settings->maxEValueProduct)
+        if (g_settings->maxEValueProduct.on && blastQueryPath.getEvalueProduct() > g_settings->maxEValueProduct)
             continue;
-        if (g_settings->minMeanHitIdentity.on && blastQueryPaths[i].getMeanHitPercIdentity() < 100.0 * g_settings->minMeanHitIdentity)
+        if (g_settings->minMeanHitIdentity.on && blastQueryPath.getMeanHitPercIdentity() < 100.0 * g_settings->minMeanHitIdentity)
             continue;
-        if (g_settings->minLengthPercentage.on && blastQueryPaths[i].getRelativePathLength() < g_settings->minLengthPercentage)
+        if (g_settings->minLengthPercentage.on && blastQueryPath.getRelativePathLength() < g_settings->minLengthPercentage)
             continue;
-        if (g_settings->maxLengthPercentage.on && blastQueryPaths[i].getRelativePathLength() > g_settings->maxLengthPercentage)
+        if (g_settings->maxLengthPercentage.on && blastQueryPath.getRelativePathLength() > g_settings->maxLengthPercentage)
             continue;
-        if (g_settings->minLengthBaseDiscrepancy.on && blastQueryPaths[i].getAbsolutePathLengthDifference() < g_settings->minLengthBaseDiscrepancy)
+        if (g_settings->minLengthBaseDiscrepancy.on && blastQueryPath.getAbsolutePathLengthDifference() < g_settings->minLengthBaseDiscrepancy)
             continue;
-        if (g_settings->maxLengthBaseDiscrepancy.on && blastQueryPaths[i].getAbsolutePathLengthDifference() > g_settings->maxLengthBaseDiscrepancy)
+        if (g_settings->maxLengthBaseDiscrepancy.on && blastQueryPath.getAbsolutePathLengthDifference() > g_settings->maxLengthBaseDiscrepancy)
             continue;
 
-        sufficientCoveragePaths.push_back(blastQueryPaths[i]);
+        sufficientCoveragePaths.push_back(blastQueryPath);
     }
 
     //We now want to throw out any paths which are sub-paths of other, larger
@@ -212,7 +210,7 @@ void BlastQuery::findQueryPaths() {
 //If a list of BLAST hits is passed to the function, it only looks in those
 //hits.  If no such list is passed, it looks in all hits for this query.
 // http://stackoverflow.com/questions/5276686/merging-ranges-in-c
-double BlastQuery::fractionCoveredByHits(const std::vector<BlastHit *> &hitsToCheck) const {
+double BlastQuery::fractionCoveredByHits(const std::vector<const BlastHit *> &hitsToCheck) const {
     int hitBases = 0;
     int queryLength = getLength();
     if (queryLength == 0)
@@ -220,10 +218,8 @@ double BlastQuery::fractionCoveredByHits(const std::vector<BlastHit *> &hitsToCh
 
     std::vector<std::pair<int, int> > ranges;
     if (hitsToCheck.empty()) {
-        for (const auto &m_hit : m_hits) {
-            BlastHit * hit = m_hit.get();
-            ranges.emplace_back(hit->m_queryStart - 1, hit->m_queryEnd);
-        }
+        for (const auto &hit : m_hits)
+            ranges.emplace_back(hit.m_queryStart - 1, hit.m_queryEnd);
     } else {
         for (auto *hit : hitsToCheck) {
             ranges.emplace_back(hit->m_queryStart - 1, hit->m_queryEnd);

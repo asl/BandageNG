@@ -147,8 +147,8 @@ void BlastQueries::findQueryPaths() {
         query->findQueryPaths();
 }
 
-BlastHits BlastQueries::allHits() const {
-    BlastHits res;
+std::vector<BlastHit> BlastQueries::allHits() const {
+    std::vector<BlastHit> res;
 
     for (const auto *query : m_queries) {
         const auto &hits = query->getHits();
@@ -169,12 +169,12 @@ std::vector<DeBruijnNode *> BlastQueries::getNodesFromHits(const QString& queryN
         // Add pointers to nodes that have a hit for the selected target(s).
         for (auto *currentQuery: m_queries) {
             for (const auto &hit: currentQuery->getHits())
-                returnVector.push_back(hit->m_node);
+                returnVector.push_back(hit.m_node);
         }
     } else {
         if (BlastQuery *query = getQueryFromName(queryName)) {
             for (const auto &hit: query->getHits())
-                returnVector.push_back(hit->m_node);
+                returnVector.push_back(hit.m_node);
         }
     }
 

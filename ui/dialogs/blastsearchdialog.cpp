@@ -834,7 +834,7 @@ QVariant HitsListModel::data(const QModelIndex &index, int role) const {
         return {};
 
     auto column = HitsColumns(index.column());
-    const auto &hit = *m_hits[index.row()];
+    const auto &hit = m_hits[index.row()];
     const auto &hitQuery = *hit.m_query;
 
     if (role == Qt::BackgroundRole) {

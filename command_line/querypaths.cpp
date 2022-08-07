@@ -198,12 +198,10 @@ int bandageQueryPaths(QStringList arguments)
 
             //If we are also saving the hit sequences, save the hit sequence
             //along with its ID to save later.
-            if (hitsFasta)
-            {
+            if (hitsFasta) {
                 const auto &hits = queryPath.getHits();
-                for (int k = 0; k < hits.size(); ++k)
-                {
-                    BlastHit * hit = hits[k];
+                for (int k = 0; k < hits.size(); ++k) {
+                    const BlastHit * hit = hits[k];
                     QString hitSequenceID = pathSequenceID + "_" + QString::number(k+1);
                     QByteArray hitSequence = hit->getNodeSequence();
                     hitSequenceIDs.push_back(hitSequenceID);

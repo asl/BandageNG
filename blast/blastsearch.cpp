@@ -213,14 +213,14 @@ void BlastSearch::blastQueryChanged(const QString &queryName) {
         auto &group = g_annotationsManager->createAnnotationGroup(g_settings->blastAnnotationGroupName);
         for (auto query: shownQueries) {
             for (auto &hit: query->getHits()) {
-                auto &annotation = group.annotationMap[hit->m_node].emplace_back(
+                auto &annotation = group.annotationMap[hit.m_node].emplace_back(
                         std::make_unique<Annotation>(
-                                hit->m_nodeStart,
-                                hit->m_nodeEnd,
+                                hit.m_nodeStart,
+                                hit.m_nodeEnd,
                                 query->getName().toStdString()));
                 annotation->addView(std::make_unique<SolidView>(1.0, query->getColour()));
-                annotation->addView(std::make_unique<RainbowBlastHitView>(hit->queryStartFraction(),
-                                                                          hit->queryEndFraction()));
+                annotation->addView(std::make_unique<RainbowBlastHitView>(hit.queryStartFraction(),
+                                                                          hit.queryEndFraction()));
             }
         }
     }

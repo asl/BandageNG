@@ -27,22 +27,21 @@
 
 #include <limits>
 
-BlastQueryPath::BlastQueryPath(Path path, BlastQuery * query) :
+BlastQueryPath::BlastQueryPath(Path path, BlastQuery *query) :
     m_path(std::move(path)), m_query(query) {
     //This function follows the path, returning the BLAST hits it finds for the
     //query.  It requires that the hits occur in order, i.e. that each hit in
     //the path begins later in the query than the previous hit.
 
-    BlastHit * previousHit = nullptr;
+    const BlastHit * previousHit = nullptr;
     const auto &pathNodes = m_path.nodes();
     for (int i = 0; i < pathNodes.size(); ++i) {
         DeBruijnNode * node = pathNodes[i];
 
-        std::vector<BlastHit*> hitsThisNode;
+        std::vector<const BlastHit*> hitsThisNode;
         for (auto &queryHit : query->getHits()) {
-            BlastHit * hit = queryHit.get();
-            if (hit->m_node->getName() == node->getName())
-                hitsThisNode.push_back(hit);
+            if (queryHit.m_node == node)
+                hitsThisNode.push_back(&queryHit);
         }
 
         std::sort(hitsThisNode.begin(), hitsThisNode.end(),
@@ -66,10 +65,6 @@ BlastQueryPath::BlastQueryPath(Path path, BlastQuery * query) :
         }
     }
 }
-
-
-
-
 
 double BlastQueryPath::getMeanHitPercIdentity() const {
     int totalHitLength = 0;
@@ -98,17 +93,17 @@ SciNot BlastQueryPath::getEvalueProduct() const {
     int exponentSum = 0;
 
     for (int i = 0; i < m_hits.size(); ++i) {
-        BlastHit * thisHit = m_hits[i];
+        const BlastHit * thisHit = m_hits[i];
         SciNot thisHitEValue = thisHit->m_eValue;
         double eValueLenToRemove = 0.0;
         if (i > 0) {
-            BlastHit * previousHit = m_hits[i-1];
+            const BlastHit * previousHit = m_hits[i-1];
             int overlap = getHitOverlap(previousHit, thisHit);
             if (overlap > 0)
                 eValueLenToRemove += overlap / 2.0;
         }
         if (i < m_hits.size() - 1) {
-            BlastHit * nextHit = m_hits[i+1];
+            const BlastHit * nextHit = m_hits[i+1];
             int overlap = getHitOverlap(thisHit, nextHit);
             if (overlap > 0)
                 eValueLenToRemove += overlap / 2.0;
@@ -127,7 +122,7 @@ SciNot BlastQueryPath::getEvalueProduct() const {
 }
 
 
-int BlastQueryPath::getHitOverlap(BlastHit * hit1, BlastHit * hit2) const
+int BlastQueryPath::getHitOverlap(const BlastHit * hit1, const BlastHit * hit2) const
 {
     int hit1Start, hit1End, hit2Start, hit2End;
     QPair<DeBruijnNode *, DeBruijnNode *> possibleEdge(hit1->m_node, hit2->m_node);

@@ -52,10 +52,10 @@ public:
 private:
     Path m_path;
     BlastQuery * m_query;
-    std::vector<BlastHit*> m_hits;
+    std::vector<const BlastHit*> m_hits;
 
     int getHitQueryLength() const;
-    int getHitOverlap(BlastHit * hit1, BlastHit * hit2) const;
+    int getHitOverlap(const BlastHit * hit1, const BlastHit * hit2) const;
 };
 
 #endif // BLASTQUERYPATH_H

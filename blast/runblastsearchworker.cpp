@@ -226,16 +226,16 @@ static void buildHitsFromBlastOutput(QString blastOutput,
             bitScore < g_settings->blastBitScoreFilter)
             continue;
 
-        auto hit = std::make_shared<BlastHit>(query, node, percentIdentity, alignmentLength,
-                                              numberMismatches, numberGapOpens, queryStart, queryEnd,
-                                              nodeStart, nodeEnd, eValue, bitScore);
+        BlastHit hit(query, node, percentIdentity, alignmentLength,
+                     numberMismatches, numberGapOpens, queryStart, queryEnd,
+                     nodeStart, nodeEnd, eValue, bitScore);
 
         if (g_settings->blastQueryCoverageFilter.on) {
-            double hitCoveragePercentage = 100.0 * hit->getQueryCoverageFraction();
+            double hitCoveragePercentage = 100.0 * hit.getQueryCoverageFraction();
             if (hitCoveragePercentage < g_settings->blastQueryCoverageFilter)
                 continue;
         }
 
-        query->addHit(std::move(hit));
+        query->addHit(hit);
     }
 }

@@ -33,8 +33,6 @@ enum QuerySequenceType {
     PROTEIN
 };
 
-using BlastHits = std::vector<std::shared_ptr<BlastHit>>;
-
 class BlastQuery : public QObject {
 public:
     //CREATORS
@@ -53,13 +51,13 @@ public:
     const auto &getPaths() const {return m_paths;}
     size_t getPathCount() const {return m_paths.size();}
     QString getTypeString() const;
-    double fractionCoveredByHits(const std::vector<BlastHit*> &hitsToCheck = {}) const;
+    double fractionCoveredByHits(const std::vector<const BlastHit*> &hitsToCheck = {}) const;
     bool isShown() const {return m_shown;}
     bool isHidden() const {return !m_shown;}
 
     // MODIFIERS
     void setName(QString newName) {m_name = std::move(newName);}
-    void addHit(std::shared_ptr<BlastHit> newHit) {m_hits.emplace_back(std::move(newHit));}
+    void addHit(BlastHit newHit) {m_hits.emplace_back(newHit);}
     void clearSearchResults();
     void setAsSearchedFor() {m_searchedFor = true;}
     void findQueryPaths();
@@ -70,7 +68,7 @@ public:
 private:
     QString m_name;
     QString m_sequence;
-    BlastHits m_hits;
+    std::vector<BlastHit> m_hits;
     QuerySequenceType m_sequenceType;
     bool m_searchedFor;
     bool m_shown;

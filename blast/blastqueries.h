@@ -54,7 +54,7 @@ public:
     size_t getQueryPathCount() const ;
     size_t getQueryCount(QuerySequenceType sequenceType) const;
     bool isQueryPresent(const BlastQuery * query) const;
-    BlastHits allHits() const;
+    std::vector<BlastHit> allHits() const;
     const auto &queries() const { return m_queries; }
     auto &queries() { return m_queries; }
     BlastQuery *query(size_t idx) { return m_queries[idx]; }

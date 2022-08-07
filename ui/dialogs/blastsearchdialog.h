@@ -28,7 +28,7 @@ class BlastQueries;
 class BlastHit;
 class BlastSearch;
 
-using BlastHits = std::vector<std::shared_ptr<BlastHit>>;
+using BlastHits = std::vector<BlastHit>;
 
 namespace Ui {
 class BlastSearchDialog;
