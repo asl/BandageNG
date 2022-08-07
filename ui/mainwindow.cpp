@@ -481,6 +481,7 @@ void MainWindow::displayGraphDetails()
     ui->pathCountLabel->setText(formatIntForDisplay(g_assemblyGraph->m_pathCount));
     ui->totalLengthLabel->setText(formatIntForDisplay(g_assemblyGraph->m_totalLength));
 }
+
 void MainWindow::clearGraphDetails()
 {
     ui->nodeCountLabel->setText("0");
@@ -488,7 +489,6 @@ void MainWindow::clearGraphDetails()
     ui->pathCountLabel->setText("0");
     ui->totalLengthLabel->setText("0");
 }
-
 
 void MainWindow::selectionChanged()
 {
@@ -852,9 +852,10 @@ void MainWindow::drawGraph() {
 
     auto scope = graph::scope(g_settings->graphScope,
                               ui->startingNodesLineEdit->text(),
+                              ui->minDepthSpinBox->value(), ui->maxDepthSpinBox->value(),
                               g_blastSearch->m_blastQueries, ui->blastQueryComboBox->currentText(),
                               ui->pathSelectionLineEdit->displayText(),
-                              g_settings->nodeDistance);
+                              ui->nodeDistanceSpinBox->value());
 
     auto startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
                                                  *g_assemblyGraph, scope);
@@ -1035,18 +1036,20 @@ void MainWindow::zoomToFitRect(QRectF rect)
 void MainWindow::copySelectedSequencesToClipboardActionTriggered()
 {
     std::vector<DeBruijnNode *> selectedNodes = m_scene->getSelectedNodes();
-    if (selectedNodes.empty())
-        QMessageBox::information(this, "Copy sequences to clipboard", "No nodes are selected.\n\n"
-                                                                      "You must first select nodes in the graph before you can copy their sequences to the clipboard.");
-    else
-        copySelectedSequencesToClipboard();
+    if (selectedNodes.empty()) {
+        QMessageBox::information(this, "Copy sequences to clipboard",
+                                 "No nodes are selected.\n\n"
+                                 "You must first select nodes in the graph before you can copy their sequences to the clipboard.");
+        return;
+    }
+
+    copySelectedSequencesToClipboard();
 }
 
 
 //This function copies selected sequences to clipboard, if any sequences are
 //selected.
-void MainWindow::copySelectedSequencesToClipboard()
-{
+void MainWindow::copySelectedSequencesToClipboard() {
     std::vector<DeBruijnNode *> selectedNodes = m_scene->getSelectedNodes();
     if (selectedNodes.empty())
         return;
@@ -1070,11 +1073,13 @@ void MainWindow::copySelectedSequencesToClipboard()
 void MainWindow::saveSelectedSequencesToFileActionTriggered()
 {
     std::vector<DeBruijnNode *> selectedNodes = m_scene->getSelectedNodes();
-    if (selectedNodes.empty())
+    if (selectedNodes.empty())  {
         QMessageBox::information(this, "Save sequences to FASTA", "No nodes are selected.\n\n"
-                                                                  "You must first select nodes in the graph before you can save their sequences to a FASTA file.");
-    else
-        saveSelectedSequencesToFile();
+                                 "You must first select nodes in the graph before you can save their sequences to a FASTA file.");
+        return;
+    }
+
+    saveSelectedSequencesToFile();
 }
 
 
@@ -1090,17 +1095,17 @@ void MainWindow::saveSelectedSequencesToFile()
 
     QString fullFileName = QFileDialog::getSaveFileName(this, "Save node sequences", defaultFileNameAndPath, "FASTA (*.fasta)");
 
-    if (fullFileName != "") //User did not hit cancel
-    {
-        QFile file(fullFileName);
-        file.open(QIODevice::WriteOnly | QIODevice::Text);
-        QTextStream out(&file);
+    if (fullFileName.isEmpty()) //User did hit cancel
+        return;
 
-        for (auto & selectedNode : selectedNodes)
-            out << selectedNode->getFasta(true);
+    QFile file(fullFileName);
+    file.open(QIODevice::WriteOnly | QIODevice::Text);
+    QTextStream out(&file);
 
-        g_memory->rememberedPath = QFileInfo(fullFileName).absolutePath();
-    }
+    for (auto & selectedNode : selectedNodes)
+        out << selectedNode->getFasta(true);
+
+    g_memory->rememberedPath = QFileInfo(fullFileName).absolutePath();
 }
 
 void MainWindow::copySelectedPathToClipboard()
@@ -1834,7 +1839,7 @@ void MainWindow::bringSelectedNodesToFront() {
     if (selectedNodes.empty()) {
         QMessageBox::information(this, "No nodes selected",
                                  "You must first select nodes in the graph before using "
-                                      "the 'Bring selected nodes to front' function.");
+                                 "the 'Bring selected nodes to front' function.");
         return;
     }
 
@@ -2071,7 +2076,7 @@ void MainWindow::selectBasedOnContiguity(ContiguityStatus targetContiguityStatus
 
 void MainWindow::openBandageUrl()
 {
-    QDesktopServices::openUrl(QUrl("https://github.com/rrwick/Bandage/wiki"));
+    QDesktopServices::openUrl(QUrl("https://github.com/asl/Bandage-NG/wiki"));
 }
 
 
@@ -2103,25 +2108,15 @@ void MainWindow::setWidgetsFromSettings()
     ui->maxDepthSpinBox->setValue(g_settings->maxDepthRange);
 }
 
-void MainWindow::setGraphScopeComboBox(GraphScope graphScope)
-{
-    switch (graphScope)
-    {
-    case WHOLE_GRAPH: ui->graphScopeComboBox->setCurrentIndex(0); break;
-    case AROUND_NODE: ui->graphScopeComboBox->setCurrentIndex(1); break;
-    case AROUND_PATHS: ui->graphScopeComboBox->setCurrentIndex(2); break;
-    case AROUND_BLAST_HITS: ui->graphScopeComboBox->setCurrentIndex(3); break;
-    case DEPTH_RANGE: ui->graphScopeComboBox->setCurrentIndex(4); break;
-    }
+void MainWindow::setGraphScopeComboBox(GraphScope graphScope) {
+    ui->graphScopeComboBox->setCurrentIndex(int(graphScope));
 }
 
-void MainWindow::nodeDistanceChanged()
-{
+void MainWindow::nodeDistanceChanged() {
     g_settings->nodeDistance = ui->nodeDistanceSpinBox->value();
 }
 
-void MainWindow::depthRangeChanged()
-{
+void MainWindow::depthRangeChanged() {
     g_settings->minDepthRange = ui->minDepthSpinBox->value();
     g_settings->maxDepthRange = ui->maxDepthSpinBox->value();
 }

@@ -90,6 +90,7 @@ namespace graph {
     }
 
     Scope scope(GraphScope graphScope, const QString &nodesList,
+                double minDepthRange, double maxDepthRange,
                 const BlastQueries &blastQueries, const QString &blastQueryName,
                 const QString &pathName, unsigned distance) {
         switch (graphScope) {
@@ -102,7 +103,7 @@ namespace graph {
             case AROUND_BLAST_HITS:
                 return Scope::aroundHits(blastQueries, blastQueryName, distance);
             case DEPTH_RANGE:
-                return Scope::depthRange(g_settings->minDepthRange, g_settings->maxDepthRange);
+                return Scope::depthRange(minDepthRange, maxDepthRange);
         }
     }
 

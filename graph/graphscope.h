@@ -110,8 +110,10 @@ namespace graph {
                 : m_scope(WHOLE_GRAPH), m_opt{nullptr}, m_distance(0) {}
     };
 
+    // All-in-one function intended to be used in UIs and such
     Scope scope(GraphScope graphScope,
                 const QString& nodesList,
+                double minDepthRange, double maxDepthRange,
                 const BlastQueries &blastQueries, const QString& blastQueryName,
                 const QString& pathName, unsigned distance = 0);
 
