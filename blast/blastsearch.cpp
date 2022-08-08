@@ -165,8 +165,8 @@ int BlastSearch::loadBlastQueriesFromFastaFile(QString fullFileName) {
         if (!queryNameParts.empty())
             queryName = cleanQueryName(queryNameParts[0]);
 
-        m_blastQueries.addQuery(new BlastQuery(queryName,
-                                querySequences[i]));
+        m_blastQueries.addQuery(new Query(queryName,
+                                          querySequences[i]));
     }
 
     int queriesAfter = int(m_blastQueries.getQueryCount());
@@ -191,17 +191,17 @@ QString BlastSearch::cleanQueryName(QString queryName) {
 void BlastSearch::blastQueryChanged(const QString &queryName) {
     g_annotationsManager->removeGroupByName(g_settings->blastAnnotationGroupName);
 
-    std::vector<BlastQuery *> queries;
+    std::vector<Query *> queries;
 
     //If "all" is selected, then we'll display each of the BLAST queries
     if (queryName == "all")
         queries = m_blastQueries.queries();
     //If only one query is selected, then just display that one.
-    else if (BlastQuery * query = m_blastQueries.getQueryFromName(queryName))
+    else if (Query * query = m_blastQueries.getQueryFromName(queryName))
         queries.push_back(query);
 
     //We now filter out any queries that have been hidden by the user.
-    std::vector<BlastQuery *> shownQueries;
+    std::vector<Query *> shownQueries;
     for (auto *query : queries) {
         if (query->isShown())
             shownQueries.push_back(query);

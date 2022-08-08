@@ -317,8 +317,8 @@ void BlastSearchDialog::enterQueryManually() {
         return;
 
     QString queryName = BlastSearch::cleanQueryName(enterOneBlastQueryDialog.getName());
-    m_blastSearch->addQuery(new BlastQuery(queryName,
-                                           enterOneBlastQueryDialog.getSequence()));
+    m_blastSearch->addQuery(new Query(queryName,
+                                      enterOneBlastQueryDialog.getSequence()));
     updateTables();
     clearBlastHits();
 
@@ -347,7 +347,7 @@ void BlastSearchDialog::clearSelectedQueries() {
         return;
     }
 
-    std::vector<BlastQuery *> queriesToRemove;
+    std::vector<Query *> queriesToRemove;
     for (const auto &index : selection)
         queriesToRemove.push_back(m_queriesListModel->query(index));
     m_queriesListModel->m_queries.clearSomeQueries(queriesToRemove);
@@ -616,7 +616,7 @@ void BlastSearchDialog::setFilterText() {
     ui->blastHitFiltersLabel->setText("Current filters: " + BlastHitFiltersDialog::getFilterText());
 }
 
-QueriesListModel::QueriesListModel(BlastQueries &queries, QObject *parent)
+QueriesListModel::QueriesListModel(Queries &queries, QObject *parent)
   : m_queries(queries), QAbstractTableModel(parent) {}
 
 int QueriesListModel::rowCount(const QModelIndex &) const {
@@ -753,7 +753,7 @@ bool QueriesListModel::setData(const QModelIndex &index, const QVariant &value, 
     return false;
 }
 
-BlastQuery *QueriesListModel::query(const QModelIndex &index) const {
+Query *QueriesListModel::query(const QModelIndex &index) const {
     if (!index.isValid() || index.row() >= m_queries.getQueryCount())
         return nullptr;
 
@@ -816,7 +816,7 @@ bool PathButtonDelegate::editorEvent(QEvent *event, QAbstractItemModel *model, c
     return QStyledItemDelegate::editorEvent(event, model, option, index);
 }
 
-HitsListModel::HitsListModel(BlastQueries &queries, QObject *parent)
+HitsListModel::HitsListModel(Queries &queries, QObject *parent)
  : QAbstractTableModel(parent) {
     update(queries);
 }
@@ -923,7 +923,7 @@ QVariant HitsListModel::headerData(int section, Qt::Orientation orientation, int
     }
 }
 
-void HitsListModel::update(BlastQueries &queries) {
+void HitsListModel::update(Queries &queries) {
     startUpdate();
     clear();
 

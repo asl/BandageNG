@@ -24,7 +24,7 @@
 #include <utility>
 #include <vector>
 
-BlastQuery::BlastQuery(QString name, QString sequence)
+Query::Query(QString name, QString sequence)
     : m_name(std::move(name)), m_sequence(std::move(sequence)), m_searchedFor(false), m_shown(true) {
     autoSetSequenceType();
 }
@@ -32,7 +32,7 @@ BlastQuery::BlastQuery(QString name, QString sequence)
 
 //This function looks at the query sequence to decide if it is
 //a nucleotide or protein sequence.
-void BlastQuery::autoSetSequenceType() {
+void Query::autoSetSequenceType() {
     //If the sequence contains a letter that's in the protein
     //alphabet but not in the extended DNA alphabet, then it's
     //a protein
@@ -67,17 +67,17 @@ void BlastQuery::autoSetSequenceType() {
 }
 
 
-QString BlastQuery::getTypeString() const {
+QString Query::getTypeString() const {
     return (m_sequenceType == NUCLEOTIDE ? "nucl" : "prot");
 }
 
-void BlastQuery::clearSearchResults() {
+void Query::clearSearchResults() {
     m_searchedFor = false;
     m_hits.clear();
 }
 
 // This function tries to find the paths through the graph which cover the query.
-void BlastQuery::findQueryPaths() {
+void Query::findQueryPaths() {
     m_paths.clear();
     if (m_hits.size() > g_settings->maxHitsForQueryPath)
         return;
@@ -88,7 +88,7 @@ void BlastQuery::findQueryPaths() {
 
     //Find all possible path starts within an acceptable distance from the query
     //start.
-    std::vector<BlastHit *> possibleStarts;
+    std::vector<Hit *> possibleStarts;
     double acceptableStartFraction = 1.0 - g_settings->minQueryCoveredByPath;
     for (auto &hit : m_hits) {
         if (hit.queryStartFraction() <= acceptableStartFraction)
@@ -96,7 +96,7 @@ void BlastQuery::findQueryPaths() {
     }
 
     //Find all possible path ends.
-    std::vector<BlastHit *> possibleEnds;
+    std::vector<Hit *> possibleEnds;
     double acceptableEndFraction = g_settings->minQueryCoveredByPath;
     for (auto &hit : m_hits) {
         if (hit.queryEndFraction() >= acceptableEndFraction)
@@ -153,15 +153,15 @@ void BlastQuery::findQueryPaths() {
         }
     }
 
-    //Now we use the Path objects to make BlastQueryPath objects.  These contain
+    //Now we use the Path objects to make QueryPath objects.  These contain
     //BLAST-specific information that the Path class doesn't.
-    QList<BlastQueryPath> blastQueryPaths;
+    QList<QueryPath> blastQueryPaths;
     for (auto &possiblePath : possiblePaths)
-        blastQueryPaths.push_back(BlastQueryPath(possiblePath, this));
+        blastQueryPaths.push_back(QueryPath(possiblePath, this));
 
     //We now want to throw out any paths for which the hits fail to meet the
     //thresholds in settings.
-    QList<BlastQueryPath> sufficientCoveragePaths;
+    QList<QueryPath> sufficientCoveragePaths;
     for (auto & blastQueryPath : blastQueryPaths) {
         if (blastQueryPath.getPathQueryCoverage() < g_settings->minQueryCoveredByPath)
             continue;
@@ -210,7 +210,7 @@ void BlastQuery::findQueryPaths() {
 //If a list of BLAST hits is passed to the function, it only looks in those
 //hits.  If no such list is passed, it looks in all hits for this query.
 // http://stackoverflow.com/questions/5276686/merging-ranges-in-c
-double BlastQuery::fractionCoveredByHits(const std::vector<const BlastHit *> &hitsToCheck) const {
+double Query::fractionCoveredByHits(const std::vector<const Hit *> &hitsToCheck) const {
     int hitBases = 0;
     int queryLength = getLength();
     if (queryLength == 0)

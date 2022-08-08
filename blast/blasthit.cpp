@@ -22,12 +22,12 @@
 #include "graph/debruijnnode.h"
 #include "graph/sequenceutils.h"
 
-BlastHit::BlastHit(BlastQuery * query, DeBruijnNode * node,
-                   double percentIdentity, int alignmentLength,
-                   int numberMismatches, int numberGapOpens,
-                   int queryStart, int queryEnd,
-                   int nodeStart, int nodeEnd,
-                   SciNot eValue, double bitScore) :
+Hit::Hit(Query * query, DeBruijnNode * node,
+         double percentIdentity, int alignmentLength,
+         int numberMismatches, int numberGapOpens,
+         int queryStart, int queryEnd,
+         int nodeStart, int nodeEnd,
+         SciNot eValue, double bitScore) :
     m_query(query), m_node(node),
     m_percentIdentity(percentIdentity), m_alignmentLength(alignmentLength),
     m_numberMismatches(numberMismatches), m_numberGapOpens(numberGapOpens),
@@ -35,23 +35,23 @@ BlastHit::BlastHit(BlastQuery * query, DeBruijnNode * node,
     m_nodeStart(nodeStart), m_nodeEnd(nodeEnd),
     m_eValue(eValue), m_bitScore(bitScore) { }
 
-double BlastHit::nodeStartFraction() const {
+double Hit::nodeStartFraction() const {
     return double(m_nodeStart - 1) / m_node->getLength();
 }
 
-double BlastHit::nodeEndFraction() const {
+double Hit::nodeEndFraction() const {
     return double(m_nodeEnd - 1) / m_node->getLength();
 }
 
-double BlastHit::queryStartFraction() const {
+double Hit::queryStartFraction() const {
     return double(m_queryStart - 1) / m_query->getLength();
 }
 
-double BlastHit::queryEndFraction() const {
+double Hit::queryEndFraction() const {
     return double(m_queryEnd - 1) / m_query->getLength();
 }
 
-double BlastHit::getQueryCoverageFraction() const {
+double Hit::getQueryCoverageFraction() const {
     int queryRegionSize = m_queryEnd - m_queryStart + 1;
     int queryLength = m_query->getLength();
 
@@ -62,15 +62,15 @@ double BlastHit::getQueryCoverageFraction() const {
 }
 
 
-GraphLocation BlastHit::getHitStart() const {
+GraphLocation Hit::getHitStart() const {
     return {m_node, m_nodeStart};
 }
 
-GraphLocation BlastHit::getHitEnd() const {
+GraphLocation Hit::getHitEnd() const {
     return {m_node, m_nodeEnd};
 }
 
 //This function returns the node sequence for this hit.
-QByteArray BlastHit::getNodeSequence() const {
+QByteArray Hit::getNodeSequence() const {
     return utils::sequenceToQByteArray(m_node->getSequence().Subseq(m_nodeStart-1, m_nodeEnd));
 }

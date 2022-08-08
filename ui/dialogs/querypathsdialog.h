@@ -26,7 +26,7 @@
 #include <QStyledItemDelegate>
 #include <QItemSelection>
 
-class BlastQuery;
+class Query;
 
 namespace Ui {
 class QueryPathsDialog;
@@ -48,7 +48,7 @@ public:
 class QueryPathsModel : public QAbstractTableModel {
     Q_OBJECT
 public:
-    explicit QueryPathsModel(const BlastQuery *query,
+    explicit QueryPathsModel(const Query *query,
                              QObject *parent = nullptr);
 
     int rowCount(const QModelIndex &) const override;
@@ -57,7 +57,7 @@ public:
     QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
     Qt::ItemFlags flags(const QModelIndex &index) const override;
 
-    std::vector<BlastQueryPath> m_queryPaths;
+    std::vector<QueryPath> m_queryPaths;
 };
 
 class QueryPathsDialog : public QDialog
@@ -65,7 +65,7 @@ class QueryPathsDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit QueryPathsDialog(BlastQuery *query, QWidget *parent = nullptr);
+    explicit QueryPathsDialog(Query *query, QWidget *parent = nullptr);
     ~QueryPathsDialog() override;
 
 private:

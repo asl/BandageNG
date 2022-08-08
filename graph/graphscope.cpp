@@ -91,7 +91,7 @@ namespace graph {
 
     Scope scope(GraphScope graphScope, const QString &nodesList,
                 double minDepthRange, double maxDepthRange,
-                const BlastQueries &blastQueries, const QString &blastQueryName,
+                const Queries &blastQueries, const QString &blastQueryName,
                 const QString &pathName, unsigned distance) {
         switch (graphScope) {
             case WHOLE_GRAPH:
@@ -110,7 +110,7 @@ namespace graph {
         return Scope::wholeGraph();
     }
 
-    Scope Scope::aroundHits(const BlastQueries &queries, const QString& queryName,
+    Scope Scope::aroundHits(const Queries &queries, const QString& queryName,
                             unsigned distance) {
         Scope res;
         res.m_scope = AROUND_BLAST_HITS;

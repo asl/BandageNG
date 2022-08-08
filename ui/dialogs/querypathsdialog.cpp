@@ -42,7 +42,7 @@ enum class QueryPathsColumns : int {
     TotalColumns = Copy + 1
 };
 
-QueryPathsDialog::QueryPathsDialog(BlastQuery *query, QWidget *parent) :
+QueryPathsDialog::QueryPathsDialog(Query *query, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::QueryPathsDialog)
 {
@@ -104,7 +104,7 @@ void QueryPathsDialog::tableSelectionChanged(const QItemSelection &selected,
     emit selectionChanged();
 }
 
-QueryPathsModel::QueryPathsModel(const BlastQuery *query, QObject *parent)
+QueryPathsModel::QueryPathsModel(const Query *query, QObject *parent)
   : m_queryPaths(query->getPaths()), QAbstractTableModel(parent) {}
 
 int QueryPathsModel::rowCount(const QModelIndex &) const {

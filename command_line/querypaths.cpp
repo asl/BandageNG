@@ -201,7 +201,7 @@ int bandageQueryPaths(QStringList arguments)
             if (hitsFasta) {
                 const auto &hits = queryPath.getHits();
                 for (int k = 0; k < hits.size(); ++k) {
-                    const BlastHit * hit = hits[k];
+                    const Hit * hit = hits[k];
                     QString hitSequenceID = pathSequenceID + "_" + QString::number(k+1);
                     QByteArray hitSequence = hit->getNodeSequence();
                     hitSequenceIDs.push_back(hitSequenceID);

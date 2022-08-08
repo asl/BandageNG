@@ -1,31 +1,28 @@
-//Copyright 2017 Ryan Wick
+// Copyright 2017 Ryan Wick
+// Copyright 2022 Anton Korobeynikov
 
-//This file is part of Bandage
+// This file is part of Bandage
 
-//Bandage is free software: you can redistribute it and/or modify
-//it under the terms of the GNU General Public License as published by
-//the Free Software Foundation, either version 3 of the License, or
-//(at your option) any later version.
+// Bandage is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 
-//Bandage is distributed in the hope that it will be useful,
-//but WITHOUT ANY WARRANTY; without even the implied warranty of
-//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//GNU General Public License for more details.
+// Bandage is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
 
-//You should have received a copy of the GNU General Public License
-//along with Bandage.  If not, see <http://www.gnu.org/licenses/>.
+// You should have received a copy of the GNU General Public License
+// along with Bandage.  If not, see <http://www.gnu.org/licenses/>.
 
-
-#ifndef BLASTQUERY_H
-#define BLASTQUERY_H
+#pragma once
 
 #include "blastquerypath.h"
 #include "blasthit.h"
 
-#include <QObject>
 #include <QString>
 #include <QColor>
-#include <QList>
 #include <utility>
 
 enum QuerySequenceType {
@@ -33,10 +30,10 @@ enum QuerySequenceType {
     PROTEIN
 };
 
-class BlastQuery : public QObject {
+class Query {
 public:
     //CREATORS
-    BlastQuery(QString name, QString sequence);
+    Query(QString name, QString sequence);
 
     //ACCESSORS
     QString getName() const {return m_name;}
@@ -51,13 +48,13 @@ public:
     const auto &getPaths() const {return m_paths;}
     size_t getPathCount() const {return m_paths.size();}
     QString getTypeString() const;
-    double fractionCoveredByHits(const std::vector<const BlastHit*> &hitsToCheck = {}) const;
+    double fractionCoveredByHits(const std::vector<const Hit*> &hitsToCheck = {}) const;
     bool isShown() const {return m_shown;}
     bool isHidden() const {return !m_shown;}
 
     // MODIFIERS
     void setName(QString newName) {m_name = std::move(newName);}
-    void addHit(BlastHit newHit) {m_hits.emplace_back(newHit);}
+    void addHit(Hit newHit) {m_hits.emplace_back(newHit);}
     void clearSearchResults();
     void setAsSearchedFor() {m_searchedFor = true;}
     void findQueryPaths();
@@ -68,14 +65,12 @@ public:
 private:
     QString m_name;
     QString m_sequence;
-    std::vector<BlastHit> m_hits;
+    std::vector<Hit> m_hits;
     QuerySequenceType m_sequenceType;
     bool m_searchedFor;
     bool m_shown;
     QColor m_colour;
-    std::vector<BlastQueryPath> m_paths;
+    std::vector<QueryPath> m_paths;
 
     void autoSetSequenceType();
 };
-
-#endif // BLASTQUERY_H

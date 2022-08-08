@@ -1715,7 +1715,7 @@ void MainWindow::openBlastSearchDialog() {
 void MainWindow::blastChanged()
 {
     QString blastQueryText = ui->blastQueryComboBox->currentText();
-    BlastQuery * queryBefore = g_blastSearch->queries().getQueryFromName(blastQueryText);
+    Query * queryBefore = g_blastSearch->queries().getQueryFromName(blastQueryText);
 
     //If we didn't find a currently selected query, but it isn't "none" or "all",
     //then maybe the user changed the name of the currently selected query, and

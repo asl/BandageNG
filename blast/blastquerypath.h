@@ -1,37 +1,34 @@
-//Copyright 2017 Ryan Wick
+// Copyright 2017 Ryan Wick
+// Copyright 2022 Anton Korobeynikov
 
-//This file is part of Bandage.
+// This file is part of Bandage
 
-//Bandage is free software: you can redistribute it and/or modify
-//it under the terms of the GNU General Public License as published by
-//the Free Software Foundation, either version 3 of the License, or
-//(at your option) any later version.
+// Bandage is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 
-//Bandage is distributed in the hope that it will be useful,
-//but WITHOUT ANY WARRANTY; without even the implied warranty of
-//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//GNU General Public License for more details.
+// Bandage is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
 
-//You should have received a copy of the GNU General Public License
-//along with Bandage.  If not, see <http://www.gnu.org/licenses/>.
+// You should have received a copy of the GNU General Public License
+// along with Bandage.  If not, see <http://www.gnu.org/licenses/>.
 
-
-#ifndef BLASTQUERYPATH_H
-#define BLASTQUERYPATH_H
+#pragma once
 
 #include "blasthit.h"
 
 #include "graph/path.h"
 #include "program/scinot.h"
 
-#include <QList>
+class Query;
 
-class BlastQuery;
-
-class BlastQueryPath {
+class QueryPath {
 public:
     //CREATORS
-    BlastQueryPath(Path path, BlastQuery * query);
+    QueryPath(Path path, Query * query);
 
     //ACCESSORS
     Path getPath() const {return m_path;}
@@ -47,15 +44,13 @@ public:
     int getTotalHitMismatches() const;
     int getTotalHitGapOpens() const;
 
-    bool operator<(BlastQueryPath const &other) const;
+    bool operator<(QueryPath const &other) const;
 
 private:
     Path m_path;
-    BlastQuery * m_query;
-    std::vector<const BlastHit*> m_hits;
+    Query * m_query;
+    std::vector<const Hit*> m_hits;
 
     int getHitQueryLength() const;
-    int getHitOverlap(const BlastHit * hit1, const BlastHit * hit2) const;
+    int getHitOverlap(const Hit * hit1, const Hit * hit2) const;
 };
-
-#endif // BLASTQUERYPATH_H

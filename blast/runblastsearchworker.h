@@ -25,7 +25,7 @@
 #include <QTemporaryDir>
 
 class QProcess;
-class BlastQueries;
+class Queries;
 
 //This class carries out the task of running blastn and/or
 //tblastn.
@@ -47,11 +47,11 @@ private:
     QProcess *m_blast = nullptr;
     bool m_cancelRunBlastSearch = false;
 
-    QString runOneBlastSearch(QuerySequenceType sequenceType, const BlastQueries &queries,
+    QString runOneBlastSearch(QuerySequenceType sequenceType, const Queries &queries,
                               bool * success);
 
 public slots:
-    bool runBlastSearch(BlastQueries &queries);
+    bool runBlastSearch(Queries &queries);
     void cancel();
 
 signals:

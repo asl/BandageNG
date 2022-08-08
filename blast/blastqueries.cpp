@@ -23,14 +23,14 @@
 
 #include <unordered_set>
 
-BlastQueries::BlastQueries()
+Queries::Queries()
 : m_presetColours{getPresetColours()} {}
 
-BlastQueries::~BlastQueries() {
+Queries::~Queries() {
     clearAllQueries();
 }
 
-BlastQuery *BlastQueries::getQueryFromName(QString queryName) const {
+Query *Queries::getQueryFromName(QString queryName) const {
     auto res =
             std::find_if(m_queries.begin(), m_queries.end(),
                          [&](const auto *query) { return queryName == query->getName(); });
@@ -41,7 +41,7 @@ BlastQuery *BlastQueries::getQueryFromName(QString queryName) const {
     return *res;
 }
 
-void BlastQueries::addQuery(BlastQuery * newQuery) {
+void Queries::addQuery(Query * newQuery) {
     newQuery->setName(getUniqueName(newQuery->getName()));
 
     // Give the new query a colour
@@ -53,7 +53,7 @@ void BlastQueries::addQuery(BlastQuery * newQuery) {
 // This function renames the query.  It returns the name given, because that
 // might not be exactly the same as the name passed to the function if it
 // wasn't unique.
-QString BlastQueries::renameQuery(BlastQuery * newQuery, QString newName) {
+QString Queries::renameQuery(Query * newQuery, QString newName) {
     newQuery->setName(getUniqueName(newName));
     return newQuery->getName();
 }
@@ -61,7 +61,7 @@ QString BlastQueries::renameQuery(BlastQuery * newQuery, QString newName) {
 //This function looks at the name, and if it is not unique, it adds a suffix
 //to make it unique.  Also make sure it's not "all" or "none", as those will
 //conflict with viewing all queries at once or no queries.
-QString BlastQueries::getUniqueName(QString name) {
+QString Queries::getUniqueName(QString name) {
     //If the query name ends in a semicolon, remove it.  Ending semicolons
     //mess with BLAST.
     if (name.endsWith(';'))
@@ -79,14 +79,14 @@ QString BlastQueries::getUniqueName(QString name) {
     return finalName;
 }
 
-void BlastQueries::clearAllQueries() {
+void Queries::clearAllQueries() {
     for (auto *query : m_queries)
         delete query;
     m_queries.clear();
 }
 
-void BlastQueries::clearSomeQueries(const std::vector<BlastQuery *> &queriesToRemove) {
-    std::unordered_set<BlastQuery *> queries(queriesToRemove.begin(), queriesToRemove.end());
+void Queries::clearSomeQueries(const std::vector<Query *> &queriesToRemove) {
+    std::unordered_set<Query *> queries(queriesToRemove.begin(), queriesToRemove.end());
     m_queries.erase(std::remove_if(m_queries.begin(), m_queries.end(),
                                    [&](auto *query) { return queries.count(query); }),
                     m_queries.end());
@@ -95,23 +95,23 @@ void BlastQueries::clearSomeQueries(const std::vector<BlastQuery *> &queriesToRe
         delete query;
 }
 
-void BlastQueries::searchOccurred() {
+void Queries::searchOccurred() {
     for (auto *query : m_queries)
         query->setAsSearchedFor();
 }
 
 
-void BlastQueries::clearSearchResults() {
+void Queries::clearSearchResults() {
     for (auto *query : m_queries)
         query->clearSearchResults();
 }
 
 
-size_t BlastQueries::getQueryCount() const {
+size_t Queries::getQueryCount() const {
     return m_queries.size();
 }
 
-size_t BlastQueries::getQueryCountWithAtLeastOnePath() const {
+size_t Queries::getQueryCountWithAtLeastOnePath() const {
     int count = 0;
     for (const auto *query : m_queries)
         count += (query->getPathCount() > 0);
@@ -119,14 +119,14 @@ size_t BlastQueries::getQueryCountWithAtLeastOnePath() const {
     return count;
 }
 
-size_t BlastQueries::getQueryPathCount() const {
+size_t Queries::getQueryPathCount() const {
     size_t count = 0;
     for (const auto *query : m_queries)
         count += query->getPathCount();
     return count;
 }
 
-size_t BlastQueries::getQueryCount(QuerySequenceType sequenceType) const {
+size_t Queries::getQueryCount(QuerySequenceType sequenceType) const {
     size_t count = 0;
     for (const auto *query : m_queries)
         count += (query->getSequenceType() == sequenceType);
@@ -136,19 +136,19 @@ size_t BlastQueries::getQueryCount(QuerySequenceType sequenceType) const {
 //This function looks to see if a query pointer is in the list
 //of queries.  The query pointer given may or may not still
 //actually exist, so it can't be dereferenced.
-bool BlastQueries::isQueryPresent(const BlastQuery * query) const {
+bool Queries::isQueryPresent(const Query * query) const {
     return std::find(m_queries.begin(), m_queries.end(), query) != m_queries.end();
 }
 
 // This function looks at each BLAST query and tries to find a path through
 // the graph which covers the maximal amount of the query.
-void BlastQueries::findQueryPaths() {
+void Queries::findQueryPaths() {
     for (auto *query : m_queries)
         query->findQueryPaths();
 }
 
-std::vector<BlastHit> BlastQueries::allHits() const {
-    std::vector<BlastHit> res;
+std::vector<Hit> Queries::allHits() const {
+    std::vector<Hit> res;
 
     for (const auto *query : m_queries) {
         const auto &hits = query->getHits();
@@ -158,7 +158,7 @@ std::vector<BlastHit> BlastQueries::allHits() const {
     return res;
 }
 
-std::vector<DeBruijnNode *> BlastQueries::getNodesFromHits(const QString& queryName) const {
+std::vector<DeBruijnNode *> Queries::getNodesFromHits(const QString& queryName) const {
     std::vector<DeBruijnNode *> returnVector;
 
     if (empty())
@@ -172,7 +172,7 @@ std::vector<DeBruijnNode *> BlastQueries::getNodesFromHits(const QString& queryN
                 returnVector.push_back(hit.m_node);
         }
     } else {
-        if (BlastQuery *query = getQueryFromName(queryName)) {
+        if (Query *query = getQueryFromName(queryName)) {
             for (const auto &hit: query->getHits())
                 returnVector.push_back(hit.m_node);
         }

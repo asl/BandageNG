@@ -27,25 +27,25 @@
 
 #include <limits>
 
-BlastQueryPath::BlastQueryPath(Path path, BlastQuery *query) :
+QueryPath::QueryPath(Path path, Query *query) :
     m_path(std::move(path)), m_query(query) {
     //This function follows the path, returning the BLAST hits it finds for the
     //query.  It requires that the hits occur in order, i.e. that each hit in
     //the path begins later in the query than the previous hit.
 
-    const BlastHit * previousHit = nullptr;
+    const Hit * previousHit = nullptr;
     const auto &pathNodes = m_path.nodes();
     for (int i = 0; i < pathNodes.size(); ++i) {
         DeBruijnNode * node = pathNodes[i];
 
-        std::vector<const BlastHit*> hitsThisNode;
+        std::vector<const Hit*> hitsThisNode;
         for (auto &queryHit : query->getHits()) {
             if (queryHit.m_node == node)
                 hitsThisNode.push_back(&queryHit);
         }
 
         std::sort(hitsThisNode.begin(), hitsThisNode.end(),
-                  [](const BlastHit *a, const BlastHit *b) {
+                  [](const Hit *a, const Hit *b) {
                       return a->m_queryStart < b->m_queryStart;
                   });
 
@@ -66,7 +66,7 @@ BlastQueryPath::BlastQueryPath(Path path, BlastQuery *query) :
     }
 }
 
-double BlastQueryPath::getMeanHitPercIdentity() const {
+double QueryPath::getMeanHitPercIdentity() const {
     int totalHitLength = 0;
     double sum = 0.0;
 
@@ -88,22 +88,22 @@ double BlastQueryPath::getMeanHitPercIdentity() const {
 //multiplies the e-values together. If the hits overlap each other, then
 //this function reduces the e-values accoringly (effectively to prevent
 //the overlapping region from being counted twice).
-SciNot BlastQueryPath::getEvalueProduct() const {
+SciNot QueryPath::getEvalueProduct() const {
     double coefficientProduct = 1.0;
     int exponentSum = 0;
 
     for (int i = 0; i < m_hits.size(); ++i) {
-        const BlastHit * thisHit = m_hits[i];
+        const Hit * thisHit = m_hits[i];
         SciNot thisHitEValue = thisHit->m_eValue;
         double eValueLenToRemove = 0.0;
         if (i > 0) {
-            const BlastHit * previousHit = m_hits[i-1];
+            const Hit * previousHit = m_hits[i - 1];
             int overlap = getHitOverlap(previousHit, thisHit);
             if (overlap > 0)
                 eValueLenToRemove += overlap / 2.0;
         }
         if (i < m_hits.size() - 1) {
-            const BlastHit * nextHit = m_hits[i+1];
+            const Hit * nextHit = m_hits[i + 1];
             int overlap = getHitOverlap(thisHit, nextHit);
             if (overlap > 0)
                 eValueLenToRemove += overlap / 2.0;
@@ -122,7 +122,7 @@ SciNot BlastQueryPath::getEvalueProduct() const {
 }
 
 
-int BlastQueryPath::getHitOverlap(const BlastHit * hit1, const BlastHit * hit2) const
+int QueryPath::getHitOverlap(const Hit * hit1, const Hit * hit2) const
 {
     int hit1Start, hit1End, hit2Start, hit2End;
     QPair<DeBruijnNode *, DeBruijnNode *> possibleEdge(hit1->m_node, hit2->m_node);
@@ -160,7 +160,7 @@ int BlastQueryPath::getHitOverlap(const BlastHit * hit1, const BlastHit * hit2) 
 //This function looks at the length of the given path and compares it to how
 //long the path should be for the hits it contains (i.e. if the path perfectly
 //matched up the query).
-double BlastQueryPath::getRelativeLengthDiscrepancy() const {
+double QueryPath::getRelativeLengthDiscrepancy() const {
     if (m_hits.empty())
         return std::numeric_limits<double>::max();
 
@@ -174,7 +174,7 @@ double BlastQueryPath::getRelativeLengthDiscrepancy() const {
 //This function gets the length of the path relative to the how long it should
 //be.  A value of 1 means a perfect match; less than 1 means it is too short;
 //more than 1 means it is too long.
-double BlastQueryPath::getRelativePathLength() const {
+double QueryPath::getRelativePathLength() const {
     return double(m_path.getLength()) / getHitQueryLength();
 }
 
@@ -182,12 +182,12 @@ double BlastQueryPath::getRelativePathLength() const {
 //This function gets the difference between how long the path is vs how long it
 //should be.  A value of 0 means a perfect match; less than 0 means it is too
 //short; more than 0 means it is too long.
-int BlastQueryPath::getAbsolutePathLengthDifference() const {
+int QueryPath::getAbsolutePathLengthDifference() const {
     return m_path.getLength() - getHitQueryLength();
 }
 
 
-QString BlastQueryPath::getAbsolutePathLengthDifferenceString(bool commas) const {
+QString QueryPath::getAbsolutePathLengthDifferenceString(bool commas) const {
     int lengthDisc = getAbsolutePathLengthDifference();
     QString lengthDiscSign = "";
     if (lengthDisc > 0)
@@ -201,7 +201,7 @@ QString BlastQueryPath::getAbsolutePathLengthDifferenceString(bool commas) const
 
 //This function returns the fraction of the query that is covered by the entire
 //path.
-double BlastQueryPath::getPathQueryCoverage() const {
+double QueryPath::getPathQueryCoverage() const {
     if (m_hits.empty())
         return 0.0;
 
@@ -218,14 +218,14 @@ double BlastQueryPath::getPathQueryCoverage() const {
 
 //This function returns the fraction of the query that is covered by hits in the
 //path.
-double BlastQueryPath::getHitsQueryCoverage() const {
+double QueryPath::getHitsQueryCoverage() const {
     return m_query->fractionCoveredByHits(m_hits);
 }
 
 //This function returns the length of the query which is covered by the path.
 //It is returned in bp, whether or not the query is a protein or nucleotide
 //sequence.
-int BlastQueryPath::getHitQueryLength() const {
+int QueryPath::getHitQueryLength() const {
     int queryStart = m_hits.front()->m_queryStart;
     int queryEnd = m_hits.back()->m_queryEnd;
     int hitQueryLength = queryEnd - queryStart + 1;
@@ -236,14 +236,14 @@ int BlastQueryPath::getHitQueryLength() const {
     return hitQueryLength;
 }
 
-int BlastQueryPath::getTotalHitMismatches() const {
+int QueryPath::getTotalHitMismatches() const {
     int total = 0;
     for (const auto *hit : m_hits)
         total += hit->m_numberMismatches;
     return total;
 }
 
-int BlastQueryPath::getTotalHitGapOpens() const {
+int QueryPath::getTotalHitGapOpens() const {
     int total = 0;
     for (const auto *hit : m_hits)
         total += hit->m_numberGapOpens;
@@ -253,7 +253,7 @@ int BlastQueryPath::getTotalHitGapOpens() const {
 
 //This function is used for sorting the paths for a query from best to worst.
 //it uses < to mean 'better than'.
-bool BlastQueryPath::operator<(BlastQueryPath const &other) const {
+bool QueryPath::operator<(QueryPath const &other) const {
     //First we compare using the E-value product.  This seems to value stronger
     //hits as well as paths with fewer, longer hits.
     SciNot aEValueProduct = getEvalueProduct();

@@ -35,9 +35,9 @@ RunBlastSearchWorker::RunBlastSearchWorker(QString blastnCommand, QString tblast
 
 
 static void buildHitsFromBlastOutput(QString blastOutput,
-                                     BlastQueries &queries);
+                                     Queries &queries);
 
-    bool RunBlastSearchWorker::runBlastSearch(BlastQueries &queries) {
+    bool RunBlastSearchWorker::runBlastSearch(Queries &queries) {
     m_cancelRunBlastSearch = false;
     bool success = false;
 
@@ -71,7 +71,7 @@ static void buildHitsFromBlastOutput(QString blastOutput,
 }
 
 static void writeQueryFile(QFile *file,
-                           const BlastQueries &queries,
+                           const Queries &queries,
                            QuerySequenceType sequenceType) {
     QTextStream out(file);
     for (const auto *query: queries.queries()) {
@@ -85,7 +85,7 @@ static void writeQueryFile(QFile *file,
 }
 
 QString RunBlastSearchWorker::runOneBlastSearch(QuerySequenceType sequenceType,
-                                                const BlastQueries &queries,
+                                                const Queries &queries,
                                                 bool * success) {
     QTemporaryFile tmpFile(m_tempDirectory.filePath(sequenceType == NUCLEOTIDE ?
                            "nucl_queries.XXXXXX.fasta" : "prot_queries.XXXXXX.fasta"));
@@ -167,11 +167,11 @@ static QString getNodeNameFromString(const QString &nodeString) {
 }
 
 // This function uses the contents of blastOutput (the raw output from the
-// BLAST search) to construct the BlastHit objects.
+// BLAST search) to construct the Hit objects.
 // It looks at the filters to possibly exclude hits which fail to meet user-
 // defined thresholds.
 static void buildHitsFromBlastOutput(QString blastOutput,
-                                     BlastQueries &queries) {
+                                     Queries &queries) {
     QStringList blastHitList = blastOutput.split("\n", Qt::SkipEmptyParts);
 
     for (const auto &hitString : blastHitList) {
@@ -205,7 +205,7 @@ static void buildHitsFromBlastOutput(QString blastOutput,
 
         node = it.value();
 
-        BlastQuery *query = queries.getQueryFromName(queryName);
+        Query *query = queries.getQueryFromName(queryName);
         if (query == nullptr)
             continue;
 
@@ -226,9 +226,9 @@ static void buildHitsFromBlastOutput(QString blastOutput,
             bitScore < g_settings->blastBitScoreFilter)
             continue;
 
-        BlastHit hit(query, node, percentIdentity, alignmentLength,
-                     numberMismatches, numberGapOpens, queryStart, queryEnd,
-                     nodeStart, nodeEnd, eValue, bitScore);
+        Hit hit(query, node, percentIdentity, alignmentLength,
+                numberMismatches, numberGapOpens, queryStart, queryEnd,
+                nodeStart, nodeEnd, eValue, bitScore);
 
         if (g_settings->blastQueryCoverageFilter.on) {
             double hitCoveragePercentage = 100.0 * hit.getQueryCoverageFraction();
