@@ -24,6 +24,8 @@
 #include <utility>
 #include <vector>
 
+using namespace search;
+
 Query::Query(QString name, QString sequence)
     : m_name(std::move(name)), m_sequence(std::move(sequence)), m_searchedFor(false), m_shown(true) {
     autoSetSequenceType();

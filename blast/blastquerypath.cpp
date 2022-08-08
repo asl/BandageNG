@@ -27,6 +27,8 @@
 
 #include <limits>
 
+using namespace search;
+
 QueryPath::QueryPath(Path path, Query *query) :
     m_path(std::move(path)), m_query(query) {
     //This function follows the path, returning the BLAST hits it finds for the

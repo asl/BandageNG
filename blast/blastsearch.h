@@ -37,18 +37,18 @@ public:
     auto &queries() { return m_blastQueries; }
     [[nodiscard]] const auto &query(size_t idx) const { return m_blastQueries[idx]; }
     auto &query(size_t idx) { return m_blastQueries[idx]; }
-    bool isQueryPresent(const Query *query) const { return m_blastQueries.isQueryPresent(query); }
+    bool isQueryPresent(const search::Query *query) const { return m_blastQueries.isQueryPresent(query); }
     size_t getQueryCount() const { return m_blastQueries.getQueryCount(); }
     size_t getQueryCountWithAtLeastOnePath() const { return m_blastQueries.getQueryCountWithAtLeastOnePath(); }
     size_t getQueryPathCount() const { return m_blastQueries.getQueryPathCount(); }
-    size_t getQueryCount(QuerySequenceType sequenceType) const { return m_blastQueries.getQueryCount(sequenceType); }
+    size_t getQueryCount(search::QuerySequenceType sequenceType) const { return m_blastQueries.getQueryCount(sequenceType); }
 
     static bool findProgram(const QString& programName, QString * command);
     int loadBlastQueriesFromFastaFile(QString fullFileName);
     static QString cleanQueryName(QString queryName);
     void blastQueryChanged(const QString& queryName);
-    void addQuery(Query *newQuery) { m_blastQueries.addQuery(newQuery); }
-    Query * getQueryFromName(QString queryName) const { return m_blastQueries.getQueryFromName(queryName); }
+    void addQuery(search::Query *newQuery) { m_blastQueries.addQuery(newQuery); }
+    search::Query * getQueryFromName(QString queryName) const { return m_blastQueries.getQueryFromName(queryName); }
 
     void clearBlastHits();
     void cleanUp();
@@ -60,7 +60,7 @@ public:
     QString doAutoBlastSearch();
 
 private:
-    Queries m_blastQueries;
+    search::Queries m_blastQueries;
     QTemporaryDir m_tempDirectory;
 };
 

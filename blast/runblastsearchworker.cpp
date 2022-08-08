@@ -28,6 +28,8 @@
 #include <QTemporaryFile>
 #include <QProcess>
 
+using namespace search;
+
 RunBlastSearchWorker::RunBlastSearchWorker(QString blastnCommand, QString tblastnCommand, QString parameters,
                                            const QTemporaryDir &workdir)
         : m_blastnCommand(blastnCommand), m_tblastnCommand(tblastnCommand), m_parameters(parameters),

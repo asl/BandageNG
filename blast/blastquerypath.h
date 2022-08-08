@@ -23,34 +23,37 @@
 #include "graph/path.h"
 #include "program/scinot.h"
 
-class Query;
+namespace search {
+    class Query;
 
-class QueryPath {
-public:
-    //CREATORS
-    QueryPath(Path path, Query * query);
+    class QueryPath {
+    public:
+        //CREATORS
+        QueryPath(Path path, Query *query);
 
-    //ACCESSORS
-    Path getPath() const {return m_path;}
-    const auto& getHits() const {return m_hits;}
-    SciNot getEvalueProduct() const;
-    double getMeanHitPercIdentity() const;
-    double getRelativeLengthDiscrepancy() const;
-    double getRelativePathLength() const;
-    int getAbsolutePathLengthDifference() const;
-    QString getAbsolutePathLengthDifferenceString(bool commas) const;
-    double getPathQueryCoverage() const;
-    double getHitsQueryCoverage() const;
-    int getTotalHitMismatches() const;
-    int getTotalHitGapOpens() const;
+        //ACCESSORS
+        Path getPath() const { return m_path; }
 
-    bool operator<(QueryPath const &other) const;
+        const auto &getHits() const { return m_hits; }
 
-private:
-    Path m_path;
-    Query * m_query;
-    std::vector<const Hit*> m_hits;
+        SciNot getEvalueProduct() const;
+        double getMeanHitPercIdentity() const;
+        double getRelativeLengthDiscrepancy() const;
+        double getRelativePathLength() const;
+        int getAbsolutePathLengthDifference() const;
+        QString getAbsolutePathLengthDifferenceString(bool commas) const;
+        double getPathQueryCoverage() const;
+        double getHitsQueryCoverage() const;
+        int getTotalHitMismatches() const;
+        int getTotalHitGapOpens() const;
 
-    int getHitQueryLength() const;
-    int getHitOverlap(const Hit * hit1, const Hit * hit2) const;
-};
+        bool operator<(QueryPath const &other) const;
+    private:
+        Path m_path;
+        Query *m_query;
+        std::vector<const Hit *> m_hits;
+
+        int getHitQueryLength() const;
+        int getHitOverlap(const Hit *hit1, const Hit *hit2) const;
+    };
+}

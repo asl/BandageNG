@@ -23,6 +23,8 @@
 
 #include <unordered_set>
 
+using namespace search;
+
 Queries::Queries()
 : m_presetColours{getPresetColours()} {}
 

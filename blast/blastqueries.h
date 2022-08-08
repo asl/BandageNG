@@ -21,6 +21,7 @@
 #include "blastquery.h"
 #include <vector>
 
+namespace search {
 // This class manages all queries. It holds Query objects
 class Queries {
 public:
@@ -61,6 +62,9 @@ public:
 private:
     QString getUniqueName(QString name);
 
+    // FIXME: This should really own the queries!
     std::vector<Query*> m_queries;
     std::vector<QColor> m_presetColours;
 };
+
+}

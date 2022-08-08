@@ -25,38 +25,42 @@
 #include <vector>
 
 class DeBruijnNode;
-class Query;
 
-class Hit {
-public:
-    Hit(Query * query, DeBruijnNode * node,
-        double percentIdentity, int alignmentLength,
-        int numberMismatches, int numberGapOpens,
-        int queryStart, int queryEnd,
-        int nodeStart, int nodeEnd, SciNot eValue, double bitScore);
+namespace search {
+    class Query;
 
-    Query * m_query;
-    DeBruijnNode * m_node;
-    double m_percentIdentity;
-    int m_alignmentLength;
-    int m_numberMismatches;
-    int m_numberGapOpens;
-    int m_queryStart;
-    int m_queryEnd;
-    int m_nodeStart;
-    int m_nodeEnd;
-    SciNot m_eValue;
-    double m_bitScore;
+    class Hit {
+    public:
+        Hit(Query *query, DeBruijnNode *node,
+            double percentIdentity, int alignmentLength,
+            int numberMismatches, int numberGapOpens,
+            int queryStart, int queryEnd,
+            int nodeStart, int nodeEnd, SciNot eValue, double bitScore);
 
-    double getQueryCoverageFraction() const;
-    GraphLocation getHitStart() const;
-    GraphLocation getHitEnd() const;
-    QByteArray getNodeSequence() const;
-    int getNodeLength() const {return m_nodeEnd - m_nodeStart + 1;}
+        Query *m_query;
+        DeBruijnNode *m_node;
+        double m_percentIdentity;
+        int m_alignmentLength;
+        int m_numberMismatches;
+        int m_numberGapOpens;
+        int m_queryStart;
+        int m_queryEnd;
+        int m_nodeStart;
+        int m_nodeEnd;
+        SciNot m_eValue;
+        double m_bitScore;
 
-    double nodeStartFraction() const;
-    double nodeEndFraction() const;
-    double queryStartFraction() const;
-    double queryEndFraction() const;
+        double getQueryCoverageFraction() const;
 
-};
+        GraphLocation getHitStart() const;
+        GraphLocation getHitEnd() const;
+
+        QByteArray getNodeSequence() const;
+        int getNodeLength() const { return m_nodeEnd - m_nodeStart + 1; }
+
+        double nodeStartFraction() const;
+        double nodeEndFraction() const;
+        double queryStartFraction() const;
+        double queryEndFraction() const;
+    };
+}

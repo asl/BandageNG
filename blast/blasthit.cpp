@@ -22,6 +22,8 @@
 #include "graph/debruijnnode.h"
 #include "graph/sequenceutils.h"
 
+using namespace search;
+
 Hit::Hit(Query * query, DeBruijnNode * node,
          double percentIdentity, int alignmentLength,
          int numberMismatches, int numberGapOpens,

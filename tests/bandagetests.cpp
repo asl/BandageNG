@@ -529,10 +529,10 @@ void BandageTests::blastSearch()
 
     QCOMPARE(errorString, "");
 
-    Query * exact = g_blastSearch->getQueryFromName("test_query_exact");
-    Query * one_mismatch = g_blastSearch->getQueryFromName("test_query_one_mismatch");
-    Query * one_insertion = g_blastSearch->getQueryFromName("test_query_one_insertion");
-    Query * one_deletion = g_blastSearch->getQueryFromName("test_query_one_deletion");
+    search::Query * exact = g_blastSearch->getQueryFromName("test_query_exact");
+    search::Query * one_mismatch = g_blastSearch->getQueryFromName("test_query_one_mismatch");
+    search::Query * one_insertion = g_blastSearch->getQueryFromName("test_query_one_insertion");
+    search::Query * one_deletion = g_blastSearch->getQueryFromName("test_query_one_deletion");
 
     QVERIFY(exact != nullptr);
     QVERIFY(one_mismatch != nullptr);

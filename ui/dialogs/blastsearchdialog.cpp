@@ -49,6 +49,8 @@
 #include <QPainter>
 #include <QSortFilterProxyModel>
 
+using namespace search;
+
 enum class QueriesHitColumns : unsigned {
     Color = 0,
     Show = 1,
@@ -317,7 +319,7 @@ void BlastSearchDialog::enterQueryManually() {
         return;
 
     QString queryName = BlastSearch::cleanQueryName(enterOneBlastQueryDialog.getName());
-    m_blastSearch->addQuery(new Query(queryName,
+    m_blastSearch->addQuery(new search::Query(queryName,
                                       enterOneBlastQueryDialog.getSequence()));
     updateTables();
     clearBlastHits();

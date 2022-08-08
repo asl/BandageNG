@@ -23,12 +23,14 @@
 #include <QAbstractTableModel>
 #include <QStyledItemDelegate>
 
-class Query;
-class Queries;
-class Hit;
+namespace search {
+    class Query;
+    class Queries;
+    class Hit;
+}
 class BlastSearch;
 
-using BlastHits = std::vector<Hit>;
+using Hits = std::vector<search::Hit>;
 
 namespace Ui {
 class BlastSearchDialog;
@@ -58,7 +60,7 @@ signals:
 class QueriesListModel : public QAbstractTableModel {
     Q_OBJECT
 public:
-    explicit QueriesListModel(Queries &queries,
+    explicit QueriesListModel(search::Queries &queries,
                               QObject *parent = nullptr);
 
     int rowCount(const QModelIndex &) const override;
@@ -73,15 +75,15 @@ public:
     void startUpdate() { beginResetModel(); }
     void endUpdate() { endResetModel(); }
 
-    Query *query(const QModelIndex &index) const;
+    search::Query *query(const QModelIndex &index) const;
 
-    Queries &m_queries;
+    search::Queries &m_queries;
 };
 
 class HitsListModel : public QAbstractTableModel {
     Q_OBJECT
 public:
-    explicit HitsListModel(Queries &queries,
+    explicit HitsListModel(search::Queries &queries,
                            QObject *parent = nullptr);
 
     int rowCount(const QModelIndex &) const override;
@@ -89,13 +91,13 @@ public:
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
     QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
 
-    void update(Queries &queries);
+    void update(search::Queries &queries);
     void clear() { m_hits.clear(); }
     void startUpdate() { beginResetModel(); }
     void endUpdate() { endResetModel(); }
     bool empty() const { return m_hits.empty(); }
 
-    BlastHits m_hits;
+    Hits m_hits;
 };
 
 class BlastSearchDialog : public QDialog {

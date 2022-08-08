@@ -25,52 +25,61 @@
 #include <QColor>
 #include <utility>
 
-enum QuerySequenceType {
-    NUCLEOTIDE,
-    PROTEIN
-};
+namespace search {
+    enum QuerySequenceType {
+        NUCLEOTIDE,
+        PROTEIN
+    };
 
-class Query {
-public:
-    //CREATORS
-    Query(QString name, QString sequence);
+    class Query {
+    public:
+        //CREATORS
+        Query(QString name, QString sequence);
 
-    //ACCESSORS
-    QString getName() const {return m_name;}
-    QString getSequence() const {return m_sequence;}
-    size_t getLength() const {return m_sequence.length();}
-    bool hasHits() const {return !m_hits.empty();}
-    size_t hitCount() const {return m_hits.size();}
-    const auto &getHits() const {return m_hits;}
-    bool wasSearchedFor() const {return m_searchedFor;}
-    QColor getColour() const {return m_colour;}
-    QuerySequenceType getSequenceType() const {return m_sequenceType;}
-    const auto &getPaths() const {return m_paths;}
-    size_t getPathCount() const {return m_paths.size();}
-    QString getTypeString() const;
-    double fractionCoveredByHits(const std::vector<const Hit*> &hitsToCheck = {}) const;
-    bool isShown() const {return m_shown;}
-    bool isHidden() const {return !m_shown;}
+        //ACCESSORS
+        QString getName() const { return m_name; }
+        QString getSequence() const { return m_sequence; }
+        size_t getLength() const { return m_sequence.length(); }
 
-    // MODIFIERS
-    void setName(QString newName) {m_name = std::move(newName);}
-    void addHit(Hit newHit) {m_hits.emplace_back(newHit);}
-    void clearSearchResults();
-    void setAsSearchedFor() {m_searchedFor = true;}
-    void findQueryPaths();
+        bool hasHits() const { return !m_hits.empty(); }
+        size_t hitCount() const { return m_hits.size(); }
+        const auto &getHits() const { return m_hits; }
 
-    void setColour(QColor newColour) {m_colour = newColour;}
-    void setShown(bool newShown) {m_shown = newShown;}
+        bool wasSearchedFor() const { return m_searchedFor; }
+        QColor getColour() const { return m_colour; }
+        QuerySequenceType getSequenceType() const { return m_sequenceType; }
 
-private:
-    QString m_name;
-    QString m_sequence;
-    std::vector<Hit> m_hits;
-    QuerySequenceType m_sequenceType;
-    bool m_searchedFor;
-    bool m_shown;
-    QColor m_colour;
-    std::vector<QueryPath> m_paths;
+        const auto &getPaths() const { return m_paths; }
+        size_t getPathCount() const { return m_paths.size(); }
 
-    void autoSetSequenceType();
-};
+        QString getTypeString() const;
+
+        double fractionCoveredByHits(const std::vector<const Hit *> &hitsToCheck = {}) const;
+
+        bool isShown() const { return m_shown; }
+        bool isHidden() const { return !m_shown; }
+
+        // MODIFIERS
+        void setName(QString newName) { m_name = std::move(newName); }
+        void addHit(Hit newHit) { m_hits.emplace_back(newHit); }
+
+        void clearSearchResults();
+        void setAsSearchedFor() { m_searchedFor = true; }
+
+        void findQueryPaths();
+
+        void setColour(QColor newColour) { m_colour = newColour; }
+        void setShown(bool newShown) { m_shown = newShown; }
+    private:
+        QString m_name;
+        QString m_sequence;
+        std::vector<Hit> m_hits;
+        QuerySequenceType m_sequenceType;
+        bool m_searchedFor;
+        bool m_shown;
+        QColor m_colour;
+        std::vector<QueryPath> m_paths;
+
+        void autoSetSequenceType();
+    };
+}

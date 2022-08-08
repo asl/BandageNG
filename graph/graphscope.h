@@ -23,7 +23,9 @@
 
 class DeBruijnNode;
 class AssemblyGraph;
-class Queries;
+namespace search {
+    class Queries;
+}
 
 enum GraphScope {
     WHOLE_GRAPH,
@@ -39,7 +41,7 @@ namespace graph {
         std::variant<
                 std::nullptr_t, // whole graph
                 QString, // path or node
-                std::pair<std::reference_wrapper<const Queries>, QString>, // hits
+                std::pair<std::reference_wrapper<const search::Queries>, QString>, // hits
                 std::pair<double, double> // depth
         > m_opt;
         unsigned m_distance;
@@ -56,12 +58,12 @@ namespace graph {
             return std::get<std::pair<double, double>>(m_opt).second;
         }
 
-        const Queries &queries() const {
-            return std::get<std::pair<std::reference_wrapper<const Queries>, QString>>(m_opt).first.get();
+        const search::Queries &queries() const {
+            return std::get<std::pair<std::reference_wrapper<const search::Queries>, QString>>(m_opt).first.get();
         };
 
         QString queryName() const {
-            return std::get<std::pair<std::reference_wrapper<const Queries>, QString>>(m_opt).second;
+            return std::get<std::pair<std::reference_wrapper<const search::Queries>, QString>>(m_opt).second;
         };
 
         QString nodeList() const {
@@ -102,7 +104,7 @@ namespace graph {
             return res;
         }
 
-        static Scope aroundHits(const Queries &queries, const QString& queryName,
+        static Scope aroundHits(const search::Queries &queries, const QString& queryName,
                                 unsigned distance = 0);
 
     private:
@@ -114,7 +116,7 @@ namespace graph {
     Scope scope(GraphScope graphScope,
                 const QString& nodesList,
                 double minDepthRange, double maxDepthRange,
-                const Queries &blastQueries, const QString& blastQueryName,
+                const search::Queries &blastQueries, const QString& blastQueryName,
                 const QString& pathName, unsigned distance = 0);
 
     std::vector<DeBruijnNode *>

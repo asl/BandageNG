@@ -1,23 +1,22 @@
-//Copyright 2017 Ryan Wick
+// Copyright 2017 Ryan Wick
+// Copyright 2022 Anton Korobeynikov
 
-//This file is part of Bandage.
+// This file is part of Bandage-NG
 
-//Bandage is free software: you can redistribute it and/or modify
-//it under the terms of the GNU General Public License as published by
-//the Free Software Foundation, either version 3 of the License, or
-//(at your option) any later version.
+// Bandage is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your m_option) any later version.
 
-//Bandage is distributed in the hope that it will be useful,
-//but WITHOUT ANY WARRANTY; without even the implied warranty of
-//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//GNU General Public License for more details.
+// Bandage is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
 
-//You should have received a copy of the GNU General Public License
-//along with Bandage.  If not, see <http://www.gnu.org/licenses/>.
+// You should have received a copy of the GNU General Public License
+// along with Bandage.  If not, see <http://www.gnu.org/licenses/>.
 
-
-#ifndef QUERYPATHSDIALOG_H
-#define QUERYPATHSDIALOG_H
+#pragma once
 
 #include "blast/blastquerypath.h"
 
@@ -26,7 +25,9 @@
 #include <QStyledItemDelegate>
 #include <QItemSelection>
 
-class Query;
+namespace search {
+    class Query;
+}
 
 namespace Ui {
 class QueryPathsDialog;
@@ -48,7 +49,7 @@ public:
 class QueryPathsModel : public QAbstractTableModel {
     Q_OBJECT
 public:
-    explicit QueryPathsModel(const Query *query,
+    explicit QueryPathsModel(const search::Query *query,
                              QObject *parent = nullptr);
 
     int rowCount(const QModelIndex &) const override;
@@ -57,7 +58,7 @@ public:
     QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
     Qt::ItemFlags flags(const QModelIndex &index) const override;
 
-    std::vector<QueryPath> m_queryPaths;
+    std::vector<search::QueryPath> m_queryPaths;
 };
 
 class QueryPathsDialog : public QDialog
@@ -65,7 +66,7 @@ class QueryPathsDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit QueryPathsDialog(Query *query, QWidget *parent = nullptr);
+    explicit QueryPathsDialog(search::Query *query, QWidget *parent = nullptr);
     ~QueryPathsDialog() override;
 
 private:
@@ -78,5 +79,3 @@ private slots:
 signals:
     void selectionChanged();
 };
-
-#endif // QUERYPATHSDIALOG_H

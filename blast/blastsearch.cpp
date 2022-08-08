@@ -33,6 +33,8 @@
 #include <cmath>
 #include <unordered_set>
 
+using namespace search;
+
 BlastSearch::BlastSearch(const QDir &workDir) :
     m_blastQueries(), m_tempDirectory(workDir.filePath("bandage_temp_XXXXXX")) {}
 
