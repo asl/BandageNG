@@ -19,7 +19,7 @@
 #ifndef RUNBLASTSEARCHWORKER_H
 #define RUNBLASTSEARCHWORKER_H
 
-#include "blastquery.h"
+#include "query.h"
 
 #include <QString>
 #include <QTemporaryDir>

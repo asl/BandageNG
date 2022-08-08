@@ -16,8 +16,8 @@
 //along with Bandage.  If not, see <http://www.gnu.org/licenses/>.
 
 
-#include "blasthit.h"
-#include "blastquery.h"
+#include "hit.h"
+#include "query.h"
 
 #include "graph/debruijnnode.h"
 #include "graph/sequenceutils.h"

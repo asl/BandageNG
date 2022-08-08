@@ -18,7 +18,7 @@
 
 #include "runblastsearchworker.h"
 
-#include "blastqueries.h"
+#include "queries.h"
 
 #include "graph/assemblygraph.h"
 

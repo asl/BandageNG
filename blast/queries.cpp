@@ -16,7 +16,7 @@
 //along with Bandage.  If not, see <http://www.gnu.org/licenses/>.
 
 
-#include "blastqueries.h"
+#include "queries.h"
 
 #include "program/globals.h"
 #include "program/settings.h"

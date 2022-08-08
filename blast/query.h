@@ -18,8 +18,8 @@
 
 #pragma once
 
-#include "blastquerypath.h"
-#include "blasthit.h"
+#include "querypath.h"
+#include "hit.h"
 
 #include <QString>
 #include <QColor>

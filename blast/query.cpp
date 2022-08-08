@@ -16,7 +16,7 @@
 //along with Bandage.  If not, see <http://www.gnu.org/licenses/>.
 
 
-#include "blastquery.h"
+#include "query.h"
 #include "program/settings.h"
 #include "graph/path.h"
 #include "graph/debruijnnode.h"

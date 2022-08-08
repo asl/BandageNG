@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include "blastquery.h"
+#include "query.h"
 #include <vector>
 
 namespace search {

@@ -21,8 +21,8 @@
 
 #include "enteroneblastquerydialog.h"
 
-#include "blast/blasthit.h"
-#include "blast/blastquery.h"
+#include "blast/hit.h"
+#include "blast/query.h"
 #include "blast/blastsearch.h"
 #include "blast/buildblastdatabaseworker.h"
 #include "blast/runblastsearchworker.h"

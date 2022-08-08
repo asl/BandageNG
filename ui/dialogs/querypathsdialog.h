@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include "blast/blastquerypath.h"
+#include "blast/querypath.h"
 
 #include <QDialog>
 #include <QAbstractTableModel>

@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include "blasthit.h"
+#include "hit.h"
 
 #include "graph/path.h"
 #include "program/scinot.h"
