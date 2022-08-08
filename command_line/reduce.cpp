@@ -21,7 +21,7 @@
 
 #include "graph/assemblygraph.h"
 #include "graph/gfawriter.h"
-#include "blast/blastsearch.h"
+#include "graphsearch/blast/blastsearch.h"
 
 #include "ui/bandagegraphicsscene.h"
 #include "ui/bandagegraphicsview.h"

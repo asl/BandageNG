@@ -30,7 +30,7 @@
 #include "ui/dialogs/graphinfodialog.h"
 #include "ui/dialogs/pathlistdialog.h"
 
-#include "blast/blastsearch.h"
+#include "graphsearch/blast/blastsearch.h"
 
 #include "graph/assemblygraph.h"
 #include "graph/debruijnnode.h"

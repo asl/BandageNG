@@ -21,7 +21,7 @@
 
 #include "graph/assemblygraph.h"
 
-#include "blast/blastsearch.h"
+#include "graphsearch/blast/blastsearch.h"
 
 #include "program/globals.h"
 #include "program/settings.h"

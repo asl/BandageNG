@@ -24,7 +24,6 @@
 #include "graphicsitemnode.h"
 #include "sequenceutils.h"
 
-#include "blast/blastsearch.h"
 #include "layout/graphlayoutworker.h"
 
 #include "program/memory.h"

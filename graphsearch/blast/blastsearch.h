@@ -19,7 +19,7 @@
 #ifndef BLASTSEARCH_H
 #define BLASTSEARCH_H
 
-#include "queries.h"
+#include "graphsearch/queries.h"
 
 #include <QDir>
 #include <QString>

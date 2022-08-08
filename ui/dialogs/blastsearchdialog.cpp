@@ -21,11 +21,11 @@
 
 #include "enteroneblastquerydialog.h"
 
-#include "blast/hit.h"
-#include "blast/query.h"
-#include "blast/blastsearch.h"
-#include "blast/buildblastdatabaseworker.h"
-#include "blast/runblastsearchworker.h"
+#include "graphsearch/hit.h"
+#include "graphsearch/query.h"
+#include "graphsearch/blast/blastsearch.h"
+#include "graphsearch/blast/buildblastdatabaseworker.h"
+#include "graphsearch/blast/runblastsearchworker.h"
 
 #include "graph/debruijnnode.h"
 #include "graph/assemblygraph.h"

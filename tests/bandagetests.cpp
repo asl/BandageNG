@@ -33,7 +33,7 @@
 #include "program/globals.h"
 #include "command_line/commoncommandlinefunctions.h"
 
-#include "blast/blastsearch.h"
+#include "graphsearch/blast/blastsearch.h"
 
 #include <QtTest/QtTest>
 #include <QDebug>

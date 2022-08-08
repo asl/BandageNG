@@ -17,8 +17,6 @@
 
 
 #include "graph/assemblygraph.h"
-#include "graph/debruijnnode.h"
-#include "graph/debruijnedge.h"
 
 #include "command_line/load.h"
 #include "command_line/info.h"
@@ -30,7 +28,7 @@
 #include "program/settings.h"
 #include "program/memory.h"
 #include "program/globals.h"
-#include "blast/blastsearch.h"
+#include "graphsearch/blast/blastsearch.h"
 
 #include "ui/mainwindow.h"
 #include "graph/annotationsmanager.h"
@@ -38,7 +36,6 @@
 
 #include <QApplication>
 #include <QString>
-#include <QCommandLineParser>
 #include <QTextStream>
 
 #ifndef Q_OS_WIN32

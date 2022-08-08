@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include "hit.h"
+#include "graphsearch/hit.h"
 
 #include "graph/path.h"
 #include "program/scinot.h"

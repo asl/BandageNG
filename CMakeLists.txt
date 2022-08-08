@@ -14,13 +14,13 @@ find_package(Qt6 REQUIRED COMPONENTS Widgets Svg Test Concurrent)
 find_package(ZLIB REQUIRED)
 
 set(LIB_SOURCES
-        blast/hit.cpp
-        blast/queries.cpp
-        blast/query.cpp
-        blast/querypath.cpp
-        blast/blastsearch.cpp
-        blast/buildblastdatabaseworker.cpp
-        blast/runblastsearchworker.cpp
+        graphsearch/hit.cpp
+        graphsearch/queries.cpp
+        graphsearch/query.cpp
+        graphsearch/querypath.cpp
+        graphsearch/blast/blastsearch.cpp
+        graphsearch/blast/buildblastdatabaseworker.cpp
+        graphsearch/blast/runblastsearchworker.cpp
         command_line/commoncommandlinefunctions.cpp
         command_line/image.cpp
         command_line/info.cpp

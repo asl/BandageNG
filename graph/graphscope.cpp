@@ -17,7 +17,7 @@
 
 #include "graphscope.h"
 
-#include "blast/queries.h"
+#include "graphsearch/queries.h"
 
 #include "program/settings.h"
 

@@ -18,14 +18,13 @@
 
 #include "commoncommandlinefunctions.h"
 
-#include <QApplication>
-#include <QRegularExpression>
 #include "graph/assemblygraph.h"
-#include "blast/blastsearch.h"
 #include "program/memory.h"
 
 #include <QDir>
 #include <utility>
+#include <QApplication>
+#include <QRegularExpression>
 
 
 QStringList getArgumentList(int argc, char *argv[])

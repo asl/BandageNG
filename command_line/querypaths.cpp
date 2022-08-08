@@ -18,10 +18,12 @@
 
 #include "querypaths.h"
 #include "commoncommandlinefunctions.h"
+
 #include "program/settings.h"
 #include "graph/assemblygraph.h"
 #include "graph/sequenceutils.h"
-#include "blast/blastsearch.h"
+
+#include "graphsearch/blast/blastsearch.h"
 #include <QDateTime>
 
 int bandageQueryPaths(QStringList arguments)

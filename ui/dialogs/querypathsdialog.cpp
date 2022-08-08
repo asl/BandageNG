@@ -19,7 +19,7 @@
 #include "querypathsdialog.h"
 #include "ui_querypathsdialog.h"
 
-#include "blast/query.h"
+#include "graphsearch/query.h"
 #include "program/globals.h"
 #include "program/memory.h"
 

@@ -19,7 +19,7 @@
 #pragma once
 
 #include "querypath.h"
-#include "hit.h"
+#include "graphsearch/hit.h"
 
 #include <QString>
 #include <QColor>
