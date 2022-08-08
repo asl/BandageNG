@@ -208,7 +208,7 @@ void BlastSearchDialog::afterWindowShow() {
 }
 
 void BlastSearchDialog::clearBlastHits() {
-    m_blastSearch->clearBlastHits();
+    m_blastSearch->clearHits();
     g_annotationsManager->removeGroupByName(g_settings->blastAnnotationGroupName);
     updateTables();
 }

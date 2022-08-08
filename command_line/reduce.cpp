@@ -72,15 +72,12 @@ int bandageReduce(QStringList arguments)
         outputFilename += ".gfa";
 
     QString error = checkForInvalidReduceOptions(arguments);
-    if (error.length() > 0)
-    {
+    if (!error.isEmpty()) {
         outputText("Bandage-NG error: " + error, &err);
         return 1;
     }
 
-    bool loadSuccess = g_assemblyGraph->loadGraphFromFile(inputFilename);
-    if (!loadSuccess)
-    {
+    if (!g_assemblyGraph->loadGraphFromFile(inputFilename)) {
         outputText("Bandage-NG error: could not load " + inputFilename, &err);
         return 1;
     }
@@ -93,10 +90,10 @@ int bandageReduce(QStringList arguments)
             return 1;
         }
 
-        QString blastError = g_blastSearch->doAutoBlastSearch();
-
-        if (blastError != "")
-        {
+        QString blastError = g_blastSearch->doAutoGraphSearch(*g_assemblyGraph,
+                                                              g_settings->blastQueryFilename,
+                                                              g_settings->blastSearchParameters);
+        if (!blastError.isEmpty()) {
             err << blastError << Qt::endl;
             return 1;
         }

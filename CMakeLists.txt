@@ -40,6 +40,7 @@ set(LIB_SOURCES
         program/memory.cpp
         program/scinot.cpp
         program/settings.cpp
+        program/colormap.cpp
         ui/dialogs/aboutdialog.cpp
         ui/annotationswidget.cpp
         ui/bedwidget.cpp
@@ -64,8 +65,13 @@ set(LIB_SOURCES
         ui/widgets/verticallabel.cpp
         ui/widgets/verticalscrollarea.cpp
         graph/nodecolorer.cpp
-        graph/sequenceutils.cpp 
-        graph/annotation.cpp)
+        graph/sequenceutils.cpp
+        graph/annotation.cpp
+        graph/gfawriter.cpp
+        graph/fastawriter.cpp
+        graph/io.cpp
+        graph/graphscope.cpp
+        graphsearch/graphsearch.cpp)
 
 set(FORMS
         ui/dialogs/aboutdialog.ui
@@ -99,11 +105,13 @@ target_link_libraries(BandageLayout PRIVATE OGDF Qt6::Concurrent Qt6::Gui Qt6::W
 add_library(BandageIo STATIC
         io/gfa.cpp
         io/bedloader.cpp
-        io/fileutils.cpp io/cigar.cpp io/gaf.cpp)
+        io/fileutils.cpp
+        io/cigar.cpp
+        io/gaf.cpp)
 target_link_libraries(BandageIo PRIVATE Qt6::Gui Qt6::Widgets foonathan::lexy)
 
 # FIXME: Untagle this
-add_library(BandageLib STATIC ${LIB_SOURCES} ${FORMS} program/colormap.cpp graph/gfawriter.cpp graph/gfawriter.h graph/fastawriter.cpp graph/io.cpp graph/graphscope.cpp)
+add_library(BandageLib STATIC ${LIB_SOURCES} ${FORMS})
 target_link_libraries(BandageLib PRIVATE BandageLayout BandageIo Qt6::Concurrent Qt6::Widgets Qt6::Svg ZLIB::ZLIB)
 target_include_directories(BandageLib INTERFACE ".")
 

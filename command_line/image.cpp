@@ -121,7 +121,9 @@ int bandageImage(QStringList arguments)
             return 1;
         }
 
-        QString blastError = g_blastSearch->doAutoBlastSearch();
+        QString blastError = g_blastSearch->doAutoGraphSearch(*g_assemblyGraph,
+                                                              g_settings->blastQueryFilename,
+                                                              g_settings->blastSearchParameters);
         if (!blastError.isEmpty()) {
             err << blastError << Qt::endl;
             return 1;

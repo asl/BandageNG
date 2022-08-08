@@ -35,103 +35,25 @@
 
 using namespace search;
 
-BlastSearch::BlastSearch(const QDir &workDir) :
-    m_blastQueries(), m_tempDirectory(workDir.filePath("bandage_temp_XXXXXX")) {}
-
-BlastSearch::~BlastSearch() {
-    clearBlastHits();
-    m_blastQueries.clearAllQueries();
-}
-
-void BlastSearch::clearBlastHits() {
-    m_blastQueries.clearSearchResults();
-}
-
-void BlastSearch::cleanUp() {
-    clearBlastHits();
-    m_blastQueries.clearAllQueries();
-    emptyTempDirectory();
-}
-
-#ifdef Q_OS_WIN32
-//On Windows, we use the WHERE command to find a program.
-bool BlastSearch::findProgram(const QString &programName, QString * command)
-{
-    QProcess find;
-    find.start("WHERE", QStringList(programName));
-    find.waitForFinished();
-    *command = programName;
-    return (find.exitCode() == 0);
-}
-
-#else
-//On Mac/Linux we use the which command to find a program.
-bool BlastSearch::findProgram(const QString &programName, QString * command)
-{
-    QProcess find;
-
-    //On Mac, it's necessary to adjust the PATH variable in order
-    //for which to work.
-#ifdef Q_OS_MAC
-    QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
-    QStringList envlist = env.toStringList();
-
-    //Add some paths to the process environment
-    envlist.replaceInStrings(QRegularExpression("^(?i)PATH=(.*)"), "PATH="
-                                                                   "/usr/bin:"
-                                                                   "/bin:"
-                                                                   "/usr/sbin:"
-                                                                   "/sbin:"
-                                                                   "/opt/local/bin:"
-                                                                   "/usr/local/bin:"
-                                                                   "/opt/homebrew/bin:"
-                                                                   "$HOME/bin:"
-                                                                   "$HOME/.local/bin:"
-                                                                   "$HOME/miniconda3/bin:"
-                                                                   "/usr/local/ncbi/blast/bin:"
-                                                                   "\\1");
-    find.setEnvironment(envlist);
-#endif
-
-    find.start("which", QStringList(programName));
-    find.waitForFinished();
-
-    //On a Mac, we need to use the full path to the program.
-#ifdef Q_OS_MAC
-    *command = QString(find.readAll()).simplified();
-#else
-    *command = programName;
-#endif
-
-    return (find.exitCode() == 0);
-}
-#endif
-
-
-void BlastSearch::emptyTempDirectory() const {
-    QDir tempDirectory(m_tempDirectory.path());
-    tempDirectory.setNameFilters(QStringList() << "*.*");
-    tempDirectory.setFilter(QDir::Files);
-    foreach(QString dirFile, tempDirectory.entryList())
-        tempDirectory.remove(dirFile);
-}
-
+BlastSearch::BlastSearch(const QDir &workDir)
+  : GraphSearch(workDir) {}
 
 //This function carries out the entire BLAST search procedure automatically, without user input.
 //It returns an error string which is empty if all goes well.
-QString BlastSearch::doAutoBlastSearch() {
+QString BlastSearch::doAutoGraphSearch(const AssemblyGraph &graph, QString queriesFilename,
+                                       QString extraParameters) {
     cleanUp();
 
     QString makeblastdbCommand;
     if (!findProgram("makeblastdb", &makeblastdbCommand))
         return "Error: The program makeblastdb was not found.  Please install NCBI BLAST to use this feature.";
 
-    BuildBlastDatabaseWorker buildBlastDatabaseWorker(makeblastdbCommand, *g_assemblyGraph,
-                                                      m_tempDirectory);
+    BuildBlastDatabaseWorker buildBlastDatabaseWorker(makeblastdbCommand, graph,
+                                                      temporaryDir());
     if (!buildBlastDatabaseWorker.buildBlastDatabase())
         return buildBlastDatabaseWorker.m_error;
 
-    loadBlastQueriesFromFastaFile(g_settings->blastQueryFilename);
+    loadBlastQueriesFromFastaFile(queriesFilename);
 
     QString blastnCommand;
     if (!findProgram("blastn", &blastnCommand))
@@ -140,8 +62,8 @@ QString BlastSearch::doAutoBlastSearch() {
     if (!findProgram("tblastn", &tblastnCommand))
         return "Error: The program tblastn was not found.  Please install NCBI BLAST to use this feature.";
 
-    RunBlastSearchWorker runBlastSearchWorker(blastnCommand, tblastnCommand, g_settings->blastSearchParameters, m_tempDirectory);
-    if (!runBlastSearchWorker.runBlastSearch(m_blastQueries))
+    RunBlastSearchWorker runBlastSearchWorker(blastnCommand, tblastnCommand, extraParameters, temporaryDir());
+    if (!runBlastSearchWorker.runBlastSearch(queries()))
         return runBlastSearchWorker.m_error;
 
     blastQueryChanged("all");
@@ -152,7 +74,7 @@ QString BlastSearch::doAutoBlastSearch() {
 
 //This function returns the number of queries loaded from the FASTA file.
 int BlastSearch::loadBlastQueriesFromFastaFile(QString fullFileName) {
-    int queriesBefore = int(m_blastQueries.getQueryCount());
+    int queriesBefore = int(getQueryCount());
 
     std::vector<QString> queryNames;
     std::vector<QByteArray> querySequences;
@@ -167,27 +89,11 @@ int BlastSearch::loadBlastQueriesFromFastaFile(QString fullFileName) {
         if (!queryNameParts.empty())
             queryName = cleanQueryName(queryNameParts[0]);
 
-        m_blastQueries.addQuery(new Query(queryName,
-                                          querySequences[i]));
+        addQuery(new Query(queryName, querySequences[i]));
     }
 
-    int queriesAfter = int(m_blastQueries.getQueryCount());
+    int queriesAfter = int(getQueryCount());
     return queriesAfter - queriesBefore;
-}
-
-
-QString BlastSearch::cleanQueryName(QString queryName) {
-    //Replace whitespace with underscores
-    queryName = queryName.replace(QRegularExpression("\\s"), "_");
-
-    //Remove any dots from the end of the query name.  BLAST doesn't
-    //include them in its results, so if we don't remove them, then
-    //we won't be able to find a match between the query name and
-    //the BLAST hit.
-    while (queryName.length() > 0 && queryName[queryName.size() - 1] == '.')
-        queryName = queryName.left(queryName.size() - 1);
-
-    return queryName;
 }
 
 void BlastSearch::blastQueryChanged(const QString &queryName) {
@@ -197,9 +103,9 @@ void BlastSearch::blastQueryChanged(const QString &queryName) {
 
     //If "all" is selected, then we'll display each of the BLAST queries
     if (queryName == "all")
-        queries = m_blastQueries.queries();
+        queries = this->queries().queries(); // FIXME: Ugly!
     //If only one query is selected, then just display that one.
-    else if (Query * query = m_blastQueries.getQueryFromName(queryName))
+    else if (Query * query = getQueryFromName(queryName))
         queries.push_back(query);
 
     //We now filter out any queries that have been hidden by the user.

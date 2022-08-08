@@ -15,53 +15,25 @@
 //You should have received a copy of the GNU General Public License
 //along with Bandage.  If not, see <http://www.gnu.org/licenses/>.
 
+#pragma once
 
-#ifndef BLASTSEARCH_H
-#define BLASTSEARCH_H
-
-#include "graphsearch/queries.h"
+#include "graphsearch/graphsearch.h"
 
 #include <QDir>
 #include <QString>
 #include <QTemporaryDir>
 
-//This is a class to hold all BLAST search related stuff.
-//An instance of it is made available to the whole program
-//as a global.
-class BlastSearch {
+// This is a class to hold all BLAST search related stuff.
+// An instance of it is made available to the whole program
+// as a global.
+class BlastSearch : public search::GraphSearch {
 public:
     explicit BlastSearch(const QDir &workDir = QDir::temp());
-    ~BlastSearch();
+    virtual ~BlastSearch() = default;
 
-    [[nodiscard]] const auto &queries() const { return m_blastQueries; }
-    auto &queries() { return m_blastQueries; }
-    [[nodiscard]] const auto &query(size_t idx) const { return m_blastQueries[idx]; }
-    auto &query(size_t idx) { return m_blastQueries[idx]; }
-    bool isQueryPresent(const search::Query *query) const { return m_blastQueries.isQueryPresent(query); }
-    size_t getQueryCount() const { return m_blastQueries.getQueryCount(); }
-    size_t getQueryCountWithAtLeastOnePath() const { return m_blastQueries.getQueryCountWithAtLeastOnePath(); }
-    size_t getQueryPathCount() const { return m_blastQueries.getQueryPathCount(); }
-    size_t getQueryCount(search::QuerySequenceType sequenceType) const { return m_blastQueries.getQueryCount(sequenceType); }
-
-    static bool findProgram(const QString& programName, QString * command);
     int loadBlastQueriesFromFastaFile(QString fullFileName);
-    static QString cleanQueryName(QString queryName);
     void blastQueryChanged(const QString& queryName);
-    void addQuery(search::Query *newQuery) { m_blastQueries.addQuery(newQuery); }
-    search::Query * getQueryFromName(QString queryName) const { return m_blastQueries.getQueryFromName(queryName); }
 
-    void clearBlastHits();
-    void cleanUp();
-
-    bool ready() const { return m_tempDirectory.isValid(); }
-    [[nodiscard]] const QTemporaryDir &temporaryDir() const { return m_tempDirectory; }
-
-    void emptyTempDirectory() const;
-    QString doAutoBlastSearch();
-
-private:
-    search::Queries m_blastQueries;
-    QTemporaryDir m_tempDirectory;
+    QString doAutoGraphSearch(const AssemblyGraph &graph, QString queriesFilename,
+                              QString extraParameters = "") override;
 };
-
-#endif // BLASTSEARCH_H
