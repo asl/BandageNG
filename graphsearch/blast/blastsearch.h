@@ -21,7 +21,6 @@
 
 #include <QDir>
 #include <QString>
-#include <QTemporaryDir>
 
 // This is a class to hold all BLAST search related stuff.
 // An instance of it is made available to the whole program
@@ -36,4 +35,9 @@ public:
 
     QString doAutoGraphSearch(const AssemblyGraph &graph, QString queriesFilename,
                               QString extraParameters = "") override;
+
+private:
+    bool findTools();
+
+    QString m_makeblastdbCommand, m_blastnCommand, m_tblastnCommand;
 };

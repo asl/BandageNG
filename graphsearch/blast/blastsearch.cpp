@@ -38,37 +38,47 @@ using namespace search;
 BlastSearch::BlastSearch(const QDir &workDir)
   : GraphSearch(workDir) {}
 
+bool BlastSearch::findTools() {
+    if (!findProgram("makeblastdb", &m_makeblastdbCommand)) {
+        m_lastError = "Error: The program makeblastdb was not found.  Please install NCBI BLAST to use this feature.";
+        return false;
+    }
+    if (!findProgram("blastn", &m_blastnCommand)) {
+        m_lastError = "Error: The program blastn was not found.  Please install NCBI BLAST to use this feature.";
+        return false;
+    }
+    if (!findProgram("tblastn", &m_tblastnCommand)) {
+        m_lastError = "Error: The program tblastn was not found.  Please install NCBI BLAST to use this feature.";
+        return false;
+    }
+
+    return true;
+}
+
 //This function carries out the entire BLAST search procedure automatically, without user input.
 //It returns an error string which is empty if all goes well.
 QString BlastSearch::doAutoGraphSearch(const AssemblyGraph &graph, QString queriesFilename,
                                        QString extraParameters) {
     cleanUp();
 
-    QString makeblastdbCommand, blastnCommand, tblastnCommand;
+    if (!findTools())
+        return m_lastError;
 
-    if (!findProgram("makeblastdb", &makeblastdbCommand))
-        return (m_lastError = "Error: The program makeblastdb was not found.  Please install NCBI BLAST to use this feature.");
-    if (!findProgram("blastn", &blastnCommand))
-        return (m_lastError = "Error: The program blastn was not found.  Please install NCBI BLAST to use this feature.");
-    if (!findProgram("tblastn", &tblastnCommand))
-        return (m_lastError = "Error: The program tblastn was not found.  Please install NCBI BLAST to use this feature.");
-
-    BuildBlastDatabaseWorker buildBlastDatabaseWorker(makeblastdbCommand, graph,
+    BuildBlastDatabaseWorker buildBlastDatabaseWorker(m_makeblastdbCommand, graph,
                                                       temporaryDir());
     if (!buildBlastDatabaseWorker.buildBlastDatabase())
-        return buildBlastDatabaseWorker.m_error;
+        return (m_lastError = buildBlastDatabaseWorker.m_error);
 
     loadBlastQueriesFromFastaFile(queriesFilename);
 
-    RunBlastSearchWorker runBlastSearchWorker(blastnCommand, tblastnCommand, extraParameters, temporaryDir());
+    RunBlastSearchWorker runBlastSearchWorker(m_blastnCommand, m_tblastnCommand, extraParameters, temporaryDir());
     if (!runBlastSearchWorker.runBlastSearch(queries()))
-        return runBlastSearchWorker.m_error;
+        return (m_lastError = runBlastSearchWorker.m_error);
 
     blastQueryChanged("all");
 
     return "";
 }
-
 
 //This function returns the number of queries loaded from the FASTA file.
 int BlastSearch::loadBlastQueriesFromFastaFile(QString fullFileName) {
