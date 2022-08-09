@@ -123,6 +123,7 @@ private:
     void buildDatabase(bool separateThread);
     void runGraphSearches(bool separateThread);
     void setFilterText();
+    void setUiCaptions();
 
 private slots:
     void afterWindowShow();
