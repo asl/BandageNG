@@ -1,25 +1,25 @@
-﻿//Copyright 2017 Ryan Wick
+﻿// Copyright 2017 Ryan Wick
+// Copyright 2022 Anton Korobeynikov
 
-//This file is part of Bandage
+//This file is part of Bandage-NG
 
-//Bandage is free software: you can redistribute it and/or modify
-//it under the terms of the GNU General Public License as published by
-//the Free Software Foundation, either version 3 of the License, or
-//(at your option) any later version.
+// Bandage is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 
-//Bandage is distributed in the hope that it will be useful,
-//but WITHOUT ANY WARRANTY; without even the implied warranty of
-//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//GNU General Public License for more details.
+// Bandage is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
 
-//You should have received a copy of the GNU General Public License
-//along with Bandage.  If not, see <http://www.gnu.org/licenses/>.
-
+// You should have received a copy of the GNU General Public License
+// along with Bandage.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "blastsearchdialog.h"
 #include "ui_blastsearchdialog.h"
 
-#include "enteroneblastquerydialog.h"
+#include "enteronequerydialog.h"
 
 #include "graphsearch/hit.h"
 #include "graphsearch/query.h"
@@ -295,7 +295,7 @@ void BlastSearchDialog::loadQueriesFromFile(const QString& fullFileName) {
 
 
 void BlastSearchDialog::enterQueryManually() {
-    EnterOneBlastQueryDialog enterOneBlastQueryDialog(this);
+    EnterOneQueryDialog enterOneBlastQueryDialog(this);
     if (!enterOneBlastQueryDialog.exec())
         return;
 

@@ -50,7 +50,7 @@ set(LIB_SOURCES
         ui/dialogs/changenodedepthdialog.cpp
         ui/dialogs/changenodenamedialog.cpp
         ui/widgets/colourbutton.cpp
-        ui/dialogs/enteroneblastquerydialog.cpp
+        ui/dialogs/enteronequerydialog.cpp
         ui/dialogs/pathlistdialog.cpp
         ui/graphicsviewzoom.cpp
         ui/dialogs/graphinfodialog.cpp
@@ -80,7 +80,7 @@ set(FORMS
         ui/dialogs/blastsearchdialog.ui
         ui/dialogs/changenodedepthdialog.ui
         ui/dialogs/changenodenamedialog.ui
-        ui/dialogs/enteroneblastquerydialog.ui
+        ui/dialogs/enteronequerydialog.ui
         ui/dialogs/graphinfodialog.ui
         ui/mainwindow.ui
         ui/dialogs/myprogressdialog.ui

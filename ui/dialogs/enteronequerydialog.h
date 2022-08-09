@@ -16,32 +16,29 @@
 //along with Bandage.  If not, see <http://www.gnu.org/licenses/>.
 
 
-#ifndef ENTERONEBLASTQUERYDIALOG_H
-#define ENTERONEBLASTQUERYDIALOG_H
+#pragma once
 
 #include <QDialog>
 #include <QString>
 
 namespace Ui {
-class EnterOneBlastQueryDialog;
+class EnterOneQueryDialog;
 }
 
-class EnterOneBlastQueryDialog : public QDialog
+class EnterOneQueryDialog : public QDialog
 {
     Q_OBJECT
 
 public:
-    explicit EnterOneBlastQueryDialog(QWidget *parent = nullptr);
-    ~EnterOneBlastQueryDialog() override;
+    explicit EnterOneQueryDialog(QWidget *parent = nullptr);
+    ~EnterOneQueryDialog() override;
 
     QString getName();
     QString getSequence();
 
 private:
-    Ui::EnterOneBlastQueryDialog *ui;
+    Ui::EnterOneQueryDialog *ui;
 
 private slots:
     void sequenceChanged();
 };
-
-#endif // ENTERONEBLASTQUERYDIALOG_H

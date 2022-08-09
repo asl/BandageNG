@@ -16,28 +16,28 @@
 //along with Bandage.  If not, see <http://www.gnu.org/licenses/>.
 
 
-#include "enteroneblastquerydialog.h"
-#include "ui_enteroneblastquerydialog.h"
+#include "enteronequerydialog.h"
+#include "ui_enteronequerydialog.h"
 #include "program/settings.h"
 #include "program/globals.h"
 #include <QDialogButtonBox>
 #include <QPushButton>
 
-EnterOneBlastQueryDialog::EnterOneBlastQueryDialog(QWidget *parent) :
+EnterOneQueryDialog::EnterOneQueryDialog(QWidget *parent) :
     QDialog(parent),
-    ui(new Ui::EnterOneBlastQueryDialog)
+    ui(new Ui::EnterOneQueryDialog)
 {
     ui->setupUi(this);
     ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
     connect(ui->sequenceTextEdit, SIGNAL(textChanged()), this, SLOT(sequenceChanged()));
 }
 
-EnterOneBlastQueryDialog::~EnterOneBlastQueryDialog()
+EnterOneQueryDialog::~EnterOneQueryDialog()
 {
     delete ui;
 }
 
-QString EnterOneBlastQueryDialog::getName()
+QString EnterOneQueryDialog::getName()
 {
     QString name = ui->nameLineEdit->text().simplified();
     if (name == "")
@@ -45,12 +45,12 @@ QString EnterOneBlastQueryDialog::getName()
     return name;
 }
 
-QString EnterOneBlastQueryDialog::getSequence()
+QString EnterOneQueryDialog::getSequence()
 {
     return ui->sequenceTextEdit->toPlainText().simplified().replace(" ", "");
 }
 
-void EnterOneBlastQueryDialog::sequenceChanged()
+void EnterOneQueryDialog::sequenceChanged()
 {
     bool someText = !ui->sequenceTextEdit->toPlainText().isEmpty();
     ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(someText);
