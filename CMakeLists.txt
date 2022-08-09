@@ -21,6 +21,7 @@ set(LIB_SOURCES
         graphsearch/blast/blastsearch.cpp
         graphsearch/blast/buildblastdatabaseworker.cpp
         graphsearch/blast/runblastsearchworker.cpp
+        graphsearch/minimap2/minimap2search.cpp
         command_line/commoncommandlinefunctions.cpp
         command_line/image.cpp
         command_line/info.cpp

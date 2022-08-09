@@ -171,7 +171,8 @@ void Query::findQueryPaths() {
             continue;
         if (g_settings->maxEValueProduct.on && blastQueryPath.getEvalueProduct() > g_settings->maxEValueProduct)
             continue;
-        if (g_settings->minMeanHitIdentity.on && blastQueryPath.getMeanHitPercIdentity() < 100.0 * g_settings->minMeanHitIdentity)
+        double idy = blastQueryPath.getMeanHitPercIdentity();
+        if (g_settings->minMeanHitIdentity.on && idy >= 0 && idy < 100.0 * g_settings->minMeanHitIdentity)
             continue;
         if (g_settings->minLengthPercentage.on && blastQueryPath.getRelativePathLength() < g_settings->minLengthPercentage)
             continue;

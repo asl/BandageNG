@@ -31,6 +31,7 @@
 #include "ui/dialogs/pathlistdialog.h"
 
 #include "graphsearch/blast/blastsearch.h"
+#include "graphsearch/minimap2/minimap2search.h"
 
 #include "graph/assemblygraph.h"
 #include "graph/debruijnnode.h"
@@ -84,7 +85,7 @@ MainWindow::MainWindow(QString fileToLoadOnStartup, bool drawGraphAfterLoad) :
     QMainWindow(nullptr),
     ui(new Ui::MainWindow), m_imageFilter("PNG (*.png)"),
     m_fileToLoadOnStartup(fileToLoadOnStartup), m_drawGraphAfterLoad(drawGraphAfterLoad),
-    m_uiState(NO_GRAPH_LOADED), m_blastSearchDialog(nullptr), m_alreadyShown(false)
+    m_uiState(NO_GRAPH_LOADED), m_blastSearchDialog(nullptr), m_graphSearch(g_blastSearch.get()), m_alreadyShown(false)
 {
     ui->setupUi(this);
 
@@ -93,8 +94,8 @@ MainWindow::MainWindow(QString fileToLoadOnStartup, bool drawGraphAfterLoad) :
 
     srand(time(nullptr));
 
-    if (!g_blastSearch->ready()) {
-        QMessageBox::warning(this, "Error", g_blastSearch->lastError());
+    if (!m_graphSearch->ready()) {
+        QMessageBox::warning(this, "Error", m_graphSearch->lastError());
         return;
     }
 
@@ -229,9 +230,9 @@ void MainWindow::afterMainWindowShow() {
                   << ", " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << std::endl;
     }
 
-    //If a BLAST query filename is present, do the BLAST search now automatically.
+    // If a BLAST query filename is present, do the BLAST search now automatically.
     if (!g_settings->blastQueryFilename.isEmpty()) {
-        BlastSearchDialog blastSearchDialog(g_blastSearch.get(), this, g_settings->blastQueryFilename);
+        BlastSearchDialog blastSearchDialog(m_graphSearch, this, g_settings->blastQueryFilename);
         setupBlastQueryComboBox();
     }
 
@@ -258,7 +259,7 @@ void MainWindow::cleanUp() {
     ui->blastQueryComboBox->clear();
     ui->blastQueryComboBox->addItem("none");
 
-    g_blastSearch->cleanUp();
+    m_graphSearch->cleanUp();
     g_assemblyGraph->cleanUp();
     setWindowTitle("Bandage-NG");
 
@@ -853,7 +854,7 @@ void MainWindow::drawGraph() {
     auto scope = graph::scope(g_settings->graphScope,
                               ui->startingNodesLineEdit->text(),
                               ui->minDepthSpinBox->value(), ui->maxDepthSpinBox->value(),
-                              g_blastSearch->queries(), ui->blastQueryComboBox->currentText(),
+                              m_graphSearch->queries(), ui->blastQueryComboBox->currentText(),
                               ui->pathSelectionLineEdit->displayText(),
                               ui->nodeDistanceSpinBox->value());
 
@@ -1700,7 +1701,7 @@ void MainWindow::openAboutDialog()
 void MainWindow::openBlastSearchDialog() {
     // If a BLAST search dialog does not currently exist, make it.
     if (!m_blastSearchDialog) {
-        m_blastSearchDialog = new BlastSearchDialog(g_blastSearch.get(), this);
+        m_blastSearchDialog = new BlastSearchDialog(m_graphSearch, this);
         connect(m_blastSearchDialog, SIGNAL(blastChanged()), this, SLOT(blastChanged()));
         connect(m_blastSearchDialog, SIGNAL(queryPathSelectionChanged()), g_graphicsView->viewport(), SLOT(update()));
     }
@@ -1713,7 +1714,7 @@ void MainWindow::openBlastSearchDialog() {
 //BlastSearchDialog that should be reflected here in MainWindow.
 void MainWindow::blastChanged() {
     QString blastQueryText = ui->blastQueryComboBox->currentText();
-    auto *queryBefore = g_blastSearch->queries().getQueryFromName(blastQueryText);
+    auto *queryBefore = m_graphSearch->queries().getQueryFromName(blastQueryText);
 
     // If we didn't find a currently selected query, but it isn't "none" or "all",
     // then maybe the user changed the name of the currently selected query, and
@@ -1723,8 +1724,8 @@ void MainWindow::blastChanged() {
         int blastQueryIndex = ui->blastQueryComboBox->currentIndex();
         if (ui->blastQueryComboBox->count() > 1)
             --blastQueryIndex;
-        if (blastQueryIndex < g_blastSearch->getQueryCount())
-            queryBefore = g_blastSearch->query(blastQueryIndex);
+        if (blastQueryIndex < m_graphSearch->getQueryCount())
+            queryBefore = m_graphSearch->query(blastQueryIndex);
     }
 
     //Rebuild the query combo box, in case the user changed the queries or
@@ -1734,7 +1735,7 @@ void MainWindow::blastChanged() {
     //Look to see if the query selected before is still present.  If so,
     //set the combo box to have that query selected.  If not (or if no
     //query was previously selected), leave the combo box a index 0.
-    if (queryBefore && g_blastSearch->isQueryPresent(queryBefore)) {
+    if (queryBefore && m_graphSearch->isQueryPresent(queryBefore)) {
         int indexOfQuery = ui->blastQueryComboBox->findText(queryBefore->getName());
         if (indexOfQuery != -1)
             ui->blastQueryComboBox->setCurrentIndex(indexOfQuery);
@@ -1746,7 +1747,7 @@ void MainWindow::blastChanged() {
 void MainWindow::setupBlastQueryComboBox() {
     ui->blastQueryComboBox->clear();
     QStringList comboBoxItems;
-    for (auto &query : g_blastSearch->queries()) {
+    for (auto &query : m_graphSearch->queries()) {
         if (query->hasHits())
             comboBoxItems.push_back(query->getName());
     }
@@ -1769,16 +1770,16 @@ void MainWindow::blastQueryChanged() {
     std::vector<search::Query *> shownQueries;
     // If "all" is selected, then we'll display each of the BLAST queries
     if (queryName == "all") {
-        for (auto *query : g_blastSearch->queries()) {
+        for (auto *query : m_graphSearch->queries()) {
             if (query->isShown())
                 shownQueries.push_back(query);
         }
-    }  else if (auto *query = g_blastSearch->getQueryFromName(queryName))
+    }  else if (auto *query = m_graphSearch->getQueryFromName(queryName))
         // If only one query is selected, then just display that one.
         if (query->isShown())
             shownQueries.push_back(query);
 
-    g_annotationsManager->updateGroupFromHits(g_blastSearch->annotationGroupName(), shownQueries);
+    g_annotationsManager->updateGroupFromHits(m_graphSearch->annotationGroupName(), shownQueries);
     g_graphicsView->viewport()->update();
 }
 
@@ -2437,7 +2438,7 @@ void MainWindow::mergeAllPossible()
 
 void MainWindow::cleanUpAllBlast()
 {
-    g_blastSearch->cleanUp();
+    m_graphSearch->cleanUp();
     g_annotationsManager->removeGroupByName(g_settings->blastAnnotationGroupName);
     ui->blastQueryComboBox->clear();
 

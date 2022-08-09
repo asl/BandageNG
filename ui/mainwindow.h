@@ -42,7 +42,9 @@ class BandageGraphicsScene;
 class DeBruijnNode;
 class DeBruijnEdge;
 class BlastSearchDialog;
-
+namespace search {
+    class GraphSearch;
+}
 enum UiState {NO_GRAPH_LOADED, GRAPH_LOADED, GRAPH_DRAWN};
 
 namespace Ui {
@@ -68,6 +70,8 @@ private:
     bool m_drawGraphAfterLoad;
     UiState m_uiState;
     BlastSearchDialog * m_blastSearchDialog;
+    search::GraphSearch *m_graphSearch;
+
     bool m_alreadyShown;
 
     void cleanUp();

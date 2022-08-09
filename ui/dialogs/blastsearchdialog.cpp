@@ -808,14 +808,20 @@ QVariant HitsListModel::data(const QModelIndex &index, int role) const {
         case HitsColumns::NodeName:
             return hit.m_node->getName();
         case HitsColumns::PercentIdentity:
-            return formatDoubleForDisplay(hit.m_percentIdentity, 2) + "%";
+            if (hit.m_percentIdentity > 0)
+                return formatDoubleForDisplay(hit.m_percentIdentity, 2) + "%";
+            return "N/A";
         case HitsColumns::AlignmentLength:
             return hit.m_alignmentLength;
         case HitsColumns::QueryCover:
             return formatDoubleForDisplay(100.0 * hit.getQueryCoverageFraction(), 2) + "%";
         case HitsColumns::Mismatches:
+            if (hit.m_numberMismatches < 0)
+                return "N/A";
             return hit.m_numberMismatches;
         case HitsColumns::GapOpens:
+            if (hit.m_numberGapOpens < 0)
+                return "N/A";
             return hit.m_numberGapOpens;
         case HitsColumns::QueryStart:
             return hit.m_queryStart;

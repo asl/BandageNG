@@ -177,12 +177,25 @@ QVariant QueryPathsModel::data(const QModelIndex &index, int role) const {
             return formatDoubleForDisplay(100.0 * queryPath.getPathQueryCoverage(), 2) + "%";
         case QueryPathsColumns::QueryCoverageHits:
             return formatDoubleForDisplay(100.0 * queryPath.getHitsQueryCoverage(), 2) + "%";
-        case QueryPathsColumns::PercIdentity:
-            return formatDoubleForDisplay(queryPath.getMeanHitPercIdentity(), 2) + "%";
-        case QueryPathsColumns::Mismatches:
-            return queryPath.getTotalHitMismatches();
-        case QueryPathsColumns::GapOpens:
-            return queryPath.getTotalHitGapOpens();
+        case QueryPathsColumns::PercIdentity: {
+            double idy = queryPath.getMeanHitPercIdentity();
+            if (idy < 0)
+                return "N/A";
+            return formatDoubleForDisplay(idy, 2) + "%";
+        }
+        case QueryPathsColumns::Mismatches: {
+            int mismatches = queryPath.getTotalHitMismatches();
+            if (mismatches < 0)
+                return "N/A";
+            return mismatches;
+        }
+        case QueryPathsColumns::GapOpens: {
+            int gaps = queryPath.getTotalHitGapOpens();
+            if (gaps < 0)
+                return "N/A";
+
+            return gaps;
+        }
         case QueryPathsColumns::RelativeLength:
             return formatDoubleForDisplay(100.0 * queryPath.getRelativePathLength(), 2) + "%";
         case QueryPathsColumns::LengthDisc:
