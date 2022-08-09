@@ -142,7 +142,7 @@ private slots:
     void openFiltersDialog();
 
 signals:
-    void blastChanged();
+    void changed();
     void queryPathSelectionChanged();
 };
 

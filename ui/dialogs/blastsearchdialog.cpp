@@ -119,7 +119,7 @@ BlastSearchDialog::BlastSearchDialog(search::GraphSearch *graphSearch,
         loadQueriesFromFile(autoQuery);
         runGraphSearches(false);
         QMetaObject::invokeMethod(this, "close", Qt::QueuedConnection);
-        emit blastChanged();
+        emit changed();
         return;
     }
 
@@ -186,7 +186,7 @@ BlastSearchDialog::BlastSearchDialog(search::GraphSearch *graphSearch,
 
     connect(m_queriesListModel, &QueriesListModel::dataChanged,
             [this]() {
-                emit blastChanged();
+                emit changed();
             });
 
     // This is weird: we need to propagate data changes to proxies
@@ -318,7 +318,7 @@ void BlastSearchDialog::clearAllQueries() {
     updateTables();
 
     setUiStep(GRAPH_DB_BUILT_BUT_NO_QUERIES);
-    emit blastChanged();
+    emit changed();
 }
 
 void BlastSearchDialog::clearSelectedQueries() {
@@ -338,7 +338,7 @@ void BlastSearchDialog::clearSelectedQueries() {
 
     updateTables();
 
-    emit blastChanged();
+    emit changed();
 }
 
 void BlastSearchDialog::runGraphSearchesInThread() {
@@ -379,7 +379,7 @@ void BlastSearchDialog::graphSearchFinished(const QString& error) {
         setUiStep(GRAPH_SEARCH_COMPLETE);
     }
 
-    emit blastChanged();
+    emit changed();
 }
 
 void BlastSearchDialog::setUiStep(BlastUiState blastUiState) {
