@@ -27,8 +27,8 @@ namespace search {
     class Query;
     class Queries;
     class Hit;
+    class GraphSearch;
 }
-class BlastSearch;
 
 using Hits = std::vector<search::Hit>;
 
@@ -105,14 +105,14 @@ public:
 class BlastSearchDialog : public QDialog {
     Q_OBJECT
 public:
-    explicit BlastSearchDialog(BlastSearch *blastSearch,
+    explicit BlastSearchDialog(search::GraphSearch *graphSearch,
                                QWidget *parent = nullptr, const QString& autoQuery = "");
     ~BlastSearchDialog() override;
 
 private:
     Ui::BlastSearchDialog *ui;
 
-    BlastSearch *m_blastSearch;
+    search::GraphSearch *m_graphSearch;
     QueriesListModel *m_queriesListModel;
     HitsListModel *m_hitsListModel;
 

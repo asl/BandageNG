@@ -23,7 +23,7 @@
 
 #include "graphsearch/hit.h"
 #include "graphsearch/query.h"
-#include "graphsearch/blast/blastsearch.h"
+#include "graphsearch/graphsearch.h"
 
 #include "graph/debruijnnode.h"
 #include "graph/assemblygraph.h"
@@ -79,14 +79,14 @@ enum class HitsColumns : unsigned {
     TotalHitColumns = BitScore + 1
 };
 
-BlastSearchDialog::BlastSearchDialog(BlastSearch *blastSearch,
+BlastSearchDialog::BlastSearchDialog(search::GraphSearch *graphSearch,
                                      QWidget *parent, const QString& autoQuery)
- : QDialog(parent), ui(new Ui::BlastSearchDialog), m_blastSearch(blastSearch) {
+ : QDialog(parent), ui(new Ui::BlastSearchDialog), m_graphSearch(graphSearch) {
     ui->setupUi(this);
 
     setWindowFlags(windowFlags() | Qt::Tool);
 
-    m_queriesListModel = new QueriesListModel(m_blastSearch->queries(),
+    m_queriesListModel = new QueriesListModel(m_graphSearch->queries(),
                                               ui->blastQueriesTable);
     auto *proxyQModel = new QSortFilterProxyModel(ui->blastQueriesTable);
     proxyQModel->setSourceModel(m_queriesListModel);
@@ -99,7 +99,7 @@ BlastSearchDialog::BlastSearchDialog(BlastSearch *blastSearch,
     connect(queryPathsDelegate, &PathButtonDelegate::queryPathSelectionChanged,
             [this] { emit queryPathSelectionChanged(); });
 
-    m_hitsListModel = new HitsListModel(m_blastSearch->queries(), ui->blastHitsTable);
+    m_hitsListModel = new HitsListModel(m_graphSearch->queries(), ui->blastHitsTable);
     auto *proxyHModel = new QSortFilterProxyModel(ui->blastHitsTable);
     proxyHModel->setSourceModel(m_hitsListModel);
     ui->blastHitsTable->setModel(proxyHModel);
@@ -123,18 +123,18 @@ BlastSearchDialog::BlastSearchDialog(BlastSearch *blastSearch,
     }
 
     // If a BLAST database already exists, move to step 2.
-    QFile databaseFile = m_blastSearch->temporaryDir().filePath("all_nodes.fasta");
+    QFile databaseFile = m_graphSearch->temporaryDir().filePath("all_nodes.fasta");
     if (databaseFile.exists())
         setUiStep(GRAPH_DB_BUILT_BUT_NO_QUERIES);
     //If there isn't a BLAST database, clear the entire temporary directory
     //and move to step 1.
     else {
-        m_blastSearch->emptyTempDirectory();
+        m_graphSearch->emptyTempDirectory();
         setUiStep(GRAPH_DB_NOT_YET_BUILT);
     }
 
     // If queries already exist, display them and move to step 3.
-    if (!m_blastSearch->queries().empty()) {
+    if (!m_graphSearch->queries().empty()) {
         updateTables();
         setUiStep(READY_FOR_GRAPH_SEARCH);
     }
@@ -207,7 +207,7 @@ void BlastSearchDialog::afterWindowShow() {
 }
 
 void BlastSearchDialog::clearHits() {
-    m_blastSearch->clearHits();
+    m_graphSearch->clearHits();
     g_annotationsManager->removeGroupByName(g_settings->blastAnnotationGroupName);
     updateTables();
 }
@@ -216,12 +216,12 @@ void BlastSearchDialog::fillTablesAfterGraphSearch() {
     updateTables();
 
     if (m_hitsListModel->empty())
-        QMessageBox::information(this, "No hits", "No " + m_blastSearch->name() + " hits were found for the given queries and parameters.");
+        QMessageBox::information(this, "No hits", "No " + m_graphSearch->name() + " hits were found for the given queries and parameters.");
 }
 
 void BlastSearchDialog::updateTables() {
     m_queriesListModel->update();
-    m_hitsListModel->update(m_blastSearch->queries());
+    m_hitsListModel->update(m_graphSearch->queries());
     ui->blastQueriesTable->resizeColumnsToContents();
     ui->blastHitsTable->resizeColumnsToContents();
 }
@@ -233,19 +233,19 @@ void BlastSearchDialog::buildGraphDatabaseInThread() {
 void BlastSearchDialog::buildDatabase(bool separateThread) {
     setUiStep(GRAPH_DB_BUILD_IN_PROGRESS);
 
-    auto * progress = new MyProgressDialog(this, "Running " + m_blastSearch->name() + " database...",
+    auto * progress = new MyProgressDialog(this, "Running " + m_graphSearch->name() + " database...",
                                            separateThread,
                                            "Cancel build",
                                            "Cancelling build...",
-                                           "Clicking this button will stop the " + m_blastSearch->name() +" database from being built.");
+                                           "Clicking this button will stop the " + m_graphSearch->name() + " database from being built.");
     progress->setWindowModality(Qt::WindowModal);
     progress->show();
 
-    connect(m_blastSearch, SIGNAL(finishedDbBuild(QString)), progress, SLOT(deleteLater()));
-    connect(m_blastSearch, SIGNAL(finishedDbBuild(QString)), this, SLOT(graphDatabaseBuildFinished(QString)));
-    connect(progress, SIGNAL(halt()), m_blastSearch, SLOT(cancelDatabaseBuild()));
+    connect(m_graphSearch, SIGNAL(finishedDbBuild(QString)), progress, SLOT(deleteLater()));
+    connect(m_graphSearch, SIGNAL(finishedDbBuild(QString)), this, SLOT(graphDatabaseBuildFinished(QString)));
+    connect(progress, SIGNAL(halt()), m_graphSearch, SLOT(cancelDatabaseBuild()));
 
-    auto builder = [this]() { m_blastSearch->buildDatabase(*g_assemblyGraph); };
+    auto builder = [this]() { m_graphSearch->buildDatabase(*g_assemblyGraph); };
     if (separateThread) {
         QFuture<void> res = QtConcurrent::run(builder);
     } else
@@ -276,7 +276,7 @@ void BlastSearchDialog::loadQueriesFromFile(const QString& fullFileName) {
     progress->setWindowModality(Qt::WindowModal);
     progress->show();
 
-    int queriesLoaded = m_blastSearch->loadQueriesFromFile(fullFileName);
+    int queriesLoaded = m_graphSearch->loadQueriesFromFile(fullFileName);
     if (queriesLoaded > 0) {
         clearHits();
 
@@ -290,7 +290,7 @@ void BlastSearchDialog::loadQueriesFromFile(const QString& fullFileName) {
 
     if (queriesLoaded == 0)
         QMessageBox::information(this, "No queries loaded",
-                                 "No queries could be loaded from the specified file: " + m_blastSearch->lastError());
+                                 "No queries could be loaded from the specified file: " + m_graphSearch->lastError());
 }
 
 
@@ -299,9 +299,9 @@ void BlastSearchDialog::enterQueryManually() {
     if (!enterOneBlastQueryDialog.exec())
         return;
 
-    QString queryName = BlastSearch::cleanQueryName(enterOneBlastQueryDialog.getName());
-    m_blastSearch->addQuery(new search::Query(queryName,
-                                      enterOneBlastQueryDialog.getSequence()));
+    QString queryName = GraphSearch::cleanQueryName(enterOneBlastQueryDialog.getName());
+    m_graphSearch->addQuery(new search::Query(queryName,
+                                              enterOneBlastQueryDialog.getSequence()));
     updateTables();
     clearHits();
 
@@ -349,19 +349,19 @@ void BlastSearchDialog::runGraphSearches(bool separateThread) {
 
     clearHits();
 
-    auto * progress = new MyProgressDialog(this, "Running " + m_blastSearch->name() + " search...",
+    auto * progress = new MyProgressDialog(this, "Running " + m_graphSearch->name() + " search...",
                                            separateThread,
                                            "Cancel search",
                                            "Cancelling search...",
-                                           "Clicking this button will stop the " + m_blastSearch->name() +" search.");
+                                           "Clicking this button will stop the " + m_graphSearch->name() + " search.");
     progress->setWindowModality(Qt::WindowModal);
     progress->show();
 
-    connect(m_blastSearch, SIGNAL(finishedSearch(QString)), progress, SLOT(deleteLater()));
-    connect(m_blastSearch, SIGNAL(finishedSearch(QString)), this, SLOT(graphSearchFinished(QString)));
-    connect(progress, SIGNAL(halt()), m_blastSearch, SLOT(cancelSearch()));
+    connect(m_graphSearch, SIGNAL(finishedSearch(QString)), progress, SLOT(deleteLater()));
+    connect(m_graphSearch, SIGNAL(finishedSearch(QString)), this, SLOT(graphSearchFinished(QString)));
+    connect(progress, SIGNAL(halt()), m_graphSearch, SLOT(cancelSearch()));
 
-    auto searcher = [&]() { m_blastSearch->doSearch(ui->parametersLineEdit->text().simplified()); };
+    auto searcher = [&]() { m_graphSearch->doSearch(ui->parametersLineEdit->text().simplified()); };
     if (separateThread) {
         QFuture<void> res = QtConcurrent::run(searcher);
     } else

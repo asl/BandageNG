@@ -1,0 +1,8 @@
+//
+// Created by Anton Korobeynikov on 09.08.2022.
+//
+
+#ifndef BANDAGENG_MINIMAP2SEARCH_H
+#define BANDAGENG_MINIMAP2SEARCH_H
+
+#endif //BANDAGENG_MINIMAP2SEARCH_H
