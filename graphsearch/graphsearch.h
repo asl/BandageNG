@@ -51,12 +51,13 @@ public:
 
     bool ready() const { return m_tempDirectory.isValid(); }
     [[nodiscard]] const QTemporaryDir &temporaryDir() const { return m_tempDirectory; }
+    QString lastError() const { return m_lastError; }
 
     void emptyTempDirectory() const;
 
     virtual QString doAutoGraphSearch(const AssemblyGraph &graph, QString queriesFilename,
                                       QString extraParameters = "") = 0;
-    QString lastError() const { return m_lastError; }
+    virtual QString name() const = 0;
 
 protected:
     QString m_lastError;

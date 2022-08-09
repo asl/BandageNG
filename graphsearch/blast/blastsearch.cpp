@@ -28,7 +28,6 @@
 
 #include <QDir>
 #include <QRegularExpression>
-#include <QApplication>
 #include <QProcess>
 #include <cmath>
 #include <unordered_set>
@@ -89,8 +88,6 @@ int BlastSearch::loadBlastQueriesFromFastaFile(QString fullFileName) {
     utils::readFastxFile(fullFileName, queryNames, querySequences);
 
     for (size_t i = 0; i < queryNames.size(); ++i) {
-        QApplication::processEvents();
-
         //We only use the part of the query name up to the first space.
         QStringList queryNameParts = queryNames[i].split(" ");
         QString queryName;

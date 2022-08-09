@@ -36,6 +36,7 @@ public:
     QString doAutoGraphSearch(const AssemblyGraph &graph, QString queriesFilename,
                               QString extraParameters = "") override;
 
+    QString name() const override { return "BLAST"; }
 private:
     bool findTools();
 
