@@ -35,17 +35,16 @@ public:
     explicit BlastSearch(const QDir &workDir = QDir::temp());
     virtual ~BlastSearch() = default;
 
-    int loadQueriesFromFile(QString fullFileName);
-    void blastQueryChanged(const QString& queryName);
 
     QString doAutoGraphSearch(const AssemblyGraph &graph, QString queriesFilename,
                               QString extraParameters = "") override;
-
-    QString buildDatabase(const AssemblyGraph &graph);
-    QString doSearch(QString extraParameters);
-    QString doSearch(search::Queries &queries, QString extraParameters);
+    int loadQueriesFromFile(QString fullFileName) override;
+    QString buildDatabase(const AssemblyGraph &graph) override;
+    QString doSearch(QString extraParameters) override;
+    QString doSearch(search::Queries &queries, QString extraParameters) override;
 
     QString name() const override { return "BLAST"; }
+    QString annotationGroupName() const override;
 
 public slots:
     void cancelDatabaseBuild();

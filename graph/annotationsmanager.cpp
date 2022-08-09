@@ -18,6 +18,7 @@
 
 #include "annotationsmanager.h"
 
+#include "graphsearch/query.h"
 #include "program/settings.h"
 
 AnnotationGroup &AnnotationsManager::createAnnotationGroup(QString name) {
@@ -65,4 +66,25 @@ const AnnotationGroup &AnnotationsManager::findGroupById(AnnotationGroupId id) c
             [id](const std::unique_ptr<AnnotationGroup> &group) {
                 return group->id == id;
             });
+}
+
+void AnnotationsManager::updateGroupFromHits(const QString &name, const std::vector<search::Query *> &queries) {
+    removeGroupByName(name);
+
+    if (queries.empty())
+        return;
+
+    auto &group = createAnnotationGroup(name);
+    for (auto *query: queries) {
+        for (const auto &hit: query->getHits()) {
+            auto &annotation = group.annotationMap[hit.m_node].emplace_back(
+                    std::make_unique<Annotation>(
+                            hit.m_nodeStart,
+                            hit.m_nodeEnd,
+                            query->getName().toStdString()));
+            annotation->addView(std::make_unique<SolidView>(1.0, query->getColour()));
+            annotation->addView(std::make_unique<RainbowBlastHitView>(hit.queryStartFraction(),
+                                                                      hit.queryEndFraction()));
+        }
+    }
 }

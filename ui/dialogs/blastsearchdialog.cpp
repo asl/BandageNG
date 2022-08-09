@@ -118,6 +118,7 @@ BlastSearchDialog::BlastSearchDialog(BlastSearch *blastSearch,
         loadQueriesFromFile(autoQuery);
         runGraphSearches(false);
         QMetaObject::invokeMethod(this, "close", Qt::QueuedConnection);
+        emit blastChanged();
         return;
     }
 

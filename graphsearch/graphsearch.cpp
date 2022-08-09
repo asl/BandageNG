@@ -16,6 +16,8 @@
 // along with Bandage.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "graphsearch.h"
+#include "graph/annotationsmanager.h"
+#include "program/globals.h"
 
 #include <QDir>
 #include <QRegularExpression>

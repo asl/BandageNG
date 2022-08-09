@@ -260,7 +260,7 @@ void MainWindow::cleanUp() {
 
     g_blastSearch->cleanUp();
     g_assemblyGraph->cleanUp();
-    setWindowTitle("Bandage");
+    setWindowTitle("Bandage-NG");
 
     g_memory->userSpecifiedPath = Path();
     g_memory->userSpecifiedPathString = "";
@@ -1711,20 +1711,19 @@ void MainWindow::openBlastSearchDialog() {
 
 //This function is called whenever the user does something in the
 //BlastSearchDialog that should be reflected here in MainWindow.
-void MainWindow::blastChanged()
-{
+void MainWindow::blastChanged() {
     QString blastQueryText = ui->blastQueryComboBox->currentText();
-    search::Query * queryBefore = g_blastSearch->queries().getQueryFromName(blastQueryText);
+    auto *queryBefore = g_blastSearch->queries().getQueryFromName(blastQueryText);
 
-    //If we didn't find a currently selected query, but it isn't "none" or "all",
-    //then maybe the user changed the name of the currently selected query, and
-    //that's why we didn't find it.  In that case, try to find it using the
-    //index.
+    // If we didn't find a currently selected query, but it isn't "none" or "all",
+    // then maybe the user changed the name of the currently selected query, and
+    // that's why we didn't find it.  In that case, try to find it using the
+    // index.
     if (queryBefore == nullptr && blastQueryText != "none" && blastQueryText != "all") {
         int blastQueryIndex = ui->blastQueryComboBox->currentIndex();
         if (ui->blastQueryComboBox->count() > 1)
             --blastQueryIndex;
-        if (blastQueryIndex < g_blastSearch->queries().getQueryCount())
+        if (blastQueryIndex < g_blastSearch->getQueryCount())
             queryBefore = g_blastSearch->query(blastQueryIndex);
     }
 
@@ -1741,10 +1740,8 @@ void MainWindow::blastChanged()
             ui->blastQueryComboBox->setCurrentIndex(indexOfQuery);
     }
 
-    g_blastSearch->blastQueryChanged(ui->blastQueryComboBox->currentText());
-    g_graphicsView->viewport()->update();
+    blastQueryChanged();
 }
-
 
 void MainWindow::setupBlastQueryComboBox() {
     ui->blastQueryComboBox->clear();
@@ -1767,7 +1764,21 @@ void MainWindow::setupBlastQueryComboBox() {
 }
 
 void MainWindow::blastQueryChanged() {
-    g_blastSearch->blastQueryChanged(ui->blastQueryComboBox->currentText());
+    QString queryName = ui->blastQueryComboBox->currentText();
+
+    std::vector<search::Query *> shownQueries;
+    // If "all" is selected, then we'll display each of the BLAST queries
+    if (queryName == "all") {
+        for (auto *query : g_blastSearch->queries()) {
+            if (query->isShown())
+                shownQueries.push_back(query);
+        }
+    }  else if (auto *query = g_blastSearch->getQueryFromName(queryName))
+        // If only one query is selected, then just display that one.
+        if (query->isShown())
+            shownQueries.push_back(query);
+
+    g_annotationsManager->updateGroupFromHits(g_blastSearch->annotationGroupName(), shownQueries);
     g_graphicsView->viewport()->update();
 }
 

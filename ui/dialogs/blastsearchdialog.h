@@ -36,10 +36,12 @@ namespace Ui {
 class BlastSearchDialog;
 }
 
-enum BlastUiState {GRAPH_DB_NOT_YET_BUILT, GRAPH_DB_BUILD_IN_PROGRESS,
+enum BlastUiState {
+    GRAPH_DB_NOT_YET_BUILT, GRAPH_DB_BUILD_IN_PROGRESS,
     GRAPH_DB_BUILT_BUT_NO_QUERIES,
     READY_FOR_GRAPH_SEARCH, GRAPH_SEARCH_IN_PROGRESS,
-    GRAPH_SEARCH_COMPLETE};
+    GRAPH_SEARCH_COMPLETE
+};
 
 class PathButtonDelegate : public QStyledItemDelegate {
     Q_OBJECT

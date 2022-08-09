@@ -23,7 +23,6 @@
 #include "program/settings.h"
 
 #include "graph/assemblygraph.h"
-#include "graph/annotationsmanager.h"
 #include "io/fileutils.h"
 
 #include <QDir>
@@ -112,8 +111,6 @@ QString BlastSearch::doAutoGraphSearch(const AssemblyGraph &graph, QString queri
     if (!maybeError.isEmpty())
         return maybeError;
 
-    blastQueryChanged("all");
-
     return "";
 }
 
@@ -143,44 +140,6 @@ int BlastSearch::loadQueriesFromFile(QString fullFileName) {
     return queriesAfter - queriesBefore;
 }
 
-void BlastSearch::blastQueryChanged(const QString &queryName) {
-    g_annotationsManager->removeGroupByName(g_settings->blastAnnotationGroupName);
-
-    std::vector<Query *> queries;
-
-    //If "all" is selected, then we'll display each of the BLAST queries
-    if (queryName == "all")
-        queries = this->queries().queries(); // FIXME: Ugly!
-    //If only one query is selected, then just display that one.
-    else if (Query * query = getQueryFromName(queryName))
-        queries.push_back(query);
-
-    //We now filter out any queries that have been hidden by the user.
-    std::vector<Query *> shownQueries;
-    for (auto *query : queries) {
-        if (query->isShown())
-            shownQueries.push_back(query);
-    }
-
-    //Add the blast hit pointers to nodes that have a hit for
-    //the selected target(s).
-    if (!shownQueries.empty()) {
-        auto &group = g_annotationsManager->createAnnotationGroup(g_settings->blastAnnotationGroupName);
-        for (auto query: shownQueries) {
-            for (auto &hit: query->getHits()) {
-                auto &annotation = group.annotationMap[hit.m_node].emplace_back(
-                        std::make_unique<Annotation>(
-                                hit.m_nodeStart,
-                                hit.m_nodeEnd,
-                                query->getName().toStdString()));
-                annotation->addView(std::make_unique<SolidView>(1.0, query->getColour()));
-                annotation->addView(std::make_unique<RainbowBlastHitView>(hit.queryStartFraction(),
-                                                                          hit.queryEndFraction()));
-            }
-        }
-    }
-}
-
 void BlastSearch::cancelDatabaseBuild() {
     if (!m_buildDbWorker)
         return;
@@ -193,4 +152,8 @@ void BlastSearch::cancelSearch() {
         return;
 
     emit m_runSearchWorker->cancel();
+}
+
+QString BlastSearch::annotationGroupName() const {
+    return g_settings->blastAnnotationGroupName;
 }

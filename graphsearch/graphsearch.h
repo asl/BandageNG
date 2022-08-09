@@ -56,9 +56,14 @@ public:
 
     void emptyTempDirectory() const;
 
+    virtual int loadQueriesFromFile(QString fullFileName) = 0;
+    virtual QString buildDatabase(const AssemblyGraph &graph) = 0;
+    virtual QString doSearch(QString extraParameters) = 0;
+    virtual QString doSearch(search::Queries &queries, QString extraParameters) = 0;
     virtual QString doAutoGraphSearch(const AssemblyGraph &graph, QString queriesFilename,
                                       QString extraParameters = "") = 0;
     virtual QString name() const = 0;
+    virtual QString annotationGroupName() const = 0;
 
 protected:
     QString m_lastError;

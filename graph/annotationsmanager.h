@@ -25,6 +25,10 @@
 #include <utility>
 
 class DeBruijnNode;
+namespace search {
+    class Query;
+    class Queries;
+}
 
 // Often used function for access const reference to value in map even if it doesn't exist
 template <typename K, typename V, template<typename, typename, typename...> typename MapLike>
@@ -64,6 +68,7 @@ public:
     void removeGroupByName(const QString &name);
     const AnnotationGroup &findGroupByName(const QString &name) const;
     const AnnotationGroup &findGroupById(AnnotationGroupId id) const;
+    void updateGroupFromHits(const QString &name, const std::vector<search::Query*> &queries);
 
 public:
 signals:
