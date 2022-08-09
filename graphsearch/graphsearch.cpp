@@ -25,7 +25,10 @@
 using namespace search;
 
 GraphSearch::GraphSearch(const QDir &workDir) :
-        m_queries(), m_tempDirectory(workDir.filePath("bandage_temp_XXXXXX")) {}
+        m_queries(), m_tempDirectory(workDir.filePath("bandage_temp_XXXXXX")) {
+    if (!m_tempDirectory.isValid())
+        m_lastError = "A temporary directory could not be created.  BLAST search functionality will not be available. Error: " + m_tempDirectory.errorString();
+}
 
 GraphSearch::~GraphSearch() {
     clearHits();

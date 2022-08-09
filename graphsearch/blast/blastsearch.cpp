@@ -44,9 +44,14 @@ QString BlastSearch::doAutoGraphSearch(const AssemblyGraph &graph, QString queri
                                        QString extraParameters) {
     cleanUp();
 
-    QString makeblastdbCommand;
+    QString makeblastdbCommand, blastnCommand, tblastnCommand;
+
     if (!findProgram("makeblastdb", &makeblastdbCommand))
-        return "Error: The program makeblastdb was not found.  Please install NCBI BLAST to use this feature.";
+        return (m_lastError = "Error: The program makeblastdb was not found.  Please install NCBI BLAST to use this feature.");
+    if (!findProgram("blastn", &blastnCommand))
+        return (m_lastError = "Error: The program blastn was not found.  Please install NCBI BLAST to use this feature.");
+    if (!findProgram("tblastn", &tblastnCommand))
+        return (m_lastError = "Error: The program tblastn was not found.  Please install NCBI BLAST to use this feature.");
 
     BuildBlastDatabaseWorker buildBlastDatabaseWorker(makeblastdbCommand, graph,
                                                       temporaryDir());
@@ -54,13 +59,6 @@ QString BlastSearch::doAutoGraphSearch(const AssemblyGraph &graph, QString queri
         return buildBlastDatabaseWorker.m_error;
 
     loadBlastQueriesFromFastaFile(queriesFilename);
-
-    QString blastnCommand;
-    if (!findProgram("blastn", &blastnCommand))
-        return "Error: The program blastn was not found.  Please install NCBI BLAST to use this feature.";
-    QString tblastnCommand;
-    if (!findProgram("tblastn", &tblastnCommand))
-        return "Error: The program tblastn was not found.  Please install NCBI BLAST to use this feature.";
 
     RunBlastSearchWorker runBlastSearchWorker(blastnCommand, tblastnCommand, extraParameters, temporaryDir());
     if (!runBlastSearchWorker.runBlastSearch(queries()))

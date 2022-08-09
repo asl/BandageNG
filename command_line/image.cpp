@@ -117,7 +117,7 @@ int bandageImage(QStringList arguments)
 
     if (isOptionPresent("--query", &arguments)) {
         if (!g_blastSearch->ready()) {
-            err << "Error creating temporary directory for BLAST files: " << g_blastSearch->temporaryDir().errorString() << Qt::endl;
+            err << g_blastSearch->lastError() << Qt::endl;
             return 1;
         }
 

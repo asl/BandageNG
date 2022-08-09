@@ -56,6 +56,10 @@ public:
 
     virtual QString doAutoGraphSearch(const AssemblyGraph &graph, QString queriesFilename,
                                       QString extraParameters = "") = 0;
+    QString lastError() const { return m_lastError; }
+
+protected:
+    QString m_lastError;
 
 private:
     Queries m_queries;

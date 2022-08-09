@@ -94,8 +94,7 @@ MainWindow::MainWindow(QString fileToLoadOnStartup, bool drawGraphAfterLoad) :
     srand(time(nullptr));
 
     if (!g_blastSearch->ready()) {
-        QMessageBox::warning(this, "Error",
-                             "A temporary directory could not be created.  BLAST search functionality will not be available. Error: " + g_blastSearch->temporaryDir().errorString());
+        QMessageBox::warning(this, "Error", g_blastSearch->lastError());
         return;
     }
 
