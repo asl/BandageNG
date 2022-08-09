@@ -27,7 +27,7 @@ class QProcess;
 class Minimap2Search : public search::GraphSearch {
     Q_OBJECT
 public:
-    explicit Minimap2Search(const QDir &workDir = QDir::temp());
+    explicit Minimap2Search(const QDir &workDir = QDir::temp(), QObject *parent = nullptr);
     virtual ~Minimap2Search() = default;
 
 

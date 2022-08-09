@@ -32,7 +32,7 @@ class RunBlastSearchWorker;
 class BlastSearch : public search::GraphSearch {
     Q_OBJECT
 public:
-    explicit BlastSearch(const QDir &workDir = QDir::temp());
+    explicit BlastSearch(const QDir &workDir = QDir::temp(), QObject *parent = nullptr);
     virtual ~BlastSearch() = default;
 
 

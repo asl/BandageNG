@@ -85,7 +85,7 @@ MainWindow::MainWindow(QString fileToLoadOnStartup, bool drawGraphAfterLoad) :
     QMainWindow(nullptr),
     ui(new Ui::MainWindow), m_imageFilter("PNG (*.png)"),
     m_fileToLoadOnStartup(fileToLoadOnStartup), m_drawGraphAfterLoad(drawGraphAfterLoad),
-    m_uiState(NO_GRAPH_LOADED), m_blastSearchDialog(nullptr), m_graphSearch(g_blastSearch.get()), m_alreadyShown(false)
+    m_uiState(NO_GRAPH_LOADED), m_blastSearchDialog(nullptr), m_alreadyShown(false)
 {
     ui->setupUi(this);
 
@@ -93,11 +93,6 @@ MainWindow::MainWindow(QString fileToLoadOnStartup, bool drawGraphAfterLoad) :
     ui->graphicsViewWidget->layout()->addWidget(g_graphicsView);
 
     srand(time(nullptr));
-
-    if (!m_graphSearch->ready()) {
-        QMessageBox::warning(this, "Error", m_graphSearch->lastError());
-        return;
-    }
 
     m_previousZoomSpinBoxValue = ui->zoomSpinBox->value();
     ui->zoomSpinBox->setMinimum(g_settings->minZoom * 100.0);
@@ -232,7 +227,7 @@ void MainWindow::afterMainWindowShow() {
 
     // If a BLAST query filename is present, do the BLAST search now automatically.
     if (!g_settings->blastQueryFilename.isEmpty()) {
-        BlastSearchDialog blastSearchDialog(m_graphSearch, this, g_settings->blastQueryFilename);
+        BlastSearchDialog blastSearchDialog(this, g_settings->blastQueryFilename);
         setupBlastQueryComboBox();
     }
 
@@ -259,18 +254,18 @@ void MainWindow::cleanUp() {
     ui->blastQueryComboBox->clear();
     ui->blastQueryComboBox->addItem("none");
 
-    m_graphSearch->cleanUp();
+    if (m_blastSearchDialog) {
+        m_blastSearchDialog->search()->cleanUp();
+        delete m_blastSearchDialog;
+        m_blastSearchDialog = nullptr;
+    }
+
     g_assemblyGraph->cleanUp();
     setWindowTitle("Bandage-NG");
 
     g_memory->userSpecifiedPath = Path();
     g_memory->userSpecifiedPathString = "";
     g_memory->userSpecifiedPathCircular = false;
-
-    if (m_blastSearchDialog) {
-        delete m_blastSearchDialog;
-        m_blastSearchDialog = nullptr;
-    }
 
     ui->csvComboBox->clear();
     ui->csvComboBox->setEnabled(false);
@@ -851,12 +846,14 @@ void MainWindow::drawGraph() {
     QString errorMessage;
     g_settings->doubleMode = ui->doubleNodesRadioButton->isChecked();
 
-    auto scope = graph::scope(g_settings->graphScope,
-                              ui->startingNodesLineEdit->text(),
-                              ui->minDepthSpinBox->value(), ui->maxDepthSpinBox->value(),
-                              m_graphSearch->queries(), ui->blastQueryComboBox->currentText(),
-                              ui->pathSelectionLineEdit->displayText(),
-                              ui->nodeDistanceSpinBox->value());
+    auto scope =
+            graph::scope(g_settings->graphScope,
+                         ui->startingNodesLineEdit->text(),
+                         ui->minDepthSpinBox->value(), ui->maxDepthSpinBox->value(),
+                         m_blastSearchDialog ? m_blastSearchDialog->search()->queries() : search::Queries(),
+                         ui->blastQueryComboBox->currentText(),
+                         ui->pathSelectionLineEdit->displayText(),
+                         ui->nodeDistanceSpinBox->value());
 
     auto startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
                                                  *g_assemblyGraph, scope);
@@ -1701,8 +1698,8 @@ void MainWindow::openAboutDialog()
 void MainWindow::openBlastSearchDialog() {
     // If a BLAST search dialog does not currently exist, make it.
     if (!m_blastSearchDialog) {
-        m_blastSearchDialog = new BlastSearchDialog(m_graphSearch, this);
-        connect(m_blastSearchDialog, SIGNAL(blastChanged()), this, SLOT(blastChanged()));
+        m_blastSearchDialog = new BlastSearchDialog(this);
+        connect(m_blastSearchDialog, SIGNAL(changed()), this, SLOT(blastChanged()));
         connect(m_blastSearchDialog, SIGNAL(queryPathSelectionChanged()), g_graphicsView->viewport(), SLOT(update()));
     }
 
@@ -1713,8 +1710,12 @@ void MainWindow::openBlastSearchDialog() {
 //This function is called whenever the user does something in the
 //BlastSearchDialog that should be reflected here in MainWindow.
 void MainWindow::blastChanged() {
+    if (!m_blastSearchDialog)
+        return;
+
+    const auto *search = m_blastSearchDialog->search();
     QString blastQueryText = ui->blastQueryComboBox->currentText();
-    auto *queryBefore = m_graphSearch->queries().getQueryFromName(blastQueryText);
+    const auto *queryBefore = search->queries().getQueryFromName(blastQueryText);
 
     // If we didn't find a currently selected query, but it isn't "none" or "all",
     // then maybe the user changed the name of the currently selected query, and
@@ -1724,8 +1725,8 @@ void MainWindow::blastChanged() {
         int blastQueryIndex = ui->blastQueryComboBox->currentIndex();
         if (ui->blastQueryComboBox->count() > 1)
             --blastQueryIndex;
-        if (blastQueryIndex < m_graphSearch->getQueryCount())
-            queryBefore = m_graphSearch->query(blastQueryIndex);
+        if (blastQueryIndex < search->getQueryCount())
+            queryBefore = search->query(blastQueryIndex);
     }
 
     //Rebuild the query combo box, in case the user changed the queries or
@@ -1735,7 +1736,7 @@ void MainWindow::blastChanged() {
     //Look to see if the query selected before is still present.  If so,
     //set the combo box to have that query selected.  If not (or if no
     //query was previously selected), leave the combo box a index 0.
-    if (queryBefore && m_graphSearch->isQueryPresent(queryBefore)) {
+    if (queryBefore && search->isQueryPresent(queryBefore)) {
         int indexOfQuery = ui->blastQueryComboBox->findText(queryBefore->getName());
         if (indexOfQuery != -1)
             ui->blastQueryComboBox->setCurrentIndex(indexOfQuery);
@@ -1746,8 +1747,12 @@ void MainWindow::blastChanged() {
 
 void MainWindow::setupBlastQueryComboBox() {
     ui->blastQueryComboBox->clear();
+    if (!m_blastSearchDialog)
+        return;
+
+    const auto *search = m_blastSearchDialog->search();
     QStringList comboBoxItems;
-    for (auto &query : m_graphSearch->queries()) {
+    for (const auto &query : search->queries()) {
         if (query->hasHits())
             comboBoxItems.push_back(query->getName());
     }
@@ -1765,21 +1770,25 @@ void MainWindow::setupBlastQueryComboBox() {
 }
 
 void MainWindow::blastQueryChanged() {
+    if (!m_blastSearchDialog)
+        return;
+
     QString queryName = ui->blastQueryComboBox->currentText();
+    const auto *search = m_blastSearchDialog->search();
 
     std::vector<search::Query *> shownQueries;
     // If "all" is selected, then we'll display each of the BLAST queries
     if (queryName == "all") {
-        for (auto *query : m_graphSearch->queries()) {
+        for (auto *query : search->queries()) {
             if (query->isShown())
                 shownQueries.push_back(query);
         }
-    }  else if (auto *query = m_graphSearch->getQueryFromName(queryName))
+    }  else if (auto *query = search->getQueryFromName(queryName))
         // If only one query is selected, then just display that one.
         if (query->isShown())
             shownQueries.push_back(query);
 
-    g_annotationsManager->updateGroupFromHits(m_graphSearch->annotationGroupName(), shownQueries);
+    g_annotationsManager->updateGroupFromHits(search->annotationGroupName(), shownQueries);
     g_graphicsView->viewport()->update();
 }
 
@@ -2436,14 +2445,15 @@ void MainWindow::mergeAllPossible()
 }
 
 
-void MainWindow::cleanUpAllBlast()
-{
-    m_graphSearch->cleanUp();
-    g_annotationsManager->removeGroupByName(g_settings->blastAnnotationGroupName);
+void MainWindow::cleanUpAllBlast() {
+    if (m_blastSearchDialog) {
+        auto *search = m_blastSearchDialog->search();
+        search->cleanUp();
+        g_annotationsManager->removeGroupByName(search->annotationGroupName());
+    }
     ui->blastQueryComboBox->clear();
 
-    if (m_blastSearchDialog != nullptr)
-    {
+    if (m_blastSearchDialog) {
         delete m_blastSearchDialog;
         m_blastSearchDialog = nullptr;
     }
@@ -2454,8 +2464,7 @@ void MainWindow::cleanUpAllBlast()
 void MainWindow::changeNodeName()
 {
     DeBruijnNode * selectedNode = m_scene->getOnePositiveSelectedNode();
-    if (selectedNode == nullptr)
-    {
+    if (selectedNode == nullptr) {
         QMessageBox::information(this, "Improper selection", "You must select exactly one node in the graph before using this function.");
         return;
     }

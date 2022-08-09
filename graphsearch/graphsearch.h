@@ -24,11 +24,16 @@
 #include <QTemporaryDir>
 
 namespace search {
-// This is a class to hold all graph node search related stuff.
-class GraphSearch : public  QObject {
+    enum GraphSearchKind {
+        BLAST = 0,
+        Minimap2
+    };
+
+    // This is a class to hold all graph node search related stuff.
+class GraphSearch : public QObject {
     Q_OBJECT;
 public:
-    explicit GraphSearch(const QDir &workDir = QDir::temp());
+    explicit GraphSearch(const QDir &workDir = QDir::temp(), QObject *parent = nullptr);
     ~GraphSearch();
 
     [[nodiscard]] const auto &queries() const { return m_queries; }
@@ -66,6 +71,8 @@ public:
     virtual QString annotationGroupName() const = 0;
     virtual bool allowManualQueries() const { return true; }
 
+    static std::unique_ptr<GraphSearch> get(GraphSearchKind kind,
+                                            const QDir &workDir = QDir::temp(), QObject *parent = nullptr);
 protected:
     QString m_lastError;
 

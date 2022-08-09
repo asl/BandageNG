@@ -32,8 +32,8 @@
 
 using namespace search;
 
-Minimap2Search::Minimap2Search(const QDir &workDir)
-        : GraphSearch(workDir) {}
+Minimap2Search::Minimap2Search(const QDir &workDir, QObject *parent)
+        : GraphSearch(workDir, parent) {}
 
 bool Minimap2Search::findTools() {
     if (!findProgram("minimap2", &m_minimap2Command)) {

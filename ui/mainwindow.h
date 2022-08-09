@@ -70,7 +70,6 @@ private:
     bool m_drawGraphAfterLoad;
     UiState m_uiState;
     BlastSearchDialog * m_blastSearchDialog;
-    search::GraphSearch *m_graphSearch;
 
     bool m_alreadyShown;
 

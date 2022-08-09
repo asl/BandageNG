@@ -74,12 +74,13 @@ public:
 
     void setColor(const QModelIndex &index, QColor color);
     void update() { startUpdate(); endUpdate(); }
+    void setQueries(search::Queries &queries) { m_queries = queries; }
     void startUpdate() { beginResetModel(); }
     void endUpdate() { endResetModel(); }
 
     search::Query *query(const QModelIndex &index) const;
 
-    search::Queries &m_queries;
+    std::reference_wrapper<search::Queries> m_queries;
 };
 
 class HitsListModel : public QAbstractTableModel {
@@ -105,14 +106,15 @@ public:
 class BlastSearchDialog : public QDialog {
     Q_OBJECT
 public:
-    explicit BlastSearchDialog(search::GraphSearch *graphSearch,
-                               QWidget *parent = nullptr, const QString& autoQuery = "");
+    explicit BlastSearchDialog(QWidget *parent = nullptr, const QString& autoQuery = "");
     ~BlastSearchDialog() override;
+    const search::GraphSearch *search() const { return m_graphSearch.get(); }
+    search::GraphSearch *search() { return m_graphSearch.get(); }
 
 private:
     Ui::BlastSearchDialog *ui;
 
-    search::GraphSearch *m_graphSearch;
+    std::unique_ptr<search::GraphSearch> m_graphSearch;
     QueriesListModel *m_queriesListModel;
     HitsListModel *m_hitsListModel;
 
@@ -135,6 +137,7 @@ private slots:
     void runGraphSearchesInThread();
     void fillTablesAfterGraphSearch();
     void updateTables();
+    void searcherChanged();
 
     void graphDatabaseBuildFinished(const QString& error);
     void graphSearchFinished(const QString& error);

@@ -79,10 +79,11 @@ enum class HitsColumns : unsigned {
     TotalHitColumns = BitScore + 1
 };
 
-BlastSearchDialog::BlastSearchDialog(search::GraphSearch *graphSearch,
-                                     QWidget *parent, const QString& autoQuery)
- : QDialog(parent), ui(new Ui::BlastSearchDialog), m_graphSearch(graphSearch) {
+BlastSearchDialog::BlastSearchDialog(QWidget *parent, const QString& autoQuery)
+ : QDialog(parent), ui(new Ui::BlastSearchDialog) {
     ui->setupUi(this);
+
+    m_graphSearch = search::GraphSearch::get(search::BLAST, QDir::temp(), this);
 
     setWindowFlags(windowFlags() | Qt::Tool);
 
@@ -197,6 +198,7 @@ BlastSearchDialog::BlastSearchDialog(search::GraphSearch *graphSearch,
             });
 
     connect(ui->blastFiltersButton, SIGNAL(clicked(bool)), this, SLOT(openFiltersDialog()));
+    connect(ui->searcherComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(searcherChanged()));
 }
 
 BlastSearchDialog::~BlastSearchDialog() {
@@ -209,7 +211,7 @@ void BlastSearchDialog::afterWindowShow() {
 
 void BlastSearchDialog::clearHits() {
     m_graphSearch->clearHits();
-    g_annotationsManager->removeGroupByName(g_settings->blastAnnotationGroupName);
+    g_annotationsManager->removeGroupByName(m_graphSearch->annotationGroupName());
     updateTables();
 }
 
@@ -242,9 +244,9 @@ void BlastSearchDialog::buildDatabase(bool separateThread) {
     progress->setWindowModality(Qt::WindowModal);
     progress->show();
 
-    connect(m_graphSearch, SIGNAL(finishedDbBuild(QString)), progress, SLOT(deleteLater()));
-    connect(m_graphSearch, SIGNAL(finishedDbBuild(QString)), this, SLOT(graphDatabaseBuildFinished(QString)));
-    connect(progress, SIGNAL(halt()), m_graphSearch, SLOT(cancelDatabaseBuild()));
+    connect(m_graphSearch.get(), SIGNAL(finishedDbBuild(QString)), progress, SLOT(deleteLater()));
+    connect(m_graphSearch.get(), SIGNAL(finishedDbBuild(QString)), this, SLOT(graphDatabaseBuildFinished(QString)));
+    connect(progress, SIGNAL(halt()), m_graphSearch.get(), SLOT(cancelDatabaseBuild()));
 
     auto builder = [this]() { m_graphSearch->buildDatabase(*g_assemblyGraph); };
     if (separateThread) {
@@ -312,7 +314,7 @@ void BlastSearchDialog::enterQueryManually() {
 void BlastSearchDialog::clearAllQueries() {
     ui->clearAllQueriesButton->setEnabled(false);
 
-    m_queriesListModel->m_queries.clearAllQueries();
+    m_queriesListModel->m_queries.get().clearAllQueries();
 
     clearHits();
     updateTables();
@@ -326,7 +328,7 @@ void BlastSearchDialog::clearSelectedQueries() {
     QItemSelectionModel *select = ui->blastQueriesTable->selectionModel();
     QModelIndexList selection = select->selectedIndexes();
 
-    if (selection.size() == m_queriesListModel->m_queries.getQueryCount()) {
+    if (selection.size() == m_queriesListModel->m_queries.get().getQueryCount()) {
         clearAllQueries();
         return;
     }
@@ -334,7 +336,7 @@ void BlastSearchDialog::clearSelectedQueries() {
     std::vector<Query *> queriesToRemove;
     for (const auto &index : selection)
         queriesToRemove.push_back(m_queriesListModel->query(index));
-    m_queriesListModel->m_queries.clearSomeQueries(queriesToRemove);
+    m_queriesListModel->m_queries.get().clearSomeQueries(queriesToRemove);
 
     updateTables();
 
@@ -358,9 +360,9 @@ void BlastSearchDialog::runGraphSearches(bool separateThread) {
     progress->setWindowModality(Qt::WindowModal);
     progress->show();
 
-    connect(m_graphSearch, SIGNAL(finishedSearch(QString)), progress, SLOT(deleteLater()));
-    connect(m_graphSearch, SIGNAL(finishedSearch(QString)), this, SLOT(graphSearchFinished(QString)));
-    connect(progress, SIGNAL(halt()), m_graphSearch, SLOT(cancelSearch()));
+    connect(m_graphSearch.get(), SIGNAL(finishedSearch(QString)), progress, SLOT(deleteLater()));
+    connect(m_graphSearch.get(), SIGNAL(finishedSearch(QString)), this, SLOT(graphSearchFinished(QString)));
+    connect(progress, SIGNAL(halt()), m_graphSearch.get(), SLOT(cancelSearch()));
 
     auto searcher = [&]() { m_graphSearch->doSearch(ui->parametersLineEdit->text().simplified()); };
     if (separateThread) {
@@ -386,8 +388,7 @@ void BlastSearchDialog::setUiStep(BlastUiState blastUiState) {
     QPixmap tick(":/icons/tick-128.png");
     tick.setDevicePixelRatio(devicePixelRatio()); //This is a workaround for a Qt bug.  Can possibly remove in the future.  https://bugreports.qt.io/browse/QTBUG-46846
 
-    switch (blastUiState)
-    {
+    switch (blastUiState) {
     case GRAPH_DB_NOT_YET_BUILT:
         ui->step1Label->setEnabled(true);
         ui->buildBlastDatabaseButton->setEnabled(true);
@@ -579,11 +580,28 @@ void BlastSearchDialog::setUiCaptions() {
     ui->runBlastSearchButton->setText(QString("Run %1 search").arg(m_graphSearch->name()));
 }
 
+void BlastSearchDialog::searcherChanged() {
+    m_queriesListModel->startUpdate();
+    g_annotationsManager->removeGroupByName(m_graphSearch->annotationGroupName());
+
+    m_graphSearch = search::GraphSearch::get(search::GraphSearchKind(ui->searcherComboBox->currentIndex()),
+                                             QDir::temp(), this);
+    m_queriesListModel->setQueries(m_graphSearch->queries());
+
+    m_queriesListModel->endUpdate();
+
+    setUiStep(GRAPH_DB_NOT_YET_BUILT);
+    setUiCaptions();
+
+    updateTables();
+    emit changed();
+}
+
 QueriesListModel::QueriesListModel(Queries &queries, QObject *parent)
   : m_queries(queries), QAbstractTableModel(parent) {}
 
 int QueriesListModel::rowCount(const QModelIndex &) const {
-    return m_queries.getQueryCount();
+    return m_queries.get().getQueryCount();
 }
 
 int QueriesListModel::columnCount(const QModelIndex &) const {
@@ -707,7 +725,7 @@ bool QueriesListModel::setData(const QModelIndex &index, const QVariant &value, 
     } else if (role == Qt::EditRole && column == QueriesHitColumns::QueryName) { // Change query name
         QString newName = value.toString();
         if (newName != query->getName()) {
-            m_queries.renameQuery(query, newName);
+            m_queries.get().renameQuery(query, newName);
             emit dataChanged(index, index);
             return true;
         }
@@ -717,10 +735,10 @@ bool QueriesListModel::setData(const QModelIndex &index, const QVariant &value, 
 }
 
 Query *QueriesListModel::query(const QModelIndex &index) const {
-    if (!index.isValid() || index.row() >= m_queries.getQueryCount())
+    if (!index.isValid() || index.row() >= m_queries.get().getQueryCount())
         return nullptr;
 
-    return m_queries.query(index.row());
+    return m_queries.get().query(index.row());
 }
 
 void QueriesListModel::setColor(const QModelIndex &index, QColor color) {

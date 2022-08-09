@@ -33,8 +33,8 @@
 
 using namespace search;
 
-BlastSearch::BlastSearch(const QDir &workDir)
-  : GraphSearch(workDir) {}
+BlastSearch::BlastSearch(const QDir &workDir, QObject *parent)
+  : GraphSearch(workDir, parent) {}
 
 bool BlastSearch::findTools() {
     if (!findProgram("makeblastdb", &m_makeblastdbCommand)) {
