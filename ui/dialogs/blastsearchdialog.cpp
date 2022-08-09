@@ -449,7 +449,7 @@ void BlastSearchDialog::setUiStep(BlastUiState blastUiState) {
         ui->buildBlastDatabaseButton->setEnabled(false);
         ui->step2Label->setEnabled(true);
         ui->loadQueriesFromFastaButton->setEnabled(true);
-        ui->enterQueryManuallyButton->setEnabled(true);
+        ui->enterQueryManuallyButton->setEnabled(m_graphSearch->allowManualQueries());
         ui->blastQueriesTable->setEnabled(true);
         ui->blastQueriesTableInfoText->setEnabled(true);
         ui->step3Label->setEnabled(false);
@@ -477,7 +477,7 @@ void BlastSearchDialog::setUiStep(BlastUiState blastUiState) {
         ui->buildBlastDatabaseButton->setEnabled(false);
         ui->step2Label->setEnabled(true);
         ui->loadQueriesFromFastaButton->setEnabled(true);
-        ui->enterQueryManuallyButton->setEnabled(true);
+        ui->enterQueryManuallyButton->setEnabled(m_graphSearch->allowManualQueries());
         ui->blastQueriesTable->setEnabled(true);
         ui->blastQueriesTableInfoText->setEnabled(true);
         ui->step3Label->setEnabled(true);
@@ -504,7 +504,7 @@ void BlastSearchDialog::setUiStep(BlastUiState blastUiState) {
         ui->buildBlastDatabaseButton->setEnabled(false);
         ui->step2Label->setEnabled(true);
         ui->loadQueriesFromFastaButton->setEnabled(true);
-        ui->enterQueryManuallyButton->setEnabled(true);
+        ui->enterQueryManuallyButton->setEnabled(m_graphSearch->allowManualQueries());
         ui->blastQueriesTable->setEnabled(true);
         ui->blastQueriesTableInfoText->setEnabled(true);
         ui->step3Label->setEnabled(true);
@@ -531,7 +531,7 @@ void BlastSearchDialog::setUiStep(BlastUiState blastUiState) {
         ui->buildBlastDatabaseButton->setEnabled(false);
         ui->step2Label->setEnabled(true);
         ui->loadQueriesFromFastaButton->setEnabled(true);
-        ui->enterQueryManuallyButton->setEnabled(true);
+        ui->enterQueryManuallyButton->setEnabled(m_graphSearch->allowManualQueries());
         ui->blastQueriesTable->setEnabled(true);
         ui->blastQueriesTableInfoText->setEnabled(true);
         ui->step3Label->setEnabled(true);

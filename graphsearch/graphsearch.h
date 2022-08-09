@@ -64,6 +64,7 @@ public:
                                       QString extraParameters = "") = 0;
     virtual QString name() const = 0;
     virtual QString annotationGroupName() const = 0;
+    virtual bool allowManualQueries() const { return true; }
 
 protected:
     QString m_lastError;
