@@ -58,7 +58,7 @@ AnnotationsListWidget::AnnotationsListWidget(QWidget *parent) : QListWidget(pare
             this, &AnnotationsListWidget::updateAnnotationGroups);
 
     connect(this, &QListWidget::itemDoubleClicked, [this](QListWidgetItem *listWidgetItem) {
-        const auto &annotationGroupPtr = g_annotationsManager->findGroupById(
+        const auto &annotationGroupPtr = *g_annotationsManager->findGroupById(
                 listWidgetItem->data(Qt::UserRole).value<AnnotationGroupId>());
         auto *settingsDialog = new AnnotationSettingsDialog(annotationGroupPtr, this);
         settingsDialog->open();

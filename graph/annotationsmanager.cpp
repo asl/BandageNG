@@ -24,15 +24,19 @@
 AnnotationGroup &AnnotationsManager::createAnnotationGroup(QString name) {
     if (name == g_settings->blastAnnotationGroupName) {
         // To be removed when we can set up annotations from CLI properly.
-        g_settings->annotationsSettings[nextFreeId] = g_settings->defaultBlastAnnotationSetting;
+        return createAnnotationGroup(name, g_settings->defaultBlastAnnotationSetting);
     }
+    return createAnnotationGroup(name, AnnotationSetting());
+}
+
+AnnotationGroup &AnnotationsManager::createAnnotationGroup(QString name, const AnnotationSetting &setting) {
+    g_settings->annotationsSettings[nextFreeId] = setting;
     m_annotationGroups.emplace_back(
             std::make_unique<AnnotationGroup>(AnnotationGroup{nextFreeId, std::move(name), {}}));
     nextFreeId++;
     emit annotationGroupsUpdated();
     return *m_annotationGroups.back();
 }
-
 
 const AnnotationsManager::AnnotationGroupVector &AnnotationsManager::getGroups() const {
     return m_annotationGroups;
@@ -50,25 +54,40 @@ void AnnotationsManager::removeGroupByName(const QString &name) {
 }
 
 
-const AnnotationGroup &AnnotationsManager::findGroupByName(const QString &name) const {
-    return **std::find_if(
+const AnnotationGroup *AnnotationsManager::findGroupByName(const QString &name) const {
+    auto res = std::find_if(
             m_annotationGroups.begin(),
             m_annotationGroups.end(),
             [&name](const std::unique_ptr<AnnotationGroup> &group) {
                 return group->name == name;
             });
+
+    if (res == m_annotationGroups.end())
+        return nullptr;
+
+    return res->get();
 }
 
-const AnnotationGroup &AnnotationsManager::findGroupById(AnnotationGroupId id) const {
-    return **std::find_if(
+const AnnotationGroup *AnnotationsManager::findGroupById(AnnotationGroupId id) const {
+    auto res = std::find_if(
             m_annotationGroups.begin(),
             m_annotationGroups.end(),
             [id](const std::unique_ptr<AnnotationGroup> &group) {
                 return group->id == id;
             });
+
+    if (res == m_annotationGroups.end())
+        return nullptr;
+
+    return res->get();
 }
 
 void AnnotationsManager::updateGroupFromHits(const QString &name, const std::vector<search::Query *> &queries) {
+    // Preserve annotation settings, if they existed
+    AnnotationSetting groupSettings;
+    if (const auto *group = findGroupByName(name))
+        groupSettings = g_settings->annotationsSettings[group->id];
+
     removeGroupByName(name);
 
     if (queries.empty())
@@ -87,4 +106,8 @@ void AnnotationsManager::updateGroupFromHits(const QString &name, const std::vec
                                                                       hit.queryEndFraction()));
         }
     }
+
+    g_settings->annotationsSettings[group.id] = groupSettings;
+
+    emit annotationGroupsUpdated();
 }

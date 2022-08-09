@@ -25,6 +25,7 @@
 #include <utility>
 
 class DeBruijnNode;
+class AnnotationSetting;
 namespace search {
     class Query;
     class Queries;
@@ -64,10 +65,12 @@ public:
     using AnnotationGroupVector = std::vector<std::unique_ptr<AnnotationGroup>>;
 
     AnnotationGroup &createAnnotationGroup(QString name);
+    AnnotationGroup &createAnnotationGroup(QString name, const AnnotationSetting &setting);
+
     const AnnotationGroupVector &getGroups() const;
     void removeGroupByName(const QString &name);
-    const AnnotationGroup &findGroupByName(const QString &name) const;
-    const AnnotationGroup &findGroupById(AnnotationGroupId id) const;
+    const AnnotationGroup *findGroupByName(const QString &name) const;
+    const AnnotationGroup *findGroupById(AnnotationGroupId id) const;
     void updateGroupFromHits(const QString &name, const std::vector<search::Query*> &queries);
 
 public:

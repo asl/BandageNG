@@ -1868,10 +1868,9 @@ void MainWindow::bringSelectedNodesToFront() {
 
 
 // TODO: rewrite to selectNodesWithAnnotation
-void MainWindow::selectNodesWithBlastHits()
-{
-    if (ui->blastQueryComboBox->currentText() == "none")
-    {
+void MainWindow::selectNodesWithBlastHits() {
+    const auto *blastHitsGroup = g_annotationsManager->findGroupByName(g_settings->blastAnnotationGroupName);
+    if (!blastHitsGroup) {
         QMessageBox::information(this, "No BLAST hits",
                                        "To select nodes with BLAST hits, you must first conduct a BLAST search.");
         return;
@@ -1882,8 +1881,8 @@ void MainWindow::selectNodesWithBlastHits()
 
     bool atLeastOneNodeHasBlastHits = false;
     bool atLeastOneNodeSelected = false;
-    const auto &blastHitsGroup = g_annotationsManager->findGroupByName(g_settings->blastAnnotationGroupName);
-    for (auto &[node, annotations] : blastHitsGroup.annotationMap) {
+
+    for (auto &[node, annotations] : blastHitsGroup->annotationMap) {
 
         bool nodeHasBlastHits;
 
@@ -1891,7 +1890,7 @@ void MainWindow::selectNodesWithBlastHits()
         nodeHasBlastHits = !annotations.empty();
         if (!g_settings->doubleMode)
             //In single mode, select a node if it or its reverse complement has a BLAST hit.
-            nodeHasBlastHits = nodeHasBlastHits || !blastHitsGroup.getAnnotations(node->getReverseComplement()).empty();
+            nodeHasBlastHits = nodeHasBlastHits || !blastHitsGroup->getAnnotations(node->getReverseComplement()).empty();
 
         if (nodeHasBlastHits)
             atLeastOneNodeHasBlastHits = true;
