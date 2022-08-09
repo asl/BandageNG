@@ -117,7 +117,7 @@ private:
     void setUiStep(BlastUiState blastUiState);
     void clearBlastHits();
 
-    void loadBlastQueriesFromFastaFile(const QString& fullFileName);
+    void loadQueriesFromFile(const QString& fullFileName);
     void buildBlastDatabase(bool separateThread);
     void runBlastSearches(bool separateThread);
     void setFilterText();

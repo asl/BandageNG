@@ -106,7 +106,7 @@ QString BlastSearch::doAutoGraphSearch(const AssemblyGraph &graph, QString queri
     if (!maybeError.isEmpty())
         return maybeError;
 
-    loadBlastQueriesFromFastaFile(queriesFilename);
+    loadQueriesFromFile(queriesFilename);
 
     maybeError = doSearch(queries(), extraParameters);
     if (!maybeError.isEmpty())
@@ -118,12 +118,16 @@ QString BlastSearch::doAutoGraphSearch(const AssemblyGraph &graph, QString queri
 }
 
 //This function returns the number of queries loaded from the FASTA file.
-int BlastSearch::loadBlastQueriesFromFastaFile(QString fullFileName) {
+int BlastSearch::loadQueriesFromFile(QString fullFileName) {
+    m_lastError = "";
     int queriesBefore = int(getQueryCount());
 
     std::vector<QString> queryNames;
     std::vector<QByteArray> querySequences;
-    utils::readFastxFile(fullFileName, queryNames, querySequences);
+    if (!utils::readFastxFile(fullFileName, queryNames, querySequences)) {
+        m_lastError = "Failed to parse FASTA file: " + fullFileName;
+        return 0;
+    }
 
     for (size_t i = 0; i < queryNames.size(); ++i) {
         //We only use the part of the query name up to the first space.

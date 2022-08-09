@@ -24,8 +24,6 @@
 #include "graphsearch/hit.h"
 #include "graphsearch/query.h"
 #include "graphsearch/blast/blastsearch.h"
-#include "graphsearch/blast/buildblastdatabaseworker.h"
-#include "graphsearch/blast/runblastsearchworker.h"
 
 #include "graph/debruijnnode.h"
 #include "graph/assemblygraph.h"
@@ -39,7 +37,6 @@
 #include "program/settings.h"
 #include "program/memory.h"
 
-#include <QThread>
 #include <QFileDialog>
 #include <QFile>
 #include <QString>
@@ -48,6 +45,7 @@
 #include <QColorDialog>
 #include <QPainter>
 #include <QSortFilterProxyModel>
+#include <QtConcurrent>
 
 using namespace search;
 
@@ -117,7 +115,7 @@ BlastSearchDialog::BlastSearchDialog(BlastSearch *blastSearch,
     if (!autoQuery.isEmpty()) {
         buildBlastDatabase(false);
         clearAllQueries();
-        loadBlastQueriesFromFastaFile(autoQuery);
+        loadQueriesFromFile(autoQuery);
         runBlastSearches(false);
         QMetaObject::invokeMethod(this, "close", Qt::QueuedConnection);
         return;
@@ -234,41 +232,23 @@ void BlastSearchDialog::buildBlastDatabaseInThread() {
 void BlastSearchDialog::buildBlastDatabase(bool separateThread) {
     setUiStep(BLAST_DB_BUILD_IN_PROGRESS);
 
-    QString makeblastdbCommand;
-    if (!BlastSearch::findProgram("makeblastdb", &makeblastdbCommand)) {
-        QMessageBox::warning(this, "Error", "The program makeblastdb was not found.  Please install NCBI BLAST to use this feature.");
-        setUiStep(BLAST_DB_NOT_YET_BUILT);
-        return;
-    }
-
-    QApplication::processEvents();
-
-    auto * progress = new MyProgressDialog(this, "Building BLAST database...", separateThread, "Cancel build", "Cancelling build...",
-                                           "Clicking this button will stop the BLAST database from being "
-                                           "built.");
+    auto * progress = new MyProgressDialog(this, "Running " + g_blastSearch->name() + " database...",
+                                           separateThread,
+                                           "Cancel build",
+                                           "Cancelling build...",
+                                           "Clicking this button will stop the " + g_blastSearch->name() +" database from being built.");
     progress->setWindowModality(Qt::WindowModal);
     progress->show();
 
+    connect(g_blastSearch.get(), SIGNAL(finishedDbBuild(QString)), progress, SLOT(deleteLater()));
+    connect(g_blastSearch.get(), SIGNAL(finishedDbBuild(QString)), this, SLOT(blastDatabaseBuildFinished(QString)));
+    connect(progress, SIGNAL(halt()), g_blastSearch.get(), SLOT(cancelDatabaseBuild()));
+
+    auto builder = [&]() { g_blastSearch->buildDatabase(*g_assemblyGraph); };
     if (separateThread) {
-        auto * buildBlastDatabaseThread = new QThread;
-        auto * buildBlastDatabaseWorker = new BuildBlastDatabaseWorker(makeblastdbCommand, *g_assemblyGraph, m_blastSearch->temporaryDir());
-        buildBlastDatabaseWorker->moveToThread(buildBlastDatabaseThread);
-
-        connect(progress, SIGNAL(halt()), buildBlastDatabaseWorker, SLOT(cancel()));
-        connect(buildBlastDatabaseThread, SIGNAL(started()), buildBlastDatabaseWorker, SLOT(buildBlastDatabase()));
-        connect(buildBlastDatabaseWorker, SIGNAL(finishedBuild(QString)), buildBlastDatabaseThread, SLOT(quit()));
-        connect(buildBlastDatabaseWorker, SIGNAL(finishedBuild(QString)), buildBlastDatabaseWorker, SLOT(deleteLater()));
-        connect(buildBlastDatabaseWorker, SIGNAL(finishedBuild(QString)), this, SLOT(blastDatabaseBuildFinished(QString)));
-        connect(buildBlastDatabaseThread, SIGNAL(finished()), buildBlastDatabaseThread, SLOT(deleteLater()));
-        connect(buildBlastDatabaseThread, SIGNAL(finished()), progress, SLOT(deleteLater()));
-
-        buildBlastDatabaseThread->start();
-    } else {
-        QString maybeError = g_blastSearch->buildDatabase(*g_assemblyGraph);
-        progress->close();
-        delete progress;
-        blastDatabaseBuildFinished(maybeError);
-    }
+        QFuture<void> res = QtConcurrent::run(builder);
+    } else
+        builder();
 }
 
 
@@ -281,21 +261,21 @@ void BlastSearchDialog::blastDatabaseBuildFinished(const QString& error) {
 }
 
 void BlastSearchDialog::loadBlastQueriesFromFastaFileButtonClicked() {
-    QStringList fullFileNames = QFileDialog::getOpenFileNames(this, "Load queries FASTA", g_memory->rememberedPath);
+    QStringList fullFileNames = QFileDialog::getOpenFileNames(this, "Load queries", g_memory->rememberedPath);
 
     if (fullFileNames.empty()) //User did hit cancel
         return;
 
     for (const auto &fullFileName : fullFileNames)
-        loadBlastQueriesFromFastaFile(fullFileName);
+        loadQueriesFromFile(fullFileName);
 }
 
-void BlastSearchDialog::loadBlastQueriesFromFastaFile(const QString& fullFileName) {
+void BlastSearchDialog::loadQueriesFromFile(const QString& fullFileName) {
     auto * progress = new MyProgressDialog(this, "Loading queries...", false);
     progress->setWindowModality(Qt::WindowModal);
     progress->show();
 
-    int queriesLoaded = m_blastSearch->loadBlastQueriesFromFastaFile(fullFileName);
+    int queriesLoaded = m_blastSearch->loadQueriesFromFile(fullFileName);
     if (queriesLoaded > 0) {
         clearBlastHits();
 
@@ -308,7 +288,8 @@ void BlastSearchDialog::loadBlastQueriesFromFastaFile(const QString& fullFileNam
     progress->deleteLater();
 
     if (queriesLoaded == 0)
-        QMessageBox::information(this, "No queries loaded", "No queries could be loaded from the specified file.");
+        QMessageBox::information(this, "No queries loaded",
+                                 "No queries could be loaded from the specified file: " + g_blastSearch->lastError());
 }
 
 
@@ -366,50 +347,25 @@ void BlastSearchDialog::runBlastSearchesInThread() {
 void BlastSearchDialog::runBlastSearches(bool separateThread) {
     setUiStep(BLAST_SEARCH_IN_PROGRESS);
 
-    QString blastnCommand, tblastnCommand;
-    if (!BlastSearch::findProgram("blastn", &blastnCommand)) {
-        QMessageBox::warning(this, "Error", "The program blastn was not found.  Please install NCBI BLAST to use this feature.");
-        setUiStep(READY_FOR_BLAST_SEARCH);
-        return;
-    }
-    if (!BlastSearch::findProgram("tblastn", &tblastnCommand)) {
-        QMessageBox::warning(this, "Error", "The program tblastn was not found.  Please install NCBI BLAST to use this feature.");
-        setUiStep(READY_FOR_BLAST_SEARCH);
-        return;
-    }
-
     clearBlastHits();
 
-    auto * progress = new MyProgressDialog(this, "Running BLAST search...", separateThread, "Cancel search", "Cancelling search...",
-                                           "Clicking this button will stop the BLAST search.");
+    auto * progress = new MyProgressDialog(this, "Running " + g_blastSearch->name() + " search...",
+                                           separateThread,
+                                           "Cancel search",
+                                           "Cancelling search...",
+                                           "Clicking this button will stop the " + g_blastSearch->name() +" search.");
     progress->setWindowModality(Qt::WindowModal);
     progress->show();
 
+    connect(g_blastSearch.get(), SIGNAL(finishedSearch(QString)), progress, SLOT(deleteLater()));
+    connect(g_blastSearch.get(), SIGNAL(finishedSearch(QString)), this, SLOT(runBlastSearchFinished(QString)));
+    connect(progress, SIGNAL(halt()), g_blastSearch.get(), SLOT(cancelSearch()));
+
+    auto searcher = [&]() { g_blastSearch->doSearch(ui->parametersLineEdit->text().simplified()); };
     if (separateThread) {
-        auto blastSearchThread = new QThread;
-        auto * runBlastSearchWorker = new RunBlastSearchWorker(blastnCommand, tblastnCommand,
-                                                               ui->parametersLineEdit->text().simplified(),
-                                                               m_blastSearch->temporaryDir());
-        runBlastSearchWorker->moveToThread(blastSearchThread);
-
-        connect(progress, SIGNAL(halt()), runBlastSearchWorker, SLOT(cancel()));
-        connect(blastSearchThread, &QThread::started,
-                [runBlastSearchWorker, this]() {
-                    runBlastSearchWorker->runBlastSearch(m_blastSearch->queries());
-        });
-        connect(runBlastSearchWorker, SIGNAL(finishedSearch(QString)), blastSearchThread, SLOT(quit()));
-        connect(runBlastSearchWorker, SIGNAL(finishedSearch(QString)), runBlastSearchWorker, SLOT(deleteLater()));
-        connect(runBlastSearchWorker, SIGNAL(finishedSearch(QString)), this, SLOT(runBlastSearchFinished(QString)));
-        connect(blastSearchThread, SIGNAL(finished()), blastSearchThread, SLOT(deleteLater()));
-        connect(blastSearchThread, SIGNAL(finished()), progress, SLOT(deleteLater()));
-
-        blastSearchThread->start();
-    } else {
-        QString maybeError = g_blastSearch->doSearch(ui->parametersLineEdit->text().simplified());
-        progress->close();
-        delete progress;
-        runBlastSearchFinished(maybeError);
-    }
+        QFuture<void> res = QtConcurrent::run(searcher);
+    } else
+        searcher();
 }
 
 void BlastSearchDialog::runBlastSearchFinished(const QString& error) {
@@ -425,8 +381,7 @@ void BlastSearchDialog::runBlastSearchFinished(const QString& error) {
     emit blastChanged();
 }
 
-void BlastSearchDialog::setUiStep(BlastUiState blastUiState)
-{
+void BlastSearchDialog::setUiStep(BlastUiState blastUiState) {
     QPixmap tick(":/icons/tick-128.png");
     tick.setDevicePixelRatio(devicePixelRatio()); //This is a workaround for a Qt bug.  Can possibly remove in the future.  https://bugreports.qt.io/browse/QTBUG-46846
 

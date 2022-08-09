@@ -35,7 +35,7 @@ public:
     explicit BlastSearch(const QDir &workDir = QDir::temp());
     virtual ~BlastSearch() = default;
 
-    int loadBlastQueriesFromFastaFile(QString fullFileName);
+    int loadQueriesFromFile(QString fullFileName);
     void blastQueryChanged(const QString& queryName);
 
     QString doAutoGraphSearch(const AssemblyGraph &graph, QString queriesFilename,
