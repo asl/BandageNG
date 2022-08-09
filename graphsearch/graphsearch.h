@@ -25,7 +25,8 @@
 
 namespace search {
 // This is a class to hold all graph node search related stuff.
-class GraphSearch {
+class GraphSearch : public  QObject {
+    Q_OBJECT;
 public:
     explicit GraphSearch(const QDir &workDir = QDir::temp());
     ~GraphSearch();

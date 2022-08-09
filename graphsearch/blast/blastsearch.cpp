@@ -54,25 +54,63 @@ bool BlastSearch::findTools() {
     return true;
 }
 
+QString BlastSearch::buildDatabase(const AssemblyGraph &graph) {
+    m_lastError = "";
+    if (!findTools())
+        return m_lastError;
+
+    if (m_buildDbWorker)
+        return (m_lastError = "Building is already in progress");
+
+    m_buildDbWorker = new BuildBlastDatabaseWorker(m_makeblastdbCommand, graph, temporaryDir());
+    if (!m_buildDbWorker->buildBlastDatabase())
+        m_lastError = m_buildDbWorker->m_error;
+
+    m_buildDbWorker->deleteLater();
+    m_buildDbWorker = nullptr;
+
+    emit finishedDbBuild(m_lastError);
+    return m_lastError;
+}
+
+QString BlastSearch::doSearch(QString extraParameters) {
+    return doSearch(queries(), extraParameters);
+}
+
+QString BlastSearch::doSearch(Queries &queries, QString extraParameters) {
+    m_lastError = "";
+    if (!findTools())
+        return m_lastError;
+
+    if (m_runSearchWorker)
+        return (m_lastError = "Search is already in progress");
+
+    m_runSearchWorker = new RunBlastSearchWorker(m_blastnCommand, m_tblastnCommand, extraParameters, temporaryDir());
+    if (!m_runSearchWorker->runBlastSearch(queries))
+         m_lastError = m_runSearchWorker->m_error;
+
+    m_runSearchWorker->deleteLater();
+    m_runSearchWorker = nullptr;
+
+    emit finishedSearch(m_lastError);
+    return m_lastError;
+}
+
 //This function carries out the entire BLAST search procedure automatically, without user input.
 //It returns an error string which is empty if all goes well.
 QString BlastSearch::doAutoGraphSearch(const AssemblyGraph &graph, QString queriesFilename,
                                        QString extraParameters) {
     cleanUp();
 
-    if (!findTools())
-        return m_lastError;
-
-    BuildBlastDatabaseWorker buildBlastDatabaseWorker(m_makeblastdbCommand, graph,
-                                                      temporaryDir());
-    if (!buildBlastDatabaseWorker.buildBlastDatabase())
-        return (m_lastError = buildBlastDatabaseWorker.m_error);
+    QString maybeError = buildDatabase(graph); // It is expected that buildDatabase will setup last error as well
+    if (!maybeError.isEmpty())
+        return maybeError;
 
     loadBlastQueriesFromFastaFile(queriesFilename);
 
-    RunBlastSearchWorker runBlastSearchWorker(m_blastnCommand, m_tblastnCommand, extraParameters, temporaryDir());
-    if (!runBlastSearchWorker.runBlastSearch(queries()))
-        return (m_lastError = runBlastSearchWorker.m_error);
+    maybeError = doSearch(queries(), extraParameters);
+    if (!maybeError.isEmpty())
+        return maybeError;
 
     blastQueryChanged("all");
 
@@ -137,4 +175,18 @@ void BlastSearch::blastQueryChanged(const QString &queryName) {
             }
         }
     }
+}
+
+void BlastSearch::cancelDatabaseBuild() {
+    if (!m_buildDbWorker)
+        return;
+
+    emit m_buildDbWorker->cancel();
+}
+
+void BlastSearch::cancelSearch() {
+    if (!m_runSearchWorker)
+        return;
+
+    emit m_runSearchWorker->cancel();
 }

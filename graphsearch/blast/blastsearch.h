@@ -25,7 +25,12 @@
 // This is a class to hold all BLAST search related stuff.
 // An instance of it is made available to the whole program
 // as a global.
+
+class BuildBlastDatabaseWorker;
+class RunBlastSearchWorker;
+
 class BlastSearch : public search::GraphSearch {
+    Q_OBJECT
 public:
     explicit BlastSearch(const QDir &workDir = QDir::temp());
     virtual ~BlastSearch() = default;
@@ -36,9 +41,24 @@ public:
     QString doAutoGraphSearch(const AssemblyGraph &graph, QString queriesFilename,
                               QString extraParameters = "") override;
 
+    QString buildDatabase(const AssemblyGraph &graph);
+    QString doSearch(QString extraParameters);
+    QString doSearch(search::Queries &queries, QString extraParameters);
+
     QString name() const override { return "BLAST"; }
+
+public slots:
+    void cancelDatabaseBuild();
+    void cancelSearch();
+
+signals:
+    void finishedDbBuild(QString error);
+    void finishedSearch(QString error);
+
 private:
     bool findTools();
 
+    BuildBlastDatabaseWorker *m_buildDbWorker = nullptr;
+    RunBlastSearchWorker *m_runSearchWorker = nullptr;
     QString m_makeblastdbCommand, m_blastnCommand, m_tblastnCommand;
 };

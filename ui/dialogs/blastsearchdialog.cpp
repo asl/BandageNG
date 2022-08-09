@@ -264,11 +264,10 @@ void BlastSearchDialog::buildBlastDatabase(bool separateThread) {
 
         buildBlastDatabaseThread->start();
     } else {
-        BuildBlastDatabaseWorker buildBlastDatabaseWorker(makeblastdbCommand, *g_assemblyGraph, m_blastSearch->temporaryDir());
-        buildBlastDatabaseWorker.buildBlastDatabase();
+        QString maybeError = g_blastSearch->buildDatabase(*g_assemblyGraph);
         progress->close();
         delete progress;
-        blastDatabaseBuildFinished(buildBlastDatabaseWorker.m_error);
+        blastDatabaseBuildFinished(maybeError);
     }
 }
 
@@ -406,13 +405,10 @@ void BlastSearchDialog::runBlastSearches(bool separateThread) {
 
         blastSearchThread->start();
     } else {
-        RunBlastSearchWorker runBlastSearchWorker(blastnCommand, tblastnCommand,
-                                                  ui->parametersLineEdit->text().simplified(),
-                                                  m_blastSearch->temporaryDir());
-        runBlastSearchWorker.runBlastSearch(m_blastSearch->queries());
+        QString maybeError = g_blastSearch->doSearch(ui->parametersLineEdit->text().simplified());
         progress->close();
         delete progress;
-        runBlastSearchFinished(runBlastSearchWorker.m_error);
+        runBlastSearchFinished(maybeError);
     }
 }
 
