@@ -45,7 +45,7 @@ set(LIB_SOURCES
         ui/dialogs/aboutdialog.cpp
         ui/annotationswidget.cpp
         ui/bedwidget.cpp
-        ui/dialogs/blasthitfiltersdialog.cpp
+        ui/dialogs/hitfiltersdialog.cpp
         ui/dialogs/blastsearchdialog.cpp
         ui/dialogs/changenodedepthdialog.cpp
         ui/dialogs/changenodenamedialog.cpp
@@ -76,7 +76,7 @@ set(LIB_SOURCES
 
 set(FORMS
         ui/dialogs/aboutdialog.ui
-        ui/dialogs/blasthitfiltersdialog.ui
+        ui/dialogs/hitfiltersdialog.ui
         ui/dialogs/blastsearchdialog.ui
         ui/dialogs/changenodedepthdialog.ui
         ui/dialogs/changenodenamedialog.ui

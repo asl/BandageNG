@@ -31,7 +31,7 @@
 
 #include "myprogressdialog.h"
 #include "querypathsdialog.h"
-#include "blasthitfiltersdialog.h"
+#include "hitfiltersdialog.h"
 
 #include "program/globals.h"
 #include "program/settings.h"
@@ -555,7 +555,7 @@ void BlastSearchDialog::setUiStep(BlastUiState blastUiState) {
 }
 
 void BlastSearchDialog::openFiltersDialog() {
-    BlastHitFiltersDialog filtersDialog(this);
+    HitFiltersDialog filtersDialog(this);
     filtersDialog.setWidgetsFromSettings();
 
     if (!filtersDialog.exec())
@@ -566,7 +566,7 @@ void BlastSearchDialog::openFiltersDialog() {
 }
 
 void BlastSearchDialog::setFilterText() {
-    ui->blastHitFiltersLabel->setText("Current filters: " + BlastHitFiltersDialog::getFilterText());
+    ui->blastHitFiltersLabel->setText("Current filters: " + HitFiltersDialog::getFilterText());
 }
 
 QueriesListModel::QueriesListModel(Queries &queries, QObject *parent)

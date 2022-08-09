@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>BlastHitFiltersDialog</class>
- <widget class="QDialog" name="BlastHitFiltersDialog">
+ <class>HitFiltersDialog</class>
+ <widget class="QDialog" name="HitFiltersDialog">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>BLAST hit filters</string>
+   <string>Hit filters</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
    <item row="5" column="1">
@@ -29,7 +29,7 @@
       </size>
      </property>
      <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;This filter will exclude any BLAST hits with a bit score length less than the specified value. I.e. only hits with a bit score greater than or equal to the value will be included in BLAST results. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;This filter will exclude any hits with a bit score length less than the specified value. I.e. only hits with a bit score greater than or equal to the value will be included in search results. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
     </widget>
    </item>
@@ -48,7 +48,7 @@
       </size>
      </property>
      <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;This filter will exclude any BLAST hits with an alignment length shorter than the specified value. I.e. only hits with an alignment length greater than or equal to the value will be included in BLAST results. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;This filter will exclude any hits with an alignment length shorter than the specified value. I.e. only hits with an alignment length greater than or equal to the value will be included in search results. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
     </widget>
    </item>
@@ -67,7 +67,7 @@
       </size>
      </property>
      <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;This filter will exclude any BLAST hits with a query coverage less than the specified value. I.e. only hits with a query coverage greater than or equal to the value will be included in BLAST results. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;This filter will exclude any hits with a query coverage less than the specified value. I.e. only hits with a query coverage greater than or equal to the value will be included in search results. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
     </widget>
    </item>
@@ -133,7 +133,7 @@
       </size>
      </property>
      <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;This filter will exclude any BLAST hits with an identity less than the specified value. I.e. only hits with an identity greater than or equal to the value will be included in BLAST results. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;This filter will exclude any hits with an identity less than the specified value. I.e. only hits with an identity greater than or equal to the value will be included in search results. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
     </widget>
    </item>
@@ -152,7 +152,7 @@
       </size>
      </property>
      <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;This filter will exclude any BLAST hits with a bit score length less than the specified value. I.e. only hits with a bit score greater than or equal to the value will be included in BLAST results.  &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;This filter will exclude any hits with a bit score length less than the specified value. I.e. only hits with a bit score greater than or equal to the value will be included in search results.  &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
     </widget>
    </item>
@@ -292,7 +292,7 @@
    <item row="0" column="0" colspan="5">
     <widget class="QLabel" name="filterDescriptionLabel">
      <property name="text">
-      <string>Turn on one or more of these filters to exclude BLAST hits which fail to meet the defined threshold. To see the effects of changing these filters, it is necessary to rerun the BLAST search.</string>
+      <string>Turn on one or more of these filters to exclude hits which fail to meet the defined threshold. To see the effects of changing these filters, it is necessary to rerun the search.</string>
      </property>
      <property name="wordWrap">
       <bool>true</bool>
@@ -339,7 +339,7 @@
   <connection>
    <sender>buttonBox</sender>
    <signal>accepted()</signal>
-   <receiver>BlastHitFiltersDialog</receiver>
+   <receiver>HitFiltersDialog</receiver>
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -355,7 +355,7 @@
   <connection>
    <sender>buttonBox</sender>
    <signal>rejected()</signal>
-   <receiver>BlastHitFiltersDialog</receiver>
+   <receiver>HitFiltersDialog</receiver>
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">

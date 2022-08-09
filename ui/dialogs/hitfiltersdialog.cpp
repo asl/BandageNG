@@ -1,12 +1,29 @@
-#include "blasthitfiltersdialog.h"
-#include "ui_blasthitfiltersdialog.h"
+// Copyright 2022 Anton Korobeynikov
+
+// This file is part of Bandage-NG
+
+// Bandage is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// Bandage is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with Bandage.  If not, see <http://www.gnu.org/licenses/>.
+
+#include "hitfiltersdialog.h"
+#include "ui_hitfiltersdialog.h"
 
 #include "program/globals.h"
 #include "program/settings.h"
 
-BlastHitFiltersDialog::BlastHitFiltersDialog(QWidget *parent) :
+HitFiltersDialog::HitFiltersDialog(QWidget *parent) :
     QDialog(parent),
-    ui(new Ui::BlastHitFiltersDialog)
+    ui(new Ui::HitFiltersDialog)
 {
     ui->setupUi(this);
 
@@ -17,13 +34,13 @@ BlastHitFiltersDialog::BlastHitFiltersDialog(QWidget *parent) :
     connect(ui->bitScoreCheckBox, SIGNAL(toggled(bool)), this, SLOT(checkBoxesChanged()));
 }
 
-BlastHitFiltersDialog::~BlastHitFiltersDialog()
+HitFiltersDialog::~HitFiltersDialog()
 {
     delete ui;
 }
 
 
-void BlastHitFiltersDialog::checkBoxesChanged()
+void HitFiltersDialog::checkBoxesChanged()
 {
     ui->alignmentLengthSpinBox->setEnabled(ui->alignmentLengthCheckBox->isChecked());
 
@@ -52,7 +69,7 @@ void setSpinBoxValMinAndMax(QDoubleSpinBox * spinBox, FloatSetting setting)
     spinBox->setMaximum(setting.max);
 }
 
-void BlastHitFiltersDialog::setWidgetsFromSettings()
+void HitFiltersDialog::setWidgetsFromSettings()
 {
     ui->alignmentLengthCheckBox->setChecked(g_settings->blastAlignmentLengthFilter.on);
     ui->queryCoverageCheckBox->setChecked(g_settings->blastQueryCoverageFilter.on);
@@ -72,7 +89,7 @@ void BlastHitFiltersDialog::setWidgetsFromSettings()
 }
 
 
-void BlastHitFiltersDialog::setSettingsFromWidgets()
+void HitFiltersDialog::setSettingsFromWidgets()
 {
     g_settings->blastAlignmentLengthFilter.on = ui->alignmentLengthCheckBox->isChecked();
     g_settings->blastQueryCoverageFilter.on = ui->queryCoverageCheckBox->isChecked();
@@ -88,7 +105,7 @@ void BlastHitFiltersDialog::setSettingsFromWidgets()
 }
 
 
-QString BlastHitFiltersDialog::getFilterText()
+QString HitFiltersDialog::getFilterText()
 {
     QString filterText;
     if (g_settings->blastAlignmentLengthFilter.on)
