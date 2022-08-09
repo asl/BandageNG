@@ -36,10 +36,10 @@ namespace Ui {
 class BlastSearchDialog;
 }
 
-enum BlastUiState {BLAST_DB_NOT_YET_BUILT, BLAST_DB_BUILD_IN_PROGRESS,
-    BLAST_DB_BUILT_BUT_NO_QUERIES,
-    READY_FOR_BLAST_SEARCH, BLAST_SEARCH_IN_PROGRESS,
-    BLAST_SEARCH_COMPLETE};
+enum BlastUiState {GRAPH_DB_NOT_YET_BUILT, GRAPH_DB_BUILD_IN_PROGRESS,
+    GRAPH_DB_BUILT_BUT_NO_QUERIES,
+    READY_FOR_GRAPH_SEARCH, GRAPH_SEARCH_IN_PROGRESS,
+    GRAPH_SEARCH_COMPLETE};
 
 class PathButtonDelegate : public QStyledItemDelegate {
     Q_OBJECT
@@ -115,26 +115,26 @@ private:
     HitsListModel *m_hitsListModel;
 
     void setUiStep(BlastUiState blastUiState);
-    void clearBlastHits();
+    void clearHits();
 
     void loadQueriesFromFile(const QString& fullFileName);
-    void buildBlastDatabase(bool separateThread);
-    void runBlastSearches(bool separateThread);
+    void buildDatabase(bool separateThread);
+    void runGraphSearches(bool separateThread);
     void setFilterText();
 
 private slots:
     void afterWindowShow();
-    void buildBlastDatabaseInThread();
-    void loadBlastQueriesFromFastaFileButtonClicked();
+    void buildGraphDatabaseInThread();
+    void loadQueriesFromFileButtonClicked();
     void enterQueryManually();
     void clearAllQueries();
     void clearSelectedQueries();
-    void runBlastSearchesInThread();
-    void fillTablesAfterBlastSearch();
+    void runGraphSearchesInThread();
+    void fillTablesAfterGraphSearch();
     void updateTables();
 
-    void blastDatabaseBuildFinished(const QString& error);
-    void runBlastSearchFinished(const QString& error);
+    void graphDatabaseBuildFinished(const QString& error);
+    void graphSearchFinished(const QString& error);
 
     void openFiltersDialog();
 

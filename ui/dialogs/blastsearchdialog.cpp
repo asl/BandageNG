@@ -113,10 +113,10 @@ BlastSearchDialog::BlastSearchDialog(BlastSearch *blastSearch,
     // If the dialog is given an autoQuery parameter, then it will
     // carry out the entire process on its own.
     if (!autoQuery.isEmpty()) {
-        buildBlastDatabase(false);
+        buildDatabase(false);
         clearAllQueries();
         loadQueriesFromFile(autoQuery);
-        runBlastSearches(false);
+        runGraphSearches(false);
         QMetaObject::invokeMethod(this, "close", Qt::QueuedConnection);
         return;
     }
@@ -124,32 +124,32 @@ BlastSearchDialog::BlastSearchDialog(BlastSearch *blastSearch,
     // If a BLAST database already exists, move to step 2.
     QFile databaseFile = m_blastSearch->temporaryDir().filePath("all_nodes.fasta");
     if (databaseFile.exists())
-        setUiStep(BLAST_DB_BUILT_BUT_NO_QUERIES);
+        setUiStep(GRAPH_DB_BUILT_BUT_NO_QUERIES);
     //If there isn't a BLAST database, clear the entire temporary directory
     //and move to step 1.
     else {
         m_blastSearch->emptyTempDirectory();
-        setUiStep(BLAST_DB_NOT_YET_BUILT);
+        setUiStep(GRAPH_DB_NOT_YET_BUILT);
     }
 
     // If queries already exist, display them and move to step 3.
     if (!m_blastSearch->queries().empty()) {
         updateTables();
-        setUiStep(READY_FOR_BLAST_SEARCH);
+        setUiStep(READY_FOR_GRAPH_SEARCH);
     }
 
     // If results already exist, display them and move to step 4.
     if (!m_hitsListModel->empty()) {
         updateTables();
-        setUiStep(BLAST_SEARCH_COMPLETE);
+        setUiStep(GRAPH_SEARCH_COMPLETE);
     }
 
-    connect(ui->buildBlastDatabaseButton, SIGNAL(clicked()), this, SLOT(buildBlastDatabaseInThread()));
-    connect(ui->loadQueriesFromFastaButton, SIGNAL(clicked()), this, SLOT(loadBlastQueriesFromFastaFileButtonClicked()));
+    connect(ui->buildBlastDatabaseButton, SIGNAL(clicked()), this, SLOT(buildGraphDatabaseInThread()));
+    connect(ui->loadQueriesFromFastaButton, SIGNAL(clicked()), this, SLOT(loadQueriesFromFileButtonClicked()));
     connect(ui->enterQueryManuallyButton, SIGNAL(clicked()), this, SLOT(enterQueryManually()));
     connect(ui->clearAllQueriesButton, SIGNAL(clicked()), this, SLOT(clearAllQueries()));
     connect(ui->clearSelectedQueriesButton, SIGNAL(clicked(bool)), this, SLOT(clearSelectedQueries()));
-    connect(ui->runBlastSearchButton, SIGNAL(clicked()), this, SLOT(runBlastSearchesInThread()));
+    connect(ui->runBlastSearchButton, SIGNAL(clicked()), this, SLOT(runGraphSearchesInThread()));
 
     connect(ui->blastQueriesTable->selectionModel(),
         &QItemSelectionModel::selectionChanged,
@@ -205,17 +205,17 @@ void BlastSearchDialog::afterWindowShow() {
     updateTables();
 }
 
-void BlastSearchDialog::clearBlastHits() {
+void BlastSearchDialog::clearHits() {
     m_blastSearch->clearHits();
     g_annotationsManager->removeGroupByName(g_settings->blastAnnotationGroupName);
     updateTables();
 }
 
-void BlastSearchDialog::fillTablesAfterBlastSearch() {
+void BlastSearchDialog::fillTablesAfterGraphSearch() {
     updateTables();
 
     if (m_hitsListModel->empty())
-        QMessageBox::information(this, "No hits", "No BLAST hits were found for the given queries and parameters.");
+        QMessageBox::information(this, "No hits", "No " + m_blastSearch->name() + " hits were found for the given queries and parameters.");
 }
 
 void BlastSearchDialog::updateTables() {
@@ -225,26 +225,26 @@ void BlastSearchDialog::updateTables() {
     ui->blastHitsTable->resizeColumnsToContents();
 }
 
-void BlastSearchDialog::buildBlastDatabaseInThread() {
-    buildBlastDatabase(true);
+void BlastSearchDialog::buildGraphDatabaseInThread() {
+    buildDatabase(true);
 }
 
-void BlastSearchDialog::buildBlastDatabase(bool separateThread) {
-    setUiStep(BLAST_DB_BUILD_IN_PROGRESS);
+void BlastSearchDialog::buildDatabase(bool separateThread) {
+    setUiStep(GRAPH_DB_BUILD_IN_PROGRESS);
 
-    auto * progress = new MyProgressDialog(this, "Running " + g_blastSearch->name() + " database...",
+    auto * progress = new MyProgressDialog(this, "Running " + m_blastSearch->name() + " database...",
                                            separateThread,
                                            "Cancel build",
                                            "Cancelling build...",
-                                           "Clicking this button will stop the " + g_blastSearch->name() +" database from being built.");
+                                           "Clicking this button will stop the " + m_blastSearch->name() +" database from being built.");
     progress->setWindowModality(Qt::WindowModal);
     progress->show();
 
-    connect(g_blastSearch.get(), SIGNAL(finishedDbBuild(QString)), progress, SLOT(deleteLater()));
-    connect(g_blastSearch.get(), SIGNAL(finishedDbBuild(QString)), this, SLOT(blastDatabaseBuildFinished(QString)));
-    connect(progress, SIGNAL(halt()), g_blastSearch.get(), SLOT(cancelDatabaseBuild()));
+    connect(m_blastSearch, SIGNAL(finishedDbBuild(QString)), progress, SLOT(deleteLater()));
+    connect(m_blastSearch, SIGNAL(finishedDbBuild(QString)), this, SLOT(graphDatabaseBuildFinished(QString)));
+    connect(progress, SIGNAL(halt()), m_blastSearch, SLOT(cancelDatabaseBuild()));
 
-    auto builder = [&]() { g_blastSearch->buildDatabase(*g_assemblyGraph); };
+    auto builder = [this]() { m_blastSearch->buildDatabase(*g_assemblyGraph); };
     if (separateThread) {
         QFuture<void> res = QtConcurrent::run(builder);
     } else
@@ -252,15 +252,15 @@ void BlastSearchDialog::buildBlastDatabase(bool separateThread) {
 }
 
 
-void BlastSearchDialog::blastDatabaseBuildFinished(const QString& error) {
+void BlastSearchDialog::graphDatabaseBuildFinished(const QString& error) {
     if (!error.isEmpty()) {
         QMessageBox::warning(this, "Error", error);
-        setUiStep(BLAST_DB_NOT_YET_BUILT);
+        setUiStep(GRAPH_DB_NOT_YET_BUILT);
     } else
-        setUiStep(BLAST_DB_BUILT_BUT_NO_QUERIES);
+        setUiStep(GRAPH_DB_BUILT_BUT_NO_QUERIES);
 }
 
-void BlastSearchDialog::loadBlastQueriesFromFastaFileButtonClicked() {
+void BlastSearchDialog::loadQueriesFromFileButtonClicked() {
     QStringList fullFileNames = QFileDialog::getOpenFileNames(this, "Load queries", g_memory->rememberedPath);
 
     if (fullFileNames.empty()) //User did hit cancel
@@ -277,10 +277,10 @@ void BlastSearchDialog::loadQueriesFromFile(const QString& fullFileName) {
 
     int queriesLoaded = m_blastSearch->loadQueriesFromFile(fullFileName);
     if (queriesLoaded > 0) {
-        clearBlastHits();
+        clearHits();
 
         g_memory->rememberedPath = QFileInfo(fullFileName).absolutePath();
-        setUiStep(READY_FOR_BLAST_SEARCH);
+        setUiStep(READY_FOR_GRAPH_SEARCH);
     }
     updateTables();
 
@@ -289,7 +289,7 @@ void BlastSearchDialog::loadQueriesFromFile(const QString& fullFileName) {
 
     if (queriesLoaded == 0)
         QMessageBox::information(this, "No queries loaded",
-                                 "No queries could be loaded from the specified file: " + g_blastSearch->lastError());
+                                 "No queries could be loaded from the specified file: " + m_blastSearch->lastError());
 }
 
 
@@ -302,9 +302,9 @@ void BlastSearchDialog::enterQueryManually() {
     m_blastSearch->addQuery(new search::Query(queryName,
                                       enterOneBlastQueryDialog.getSequence()));
     updateTables();
-    clearBlastHits();
+    clearHits();
 
-    setUiStep(READY_FOR_BLAST_SEARCH);
+    setUiStep(READY_FOR_GRAPH_SEARCH);
 }
 
 void BlastSearchDialog::clearAllQueries() {
@@ -312,10 +312,10 @@ void BlastSearchDialog::clearAllQueries() {
 
     m_queriesListModel->m_queries.clearAllQueries();
 
-    clearBlastHits();
+    clearHits();
     updateTables();
 
-    setUiStep(BLAST_DB_BUILT_BUT_NO_QUERIES);
+    setUiStep(GRAPH_DB_BUILT_BUT_NO_QUERIES);
     emit blastChanged();
 }
 
@@ -339,43 +339,42 @@ void BlastSearchDialog::clearSelectedQueries() {
     emit blastChanged();
 }
 
-void BlastSearchDialog::runBlastSearchesInThread() {
-    runBlastSearches(true);
+void BlastSearchDialog::runGraphSearchesInThread() {
+    runGraphSearches(true);
 }
 
+void BlastSearchDialog::runGraphSearches(bool separateThread) {
+    setUiStep(GRAPH_SEARCH_IN_PROGRESS);
 
-void BlastSearchDialog::runBlastSearches(bool separateThread) {
-    setUiStep(BLAST_SEARCH_IN_PROGRESS);
+    clearHits();
 
-    clearBlastHits();
-
-    auto * progress = new MyProgressDialog(this, "Running " + g_blastSearch->name() + " search...",
+    auto * progress = new MyProgressDialog(this, "Running " + m_blastSearch->name() + " search...",
                                            separateThread,
                                            "Cancel search",
                                            "Cancelling search...",
-                                           "Clicking this button will stop the " + g_blastSearch->name() +" search.");
+                                           "Clicking this button will stop the " + m_blastSearch->name() +" search.");
     progress->setWindowModality(Qt::WindowModal);
     progress->show();
 
-    connect(g_blastSearch.get(), SIGNAL(finishedSearch(QString)), progress, SLOT(deleteLater()));
-    connect(g_blastSearch.get(), SIGNAL(finishedSearch(QString)), this, SLOT(runBlastSearchFinished(QString)));
-    connect(progress, SIGNAL(halt()), g_blastSearch.get(), SLOT(cancelSearch()));
+    connect(m_blastSearch, SIGNAL(finishedSearch(QString)), progress, SLOT(deleteLater()));
+    connect(m_blastSearch, SIGNAL(finishedSearch(QString)), this, SLOT(graphSearchFinished(QString)));
+    connect(progress, SIGNAL(halt()), m_blastSearch, SLOT(cancelSearch()));
 
-    auto searcher = [&]() { g_blastSearch->doSearch(ui->parametersLineEdit->text().simplified()); };
+    auto searcher = [&]() { m_blastSearch->doSearch(ui->parametersLineEdit->text().simplified()); };
     if (separateThread) {
         QFuture<void> res = QtConcurrent::run(searcher);
     } else
         searcher();
 }
 
-void BlastSearchDialog::runBlastSearchFinished(const QString& error) {
+void BlastSearchDialog::graphSearchFinished(const QString& error) {
     if (!error.isEmpty()) {
         QMessageBox::warning(this, "Error", error);
-        setUiStep(READY_FOR_BLAST_SEARCH);
+        setUiStep(READY_FOR_GRAPH_SEARCH);
     } else {
-        fillTablesAfterBlastSearch();
+        fillTablesAfterGraphSearch();
         g_settings->blastSearchParameters = ui->parametersLineEdit->text().simplified();
-        setUiStep(BLAST_SEARCH_COMPLETE);
+        setUiStep(GRAPH_SEARCH_COMPLETE);
     }
 
     emit blastChanged();
@@ -387,7 +386,7 @@ void BlastSearchDialog::setUiStep(BlastUiState blastUiState) {
 
     switch (blastUiState)
     {
-    case BLAST_DB_NOT_YET_BUILT:
+    case GRAPH_DB_NOT_YET_BUILT:
         ui->step1Label->setEnabled(true);
         ui->buildBlastDatabaseButton->setEnabled(true);
         ui->step2Label->setEnabled(false);
@@ -415,7 +414,7 @@ void BlastSearchDialog::setUiStep(BlastUiState blastUiState) {
         ui->blastHitsTableInfoText->setEnabled(false);
         break;
 
-    case BLAST_DB_BUILD_IN_PROGRESS:
+    case GRAPH_DB_BUILD_IN_PROGRESS:
         ui->step1Label->setEnabled(true);
         ui->buildBlastDatabaseButton->setEnabled(false);
         ui->step2Label->setEnabled(false);
@@ -443,7 +442,7 @@ void BlastSearchDialog::setUiStep(BlastUiState blastUiState) {
         ui->blastHitsTableInfoText->setEnabled(false);
         break;
 
-    case BLAST_DB_BUILT_BUT_NO_QUERIES:
+    case GRAPH_DB_BUILT_BUT_NO_QUERIES:
         ui->step1Label->setEnabled(true);
         ui->buildBlastDatabaseButton->setEnabled(false);
         ui->step2Label->setEnabled(true);
@@ -471,7 +470,7 @@ void BlastSearchDialog::setUiStep(BlastUiState blastUiState) {
         ui->blastHitsTableInfoText->setEnabled(false);
         break;
 
-    case READY_FOR_BLAST_SEARCH:
+    case READY_FOR_GRAPH_SEARCH:
         ui->step1Label->setEnabled(true);
         ui->buildBlastDatabaseButton->setEnabled(false);
         ui->step2Label->setEnabled(true);
@@ -498,7 +497,7 @@ void BlastSearchDialog::setUiStep(BlastUiState blastUiState) {
         ui->blastHitsTableInfoText->setEnabled(false);
         break;
 
-    case BLAST_SEARCH_IN_PROGRESS:
+    case GRAPH_SEARCH_IN_PROGRESS:
         ui->step1Label->setEnabled(true);
         ui->buildBlastDatabaseButton->setEnabled(false);
         ui->step2Label->setEnabled(true);
@@ -525,7 +524,7 @@ void BlastSearchDialog::setUiStep(BlastUiState blastUiState) {
         ui->blastHitsTableInfoText->setEnabled(false);
         break;
 
-    case BLAST_SEARCH_COMPLETE:
+    case GRAPH_SEARCH_COMPLETE:
         ui->step1Label->setEnabled(true);
         ui->buildBlastDatabaseButton->setEnabled(false);
         ui->step2Label->setEnabled(true);
