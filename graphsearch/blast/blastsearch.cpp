@@ -135,7 +135,7 @@ QString BlastSearch::runOneBlastSearch(QuerySequenceType sequenceType,
                                        const QString &extraParameters,
                                        bool &success) {
     QTemporaryFile tmpFile(temporaryDir().filePath(sequenceType == NUCLEOTIDE ?
-                                                    "nucl_queries.XXXXXX.fasta" : "prot_queries.XXXXXX.fasta"));
+                                                   "nucl_queries.XXXXXX.fasta" : "prot_queries.XXXXXX.fasta"));
     if (!tmpFile.open()) {
         m_lastError = "Failed to create temporary query file";
         success = false;

@@ -229,6 +229,13 @@ QString Minimap2Search::doSearch(Queries &queries, QString extraParameters) {
         return m_lastError;
     }
 
+    for (const auto *query: queries.queries()) {
+        if (query->getSequenceType() != search::NUCLEOTIDE) {
+            emit finishedSearch(m_lastError = "Cannot handle non-nucleotide query: " + query->getName() + ". Remove it and retry search.");
+            return m_lastError;
+        }
+    }
+
     QTemporaryFile tmpFile(temporaryDir().filePath("queries.XXXXXX.fasta"));
     if (!tmpFile.open()) {
         emit finishedSearch(m_lastError = "Failed to create temporary query file");
