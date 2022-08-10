@@ -298,13 +298,13 @@ void GraphSearchDialog::loadQueriesFromFile(const QString& fullFileName) {
 
 
 void GraphSearchDialog::enterQueryManually() {
-    EnterOneQueryDialog enterOneBlastQueryDialog(this);
-    if (!enterOneBlastQueryDialog.exec())
+    EnterOneQueryDialog enterOneQueryDialog(this);
+    if (!enterOneQueryDialog.exec())
         return;
 
-    QString queryName = GraphSearch::cleanQueryName(enterOneBlastQueryDialog.getName());
+    QString queryName = GraphSearch::cleanQueryName(enterOneQueryDialog.getName());
     m_graphSearch->addQuery(new search::Query(queryName,
-                                              enterOneBlastQueryDialog.getSequence()));
+                                              enterOneQueryDialog.getSequence()));
     updateTables();
     clearHits();
 
@@ -384,11 +384,11 @@ void GraphSearchDialog::graphSearchFinished(const QString& error) {
     emit changed();
 }
 
-void GraphSearchDialog::setUiStep(SearchUiState blastUiState) {
+void GraphSearchDialog::setUiStep(SearchUiState uiState) {
     QPixmap tick(":/icons/tick-128.png");
     tick.setDevicePixelRatio(devicePixelRatio()); //This is a workaround for a Qt bug.  Can possibly remove in the future.  https://bugreports.qt.io/browse/QTBUG-46846
 
-    switch (blastUiState) {
+    switch (uiState) {
     case GRAPH_DB_NOT_YET_BUILT:
         ui->step1Label->setEnabled(true);
         ui->buildBlastDatabaseButton->setEnabled(true);

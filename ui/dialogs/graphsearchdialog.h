@@ -118,10 +118,10 @@ private:
     QueriesListModel *m_queriesListModel;
     HitsListModel *m_hitsListModel;
 
-    void setUiStep(SearchUiState blastUiState);
+    void setUiStep(SearchUiState uiState);
     void clearHits();
 
-    void loadQueriesFromFile(const QString& fullFileName);
+    void loadQueriesFromFile(const QString &fullFileName);
     void buildDatabase(bool separateThread);
     void runGraphSearches(bool separateThread);
     void setFilterText();
