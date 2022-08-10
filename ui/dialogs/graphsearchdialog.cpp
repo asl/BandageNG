@@ -16,8 +16,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Bandage.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "blastsearchdialog.h"
-#include "ui_blastsearchdialog.h"
+#include "graphsearchdialog.h"
+#include "ui_graphsearchdialog.h"
 
 #include "enteronequerydialog.h"
 
@@ -79,8 +79,8 @@ enum class HitsColumns : unsigned {
     TotalHitColumns = BitScore + 1
 };
 
-BlastSearchDialog::BlastSearchDialog(QWidget *parent, const QString& autoQuery)
- : QDialog(parent), ui(new Ui::BlastSearchDialog) {
+GraphSearchDialog::GraphSearchDialog(QWidget *parent, const QString& autoQuery)
+ : QDialog(parent), ui(new Ui::GraphSearchDialog) {
     ui->setupUi(this);
 
     m_graphSearch = search::GraphSearch::get(search::BLAST, QDir::temp(), this);
@@ -201,39 +201,39 @@ BlastSearchDialog::BlastSearchDialog(QWidget *parent, const QString& autoQuery)
     connect(ui->searcherComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(searcherChanged()));
 }
 
-BlastSearchDialog::~BlastSearchDialog() {
+GraphSearchDialog::~GraphSearchDialog() {
     delete ui;
 }
 
-void BlastSearchDialog::afterWindowShow() {
+void GraphSearchDialog::afterWindowShow() {
     updateTables();
 }
 
-void BlastSearchDialog::clearHits() {
+void GraphSearchDialog::clearHits() {
     m_graphSearch->clearHits();
     g_annotationsManager->removeGroupByName(m_graphSearch->annotationGroupName());
     updateTables();
 }
 
-void BlastSearchDialog::fillTablesAfterGraphSearch() {
+void GraphSearchDialog::fillTablesAfterGraphSearch() {
     updateTables();
 
     if (m_hitsListModel->empty())
         QMessageBox::information(this, "No hits", "No " + m_graphSearch->name() + " hits were found for the given queries and parameters.");
 }
 
-void BlastSearchDialog::updateTables() {
+void GraphSearchDialog::updateTables() {
     m_queriesListModel->update();
     m_hitsListModel->update(m_graphSearch->queries());
     ui->blastQueriesTable->resizeColumnsToContents();
     ui->blastHitsTable->resizeColumnsToContents();
 }
 
-void BlastSearchDialog::buildGraphDatabaseInThread() {
+void GraphSearchDialog::buildGraphDatabaseInThread() {
     buildDatabase(true);
 }
 
-void BlastSearchDialog::buildDatabase(bool separateThread) {
+void GraphSearchDialog::buildDatabase(bool separateThread) {
     setUiStep(GRAPH_DB_BUILD_IN_PROGRESS);
 
     auto * progress = new MyProgressDialog(this, "Running " + m_graphSearch->name() + " database...",
@@ -256,7 +256,7 @@ void BlastSearchDialog::buildDatabase(bool separateThread) {
 }
 
 
-void BlastSearchDialog::graphDatabaseBuildFinished(const QString& error) {
+void GraphSearchDialog::graphDatabaseBuildFinished(const QString& error) {
     if (!error.isEmpty()) {
         QMessageBox::warning(this, "Error", error);
         setUiStep(GRAPH_DB_NOT_YET_BUILT);
@@ -264,7 +264,7 @@ void BlastSearchDialog::graphDatabaseBuildFinished(const QString& error) {
         setUiStep(GRAPH_DB_BUILT_BUT_NO_QUERIES);
 }
 
-void BlastSearchDialog::loadQueriesFromFileButtonClicked() {
+void GraphSearchDialog::loadQueriesFromFileButtonClicked() {
     QStringList fullFileNames = QFileDialog::getOpenFileNames(this, "Load queries", g_memory->rememberedPath);
 
     if (fullFileNames.empty()) //User did hit cancel
@@ -274,7 +274,7 @@ void BlastSearchDialog::loadQueriesFromFileButtonClicked() {
         loadQueriesFromFile(fullFileName);
 }
 
-void BlastSearchDialog::loadQueriesFromFile(const QString& fullFileName) {
+void GraphSearchDialog::loadQueriesFromFile(const QString& fullFileName) {
     auto * progress = new MyProgressDialog(this, "Loading queries...", false);
     progress->setWindowModality(Qt::WindowModal);
     progress->show();
@@ -297,7 +297,7 @@ void BlastSearchDialog::loadQueriesFromFile(const QString& fullFileName) {
 }
 
 
-void BlastSearchDialog::enterQueryManually() {
+void GraphSearchDialog::enterQueryManually() {
     EnterOneQueryDialog enterOneBlastQueryDialog(this);
     if (!enterOneBlastQueryDialog.exec())
         return;
@@ -311,7 +311,7 @@ void BlastSearchDialog::enterQueryManually() {
     setUiStep(READY_FOR_GRAPH_SEARCH);
 }
 
-void BlastSearchDialog::clearAllQueries() {
+void GraphSearchDialog::clearAllQueries() {
     ui->clearAllQueriesButton->setEnabled(false);
 
     m_queriesListModel->m_queries.get().clearAllQueries();
@@ -323,7 +323,7 @@ void BlastSearchDialog::clearAllQueries() {
     emit changed();
 }
 
-void BlastSearchDialog::clearSelectedQueries() {
+void GraphSearchDialog::clearSelectedQueries() {
     // Use the table selection to figure out which queries are to be removed.
     QItemSelectionModel *select = ui->blastQueriesTable->selectionModel();
     QModelIndexList selection = select->selectedIndexes();
@@ -343,11 +343,11 @@ void BlastSearchDialog::clearSelectedQueries() {
     emit changed();
 }
 
-void BlastSearchDialog::runGraphSearchesInThread() {
+void GraphSearchDialog::runGraphSearchesInThread() {
     runGraphSearches(true);
 }
 
-void BlastSearchDialog::runGraphSearches(bool separateThread) {
+void GraphSearchDialog::runGraphSearches(bool separateThread) {
     setUiStep(GRAPH_SEARCH_IN_PROGRESS);
 
     clearHits();
@@ -371,7 +371,7 @@ void BlastSearchDialog::runGraphSearches(bool separateThread) {
         searcher();
 }
 
-void BlastSearchDialog::graphSearchFinished(const QString& error) {
+void GraphSearchDialog::graphSearchFinished(const QString& error) {
     if (!error.isEmpty()) {
         QMessageBox::warning(this, "Error", error);
         setUiStep(READY_FOR_GRAPH_SEARCH);
@@ -384,7 +384,7 @@ void BlastSearchDialog::graphSearchFinished(const QString& error) {
     emit changed();
 }
 
-void BlastSearchDialog::setUiStep(BlastUiState blastUiState) {
+void GraphSearchDialog::setUiStep(SearchUiState blastUiState) {
     QPixmap tick(":/icons/tick-128.png");
     tick.setDevicePixelRatio(devicePixelRatio()); //This is a workaround for a Qt bug.  Can possibly remove in the future.  https://bugreports.qt.io/browse/QTBUG-46846
 
@@ -556,7 +556,7 @@ void BlastSearchDialog::setUiStep(BlastUiState blastUiState) {
     }
 }
 
-void BlastSearchDialog::openFiltersDialog() {
+void GraphSearchDialog::openFiltersDialog() {
     HitFiltersDialog filtersDialog(this);
     filtersDialog.setWidgetsFromSettings();
 
@@ -567,11 +567,11 @@ void BlastSearchDialog::openFiltersDialog() {
     setFilterText();
 }
 
-void BlastSearchDialog::setFilterText() {
+void GraphSearchDialog::setFilterText() {
     ui->blastHitFiltersLabel->setText("Current filters: " + HitFiltersDialog::getFilterText());
 }
 
-void BlastSearchDialog::setUiCaptions() {
+void GraphSearchDialog::setUiCaptions() {
     ui->step1Label->setText(QString("<b>Step 1:</b> build %1 database").arg(m_graphSearch->name()));
     ui->step2Label->setText(QString("<b>Step 2:</b> enter %1 queries").arg(m_graphSearch->name()));
     ui->step3Label->setText(QString("<b>Step 3:</b> run %1 search").arg(m_graphSearch->name()));
@@ -580,7 +580,7 @@ void BlastSearchDialog::setUiCaptions() {
     ui->runBlastSearchButton->setText(QString("Run %1 search").arg(m_graphSearch->name()));
 }
 
-void BlastSearchDialog::searcherChanged() {
+void GraphSearchDialog::searcherChanged() {
     m_queriesListModel->startUpdate();
     g_annotationsManager->removeGroupByName(m_graphSearch->annotationGroupName());
 

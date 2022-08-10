@@ -1,23 +1,23 @@
-//Copyright 2017 Ryan Wick
+// Copyright 2017 Ryan Wick
+// Copyright 2022 Anton Korobeynikov
 
-//This file is part of Bandage
+// This file is part of Bandage
 
-//Bandage is free software: you can redistribute it and/or modify
-//it under the terms of the GNU General Public License as published by
-//the Free Software Foundation, either version 3 of the License, or
-//(at your option) any later version.
+// Bandage is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 
-//Bandage is distributed in the hope that it will be useful,
-//but WITHOUT ANY WARRANTY; without even the implied warranty of
-//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//GNU General Public License for more details.
+// Bandage is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
 
-//You should have received a copy of the GNU General Public License
-//along with Bandage.  If not, see <http://www.gnu.org/licenses/>.
+// You should have received a copy of the GNU General Public License
+// along with Bandage.  If not, see <http://www.gnu.org/licenses/>.
 
 
-#ifndef BLASTSEARCHDIALOG_H
-#define BLASTSEARCHDIALOG_H
+#pragma once
 
 #include <QDialog>
 #include <QAbstractTableModel>
@@ -33,10 +33,10 @@ namespace search {
 using Hits = std::vector<search::Hit>;
 
 namespace Ui {
-class BlastSearchDialog;
+class GraphSearchDialog;
 }
 
-enum BlastUiState {
+enum SearchUiState {
     GRAPH_DB_NOT_YET_BUILT, GRAPH_DB_BUILD_IN_PROGRESS,
     GRAPH_DB_BUILT_BUT_NO_QUERIES,
     READY_FOR_GRAPH_SEARCH, GRAPH_SEARCH_IN_PROGRESS,
@@ -103,22 +103,22 @@ public:
     Hits m_hits;
 };
 
-class BlastSearchDialog : public QDialog {
+class GraphSearchDialog : public QDialog {
     Q_OBJECT
 public:
-    explicit BlastSearchDialog(QWidget *parent = nullptr, const QString& autoQuery = "");
-    ~BlastSearchDialog() override;
+    explicit GraphSearchDialog(QWidget *parent = nullptr, const QString& autoQuery = "");
+    ~GraphSearchDialog() override;
     const search::GraphSearch *search() const { return m_graphSearch.get(); }
     search::GraphSearch *search() { return m_graphSearch.get(); }
 
 private:
-    Ui::BlastSearchDialog *ui;
+    Ui::GraphSearchDialog *ui;
 
     std::unique_ptr<search::GraphSearch> m_graphSearch;
     QueriesListModel *m_queriesListModel;
     HitsListModel *m_hitsListModel;
 
-    void setUiStep(BlastUiState blastUiState);
+    void setUiStep(SearchUiState blastUiState);
     void clearHits();
 
     void loadQueriesFromFile(const QString& fullFileName);
@@ -148,6 +148,3 @@ signals:
     void changed();
     void queryPathSelectionChanged();
 };
-
-
-#endif // BLASTSEARCHDIALOG_H

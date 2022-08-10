@@ -19,7 +19,7 @@
 
 #include "ui/dialogs/settingsdialog.h"
 #include "ui/dialogs/aboutdialog.h"
-#include "ui/dialogs/blastsearchdialog.h"
+#include "ui/dialogs/graphsearchdialog.h"
 #include "bandagegraphicsview.h"
 #include "graphicsviewzoom.h"
 #include "bandagegraphicsscene.h"
@@ -227,7 +227,7 @@ void MainWindow::afterMainWindowShow() {
 
     // If a BLAST query filename is present, do the BLAST search now automatically.
     if (!g_settings->blastQueryFilename.isEmpty()) {
-        BlastSearchDialog blastSearchDialog(this, g_settings->blastQueryFilename);
+        GraphSearchDialog blastSearchDialog(this, g_settings->blastQueryFilename);
         setupBlastQueryComboBox();
     }
 
@@ -1698,7 +1698,7 @@ void MainWindow::openAboutDialog()
 void MainWindow::openBlastSearchDialog() {
     // If a BLAST search dialog does not currently exist, make it.
     if (!m_blastSearchDialog) {
-        m_blastSearchDialog = new BlastSearchDialog(this);
+        m_blastSearchDialog = new GraphSearchDialog(this);
         connect(m_blastSearchDialog, SIGNAL(changed()), this, SLOT(blastChanged()));
         connect(m_blastSearchDialog, SIGNAL(queryPathSelectionChanged()), g_graphicsView->viewport(), SLOT(update()));
     }
@@ -1708,7 +1708,7 @@ void MainWindow::openBlastSearchDialog() {
 
 
 //This function is called whenever the user does something in the
-//BlastSearchDialog that should be reflected here in MainWindow.
+//GraphSearchDialog that should be reflected here in MainWindow.
 void MainWindow::blastChanged() {
     if (!m_blastSearchDialog)
         return;

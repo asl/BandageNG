@@ -41,7 +41,7 @@ class GraphicsViewZoom;
 class BandageGraphicsScene;
 class DeBruijnNode;
 class DeBruijnEdge;
-class BlastSearchDialog;
+class GraphSearchDialog;
 namespace search {
     class GraphSearch;
 }
@@ -69,7 +69,7 @@ private:
     QString m_fileToLoadOnStartup;
     bool m_drawGraphAfterLoad;
     UiState m_uiState;
-    BlastSearchDialog * m_blastSearchDialog;
+    GraphSearchDialog * m_blastSearchDialog;
 
     bool m_alreadyShown;
 
