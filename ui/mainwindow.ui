@@ -61,7 +61,7 @@
        <property name="geometry">
         <rect>
          <x>0</x>
-         <y>0</y>
+         <y>-683</y>
          <width>283</width>
          <height>1526</height>
         </rect>
@@ -669,7 +669,7 @@ When in double mode, you can include '+' or '-' at the end of the node name to s
                 </item>
                 <item>
                  <property name="text">
-                  <string>Around BLAST hits</string>
+                  <string>Around query hits</string>
                  </property>
                 </item>
                 <item>
@@ -1385,7 +1385,7 @@ then colour which other nodes in the graph are likely to be contiguous
               <string notr="true">QToolButton {border: none; font: 13pt; font-weight: bold;}</string>
              </property>
              <property name="text">
-              <string> BLAST</string>
+              <string> Graph search</string>
              </property>
              <property name="iconSize">
               <size>
@@ -1435,9 +1435,7 @@ then colour which other nodes in the graph are likely to be contiguous
                  </size>
                 </property>
                 <property name="toolTip">
-                 <string>After a BLAST search is completed, you can select a query here for use 
-                                        with the 'Around BLAST hits' graph scope and the 'BLAST 
-                                        hits' colour modes.</string>
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;After a graph search is completed, you can select a query here for use with the 'Around query hits' graph scope.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                 </property>
                </widget>
               </item>
@@ -1466,7 +1464,7 @@ then colour which other nodes in the graph are likely to be contiguous
                  </size>
                 </property>
                 <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Click this button to open a dialog where a BLAST search for one or more queries can be carried out on the graph's nodes.&lt;br/&gt;&lt;br/&gt;After a BLAST search is complete, it will be possible to use the 'Around BLAST hits' graph scope and the 'BLAST hits' colour modes.  &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Click this button to open a dialog where a search for one or more queries can be carried out on the graph's nodes using different tools (BLAST, minimap2, etc).&lt;br/&gt;&lt;br/&gt;After a  search is complete, it will be possible to use the 'Around query hits' graph scope and node annotations.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                 </property>
                </widget>
               </item>
@@ -1497,7 +1495,7 @@ then colour which other nodes in the graph are likely to be contiguous
                  <enum>Qt::StrongFocus</enum>
                 </property>
                 <property name="text">
-                 <string>Create/view BLAST search</string>
+                 <string>Create/view graph search</string>
                 </property>
                </widget>
               </item>
