@@ -50,14 +50,14 @@ public:
 
     static QString cleanQueryName(QString queryName);
     void addQuery(Query *newQuery) { m_queries.addQuery(newQuery); }
-    search::Query * getQueryFromName(QString queryName) const { return m_queries.getQueryFromName(queryName); }
+    search::Query *getQueryFromName(QString queryName) const { return m_queries.getQueryFromName(queryName); }
 
     void clearHits();
     void cleanUp();
 
-    bool ready() const { return m_tempDirectory.isValid(); }
+    [[nodiscard]] bool ready() const { return m_tempDirectory.isValid(); }
     [[nodiscard]] const QTemporaryDir &temporaryDir() const { return m_tempDirectory; }
-    QString lastError() const { return m_lastError; }
+    [[nodiscard]] QString lastError() const { return m_lastError; }
 
     void emptyTempDirectory() const;
 
@@ -67,9 +67,9 @@ public:
     virtual QString doSearch(search::Queries &queries, QString extraParameters) = 0;
     virtual QString doAutoGraphSearch(const AssemblyGraph &graph, QString queriesFilename,
                                       QString extraParameters = "") = 0;
-    virtual QString name() const = 0;
-    virtual QString annotationGroupName() const = 0;
-    virtual bool allowManualQueries() const { return true; }
+    [[nodiscard]] virtual QString name() const = 0;
+    [[nodiscard]] virtual QString annotationGroupName() const = 0;
+    [[nodiscard]] virtual bool allowManualQueries() const { return true; }
 
     static std::unique_ptr<GraphSearch> get(GraphSearchKind kind,
                                             const QDir &workDir = QDir::temp(), QObject *parent = nullptr);
