@@ -17,8 +17,6 @@
 
 
 #include "blastsearch.h"
-#include "buildblastdatabaseworker.h"
-#include "runblastsearchworker.h"
 
 #include "program/settings.h"
 
@@ -28,6 +26,8 @@
 #include <QDir>
 #include <QRegularExpression>
 #include <QProcess>
+#include <QTemporaryFile>
+
 #include <cmath>
 #include <unordered_set>
 
@@ -58,15 +58,55 @@ QString BlastSearch::buildDatabase(const AssemblyGraph &graph) {
     if (!findTools())
         return m_lastError;
 
-    if (m_buildDbWorker)
+    if (m_buildDb)
         return (m_lastError = "Building is already in progress");
 
-    m_buildDbWorker = new BuildBlastDatabaseWorker(m_makeblastdbCommand, graph, temporaryDir());
-    if (!m_buildDbWorker->buildBlastDatabase())
-        m_lastError = m_buildDbWorker->m_error;
+    m_cancelBuildDatabase = false;
 
-    m_buildDbWorker->deleteLater();
-    m_buildDbWorker = nullptr;
+    QFile file(temporaryDir().filePath("all_nodes.fasta"));
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+        return (m_lastError = "Failed to open: " + file.fileName());
+
+    QTextStream out(&file);
+    for (const auto *node : graph.m_deBruijnGraphNodes) {
+        if (m_cancelBuildDatabase)
+            return (m_lastError = "Build cancelled.");
+
+        out << node->getFasta(true, false, false);
+    }
+    file.close();
+
+    // Make sure the graph has sequences
+    bool atLeastOneSequence = false;
+    for (const auto *node : graph.m_deBruijnGraphNodes) {
+        if (!node->sequenceIsMissing()) {
+            atLeastOneSequence = true;
+            break;
+        }
+    }
+
+    if (!atLeastOneSequence)
+        return (m_lastError = "Cannot build the Minimap2 database as this graph contains no sequences");
+
+    QStringList makeBlastdbOptions;
+    makeBlastdbOptions << "-in" << temporaryDir().filePath("all_nodes.fasta")
+                       << "-dbtype" << "nucl";
+
+    m_buildDb = new QProcess();
+    m_buildDb->start(m_makeblastdbCommand, makeBlastdbOptions);
+
+    bool finished = m_buildDb->waitForFinished(-1);
+    if (m_buildDb->exitCode() != 0 || !finished) {
+        m_lastError = "There was a problem building minimap2 database";
+        QString stdErr = m_buildDb->readAllStandardError();
+        m_lastError += stdErr.isEmpty() ? "." : ":\n\n" + stdErr;
+    } else if (m_cancelBuildDatabase)
+        m_lastError = "Build cancelled.";
+    else
+        m_lastError = "";
+
+    m_buildDb->deleteLater();
+    m_buildDb = nullptr;
 
     emit finishedDbBuild(m_lastError);
     return m_lastError;
@@ -76,22 +116,117 @@ QString BlastSearch::doSearch(QString extraParameters) {
     return doSearch(queries(), extraParameters);
 }
 
+static void writeQueryFile(QFile *file,
+                           const Queries &queries,
+                           QuerySequenceType sequenceType) {
+    QTextStream out(file);
+    for (const auto *query: queries.queries()) {
+        if (query->getSequenceType() != sequenceType)
+            continue;
+
+        out << '>' << query->getName() << '\n'
+            << query->getSequence()
+            << '\n';
+    }
+}
+
+QString BlastSearch::runOneBlastSearch(QuerySequenceType sequenceType,
+                                       const Queries &queries,
+                                       const QString &extraParameters,
+                                       bool &success) {
+    QTemporaryFile tmpFile(temporaryDir().filePath(sequenceType == NUCLEOTIDE ?
+                                                    "nucl_queries.XXXXXX.fasta" : "prot_queries.XXXXXX.fasta"));
+    if (!tmpFile.open()) {
+        m_lastError = "Failed to create temporary query file";
+        success = false;
+        return "";
+    }
+
+    writeQueryFile(&tmpFile, queries, sequenceType);
+
+    QStringList blastOptions;
+    blastOptions << "-query" << tmpFile.fileName()
+                 << "-db" << temporaryDir().filePath("all_nodes.fasta")
+                 << "-outfmt" << "6";
+    blastOptions << extraParameters.split(" ", Qt::SkipEmptyParts);
+
+    m_doSearch = new QProcess();
+    m_doSearch->start(sequenceType == NUCLEOTIDE ? m_blastnCommand : m_tblastnCommand,
+                      blastOptions);
+
+    bool finished = m_doSearch->waitForFinished(-1);
+    if (m_doSearch->exitCode() != 0 || !finished) {
+        if (m_cancelSearch) {
+            m_lastError = "BLAST search cancelled.";
+        } else {
+            m_lastError = "There was a problem running the BLAST search";
+            QString stdErr = m_doSearch->readAllStandardError();
+            m_lastError += stdErr.isEmpty() ? "." : ":\n\n" + stdErr;
+        }
+        m_doSearch->deleteLater();
+        m_doSearch = nullptr;
+
+        success = false;
+        emit finishedSearch(m_lastError);
+        return m_lastError;
+    }
+
+    QString blastOutput = m_doSearch->readAllStandardOutput();
+    m_doSearch->deleteLater();
+    m_doSearch = nullptr;
+
+    success = true;
+    return blastOutput;
+}
+
+static void buildHitsFromBlastOutput(QString blastOutput, Queries &queries);
+
 QString BlastSearch::doSearch(Queries &queries, QString extraParameters) {
     m_lastError = "";
-    if (!findTools())
+    if (!findTools()) {
+        emit finishedSearch(m_lastError);
         return m_lastError;
+    }
 
-    if (m_runSearchWorker)
-        return (m_lastError = "Search is already in progress");
+    // FIXME: Do we need proper mutex here?
+    if (m_doSearch) {
+        emit finishedSearch(m_lastError = "Search is already in progress");
+        return m_lastError;
+    }
 
-    m_runSearchWorker = new RunBlastSearchWorker(m_blastnCommand, m_tblastnCommand, extraParameters, temporaryDir());
-    if (!m_runSearchWorker->runBlastSearch(queries))
-         m_lastError = m_runSearchWorker->m_error;
+    m_cancelSearch = false;
 
-    m_runSearchWorker->deleteLater();
-    m_runSearchWorker = nullptr;
+    QString blastOutput;
+    bool success = false;
+    if (queries.getQueryCount(NUCLEOTIDE) > 0 && !m_cancelSearch) {
+        blastOutput += runOneBlastSearch(NUCLEOTIDE, queries, extraParameters, success);
+        if (!success) {
+            emit finishedSearch(m_lastError);
+            return m_lastError;
+        }
+    }
 
+    if (queries.getQueryCount(PROTEIN) > 0 && !m_cancelSearch) {
+        blastOutput += runOneBlastSearch(PROTEIN, queries, extraParameters, success);
+        if (!success) {
+            emit finishedSearch(m_lastError);
+            return m_lastError;
+        }
+    }
+
+    if (m_cancelSearch) {
+        emit finishedSearch(m_lastError = "BLAST search cancelled");
+        return m_lastError;
+    }
+
+    // If the code got here, then the search completed successfully.
+    buildHitsFromBlastOutput(blastOutput, queries);
+    queries.findQueryPaths();
+    queries.searchOccurred();
+
+    m_lastError = "";
     emit finishedSearch(m_lastError);
+
     return m_lastError;
 }
 
@@ -141,19 +276,122 @@ int BlastSearch::loadQueriesFromFile(QString fullFileName) {
 }
 
 void BlastSearch::cancelDatabaseBuild() {
-    if (!m_buildDbWorker)
+    if (!m_buildDb)
         return;
 
-    emit m_buildDbWorker->cancel();
+    m_cancelBuildDatabase = true;
+    if (m_buildDb)
+        m_buildDb->kill();
 }
 
 void BlastSearch::cancelSearch() {
-    if (!m_runSearchWorker)
+    if (!m_doSearch)
         return;
 
-    emit m_runSearchWorker->cancel();
+    m_cancelSearch = true;
+    if (m_doSearch)
+        m_doSearch->kill();
 }
 
 QString BlastSearch::annotationGroupName() const {
     return g_settings->blastAnnotationGroupName;
+}
+
+static QString getNodeNameFromString(const QString &nodeString) {
+    QStringList nodeStringParts = nodeString.split("_");
+
+    // The node string format should look like this:
+    // NODE_nodename_length_123_cov_1.23
+    if (nodeStringParts.size() < 6)
+        return "";
+
+    if (nodeStringParts.size() == 6)
+        return nodeStringParts[1];
+
+    // If the code got here, there are more than 6 parts.  This means there are
+    // underscores in the node name (happens a lot with Trinity graphs).  So we
+    // need to pull out the parts which constitute the name.
+    int underscoreCount = nodeStringParts.size() - 6;
+    QString nodeName = "";
+    for (int i = 0; i <= underscoreCount; ++i) {
+        nodeName += nodeStringParts[1+i];
+        if (i < underscoreCount)
+            nodeName += "_";
+    }
+
+    return nodeName;
+}
+
+// This function uses the contents of blastOutput (the raw output from the
+// BLAST search) to construct the Hit objects.
+// It looks at the filters to possibly exclude hits which fail to meet user-
+// defined thresholds.
+static void buildHitsFromBlastOutput(QString blastOutput,
+                                     Queries &queries) {
+    QStringList blastHitList = blastOutput.split("\n", Qt::SkipEmptyParts);
+
+    for (const auto &hitString : blastHitList) {
+        QStringList alignmentParts = hitString.split('\t');
+
+        if (alignmentParts.size() < 12)
+            continue;
+
+        QString queryName = alignmentParts[0];
+        QString nodeLabel = alignmentParts[1];
+        double percentIdentity = alignmentParts[2].toDouble();
+        int alignmentLength = alignmentParts[3].toInt();
+        int numberMismatches = alignmentParts[4].toInt();
+        int numberGapOpens = alignmentParts[5].toInt();
+        int queryStart = alignmentParts[6].toInt();
+        int queryEnd = alignmentParts[7].toInt();
+        int nodeStart = alignmentParts[8].toInt();
+        int nodeEnd = alignmentParts[9].toInt();
+        SciNot eValue(alignmentParts[10]);
+        double bitScore = alignmentParts[11].toDouble();
+
+        //Only save BLAST hits that are on forward strands.
+        if (nodeStart > nodeEnd)
+            continue;
+
+        QString nodeName = getNodeNameFromString(nodeLabel);
+        DeBruijnNode *node = nullptr;
+        auto it = g_assemblyGraph->m_deBruijnGraphNodes.find(nodeName.toStdString());
+        if (it == g_assemblyGraph->m_deBruijnGraphNodes.end())
+            continue;
+
+        node = it.value();
+
+        Query *query = queries.getQueryFromName(queryName);
+        if (query == nullptr)
+            continue;
+
+        // Check the user-defined filters.
+        if (g_settings->blastAlignmentLengthFilter.on &&
+            alignmentLength < g_settings->blastAlignmentLengthFilter)
+            continue;
+
+        if (g_settings->blastIdentityFilter.on &&
+            percentIdentity < g_settings->blastIdentityFilter)
+            continue;
+
+        if (g_settings->blastEValueFilter.on &&
+            eValue > g_settings->blastEValueFilter)
+            continue;
+
+        if (g_settings->blastBitScoreFilter.on &&
+            bitScore < g_settings->blastBitScoreFilter)
+            continue;
+
+        Hit hit(query, node, percentIdentity, alignmentLength,
+                numberMismatches, numberGapOpens, queryStart, queryEnd,
+                nodeStart, nodeEnd, eValue, bitScore);
+
+        if (g_settings->blastQueryCoverageFilter.on) {
+            double hitCoveragePercentage = 100.0 * hit.getQueryCoverageFraction();
+            if (hitCoveragePercentage < g_settings->blastQueryCoverageFilter)
+                continue;
+        }
+
+        query->addHit(hit);
+    }
 }

@@ -26,8 +26,7 @@
 // An instance of it is made available to the whole program
 // as a global.
 
-class BuildBlastDatabaseWorker;
-class RunBlastSearchWorker;
+class QProcess;
 
 class BlastSearch : public search::GraphSearch {
     Q_OBJECT
@@ -57,7 +56,12 @@ signals:
 private:
     bool findTools();
 
-    BuildBlastDatabaseWorker *m_buildDbWorker = nullptr;
-    RunBlastSearchWorker *m_runSearchWorker = nullptr;
+    QString runOneBlastSearch(search::QuerySequenceType sequenceType,
+                              const search::Queries &queries,
+                              const QString &extraParameters,
+                              bool &success);
+
+    bool m_cancelBuildDatabase = false, m_cancelSearch = false;
+    QProcess *m_buildDb = nullptr, *m_doSearch = nullptr;
     QString m_makeblastdbCommand, m_blastnCommand, m_tblastnCommand;
 };

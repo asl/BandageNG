@@ -218,15 +218,22 @@ static void buildHitsFromPAF(const QString &PAF,
 
 QString Minimap2Search::doSearch(Queries &queries, QString extraParameters) {
     m_lastError = "";
-    if (!findTools())
+    if (!findTools()) {
+        emit finishedSearch(m_lastError);
         return m_lastError;
+    }
 
-    if (m_doSearch)
-        return (m_lastError = "Search is already in progress");
+    // FIXME: Do we need proper mutex here?
+    if (m_doSearch) {
+        emit finishedSearch(m_lastError = "Search is already in progress");
+        return m_lastError;
+    }
 
     QTemporaryFile tmpFile(temporaryDir().filePath("queries.XXXXXX.fasta"));
-    if (!tmpFile.open())
-        return (m_lastError = "Failed to create temporary query file");
+    if (!tmpFile.open()) {
+        emit finishedSearch(m_lastError = "Failed to create temporary query file");
+        return m_lastError;
+    }
 
     writeQueryFile(&tmpFile, queries);
 
@@ -235,6 +242,7 @@ QString Minimap2Search::doSearch(Queries &queries, QString extraParameters) {
                     << temporaryDir().filePath("all_nodes.idx")
                     << tmpFile.fileName();
 
+    m_cancelSearch = false;
     m_doSearch = new QProcess();
     m_doSearch->start(m_minimap2Command, minimap2Options);
 
@@ -257,13 +265,18 @@ QString Minimap2Search::doSearch(Queries &queries, QString extraParameters) {
     }
 
     QString minimap2Output = m_doSearch->readAllStandardOutput();
+    m_doSearch->deleteLater();
+    m_doSearch = nullptr;
+
+    if (m_cancelSearch) {
+        emit finishedSearch(m_lastError = "Minimap2 search cancelled");
+        return m_lastError;
+    }
 
     buildHitsFromPAF(minimap2Output, queries);
     queries.findQueryPaths();
     queries.searchOccurred();
 
-    m_doSearch->deleteLater();
-    m_doSearch = nullptr;
     m_lastError = "";
 
     emit finishedSearch(m_lastError);
