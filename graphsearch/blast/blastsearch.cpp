@@ -53,6 +53,8 @@ bool BlastSearch::findTools() {
 }
 
 QString BlastSearch::buildDatabase(const AssemblyGraph &graph) {
+    DbBuildFinishedRAII watcher(this);
+    
     m_lastError = "";
     if (!findTools())
         return m_lastError;
@@ -107,7 +109,6 @@ QString BlastSearch::buildDatabase(const AssemblyGraph &graph) {
     m_buildDb->deleteLater();
     m_buildDb = nullptr;
 
-    emit finishedDbBuild(m_lastError);
     return m_lastError;
 }
 
@@ -166,7 +167,6 @@ QString BlastSearch::runOneBlastSearch(QuerySequenceType sequenceType,
         m_doSearch = nullptr;
 
         success = false;
-        emit finishedSearch(m_lastError);
         return m_lastError;
     }
 
@@ -181,17 +181,15 @@ QString BlastSearch::runOneBlastSearch(QuerySequenceType sequenceType,
 static void buildHitsFromBlastOutput(QString blastOutput, Queries &queries);
 
 QString BlastSearch::doSearch(Queries &queries, QString extraParameters) {
+    GraphSearchFinishedRAII watcher(this);
+    
     m_lastError = "";
-    if (!findTools()) {
-        emit finishedSearch(m_lastError);
+    if (!findTools())
         return m_lastError;
-    }
 
     // FIXME: Do we need proper mutex here?
-    if (m_doSearch) {
-        emit finishedSearch(m_lastError = "Search is already in progress");
-        return m_lastError;
-    }
+    if (m_doSearch)
+        return (m_lastError = "Search is already in progress");
 
     m_cancelSearch = false;
 
@@ -199,24 +197,18 @@ QString BlastSearch::doSearch(Queries &queries, QString extraParameters) {
     bool success = false;
     if (queries.getQueryCount(NUCLEOTIDE) > 0 && !m_cancelSearch) {
         blastOutput += runOneBlastSearch(NUCLEOTIDE, queries, extraParameters, success);
-        if (!success) {
-            emit finishedSearch(m_lastError);
+        if (!success)
             return m_lastError;
-        }
     }
 
     if (queries.getQueryCount(PROTEIN) > 0 && !m_cancelSearch) {
         blastOutput += runOneBlastSearch(PROTEIN, queries, extraParameters, success);
-        if (!success) {
-            emit finishedSearch(m_lastError);
+        if (!success)
             return m_lastError;
-        }
     }
 
-    if (m_cancelSearch) {
-        emit finishedSearch(m_lastError = "BLAST search cancelled");
-        return m_lastError;
-    }
+    if (m_cancelSearch)
+        return (m_lastError = "BLAST search cancelled");
 
     // If the code got here, then the search completed successfully.
     buildHitsFromBlastOutput(blastOutput, queries);
@@ -224,8 +216,6 @@ QString BlastSearch::doSearch(Queries &queries, QString extraParameters) {
     queries.searchOccurred();
 
     m_lastError = "";
-    emit finishedSearch(m_lastError);
-
     return m_lastError;
 }
 

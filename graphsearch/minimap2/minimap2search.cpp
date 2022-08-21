@@ -43,6 +43,7 @@ bool Minimap2Search::findTools() {
 }
 
 QString Minimap2Search::buildDatabase(const AssemblyGraph &graph) {
+    DbBuildFinishedRAII watcher(this);
     m_lastError = "";
     if (!findTools())
         return m_lastError;
@@ -97,7 +98,6 @@ QString Minimap2Search::buildDatabase(const AssemblyGraph &graph) {
     m_buildDb->deleteLater();
     m_buildDb = nullptr;
 
-    emit finishedDbBuild(m_lastError);
     return m_lastError;
 }
 
@@ -203,30 +203,24 @@ static void buildHitsFromPAF(const QString &PAF,
 }
 
 QString Minimap2Search::doSearch(Queries &queries, QString extraParameters) {
+    GraphSearchFinishedRAII watcher(this);
+    
     m_lastError = "";
-    if (!findTools()) {
-        emit finishedSearch(m_lastError);
+    if (!findTools())
         return m_lastError;
-    }
 
     // FIXME: Do we need proper mutex here?
-    if (m_doSearch) {
-        emit finishedSearch(m_lastError = "Search is already in progress");
-        return m_lastError;
-    }
+    if (m_doSearch)
+        return (m_lastError = "Search is already in progress");
 
     for (const auto *query: queries.queries()) {
-        if (query->getSequenceType() != search::NUCLEOTIDE) {
-            emit finishedSearch(m_lastError = "Cannot handle non-nucleotide query: " + query->getName() + ". Remove it and retry search.");
-            return m_lastError;
-        }
+        if (query->getSequenceType() != search::NUCLEOTIDE)
+            return (m_lastError = "Cannot handle non-nucleotide query: " + query->getName() + ". Remove it and retry search.");
     }
 
     QTemporaryFile tmpFile(temporaryDir().filePath("queries.XXXXXX.fasta"));
-    if (!tmpFile.open()) {
-        emit finishedSearch(m_lastError = "Failed to create temporary query file");
-        return m_lastError;
-    }
+    if (!tmpFile.open())
+        return (m_lastError = "Failed to create temporary query file");
 
     writeQueryFile(&tmpFile, queries);
 
@@ -253,7 +247,6 @@ QString Minimap2Search::doSearch(Queries &queries, QString extraParameters) {
         m_doSearch->deleteLater();
         m_doSearch = nullptr;
 
-        emit finishedSearch(m_lastError);
         return m_lastError;
     }
 
@@ -261,10 +254,8 @@ QString Minimap2Search::doSearch(Queries &queries, QString extraParameters) {
     m_doSearch->deleteLater();
     m_doSearch = nullptr;
 
-    if (m_cancelSearch) {
-        emit finishedSearch(m_lastError = "Minimap2 search cancelled");
-        return m_lastError;
-    }
+    if (m_cancelSearch)
+        return (m_lastError = "Minimap2 search cancelled");
 
     buildHitsFromPAF(minimap2Output, queries);
     queries.findQueryPaths();
@@ -272,7 +263,6 @@ QString Minimap2Search::doSearch(Queries &queries, QString extraParameters) {
 
     m_lastError = "";
 
-    emit finishedSearch(m_lastError);
     return m_lastError;
 }
 
