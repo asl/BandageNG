@@ -138,7 +138,7 @@ namespace utils {
 
             // Find name and length
             for (auto line : part.split(QRegularExpression("[\r\n]"), Qt::SkipEmptyParts)) {
-                auto tv = line.split(" ", Qt::SkipEmptyParts);
+                auto tv = line.split(QRegularExpression("[ \t]"), Qt::SkipEmptyParts);
                 if (tv.length() < 2)
                     continue;
                 if (tv[0] == "NAME")
@@ -152,7 +152,7 @@ namespace utils {
                     break;
             }
 
-            if (name.isEmpty() || length == 0)
+            if (name.isEmpty() || length == 0 || !protHmm.has_value())
                 continue;
 
             names.push_back(name);
