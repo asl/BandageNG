@@ -19,6 +19,7 @@
 
 #include "blast/blastsearch.h"
 #include "minimap2/minimap2search.h"
+#include "hmmer/hmmersearch.h"
 
 #include <memory>
 
@@ -35,8 +36,10 @@ std::unique_ptr<GraphSearch> GraphSearch::get(GraphSearchKind kind,
         case Minimap2:
             res = std::make_unique<Minimap2Search>(workDir, parent);
             break;
+        case NHMMER:
+            res = std::make_unique<HmmerSearch>(workDir, parent);
+            break;
     }
 
     return res;
 }
-

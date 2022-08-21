@@ -88,6 +88,7 @@ public:
     virtual QString doAutoGraphSearch(const AssemblyGraph &graph, QString queriesFilename,
                                       QString extraParameters = "") = 0;
     [[nodiscard]] virtual QString name() const = 0;
+    [[nodiscard]] virtual QString queryFormat() const = 0;
     [[nodiscard]] virtual QString annotationGroupName() const = 0;
     [[nodiscard]] virtual bool allowManualQueries() const { return true; }
 
@@ -101,7 +102,7 @@ public slots:
 signals:
     void finishedDbBuild(QString error);
     void finishedSearch(QString error);
-    
+
 protected:
     QString m_lastError;
 

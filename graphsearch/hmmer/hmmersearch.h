@@ -24,11 +24,11 @@
 
 class QProcess;
 
-class Minimap2Search : public search::GraphSearch {
+class HmmerSearch : public search::GraphSearch {
     Q_OBJECT
 public:
-    explicit Minimap2Search(const QDir &workDir = QDir::temp(), QObject *parent = nullptr);
-    virtual ~Minimap2Search() = default;
+    explicit HmmerSearch(const QDir &workDir = QDir::temp(), QObject *parent = nullptr);
+    virtual ~HmmerSearch() = default;
 
 
     QString doAutoGraphSearch(const AssemblyGraph &graph, QString queriesFilename,
@@ -38,9 +38,10 @@ public:
     QString doSearch(QString extraParameters) override;
     QString doSearch(search::Queries &queries, QString extraParameters) override;
 
-    QString name() const override { return "Minimap2"; }
-    QString queryFormat() const override { return "FASTA"; }
-    QString annotationGroupName() const override { return "Minimap2 hits"; };
+    bool allowManualQueries() const override { return false; }
+    QString name() const override { return "NHMMER"; }
+    QString queryFormat() const override { return "HMM"; }
+    QString annotationGroupName() const override { return "HMMER hits"; };
 
 public slots:
     void cancelDatabaseBuild() override;
@@ -52,5 +53,5 @@ private:
     bool m_cancelBuildDatabase = false, m_cancelSearch = false;
 
     QProcess *m_buildDb = nullptr, *m_doSearch = nullptr;
-    QString m_minimap2Command;
+    QString m_hmmerCommand;
 };

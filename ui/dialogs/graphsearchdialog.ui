@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>BLAST search</string>
+   <string>Graph Search</string>
   </property>
   <layout class="QGridLayout" name="gridLayout_2" columnstretch="0,0,0">
    <item row="3" column="1">
@@ -670,6 +670,11 @@
        <string>Minimap2</string>
       </property>
      </item>
+     <item>
+      <property name="text">
+       <string>NHMMER</string>
+      </property>
+     </item>     
     </widget>
    </item>
   </layout>

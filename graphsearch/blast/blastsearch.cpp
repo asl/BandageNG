@@ -1,4 +1,5 @@
-//Copyright 2017 Ryan Wick
+// Copyright 2017 Ryan Wick
+// Copyright 2022 Anton Korobeynikov
 
 //This file is part of Bandage
 

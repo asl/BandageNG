@@ -1,4 +1,5 @@
-//Copyright 2017 Ryan Wick
+// Copyright 2017 Ryan Wick
+// Copyright 2022 Anton Korobeynikov
 
 //This file is part of Bandage
 
@@ -43,6 +44,7 @@ public:
     QString doSearch(search::Queries &queries, QString extraParameters) override;
 
     QString name() const override { return "BLAST"; }
+    QString queryFormat() const override { return "FASTA"; }
     QString annotationGroupName() const override;
 
 public slots:

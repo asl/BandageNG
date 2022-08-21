@@ -575,6 +575,7 @@ void GraphSearchDialog::setUiCaptions() {
     ui->step1Label->setText(QString("<b>Step 1:</b> build %1 database").arg(m_graphSearch->name()));
     ui->step2Label->setText(QString("<b>Step 2:</b> enter %1 queries").arg(m_graphSearch->name()));
     ui->step3Label->setText(QString("<b>Step 3:</b> run %1 search").arg(m_graphSearch->name()));
+    ui->loadQueriesFromFastaButton->setText(QString("Load from %1 file").arg(m_graphSearch->queryFormat()));
     ui->buildBlastDatabaseButton->setText(QString("Build %1 database").arg(m_graphSearch->name()));
     ui->blastFiltersButton->setText(QString("Set %1 hit filters").arg(m_graphSearch->name()));
     ui->runBlastSearchButton->setText(QString("Run %1 search").arg(m_graphSearch->name()));

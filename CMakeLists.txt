@@ -20,6 +20,7 @@ set(LIB_SOURCES
         graphsearch/querypath.cpp
         graphsearch/blast/blastsearch.cpp
         graphsearch/minimap2/minimap2search.cpp
+        graphsearch/hmmer/hmmersearch.cpp
         command_line/commoncommandlinefunctions.cpp
         command_line/image.cpp
         command_line/info.cpp
