@@ -123,3 +123,11 @@ QString GraphSearch::cleanQueryName(QString queryName) {
 
     return queryName;
 }
+
+GraphSearch::DbBuildFinishedRAII::~DbBuildFinishedRAII() {
+    emit m_search->finishedDbBuild(m_search->lastError());
+}
+
+GraphSearch::GraphSearchFinishedRAII::~GraphSearchFinishedRAII() {
+    emit m_search->finishedSearch(m_search->lastError());
+}

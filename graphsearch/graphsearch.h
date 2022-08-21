@@ -24,17 +24,37 @@
 #include <QTemporaryDir>
 
 namespace search {
-    enum GraphSearchKind {
-        BLAST = 0,
-        Minimap2
-    };
+enum GraphSearchKind {
+    BLAST = 0,
+    Minimap2,
+    NHMMER,
+};
 
-    // This is a class to hold all graph node search related stuff.
+// This is a class to hold all graph node search related stuff.
 class GraphSearch : public QObject {
     Q_OBJECT;
 public:
     explicit GraphSearch(const QDir &workDir = QDir::temp(), QObject *parent = nullptr);
     ~GraphSearch();
+
+    // Small RAII helpers to emit signals on destruction
+    class DbBuildFinishedRAII {
+      public:
+        DbBuildFinishedRAII(GraphSearch *search)
+                : m_search(search) {}
+        ~DbBuildFinishedRAII();
+      private:
+        GraphSearch *m_search;
+    };
+
+    class GraphSearchFinishedRAII {
+      public:
+        GraphSearchFinishedRAII(GraphSearch *search)
+                : m_search(search) {}
+        ~GraphSearchFinishedRAII();
+      private:
+        GraphSearch *m_search;
+    };
 
     [[nodiscard]] const auto &queries() const { return m_queries; }
     auto &queries() { return m_queries; }
@@ -73,6 +93,15 @@ public:
 
     static std::unique_ptr<GraphSearch> get(GraphSearchKind kind,
                                             const QDir &workDir = QDir::temp(), QObject *parent = nullptr);
+
+public slots:
+    virtual void cancelDatabaseBuild() {};
+    virtual void cancelSearch() {};
+
+signals:
+    void finishedDbBuild(QString error);
+    void finishedSearch(QString error);
+    
 protected:
     QString m_lastError;
 
