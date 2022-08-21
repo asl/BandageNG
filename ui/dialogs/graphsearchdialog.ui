@@ -672,7 +672,7 @@
      </item>
      <item>
       <property name="text">
-       <string>NHMMER</string>
+       <string>HMMER</string>
       </property>
      </item>     
     </widget>

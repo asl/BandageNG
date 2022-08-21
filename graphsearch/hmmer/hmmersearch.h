@@ -39,7 +39,7 @@ public:
     QString doSearch(search::Queries &queries, QString extraParameters) override;
 
     bool allowManualQueries() const override { return false; }
-    QString name() const override { return "NHMMER"; }
+    QString name() const override { return "HMMER"; }
     QString queryFormat() const override { return "HMM"; }
     QString annotationGroupName() const override { return "HMMER hits"; };
 
