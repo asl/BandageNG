@@ -41,7 +41,7 @@ namespace graph {
         std::variant<
                 std::nullptr_t, // whole graph
                 QString, // path or node
-                std::pair<std::reference_wrapper<const search::Queries>, QString>, // hits
+                std::pair<const search::Queries*, QString>, // hits
                 std::pair<double, double> // depth
         > m_opt;
         unsigned m_distance;
@@ -58,12 +58,12 @@ namespace graph {
             return std::get<std::pair<double, double>>(m_opt).second;
         }
 
-        const search::Queries &queries() const {
-            return std::get<std::pair<std::reference_wrapper<const search::Queries>, QString>>(m_opt).first.get();
+        const search::Queries *queries() const {
+            return std::get<std::pair<const search::Queries*, QString>>(m_opt).first;
         };
 
         QString queryName() const {
-            return std::get<std::pair<std::reference_wrapper<const search::Queries>, QString>>(m_opt).second;
+            return std::get<std::pair<const search::Queries*, QString>>(m_opt).second;
         };
 
         QString nodeList() const {
@@ -104,6 +104,9 @@ namespace graph {
             return res;
         }
 
+        static Scope aroundHits(const search::Queries *queries, const QString& queryName,
+                                unsigned distance = 0);
+
         static Scope aroundHits(const search::Queries &queries, const QString& queryName,
                                 unsigned distance = 0);
 
@@ -114,12 +117,12 @@ namespace graph {
 
     // All-in-one function intended to be used in UIs and such
     Scope scope(GraphScope graphScope,
-                const QString& nodesList,
+                const QString &nodesList,
                 double minDepthRange, double maxDepthRange,
-                const search::Queries &blastQueries, const QString& blastQueryName,
-                const QString& pathName, unsigned distance = 0);
+                const search::Queries *queries, const QString& blastQueryName,
+                const QString &pathName, unsigned distance = 0);
 
     std::vector<DeBruijnNode *>
-    getStartingNodes(QString * errorTitle, QString * errorMessage,
+    getStartingNodes(QString *errorTitle, QString *errorMessage,
                      const AssemblyGraph &graph, const Scope &graphScope = Scope::wholeGraph());
 }

@@ -850,7 +850,7 @@ void MainWindow::drawGraph() {
             graph::scope(g_settings->graphScope,
                          ui->startingNodesLineEdit->text(),
                          ui->minDepthSpinBox->value(), ui->maxDepthSpinBox->value(),
-                         m_blastSearchDialog ? m_blastSearchDialog->search()->queries() : search::Queries(),
+                         m_blastSearchDialog ? &m_blastSearchDialog->search()->queries() : nullptr,
                          ui->blastQueryComboBox->currentText(),
                          ui->pathSelectionLineEdit->displayText(),
                          ui->nodeDistanceSpinBox->value());

@@ -63,10 +63,12 @@ namespace graph {
                 return (*pathIt)->nodes();
             }
             case AROUND_BLAST_HITS: {
-                std::vector<DeBruijnNode *> startingNodes = graphScope.queries().getNodesFromHits(graphScope.queryName());
+                std::vector<DeBruijnNode *> startingNodes;
+                if (const auto *queries = graphScope.queries())
+                    startingNodes = queries->getNodesFromHits(graphScope.queryName());
                 if (startingNodes.empty()) {
-                    *errorTitle = "No BLAST hits";
-                    *errorMessage = "To draw the graph around BLAST hits, you must first conduct a BLAST search.";
+                    *errorTitle = "No hits";
+                    *errorMessage = "To draw the graph around graph hits, you must first conduct a graph search.";
                 }
                 return startingNodes;
             }
@@ -91,7 +93,7 @@ namespace graph {
 
     Scope scope(GraphScope graphScope, const QString &nodesList,
                 double minDepthRange, double maxDepthRange,
-                const search::Queries &blastQueries, const QString &blastQueryName,
+                const search::Queries *blastQueries, const QString &blastQueryName,
                 const QString &pathName, unsigned distance) {
         switch (graphScope) {
             case WHOLE_GRAPH:
@@ -112,9 +114,14 @@ namespace graph {
 
     Scope Scope::aroundHits(const search::Queries &queries, const QString& queryName,
                             unsigned distance) {
+        return aroundHits(&queries, queryName, distance);
+    }
+
+    Scope Scope::aroundHits(const search::Queries *queries, const QString& queryName,
+                            unsigned distance) {
         Scope res;
         res.m_scope = AROUND_BLAST_HITS;
-        res.m_opt = std::make_pair(std::ref(queries), queryName);
+        res.m_opt = std::make_pair(queries, queryName);
         res.m_distance = distance;
 
         return res;
