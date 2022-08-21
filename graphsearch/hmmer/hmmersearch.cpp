@@ -233,14 +233,17 @@ int HmmerSearch::loadQueriesFromFile(QString fullFileName) {
     std::vector<QString> queryNames;
     std::vector<QByteArray> querySequences;
     std::vector<unsigned> queryLengths;
-    if (!utils::readHmmFile(fullFileName, queryNames, queryLengths, querySequences)) {
+    std::vector<bool> queryProtHmms;
+    if (!utils::readHmmFile(fullFileName,
+                            queryNames, queryLengths, querySequences, queryProtHmms)) {
         m_lastError = "Failed to parse HMM file: " + fullFileName;
         return 0;
     }
 
     for (size_t i = 0; i < queryNames.size(); ++i)
         addQuery(new Query(cleanQueryName(queryNames[i]),
-                           QString(queryLengths[i], 'N'),
+                           QString(queryLengths[i],
+                                   queryProtHmms[i] ? 'F' : 'N'),
                            querySequences[i]));
 
     int queriesAfter = int(getQueryCount());

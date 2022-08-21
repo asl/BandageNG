@@ -118,7 +118,7 @@ namespace utils {
 
     bool readHmmFile(const QString &filename,
                      std::vector<QString> &names, std::vector<unsigned> &lengths,
-                     std::vector<QByteArray> &sequences) {
+                     std::vector<QByteArray> &hmms, std::vector<bool> &protHmms) {
         QFile inputFile(filename);
         if (!inputFile.open(QIODevice::ReadOnly))
             return false;
@@ -130,6 +130,7 @@ namespace utils {
         for (auto part : all.split(QRegularExpression("//[\r\n]"), Qt::SkipEmptyParts)) {
             QString name;
             unsigned length = 0;
+            std::optional<bool> protHmm;
 
             // Sanity check
             if (!part.startsWith("HMMER3"))
@@ -144,8 +145,10 @@ namespace utils {
                     name = tv[1];
                 else if (tv[0] == "LENG")
                     length = tv[1].toInt();
+                else if (tv[0] == "ALPH")
+                    protHmm = tv[1] == "amino";
 
-                if (!name.isEmpty() && length > 0)
+                if (!name.isEmpty() && length > 0 && protHmm.has_value())
                     break;
             }
 
@@ -154,7 +157,8 @@ namespace utils {
 
             names.push_back(name);
             lengths.push_back(length);
-            sequences.push_back(part.toLatin1());
+            hmms.push_back(part.toLatin1());
+            protHmms.push_back(*protHmm);
         }
 
         return true;

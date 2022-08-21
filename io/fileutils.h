@@ -33,5 +33,5 @@ namespace utils {
 
     bool readHmmFile(const QString &filename,
                      std::vector<QString> &names, std::vector<unsigned> &lengths,
-                     std::vector<QByteArray> &sequences);
+                     std::vector<QByteArray> &hmms, std::vector<bool> &protHmms);
 }
