@@ -257,6 +257,8 @@ void GraphSearchDialog::buildDatabase(bool separateThread) {
 
 
 void GraphSearchDialog::graphDatabaseBuildFinished(const QString& error) {
+    disconnect(m_graphSearch.get(), SIGNAL(finishedDbBuild(QString)), this, nullptr);
+
     if (!error.isEmpty()) {
         QMessageBox::warning(this, "Error", error);
         setUiStep(GRAPH_DB_NOT_YET_BUILT);
@@ -372,6 +374,8 @@ void GraphSearchDialog::runGraphSearches(bool separateThread) {
 }
 
 void GraphSearchDialog::graphSearchFinished(const QString& error) {
+    disconnect(m_graphSearch.get(), SIGNAL(finishedSearch(QString)), this, nullptr);
+
     if (!error.isEmpty()) {
         QMessageBox::warning(this, "Error", error);
         setUiStep(READY_FOR_GRAPH_SEARCH);
