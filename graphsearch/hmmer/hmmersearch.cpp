@@ -19,6 +19,7 @@
 #include "hmmersearch.h"
 
 #include "graph/debruijnnode.h"
+#include "graphsearch/query.h"
 #include "program/settings.h"
 
 #include "graph/assemblygraph.h"
@@ -38,8 +39,13 @@ HmmerSearch::HmmerSearch(const QDir &workDir, QObject *parent)
         : GraphSearch(workDir, parent) {}
 
 bool HmmerSearch::findTools() {
-    if (!findProgram("nhmmer", &m_hmmerCommand)) {
+    if (!findProgram("nhmmer", &m_nhmmerCommand)) {
         m_lastError = "Error: The program nhmmer was not found.";
+        return false;
+    }
+
+    if (!findProgram("hmmsearch", &m_hmmerCommand)) {
+        m_lastError = "Error: The program hmmsearch was not found.";
         return false;
     }
 
@@ -52,7 +58,7 @@ QString HmmerSearch::buildDatabase(const AssemblyGraph &graph) {
     m_lastError = "";
     if (!findTools())
         return m_lastError;
-    
+
     if (m_buildDb)
         return (m_lastError = "Building is already in progress");
 
@@ -77,18 +83,35 @@ QString HmmerSearch::buildDatabase(const AssemblyGraph &graph) {
             return (m_lastError = "Cannot build the hmmer input set as this graph contains no sequences");
 
         out << longest->getFasta(true, false, false);
-    
+
         for (const auto *node : graph.m_deBruijnGraphNodes) {
             if (m_cancelBuildDatabase)
                 return (m_lastError = "Build cancelled.");
 
             if (node == longest)
                 continue;;
-            
+
             out << node->getFasta(true, false, false);
         }
     }
-    
+
+    // No need to perform empty checks for AAs as they all are handled above
+    {
+        QFile file(temporaryDir().filePath("all_nodes.faa"));
+        if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+            return (m_lastError = "Failed to open: " + file.fileName());
+
+        QTextStream out(&file);
+
+        for (const auto *node : graph.m_deBruijnGraphNodes) {
+            if (m_cancelBuildDatabase)
+                return (m_lastError = "Build cancelled.");
+
+            for (unsigned shift = 0; shift < 3; ++shift)
+                out << node->getAAFasta(shift, true, false, false);
+        }
+    }
+
     return m_lastError;
 }
 
@@ -97,9 +120,13 @@ QString HmmerSearch::doSearch(QString extraParameters) {
 }
 
 static void writeQueryFile(QFile *file,
-                           const Queries &queries) {
+                           const Queries &queries,
+                           search::QuerySequenceType sequenceType) {
     QTextStream out(file);
     for (const auto *query: queries.queries()) {
+        if (query->getSequenceType() != sequenceType)
+            continue;
+
         out << query->getAuxData()
             << "//\n";
     }
@@ -133,6 +160,8 @@ static QString getNodeNameFromString(const QString &nodeString) {
 
 static void buildHitsFromTblOut(QString hmmerOutput,
                                 Queries &queries);
+static void buildHitsFromDomTblOut(QString hmmerOutput,
+                                   Queries &queries);
 
 QString HmmerSearch::doSearch(Queries &queries, QString extraParameters) {
     GraphSearchFinishedRAII watcher(this);
@@ -140,36 +169,61 @@ QString HmmerSearch::doSearch(Queries &queries, QString extraParameters) {
     if (!findTools())
         return m_lastError;
 
-    // FIXME: Do we need proper mutex here?
-    if (m_doSearch)
-        return (m_lastError = "Search is already in progress");
+    if (queries.getQueryCount(NUCLEOTIDE) > 0 && !m_cancelSearch) {
+        QString hmmerOutput = doOneSearch(NUCLEOTIDE, queries, extraParameters);
+        if (!m_lastError.isEmpty())
+            return m_lastError;
+        buildHitsFromTblOut(hmmerOutput, queries);
+    }
 
-    for (const auto *query: queries.queries()) {
-        if (query->getSequenceType() != search::NUCLEOTIDE)
-            return (m_lastError = "Cannot handle non-nucleotide query: " + query->getName() + ". Remove it and retry search.");
+    if (queries.getQueryCount(PROTEIN) > 0 && !m_cancelSearch) {
+        QString hmmerOutput = doOneSearch(PROTEIN, queries, extraParameters);
+        if (!m_lastError.isEmpty())
+            return m_lastError;
+        buildHitsFromDomTblOut(hmmerOutput, queries);
+    }
+
+    queries.findQueryPaths();
+    queries.searchOccurred();
+
+    return m_lastError;
+}
+
+QString HmmerSearch::doOneSearch(search::QuerySequenceType sequenceType,
+                                 Queries &queries, QString extraParameters) {
+    // FIXME: Do we need proper mutex here?
+    if (m_doSearch) {
+        m_lastError = "Search is already in progress";
+        return "";
     }
 
     QTemporaryFile tmpQueryFile(temporaryDir().filePath("queries.XXXXXX.hmm"));
-    if (!tmpQueryFile.open())
-        return (m_lastError = "Failed to create temporary query file");
+    if (!tmpQueryFile.open()) {
+        m_lastError = "Failed to create temporary query file";
+        return "";
+    }
 
-    writeQueryFile(&tmpQueryFile, queries);
+    writeQueryFile(&tmpQueryFile, queries, sequenceType);
 
     QTemporaryFile tmpOutFile(temporaryDir().filePath("hits.XXXXXX.tblout"));
-    if (!tmpOutFile.open())
-        return (m_lastError = "Failed to create temporary output file");
-    
+    if (!tmpOutFile.open()) {
+        m_lastError = "Failed to create temporary output file";
+        return "";
+    }
+
     tmpOutFile.setAutoRemove(false);
 
     QStringList hmmerOptions;
-    hmmerOptions << "--tblout" << tmpOutFile.fileName()
+    hmmerOptions << (sequenceType == search::PROTEIN ? "--domtblout" : "--tblout") << tmpOutFile.fileName()
                  << extraParameters.split(" ", Qt::SkipEmptyParts)
-                 << tmpQueryFile.fileName()            
-                 << temporaryDir().filePath("all_nodes.fna");
+                 << tmpQueryFile.fileName()
+                 << temporaryDir().filePath(sequenceType == search::PROTEIN ?
+                                            "all_nodes.faa" : "all_nodes.fna");
 
     m_cancelSearch = false;
     m_doSearch = new QProcess();
-    m_doSearch->start(m_hmmerCommand, hmmerOptions);
+    m_doSearch->start(sequenceType == search::PROTEIN ?
+                      m_hmmerCommand : m_nhmmerCommand, hmmerOptions);
 
     bool finished = m_doSearch->waitForFinished(-1);
 
@@ -183,26 +237,20 @@ QString HmmerSearch::doSearch(Queries &queries, QString extraParameters) {
         }
 
         m_doSearch = nullptr;
-
-        return m_lastError;
+        return "";
     }
 
     QString hmmerOutput = tmpOutFile.readAll();
     m_doSearch->deleteLater();
     m_doSearch = nullptr;
 
-    if (m_cancelSearch)
-        return (m_lastError = "HMMER search cancelled");
-
-    m_lastError = hmmerOutput;
-    
-    buildHitsFromTblOut(hmmerOutput, queries);
-    queries.findQueryPaths();
-    queries.searchOccurred();
+    if (m_cancelSearch) {
+        m_lastError = "HMMER search cancelled";
+        return "";
+    }
 
     m_lastError = "";
-
-    return m_lastError;
+    return hmmerOutput;
 }
 
 QString HmmerSearch::doAutoGraphSearch(const AssemblyGraph &graph, QString queriesFilename,
@@ -227,7 +275,7 @@ int HmmerSearch::loadQueriesFromFile(QString fullFileName) {
     m_lastError = "";
     if (!findTools())
         return 0;
-    
+
     int queriesBefore = int(getQueryCount());
 
     std::vector<QString> queryNames;
@@ -275,7 +323,7 @@ static void buildHitsFromTblOut(QString hmmerOutput,
     for (const auto &hitString : hmmerHitList) {
         if (hitString.startsWith('#'))
             continue;
-        
+
         QStringList alignmentParts = hitString.split(' ', Qt::SkipEmptyParts);
         if (alignmentParts.size() < 16)
             continue;
@@ -289,7 +337,7 @@ static void buildHitsFromTblOut(QString hmmerOutput,
 
         int queryStart = alignmentParts[4].toInt();
         int queryEnd = alignmentParts[5].toInt();
-        
+
         int nodeStart = alignmentParts[6].toInt();
         int nodeEnd = alignmentParts[7].toInt();
 
@@ -309,6 +357,87 @@ static void buildHitsFromTblOut(QString hmmerOutput,
             continue;
 
         node = it.value();
+
+        Query *query = queries.getQueryFromName(queryName);
+        if (query == nullptr)
+            continue;
+
+        // Check the user-defined filters.
+        if (g_settings->blastAlignmentLengthFilter.on &&
+            alignmentLength < g_settings->blastAlignmentLengthFilter)
+            continue;
+
+        if (g_settings->blastEValueFilter.on &&
+            eValue > g_settings->blastEValueFilter)
+            continue;
+
+        if (g_settings->blastBitScoreFilter.on &&
+            bitScore < g_settings->blastBitScoreFilter)
+            continue;
+
+        Hit hit(query, node, percentIdentity, alignmentLength,
+                numberMismatches, numberGapOpens, queryStart, queryEnd,
+                nodeStart, nodeEnd, eValue, bitScore);
+
+        if (g_settings->blastQueryCoverageFilter.on) {
+            double hitCoveragePercentage = 100.0 * hit.getQueryCoverageFraction();
+            if (hitCoveragePercentage < g_settings->blastQueryCoverageFilter)
+                continue;
+        }
+
+        query->addHit(hit);
+    }
+}
+
+static void buildHitsFromDomTblOut(QString hmmerOutput,
+                                   Queries &queries) {
+    QStringList hmmerHitList = hmmerOutput.split("\n", Qt::SkipEmptyParts);
+
+    for (const auto &hitString : hmmerHitList) {
+        if (hitString.startsWith('#'))
+            continue;
+
+        QStringList alignmentParts = hitString.split(' ', Qt::SkipEmptyParts);
+        if (alignmentParts.size() < 23)
+            continue;
+
+        QString nodeLabel = alignmentParts[0];
+        QString queryName = alignmentParts[3];
+
+        double percentIdentity = -1;
+        int numberMismatches = -1;
+        int numberGapOpens = -1;
+
+        int queryStart = alignmentParts[15].toInt();
+        int queryEnd = alignmentParts[16].toInt();
+
+        int nodeStart = alignmentParts[17].toInt();
+        int nodeEnd = alignmentParts[18].toInt();
+
+        int alignmentLength = nodeEnd - nodeStart + 1;
+
+        SciNot eValue(alignmentParts[6]);
+        double bitScore = alignmentParts[7].toDouble();
+
+        // Only save hits that are on forward strands.
+        if (nodeStart > nodeEnd)
+            continue;
+
+        QString nodeName = getNodeNameFromString(nodeLabel);
+        DeBruijnNode *node = nullptr;
+        auto it = g_assemblyGraph->m_deBruijnGraphNodes.find(nodeName.toStdString());
+        if (it == g_assemblyGraph->m_deBruijnGraphNodes.end())
+            continue;
+
+        node = it.value();
+        bool ok = false;
+        unsigned shift = nodeLabel.last(1).toInt(&ok);
+        if (!ok || shift > 2)
+            continue;
+
+        nodeStart = (nodeStart - 1) * 3 + shift + 1;
+        nodeEnd = (nodeEnd - 1) * 3 + shift + 1;
+
 
         Query *query = queries.getQueryFromName(queryName);
         if (query == nullptr)

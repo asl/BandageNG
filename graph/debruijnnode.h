@@ -57,6 +57,8 @@ public:
 
     int getLengthWithoutTrailingOverlap() const;
     QByteArray getFasta(bool sign, bool newLines = true, bool evenIfEmpty = true) const;
+    QByteArray getAAFasta(unsigned shift, bool sign, bool newLines, bool evenIfEmpty) const;
+
     char getBaseAt(int i) const {if (i >= 0 && i < m_sequence.size()) return m_sequence[i]; else return '\0';} // NOTE
     ContiguityStatus getContiguityStatus() const {return m_contiguityStatus;}
     DeBruijnNode * getReverseComplement() const {return m_reverseComplement;}
@@ -71,7 +73,7 @@ public:
     const auto edgeEnd() const { return m_edges.end(); }
     auto edges() { return llvm::make_range(edgeBegin(), edgeEnd()); }
     const auto edges() const { return llvm::make_range(edgeBegin(), edgeEnd()); }
-    
+
     std::vector<DeBruijnEdge *> getEnteringEdges() const;
     std::vector<DeBruijnEdge *> getLeavingEdges() const;
     std::vector<DeBruijnNode *> getDownstreamNodes() const;

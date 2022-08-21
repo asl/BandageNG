@@ -50,8 +50,11 @@ public slots:
 private:
     bool findTools();
 
+    QString doOneSearch(search::QuerySequenceType sequenceType,
+                        search::Queries &queries, QString extraParameters);
+
     bool m_cancelBuildDatabase = false, m_cancelSearch = false;
 
     QProcess *m_buildDb = nullptr, *m_doSearch = nullptr;
-    QString m_hmmerCommand;
+    QString m_nhmmerCommand, m_hmmerCommand;
 };

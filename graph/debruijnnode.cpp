@@ -23,9 +23,12 @@
 
 #include "program/settings.h"
 
+#include <thirdparty/seq/aa.hpp>
+
 #include <cmath>
 
 #include <set>
+#include <string>
 #include <unordered_set>
 #include <QApplication>
 #include <QSet>
@@ -237,6 +240,27 @@ QByteArray DeBruijnNode::getFasta(bool sign, bool newLines, bool evenIfEmpty) co
 
     QByteArray fasta = ">";
     fasta += getNodeNameForFasta(sign);
+    fasta += "\n";
+    if (newLines)
+        fasta += utils::addNewlinesToSequence(sequence);
+    else {
+        fasta += sequence;
+        fasta += "\n";
+    }
+    return fasta;
+}
+
+QByteArray DeBruijnNode::getAAFasta(unsigned shift, bool sign, bool newLines, bool evenIfEmpty) const {
+    QByteArray sequence(utils::sequenceToQByteArray(getSequence()));
+    if (sequence.isEmpty() && !evenIfEmpty)
+        return {};
+
+    if (!sequence.isEmpty())
+        sequence = aa::translate(sequence.data() + shift).c_str();
+
+    QByteArray fasta = ">";
+    fasta += getNodeNameForFasta(sign) + "/";
+    fasta += std::to_string(shift);
     fasta += "\n";
     if (newLines)
         fasta += utils::addNewlinesToSequence(sequence);
