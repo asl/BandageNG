@@ -24,11 +24,9 @@
 #include "io/fileutils.h"
 
 #include <QDir>
-#include <QRegularExpression>
 #include <QProcess>
-#include <cmath>
-#include <unordered_set>
 #include <QTemporaryFile>
+#include <cmath>
 
 using namespace search;
 
@@ -188,18 +186,6 @@ static void buildHitsFromPAF(const QString &PAF,
         // Check the user-defined filters.
         if (g_settings->blastAlignmentLengthFilter.on &&
             alignmentLength < g_settings->blastAlignmentLengthFilter)
-            continue;
-
-        if (g_settings->blastIdentityFilter.on &&
-            percentIdentity < g_settings->blastIdentityFilter)
-            continue;
-
-        if (g_settings->blastEValueFilter.on &&
-            eValue > g_settings->blastEValueFilter)
-            continue;
-
-        if (g_settings->blastBitScoreFilter.on &&
-            bitScore < g_settings->blastBitScoreFilter)
             continue;
 
         Hit hit(query, node, percentIdentity, alignmentLength,

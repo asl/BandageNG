@@ -46,12 +46,8 @@ public:
     QString annotationGroupName() const override;
 
 public slots:
-    void cancelDatabaseBuild();
-    void cancelSearch();
-
-signals:
-    void finishedDbBuild(QString error);
-    void finishedSearch(QString error);
+    void cancelDatabaseBuild() override;
+    void cancelSearch() override;
 
 private:
     bool findTools();

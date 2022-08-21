@@ -24,12 +24,10 @@
 #include "io/fileutils.h"
 
 #include <QDir>
-#include <QRegularExpression>
 #include <QProcess>
 #include <QTemporaryFile>
 
 #include <cmath>
-#include <unordered_set>
 
 using namespace search;
 

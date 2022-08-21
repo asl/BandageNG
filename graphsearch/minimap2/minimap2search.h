@@ -42,12 +42,8 @@ public:
     QString annotationGroupName() const override { return "Minimap2 hits"; };
 
 public slots:
-    void cancelDatabaseBuild();
-    void cancelSearch();
-
-signals:
-    void finishedDbBuild(QString error);
-    void finishedSearch(QString error);
+    void cancelDatabaseBuild() override;
+    void cancelSearch() override;
 
 private:
     bool findTools();
