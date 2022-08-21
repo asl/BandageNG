@@ -21,6 +21,7 @@
 #include <QFile>
 #include <QChar>
 #include <QApplication>
+#include <QRegularExpression>
 
 namespace utils {
     bool readFastxFile(const QString &filename, std::vector<QString> &names,
@@ -114,4 +115,49 @@ namespace utils {
 
         return true;
     }
+
+    bool readHmmFile(const QString &filename,
+                     std::vector<QString> &names, std::vector<unsigned> &lengths,
+                     std::vector<QByteArray> &sequences) {
+        QFile inputFile(filename);
+        if (!inputFile.open(QIODevice::ReadOnly))
+            return false;
+
+        QTextStream in(&inputFile);
+        // FIXME: This is a very rudimentary and inefficient parser, but we
+        // should be ok for small models
+        QString all = in.readAll();
+        for (auto part : all.split(QRegularExpression("//[\r\n]"), Qt::SkipEmptyParts)) {
+            QString name;
+            unsigned length = 0;
+
+            // Sanity check
+            if (!part.startsWith("HMMER3"))
+                continue;
+
+            // Find name and length
+            for (auto line : part.split(QRegularExpression("[\r\n]"), Qt::SkipEmptyParts)) {
+                auto tv = line.split(" ", Qt::SkipEmptyParts);
+                if (tv.length() < 2)
+                    continue;
+                if (tv[0] == "NAME")
+                    name = tv[1];
+                else if (tv[0] == "LENG")
+                    length = tv[1].toInt();
+
+                if (!name.isEmpty() && length > 0)
+                    break;
+            }
+
+            if (name.isEmpty() || length == 0)
+                continue;
+
+            names.push_back(name);
+            lengths.push_back(length);
+            sequences.push_back(part.toLatin1());
+        }
+
+        return true;
+    }
+
 }

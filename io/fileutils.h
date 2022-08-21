@@ -30,4 +30,8 @@ namespace utils {
 
     bool readFastqFile(const QString &filename, std::vector<QString> &names,
                        std::vector<QByteArray> &sequences);
+
+    bool readHmmFile(const QString &filename,
+                     std::vector<QString> &names, std::vector<unsigned> &lengths,
+                     std::vector<QByteArray> &sequences);
 }
