@@ -34,12 +34,13 @@ namespace search {
     class Query {
     public:
         //CREATORS
-        Query(QString name, QString sequence);
+        Query(QString name, QString sequence, QByteArray aux = QByteArray());
 
         //ACCESSORS
         QString getName() const { return m_name; }
         QString getSequence() const { return m_sequence; }
         size_t getLength() const { return m_sequence.length(); }
+        QByteArray getAuxData() const { return m_aux; }
 
         bool hasHits() const { return !m_hits.empty(); }
         size_t hitCount() const { return m_hits.size(); }
@@ -73,10 +74,11 @@ namespace search {
     private:
         QString m_name;
         QString m_sequence;
+        QByteArray m_aux;
         std::vector<Hit> m_hits;
         QuerySequenceType m_sequenceType;
-        bool m_searchedFor;
-        bool m_shown;
+        bool m_searchedFor = false;
+        bool m_shown = true;
         QColor m_colour;
         std::vector<QueryPath> m_paths;
 
