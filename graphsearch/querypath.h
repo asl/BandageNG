@@ -28,8 +28,9 @@ namespace search {
 
     class QueryPath {
     public:
-        //CREATORS
+        // CREATORS
         QueryPath(Path path, Query *query);
+        QueryPath(Path path, Query *query, std::vector<const Hit*> hits);
 
         //ACCESSORS
         Path getPath() const { return m_path; }

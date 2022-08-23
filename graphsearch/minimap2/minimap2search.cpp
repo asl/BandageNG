@@ -42,7 +42,7 @@ bool Minimap2Search::findTools() {
     return true;
 }
 
-QString Minimap2Search::buildDatabase(const AssemblyGraph &graph) {
+QString Minimap2Search::buildDatabase(const AssemblyGraph &graph, bool includePaths) {
     DbBuildFinishedRAII watcher(this);
     m_lastError = "";
     if (!findTools())
@@ -57,14 +57,24 @@ QString Minimap2Search::buildDatabase(const AssemblyGraph &graph) {
     if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
         return (m_lastError = "Failed to open: " + file.fileName());
 
-    QTextStream out(&file);
-    for (const auto *node : graph.m_deBruijnGraphNodes) {
-        if (m_cancelBuildDatabase)
-            return (m_lastError = "Build cancelled.");
+    {
+        QTextStream out(&file);
+        for (const auto *node : graph.m_deBruijnGraphNodes) {
+            if (m_cancelBuildDatabase)
+                return (m_lastError = "Build cancelled.");
 
-        out << node->getFasta(true, false, false);
+            out << node->getFasta(true, false, false);
+        }
+
+        if (includePaths) {
+            for (auto it = graph.m_deBruijnGraphPaths.begin(); it != graph.m_deBruijnGraphPaths.end(); ++it) {
+                if (m_cancelBuildDatabase)
+                    return (m_lastError = "Build cancelled.");
+
+                out << it.value()->getFasta(it.key().c_str());
+            }
+        }
     }
-    file.close();
 
     // Make sure the graph has sequences
     bool atLeastOneSequence = false;
@@ -141,8 +151,8 @@ static QString getNodeNameFromString(const QString &nodeString) {
     return nodeName;
 }
 
-static void buildHitsFromPAF(const QString &PAF,
-                             Queries &queries) {
+void Minimap2Search::buildHitsFromPAF(const QString &PAF,
+                                      Queries &queries) const {
     QStringList hitList = PAF.split("\n", Qt::SkipEmptyParts);
 
     for (const auto &hitString : hitList) {
@@ -161,44 +171,29 @@ static void buildHitsFromPAF(const QString &PAF,
 
         int alignmentLength = alignmentParts[10].toInt();
 
-        double percentIdentity = -1;
-        int numberMismatches = -1;
-        int numberGapOpens = -1;
-
-        SciNot eValue(0);
-        double bitScore = 0;
-
-        if (!strand)
-            continue;
-
-        QString nodeName = getNodeNameFromString(nodeLabel);
-        DeBruijnNode *node = nullptr;
-        auto it = g_assemblyGraph->m_deBruijnGraphNodes.find(nodeName.toStdString());
-        if (it == g_assemblyGraph->m_deBruijnGraphNodes.end())
-            continue;
-
-        node = it.value();
-
         Query *query = queries.getQueryFromName(queryName);
         if (query == nullptr)
             continue;
 
-        // Check the user-defined filters.
-        if (g_settings->blastAlignmentLengthFilter.on &&
-            alignmentLength < g_settings->blastAlignmentLengthFilter)
-            continue;
-
-        Hit hit(query, node, percentIdentity, alignmentLength,
-                numberMismatches, numberGapOpens, queryStart, queryEnd,
-                nodeStart, nodeEnd, eValue, bitScore);
-
-        if (g_settings->blastQueryCoverageFilter.on) {
-            double hitCoveragePercentage = 100.0 * hit.getQueryCoverageFraction();
-            if (hitCoveragePercentage < g_settings->blastQueryCoverageFilter)
+        auto nodeIt = g_assemblyGraph->m_deBruijnGraphNodes.find(getNodeNameFromString(nodeLabel).toStdString());
+        if (nodeIt != g_assemblyGraph->m_deBruijnGraphNodes.end()) {
+            if (!strand)
                 continue;
+
+            addNodeHit(query, nodeIt.value(),
+                       queryStart, queryEnd,
+                       nodeStart, nodeEnd,
+                       -1, -1, -1,
+                       alignmentLength, 0, 0);
         }
 
-        query->addHit(hit);
+        auto pathIt = g_assemblyGraph->m_deBruijnGraphPaths.find(nodeLabel.toStdString());
+        if (pathIt != g_assemblyGraph->m_deBruijnGraphPaths.end()) {
+            addPathHit(query, pathIt.value(),
+                       queryStart, queryEnd,
+                       nodeStart, nodeEnd);
+        }
+
     }
 }
 
@@ -267,10 +262,11 @@ QString Minimap2Search::doSearch(Queries &queries, QString extraParameters) {
 }
 
 QString Minimap2Search::doAutoGraphSearch(const AssemblyGraph &graph, QString queriesFilename,
+                                          bool includePaths,
                                           QString extraParameters) {
     cleanUp();
 
-    QString maybeError = buildDatabase(graph); // It is expected that buildDatabase will setup last error as well
+    QString maybeError = buildDatabase(graph, includePaths); // It is expected that buildDatabase will setup last error as well
     if (!maybeError.isEmpty())
         return maybeError;
 

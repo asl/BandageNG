@@ -128,6 +128,7 @@ int bandageQueryPaths(QStringList arguments)
     out << "(" << QDateTime::currentDateTime().toString("dd MMM yyyy hh:mm:ss") << ") Running BLAST search... " << Qt::flush;
     QString blastError = g_blastSearch->doAutoGraphSearch(*g_assemblyGraph,
                                                           g_settings->blastQueryFilename,
+                                                          false, /* include paths */
                                                           g_settings->blastSearchParameters);
     if (!blastError.isEmpty()) {
         err << Qt::endl << blastError << Qt::endl;

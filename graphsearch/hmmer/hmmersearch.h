@@ -24,7 +24,11 @@
 
 class QProcess;
 
-class HmmerSearch : public search::GraphSearch {
+namespace search {
+
+class Queries;
+
+class HmmerSearch : public GraphSearch {
     Q_OBJECT
 public:
     explicit HmmerSearch(const QDir &workDir = QDir::temp(), QObject *parent = nullptr);
@@ -32,9 +36,11 @@ public:
 
 
     QString doAutoGraphSearch(const AssemblyGraph &graph, QString queriesFilename,
+                              bool includePaths = false,
                               QString extraParameters = "") override;
     int loadQueriesFromFile(QString fullFileName) override;
-    QString buildDatabase(const AssemblyGraph &graph) override;
+    QString buildDatabase(const AssemblyGraph &graph,
+                              bool includePaths = true) override;
     QString doSearch(QString extraParameters) override;
     QString doSearch(search::Queries &queries, QString extraParameters) override;
 
@@ -49,6 +55,10 @@ public slots:
 
 private:
     bool findTools();
+    void buildHitsFromTblOut(QString hmmerOutput,
+                             Queries &queries) const;
+    void buildHitsFromDomTblOut(QString hmmerOutput,
+                                Queries &queries) const;
 
     QString doOneSearch(search::QuerySequenceType sequenceType,
                         search::Queries &queries, QString extraParameters);
@@ -58,3 +68,5 @@ private:
     QProcess *m_buildDb = nullptr, *m_doSearch = nullptr;
     QString m_nhmmerCommand, m_hmmerCommand;
 };
+
+}

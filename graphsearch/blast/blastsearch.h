@@ -29,6 +29,9 @@
 
 class QProcess;
 
+namespace search {
+class Queries;
+
 class BlastSearch : public search::GraphSearch {
     Q_OBJECT
 public:
@@ -37,9 +40,11 @@ public:
 
 
     QString doAutoGraphSearch(const AssemblyGraph &graph, QString queriesFilename,
+                              bool includePaths = false,
                               QString extraParameters = "") override;
     int loadQueriesFromFile(QString fullFileName) override;
-    QString buildDatabase(const AssemblyGraph &graph) override;
+    QString buildDatabase(const AssemblyGraph &graph,
+                          bool includePaths = true) override;
     QString doSearch(QString extraParameters) override;
     QString doSearch(search::Queries &queries, QString extraParameters) override;
 
@@ -53,6 +58,8 @@ public slots:
 
 private:
     bool findTools();
+    void buildHitsFromBlastOutput(QString blastOutput,
+                                  Queries &queries) const;
 
     QString runOneBlastSearch(search::QuerySequenceType sequenceType,
                               const search::Queries &queries,
@@ -63,3 +70,5 @@ private:
     QProcess *m_buildDb = nullptr, *m_doSearch = nullptr;
     QString m_makeblastdbCommand, m_blastnCommand, m_tblastnCommand;
 };
+
+}

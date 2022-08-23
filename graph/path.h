@@ -31,9 +31,22 @@ class DeBruijnNode;
 class DeBruijnEdge;
 class AssemblyGraph;
 
-class Path
-{
+class Path {
 public:
+    // [from, to] since UI does this
+    struct Range {
+        int from; int to;
+    };
+
+    struct MappingRange {
+        // on genome/contig/whatever
+        Range initial_range;
+        // on node
+        Range mapped_range;
+    };
+
+    using MappingPath = std::vector<std::pair<DeBruijnNode*, MappingRange>>;
+    
     //CREATORS
     Path() {}
     Path(GraphLocation location);
@@ -55,7 +68,8 @@ public:
     bool haveSameNodes(const Path& other) const;
     bool hasNodeSubset(const Path& other) const;
     [[nodiscard]] QByteArray getPathSequence() const;
-    [[nodiscard]] QString getFasta() const;
+    [[nodiscard]] QByteArray getFasta(QString name = "") const;
+    [[nodiscard]] QByteArray getAAFasta(unsigned shift, QString name = "") const;
     [[nodiscard]] QString getString(bool spaces) const;
     int getLength() const;
     QList<Path> extendPathInAllPossibleWays() const;
@@ -64,6 +78,8 @@ public:
 
     std::vector<int> getPosition(const DeBruijnNode *node) const;
     std::vector<DeBruijnNode *> getNodesAt(int startPosition, int endPosition) const;
+    MappingPath getNodeCovering(int startPosition, int endPosition) const;
+
     bool containsNode(const DeBruijnNode * node) const;
     bool containsEntireNode(const DeBruijnNode * node) const;
     bool isInMiddleOfPath(const DeBruijnNode * node) const;

@@ -89,7 +89,7 @@ private slots:
     void init() {
         g_settings.reset(new Settings());
         g_memory.reset(new Memory());
-        g_blastSearch.reset(new BlastSearch(QDir(".")));
+        g_blastSearch.reset(new search::BlastSearch(QDir(".")));
         g_assemblyGraph.reset(new AssemblyGraph());
         g_annotationsManager = std::make_shared<AnnotationsManager>();
     }

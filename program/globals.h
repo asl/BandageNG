@@ -27,9 +27,12 @@
 class Settings;
 class Memory;
 class BandageGraphicsView;
-class BlastSearch;
 class AssemblyGraph;
 class AnnotationsManager;
+
+namespace search {
+class BlastSearch;
+};
 
 // Some of the program's common components are made global, so they don't have
 // to be passed around as parameters.
@@ -38,7 +41,7 @@ extern QSharedPointer<Settings> g_settings;
 extern QSharedPointer<Memory> g_memory;
 extern BandageGraphicsView * g_graphicsView;
 extern double g_absoluteZoom;
-extern QSharedPointer<BlastSearch> g_blastSearch;
+extern QSharedPointer<search::BlastSearch> g_blastSearch;
 extern QSharedPointer<AssemblyGraph> g_assemblyGraph;
 extern std::shared_ptr<AnnotationsManager> g_annotationsManager;
 

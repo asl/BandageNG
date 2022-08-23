@@ -17,7 +17,10 @@
 
 #include "graphsearch.h"
 #include "graph/annotationsmanager.h"
+
+#include "graph/assemblygraph.h"
 #include "program/globals.h"
+#include "program/settings.h"
 
 #include <QDir>
 #include <QRegularExpression>
@@ -130,4 +133,64 @@ GraphSearch::DbBuildFinishedRAII::~DbBuildFinishedRAII() {
 
 GraphSearch::GraphSearchFinishedRAII::~GraphSearchFinishedRAII() {
     emit m_search->finishedSearch(m_search->lastError());
+}
+
+
+void GraphSearch::addNodeHit(Query *query, DeBruijnNode *node,
+                             int queryStart, int queryEnd,
+                             int nodeStart, int nodeEnd,
+                             double percentIdentity,
+                             int numberMismatches, int numberGapOpens,
+                             int alignmentLength, SciNot eValue, double bitScore) {
+    if (g_settings->blastAlignmentLengthFilter.on &&
+        alignmentLength < g_settings->blastAlignmentLengthFilter)
+        return;;
+    
+    Hit hit(query, node,
+            percentIdentity, alignmentLength,
+            numberMismatches, numberGapOpens,
+            queryStart, queryEnd,
+            nodeStart, nodeEnd, eValue, bitScore);
+
+    if (g_settings->blastQueryCoverageFilter.on) {
+        double hitCoveragePercentage = 100.0 * hit.getQueryCoverageFraction();
+        if (hitCoveragePercentage < g_settings->blastQueryCoverageFilter)
+            return;
+    }
+
+    query->addHit(hit);
+}
+
+void GraphSearch::addPathHit(Query *query, Path *path,
+                             int queryStart, int queryEnd,
+                             int pathStart, int pathEnd) {
+    bool invert = pathStart > pathEnd;
+    if (invert)
+        std::swap(pathStart, pathEnd);
+
+    for (auto entry: path->getNodeCovering(pathStart, pathEnd)) {
+        DeBruijnNode *node = entry.first;
+        int nodeStart = entry.second.mapped_range.from, nodeEnd = entry.second.mapped_range.to;
+        if (invert) {
+            int nodeLength = node->getLength();
+            node = node->getReverseComplement();
+            nodeEnd = nodeLength - nodeEnd + 1;
+            nodeStart = nodeLength - nodeStart + 1;
+            std::swap(nodeEnd, nodeStart);
+        }
+
+        Hit hit(query, node, -1, nodeEnd - nodeStart + 1,
+                -1, -1,
+                queryStart, queryEnd,
+                nodeStart, nodeEnd,
+                0, 0);
+
+        if (g_settings->blastQueryCoverageFilter.on) {
+            double hitCoveragePercentage = 100.0 * hit.getQueryCoverageFraction();
+            if (hitCoveragePercentage < g_settings->blastQueryCoverageFilter)
+                continue;
+        }
+
+        query->addHit(hit);
+    }
 }

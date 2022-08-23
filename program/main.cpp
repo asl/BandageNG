@@ -111,7 +111,7 @@ int main(int argc, char *argv[])
     //Create the important global objects.
     g_settings.reset(new Settings());
     g_memory.reset(new Memory());
-    g_blastSearch.reset(new BlastSearch());
+    g_blastSearch.reset(new search::BlastSearch());
     g_assemblyGraph.reset(new AssemblyGraph());
     g_graphicsView = new BandageGraphicsView();
     g_annotationsManager = std::make_shared<AnnotationsManager>();

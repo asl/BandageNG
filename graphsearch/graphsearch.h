@@ -82,10 +82,11 @@ public:
     void emptyTempDirectory() const;
 
     virtual int loadQueriesFromFile(QString fullFileName) = 0;
-    virtual QString buildDatabase(const AssemblyGraph &graph) = 0;
+    virtual QString buildDatabase(const AssemblyGraph &graph, bool includePaths = true) = 0;
     virtual QString doSearch(QString extraParameters) = 0;
     virtual QString doSearch(search::Queries &queries, QString extraParameters) = 0;
     virtual QString doAutoGraphSearch(const AssemblyGraph &graph, QString queriesFilename,
+                                      bool includePaths = false,
                                       QString extraParameters = "") = 0;
     [[nodiscard]] virtual QString name() const = 0;
     [[nodiscard]] virtual QString queryFormat() const = 0;
@@ -94,6 +95,18 @@ public:
 
     static std::unique_ptr<GraphSearch> get(GraphSearchKind kind,
                                             const QDir &workDir = QDir::temp(), QObject *parent = nullptr);
+
+protected:
+    static void addNodeHit(Query *query, DeBruijnNode *node,
+                           int queryStart, int queryEnd,
+                           int nodeStart, int nodeEnd,
+                           double percentIdentity,
+                           int numberMismatches, int numberGapOpens,
+                           int alignmentLength, SciNot eValue, double bitScore);
+
+    static void addPathHit(Query *query, Path *path,
+                           int queryStart, int queryEnd,
+                           int pathStart, int pathEnd);
 
 public slots:
     virtual void cancelDatabaseBuild() {};

@@ -24,6 +24,10 @@
 
 class QProcess;
 
+namespace search {
+
+class Queries;
+
 class Minimap2Search : public search::GraphSearch {
     Q_OBJECT
 public:
@@ -32,9 +36,11 @@ public:
 
 
     QString doAutoGraphSearch(const AssemblyGraph &graph, QString queriesFilename,
+                              bool includePaths = false,
                               QString extraParameters = "") override;
     int loadQueriesFromFile(QString fullFileName) override;
-    QString buildDatabase(const AssemblyGraph &graph) override;
+    QString buildDatabase(const AssemblyGraph &graph,
+                          bool includePaths = true) override;
     QString doSearch(QString extraParameters) override;
     QString doSearch(search::Queries &queries, QString extraParameters) override;
 
@@ -48,9 +54,12 @@ public slots:
 
 private:
     bool findTools();
+    void buildHitsFromPAF(const QString &PAF, Queries &queries) const;
 
     bool m_cancelBuildDatabase = false, m_cancelSearch = false;
 
     QProcess *m_buildDb = nullptr, *m_doSearch = nullptr;
     QString m_minimap2Command;
 };
+
+}

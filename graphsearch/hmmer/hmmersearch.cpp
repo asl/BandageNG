@@ -20,6 +20,7 @@
 
 #include "graph/debruijnnode.h"
 #include "graphsearch/query.h"
+#include "program/globals.h"
 #include "program/settings.h"
 
 #include "graph/assemblygraph.h"
@@ -52,7 +53,7 @@ bool HmmerSearch::findTools() {
     return true;
 }
 
-QString HmmerSearch::buildDatabase(const AssemblyGraph &graph) {
+QString HmmerSearch::buildDatabase(const AssemblyGraph &graph, bool includePaths) {
     DbBuildFinishedRAII watcher(this);
 
     m_lastError = "";
@@ -92,6 +93,15 @@ QString HmmerSearch::buildDatabase(const AssemblyGraph &graph) {
                 continue;;
 
             out << node->getFasta(true, false, false);
+        }
+
+        if (includePaths) {
+            for (auto it = graph.m_deBruijnGraphPaths.begin(); it != graph.m_deBruijnGraphPaths.end(); ++it) {
+                if (m_cancelBuildDatabase)
+                    return (m_lastError = "Build cancelled.");
+
+                out << it.value()->getFasta(it.key().c_str());
+            }
         }
     }
 
@@ -157,11 +167,6 @@ static QString getNodeNameFromString(const QString &nodeString) {
 
     return nodeName;
 }
-
-static void buildHitsFromTblOut(QString hmmerOutput,
-                                Queries &queries);
-static void buildHitsFromDomTblOut(QString hmmerOutput,
-                                   Queries &queries);
 
 QString HmmerSearch::doSearch(Queries &queries, QString extraParameters) {
     GraphSearchFinishedRAII watcher(this);
@@ -254,10 +259,11 @@ QString HmmerSearch::doOneSearch(search::QuerySequenceType sequenceType,
 }
 
 QString HmmerSearch::doAutoGraphSearch(const AssemblyGraph &graph, QString queriesFilename,
-                                          QString extraParameters) {
+                                       bool includePaths,
+                                       QString extraParameters) {
     cleanUp();
 
-    QString maybeError = buildDatabase(graph); // It is expected that buildDatabase will setup last error as well
+    QString maybeError = buildDatabase(graph, includePaths); // It is expected that buildDatabase will setup last error as well
     if (!maybeError.isEmpty())
         return maybeError;
 
@@ -316,9 +322,9 @@ void HmmerSearch::cancelSearch() {
         m_doSearch->kill();
 }
 
-static void buildHitsFromTblOut(QString hmmerOutput,
-                                Queries &queries) {
-    QStringList hmmerHitList = hmmerOutput.split("\n", Qt::SkipEmptyParts);
+void HmmerSearch::buildHitsFromTblOut(QString hmmerOutput,
+                                      Queries &queries) const {
+    QStringList hmmerHitList = hmmerOutput.split('\n', Qt::SkipEmptyParts);
 
     for (const auto &hitString : hmmerHitList) {
         if (hitString.startsWith('#'))
@@ -331,10 +337,6 @@ static void buildHitsFromTblOut(QString hmmerOutput,
         QString nodeLabel = alignmentParts[0];
         QString queryName = alignmentParts[2];
 
-        double percentIdentity = -1;
-        int numberMismatches = -1;
-        int numberGapOpens = -1;
-
         int queryStart = alignmentParts[4].toInt();
         int queryEnd = alignmentParts[5].toInt();
 
@@ -346,27 +348,11 @@ static void buildHitsFromTblOut(QString hmmerOutput,
         SciNot eValue(alignmentParts[12]);
         double bitScore = alignmentParts[13].toDouble();
 
-        // Only save hits that are on forward strands.
-        if (nodeStart > nodeEnd)
-            continue;
-
-        QString nodeName = getNodeNameFromString(nodeLabel);
-        DeBruijnNode *node = nullptr;
-        auto it = g_assemblyGraph->m_deBruijnGraphNodes.find(nodeName.toStdString());
-        if (it == g_assemblyGraph->m_deBruijnGraphNodes.end())
-            continue;
-
-        node = it.value();
-
         Query *query = queries.getQueryFromName(queryName);
         if (query == nullptr)
             continue;
 
         // Check the user-defined filters.
-        if (g_settings->blastAlignmentLengthFilter.on &&
-            alignmentLength < g_settings->blastAlignmentLengthFilter)
-            continue;
-
         if (g_settings->blastEValueFilter.on &&
             eValue > g_settings->blastEValueFilter)
             continue;
@@ -375,22 +361,30 @@ static void buildHitsFromTblOut(QString hmmerOutput,
             bitScore < g_settings->blastBitScoreFilter)
             continue;
 
-        Hit hit(query, node, percentIdentity, alignmentLength,
-                numberMismatches, numberGapOpens, queryStart, queryEnd,
-                nodeStart, nodeEnd, eValue, bitScore);
-
-        if (g_settings->blastQueryCoverageFilter.on) {
-            double hitCoveragePercentage = 100.0 * hit.getQueryCoverageFraction();
-            if (hitCoveragePercentage < g_settings->blastQueryCoverageFilter)
+        auto nodeIt = g_assemblyGraph->m_deBruijnGraphNodes.find(getNodeNameFromString(nodeLabel).toStdString());
+        if (nodeIt != g_assemblyGraph->m_deBruijnGraphNodes.end()) {
+            // Only save hits that are on forward strands.
+            if (nodeStart > nodeEnd)
                 continue;
+
+            addNodeHit(query, nodeIt.value(),
+                       queryStart, queryEnd,
+                       nodeStart, nodeEnd,
+                       -1, -1, -1,
+                       alignmentLength, eValue, bitScore);
         }
 
-        query->addHit(hit);
+        auto pathIt = g_assemblyGraph->m_deBruijnGraphPaths.find(nodeLabel.toStdString());
+        if (pathIt != g_assemblyGraph->m_deBruijnGraphPaths.end()) {
+            addPathHit(query, pathIt.value(),
+                       queryStart, queryEnd,
+                       nodeStart, nodeEnd);
+        }
     }
 }
 
-static void buildHitsFromDomTblOut(QString hmmerOutput,
-                                   Queries &queries) {
+void HmmerSearch::buildHitsFromDomTblOut(QString hmmerOutput,
+                                         Queries &queries) const {
     QStringList hmmerHitList = hmmerOutput.split("\n", Qt::SkipEmptyParts);
 
     for (const auto &hitString : hmmerHitList) {
@@ -419,35 +413,11 @@ static void buildHitsFromDomTblOut(QString hmmerOutput,
         SciNot eValue(alignmentParts[6]);
         double bitScore = alignmentParts[7].toDouble();
 
-        // Only save hits that are on forward strands.
-        if (nodeStart > nodeEnd)
-            continue;
-
-        QString nodeName = getNodeNameFromString(nodeLabel);
-        DeBruijnNode *node = nullptr;
-        auto it = g_assemblyGraph->m_deBruijnGraphNodes.find(nodeName.toStdString());
-        if (it == g_assemblyGraph->m_deBruijnGraphNodes.end())
-            continue;
-
-        node = it.value();
-        bool ok = false;
-        unsigned shift = nodeLabel.last(1).toInt(&ok);
-        if (!ok || shift > 2)
-            continue;
-
-        nodeStart = (nodeStart - 1) * 3 + shift + 1;
-        nodeEnd = (nodeEnd - 1) * 3 + shift + 1;
-
-
         Query *query = queries.getQueryFromName(queryName);
         if (query == nullptr)
             continue;
 
         // Check the user-defined filters.
-        if (g_settings->blastAlignmentLengthFilter.on &&
-            alignmentLength < g_settings->blastAlignmentLengthFilter)
-            continue;
-
         if (g_settings->blastEValueFilter.on &&
             eValue > g_settings->blastEValueFilter)
             continue;
@@ -456,16 +426,25 @@ static void buildHitsFromDomTblOut(QString hmmerOutput,
             bitScore < g_settings->blastBitScoreFilter)
             continue;
 
-        Hit hit(query, node, percentIdentity, alignmentLength,
-                numberMismatches, numberGapOpens, queryStart, queryEnd,
-                nodeStart, nodeEnd, eValue, bitScore);
-
-        if (g_settings->blastQueryCoverageFilter.on) {
-            double hitCoveragePercentage = 100.0 * hit.getQueryCoverageFraction();
-            if (hitCoveragePercentage < g_settings->blastQueryCoverageFilter)
+        auto nodeIt = g_assemblyGraph->m_deBruijnGraphNodes.find(getNodeNameFromString(nodeLabel).toStdString());
+        if (nodeIt != g_assemblyGraph->m_deBruijnGraphNodes.end()) {
+            // Only save hits that are on forward strands.
+            if (nodeStart > nodeEnd)
                 continue;
-        }
 
-        query->addHit(hit);
+            bool ok = false;
+            unsigned shift = nodeLabel.last(1).toInt(&ok);
+            if (!ok || shift > 2)
+                continue;
+
+            nodeStart = (nodeStart - 1) * 3 + shift + 1;
+            nodeEnd = (nodeEnd - 1) * 3 + shift + 1;
+
+            addNodeHit(query, nodeIt.value(),
+                       queryStart, queryEnd,
+                       nodeStart, nodeEnd,
+                       -1, -1, -1,
+                       alignmentLength, eValue, bitScore);
+        }
     }
 }

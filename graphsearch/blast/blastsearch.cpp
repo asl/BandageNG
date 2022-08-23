@@ -52,9 +52,9 @@ bool BlastSearch::findTools() {
     return true;
 }
 
-QString BlastSearch::buildDatabase(const AssemblyGraph &graph) {
+QString BlastSearch::buildDatabase(const AssemblyGraph &graph, bool includePaths) {
     DbBuildFinishedRAII watcher(this);
-    
+
     m_lastError = "";
     if (!findTools())
         return m_lastError;
@@ -68,14 +68,24 @@ QString BlastSearch::buildDatabase(const AssemblyGraph &graph) {
     if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
         return (m_lastError = "Failed to open: " + file.fileName());
 
-    QTextStream out(&file);
-    for (const auto *node : graph.m_deBruijnGraphNodes) {
-        if (m_cancelBuildDatabase)
-            return (m_lastError = "Build cancelled.");
+    {
+        QTextStream out(&file);
+        for (const auto *node : graph.m_deBruijnGraphNodes) {
+            if (m_cancelBuildDatabase)
+                return (m_lastError = "Build cancelled.");
 
-        out << node->getFasta(true, false, false);
+            out << node->getFasta(true, false, false);
+        }
+
+        if (includePaths) {
+            for (auto it = graph.m_deBruijnGraphPaths.begin(); it != graph.m_deBruijnGraphPaths.end(); ++it) {
+                if (m_cancelBuildDatabase)
+                    return (m_lastError = "Build cancelled.");
+
+                out << it.value()->getFasta(it.key().c_str());
+            }
+        }
     }
-    file.close();
 
     // Make sure the graph has sequences
     bool atLeastOneSequence = false;
@@ -182,7 +192,7 @@ static void buildHitsFromBlastOutput(QString blastOutput, Queries &queries);
 
 QString BlastSearch::doSearch(Queries &queries, QString extraParameters) {
     GraphSearchFinishedRAII watcher(this);
-    
+
     m_lastError = "";
     if (!findTools())
         return m_lastError;
@@ -222,10 +232,11 @@ QString BlastSearch::doSearch(Queries &queries, QString extraParameters) {
 //This function carries out the entire BLAST search procedure automatically, without user input.
 //It returns an error string which is empty if all goes well.
 QString BlastSearch::doAutoGraphSearch(const AssemblyGraph &graph, QString queriesFilename,
+                                       bool includePaths,
                                        QString extraParameters) {
     cleanUp();
 
-    QString maybeError = buildDatabase(graph); // It is expected that buildDatabase will setup last error as well
+    QString maybeError = buildDatabase(graph, includePaths); // It is expected that buildDatabase will setup last error as well
     if (!maybeError.isEmpty())
         return maybeError;
 
@@ -315,8 +326,8 @@ static QString getNodeNameFromString(const QString &nodeString) {
 // BLAST search) to construct the Hit objects.
 // It looks at the filters to possibly exclude hits which fail to meet user-
 // defined thresholds.
-static void buildHitsFromBlastOutput(QString blastOutput,
-                                     Queries &queries) {
+void BlastSearch::buildHitsFromBlastOutput(QString blastOutput,
+                                           Queries &queries) const {
     QStringList blastHitList = blastOutput.split("\n", Qt::SkipEmptyParts);
 
     for (const auto &hitString : blastHitList) {
@@ -338,27 +349,11 @@ static void buildHitsFromBlastOutput(QString blastOutput,
         SciNot eValue(alignmentParts[10]);
         double bitScore = alignmentParts[11].toDouble();
 
-        //Only save BLAST hits that are on forward strands.
-        if (nodeStart > nodeEnd)
-            continue;
-
-        QString nodeName = getNodeNameFromString(nodeLabel);
-        DeBruijnNode *node = nullptr;
-        auto it = g_assemblyGraph->m_deBruijnGraphNodes.find(nodeName.toStdString());
-        if (it == g_assemblyGraph->m_deBruijnGraphNodes.end())
-            continue;
-
-        node = it.value();
-
         Query *query = queries.getQueryFromName(queryName);
         if (query == nullptr)
             continue;
 
         // Check the user-defined filters.
-        if (g_settings->blastAlignmentLengthFilter.on &&
-            alignmentLength < g_settings->blastAlignmentLengthFilter)
-            continue;
-
         if (g_settings->blastIdentityFilter.on &&
             percentIdentity < g_settings->blastIdentityFilter)
             continue;
@@ -371,16 +366,25 @@ static void buildHitsFromBlastOutput(QString blastOutput,
             bitScore < g_settings->blastBitScoreFilter)
             continue;
 
-        Hit hit(query, node, percentIdentity, alignmentLength,
-                numberMismatches, numberGapOpens, queryStart, queryEnd,
-                nodeStart, nodeEnd, eValue, bitScore);
-
-        if (g_settings->blastQueryCoverageFilter.on) {
-            double hitCoveragePercentage = 100.0 * hit.getQueryCoverageFraction();
-            if (hitCoveragePercentage < g_settings->blastQueryCoverageFilter)
+        auto nodeIt = g_assemblyGraph->m_deBruijnGraphNodes.find(getNodeNameFromString(nodeLabel).toStdString());
+        if (nodeIt != g_assemblyGraph->m_deBruijnGraphNodes.end()) {
+            // Only save BLAST hits that are on forward strands.
+            if (nodeStart > nodeEnd)
                 continue;
+
+            addNodeHit(query, nodeIt.value(),
+                       queryStart, queryEnd,
+                       nodeStart, nodeEnd,
+                       percentIdentity, numberMismatches, numberGapOpens,
+                       alignmentLength, eValue, bitScore);
         }
 
-        query->addHit(hit);
+        auto pathIt = g_assemblyGraph->m_deBruijnGraphPaths.find(nodeLabel.toStdString());
+        if (pathIt != g_assemblyGraph->m_deBruijnGraphPaths.end()) {
+            addPathHit(query, pathIt.value(),
+                       queryStart, queryEnd,
+                       nodeStart, nodeEnd);
+        }
+
     }
 }

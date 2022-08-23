@@ -29,8 +29,8 @@
 
 using namespace search;
 
-QueryPath::QueryPath(Path path, Query *query) :
-    m_path(std::move(path)), m_query(query) {
+QueryPath::QueryPath(Path path, Query *query)
+        : m_path(std::move(path)), m_query(query) {
     //This function follows the path, returning the BLAST hits it finds for the
     //query.  It requires that the hits occur in order, i.e. that each hit in
     //the path begins later in the query than the previous hit.
@@ -68,6 +68,9 @@ QueryPath::QueryPath(Path path, Query *query) :
     }
 }
 
+QueryPath::QueryPath(Path path, Query *query, std::vector<const Hit *> hits)
+        : m_path(std::move(path)), m_query(query), m_hits(std::move(hits)) {}
+
 double QueryPath::getMeanHitPercIdentity() const {
     int totalHitLength = 0;
     double sum = 0.0;
@@ -82,9 +85,6 @@ double QueryPath::getMeanHitPercIdentity() const {
 
     return totalHitLength == 0 ? 0.0 : sum / totalHitLength;
 }
-
-
-
 
 //This function looks at all of the hits in the path for this query and
 //multiplies the e-values together. If the hits overlap each other, then
@@ -124,8 +124,7 @@ SciNot QueryPath::getEvalueProduct() const {
 }
 
 
-int QueryPath::getHitOverlap(const Hit * hit1, const Hit * hit2) const
-{
+int QueryPath::getHitOverlap(const Hit * hit1, const Hit * hit2) const {
     int hit1Start, hit1End, hit2Start, hit2End;
     QPair<DeBruijnNode *, DeBruijnNode *> possibleEdge(hit1->m_node, hit2->m_node);
 

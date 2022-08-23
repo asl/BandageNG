@@ -19,7 +19,7 @@
 #pragma once
 
 #include "querypath.h"
-#include "graphsearch/hit.h"
+#include "hit.h"
 
 #include <QString>
 #include <QColor>
@@ -68,6 +68,7 @@ namespace search {
         void setAsSearchedFor() { m_searchedFor = true; }
 
         void findQueryPaths();
+        void addQueryPath(QueryPath path) { m_paths.emplace_back(path); }
 
         void setColour(QColor newColour) { m_colour = newColour; }
         void setShown(bool newShown) { m_shown = newShown; }

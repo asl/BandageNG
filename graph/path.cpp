@@ -157,7 +157,7 @@ Path Path::makeFromString(const QString& pathString, const AssemblyGraph &graph,
         return path;
     }
 
-    //Find which node names are and are not actually in the graph. 
+    //Find which node names are and are not actually in the graph.
     std::vector<DeBruijnNode *> nodesInGraph;
     QStringList nodesNotInGraph;
     for (auto & i : nodeNameList) {
@@ -433,31 +433,30 @@ int Path::getLength() const {
 }
 
 
-QString Path::getFasta() const {
-    //The description line is a comma-delimited list of the nodes in the path
-    QString fasta = ">" + getString(false);
+QByteArray Path::getFasta(QString name) const {
+    // The description line is a comma-delimited list of the nodes in the path
+    QByteArray fasta = ">" + (name.isEmpty() ? getString(false).toLatin1() : name.toLatin1());
 
     if (isCircular())
         fasta += " (circular)";
     fasta += "\n";
-
-    QString pathSequence = getPathSequence();
-    int charactersOnLine = 0;
-    for (auto i : pathSequence)
-    {
-        fasta += i;
-        ++charactersOnLine;
-        if (charactersOnLine >= 70)
-        {
-            fasta += "\n";
-            charactersOnLine = 0;
-        }
-    }
-    fasta += "\n";
+    fasta += utils::addNewlinesToSequence(getPathSequence());
 
     return fasta;
 }
 
+QByteArray Path::getAAFasta(unsigned shift, QString name) const {
+    // The description line is a comma-delimited list of the nodes in the path
+    QByteArray fasta = ">" + (name.isEmpty() ? getString(false).toLatin1() : name.toLatin1());
+
+    if (isCircular())
+        fasta += " (circular)";
+    fasta += "/" + std::to_string(shift);
+    fasta += "\n";
+    fasta += utils::addNewlinesToSequence(getPathSequence());
+
+    return fasta;
+}
 
 
 QString Path::getString(bool spaces) const {
@@ -773,11 +772,11 @@ std::vector<int> Path::getPosition(const DeBruijnNode *node) const {
     return res;
 }
 
-// Checks whether [leftx, rightx) intersects [lefty, righty)
+// Checks whether [leftx, rightx] intersects [lefty, righty]
 static bool intersects(int leftx, int rightx,
                        int lefty, int righty) {
-    return (leftx <= lefty && lefty < rightx) ||
-           (lefty <= leftx && leftx < righty);
+    return (leftx <= lefty && lefty <= rightx) ||
+           (lefty <= leftx && leftx <= righty);
 
 }
 
@@ -791,9 +790,49 @@ std::vector<DeBruijnNode *> Path::getNodesAt(int startPosition, int endPosition)
         if (i > 0)
             pos -= m_edges[i-1]->getOverlap();
         int nodeLen = m_nodes[i]->getLength();
-        if (intersects(pos, pos+nodeLen,
+        if (intersects(pos, pos + nodeLen - 1,
                        startPosition, endPosition))
             res.push_back(m_nodes[i]);
+
+        pos += nodeLen;
+    }
+
+    return res;
+}
+
+Path::MappingPath Path::getNodeCovering(int startPosition, int endPosition) const {
+    int pos = -m_startLocation.getPosition() + 1; // all UI positions are 1-based, convert to 0-based
+
+    startPosition -= 1; endPosition -= 1; // all UI positions are 1-based, convert to 0-based
+
+    MappingPath res;
+    for (size_t i = 0; i < m_nodes.size(); ++i) {
+        if (i > 0)
+            pos -= m_edges[i-1]->getOverlap();
+        int nodeLen = m_nodes[i]->getLength();
+        if (intersects(pos, pos + nodeLen - 1,
+                       startPosition, endPosition)) {
+            MappingRange range;
+            // Determing the mapping range for a node
+            // Note that MappingRange is 1-based.
+            if (pos < startPosition) {
+                range.initial_range.from = startPosition + 1;
+                range.mapped_range.from = startPosition - pos + 1;
+            } else {
+                range.initial_range.from = pos + 1;
+                range.mapped_range.from = 1;
+            }
+
+            if (pos + nodeLen - 1 > endPosition) {
+                range.initial_range.to = endPosition + 1;
+                range.mapped_range.to = endPosition - pos + 1;
+            } else {
+                range.initial_range.to = pos + nodeLen;
+                range.mapped_range.to = nodeLen;
+            }
+
+            res.emplace_back(m_nodes[i], range);
+        }
 
         pos += nodeLen;
     }
