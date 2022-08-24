@@ -175,6 +175,17 @@ void Minimap2Search::buildHitsFromPAF(const QString &PAF,
         if (query == nullptr)
             continue;
 
+        if (g_settings->blastAlignmentLengthFilter.on &&
+            alignmentLength < g_settings->blastAlignmentLengthFilter)
+            continue;
+
+        if (g_settings->blastQueryCoverageFilter.on) {
+            double hitCoveragePercentage = 100.0 * Hit::getQueryCoverageFraction(query,
+                                                                                 queryStart, queryEnd);
+            if (hitCoveragePercentage < g_settings->blastQueryCoverageFilter)
+                continue;
+        }
+
         auto nodeIt = g_assemblyGraph->m_deBruijnGraphNodes.find(getNodeNameFromString(nodeLabel).toStdString());
         if (nodeIt != g_assemblyGraph->m_deBruijnGraphNodes.end()) {
             if (!strand)

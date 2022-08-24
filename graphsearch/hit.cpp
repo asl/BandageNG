@@ -53,14 +53,21 @@ double Hit::queryEndFraction() const {
     return double(m_queryEnd - 1) / m_query->getLength();
 }
 
-double Hit::getQueryCoverageFraction() const {
-    int queryRegionSize = m_queryEnd - m_queryStart + 1;
-    int queryLength = m_query->getLength();
+double Hit::getQueryCoverageFraction(Query *query,
+                                     int queryStart, int queryEnd) {
+    int queryRegionSize = queryEnd - queryStart + 1;
+    int queryLength = query->getLength();
 
     if (queryLength == 0)
         return 0.0;
     else
         return double(queryRegionSize) / queryLength;
+}
+
+
+double Hit::getQueryCoverageFraction() const {
+    return getQueryCoverageFraction(m_query,
+                                    m_queryStart, m_queryEnd);
 }
 
 

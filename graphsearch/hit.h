@@ -51,6 +51,8 @@ namespace search {
         double m_bitScore;
 
         double getQueryCoverageFraction() const;
+        static double getQueryCoverageFraction(Query *query,
+                                               int queryStart, int queryEnd);
 
         GraphLocation getHitStart() const;
         GraphLocation getHitEnd() const;

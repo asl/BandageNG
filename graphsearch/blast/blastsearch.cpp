@@ -366,6 +366,17 @@ void BlastSearch::buildHitsFromBlastOutput(QString blastOutput,
             bitScore < g_settings->blastBitScoreFilter)
             continue;
 
+        if (g_settings->blastAlignmentLengthFilter.on &&
+            alignmentLength < g_settings->blastAlignmentLengthFilter)
+            continue;
+
+        if (g_settings->blastQueryCoverageFilter.on) {
+            double hitCoveragePercentage = 100.0 * Hit::getQueryCoverageFraction(query,
+                                                                                 queryStart, queryEnd);
+            if (hitCoveragePercentage < g_settings->blastQueryCoverageFilter)
+                continue;
+        }
+
         auto nodeIt = g_assemblyGraph->m_deBruijnGraphNodes.find(getNodeNameFromString(nodeLabel).toStdString());
         if (nodeIt != g_assemblyGraph->m_deBruijnGraphNodes.end()) {
             // Only save BLAST hits that are on forward strands.
