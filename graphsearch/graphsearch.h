@@ -37,6 +37,9 @@ public:
     explicit GraphSearch(const QDir &workDir = QDir::temp(), QObject *parent = nullptr);
     ~GraphSearch();
 
+    using NodeHits = std::vector<std::pair<Query*, Hit*>>;
+    using PathHits = std::vector<std::pair<Path*, Path::MappingRange>>;
+
     // Small RAII helpers to emit signals on destruction
     class DbBuildFinishedRAII {
       public:

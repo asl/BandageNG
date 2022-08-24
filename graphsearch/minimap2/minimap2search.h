@@ -54,7 +54,6 @@ public slots:
 
 private:
     bool findTools();
-    void buildHitsFromPAF(const QString &PAF, Queries &queries) const;
 
     bool m_cancelBuildDatabase = false, m_cancelSearch = false;
 

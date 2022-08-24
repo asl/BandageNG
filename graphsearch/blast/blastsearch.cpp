@@ -188,7 +188,9 @@ QString BlastSearch::runOneBlastSearch(QuerySequenceType sequenceType,
     return blastOutput;
 }
 
-static void buildHitsFromBlastOutput(QString blastOutput, Queries &queries);
+static std::pair<GraphSearch::NodeHits, GraphSearch::PathHits>
+buildHitsFromBlastOutput(QString blastOutput,
+                         Queries &queries);
 
 QString BlastSearch::doSearch(Queries &queries, QString extraParameters) {
     GraphSearchFinishedRAII watcher(this);
@@ -221,8 +223,12 @@ QString BlastSearch::doSearch(Queries &queries, QString extraParameters) {
         return (m_lastError = "BLAST search cancelled");
 
     // If the code got here, then the search completed successfully.
-    buildHitsFromBlastOutput(blastOutput, queries);
+    auto [nodeHits, pathHits] = buildHitsFromBlastOutput(blastOutput, queries);
+    // Simply glue hits to queries. Now query owns hit.
+    for (auto &entry : nodeHits)
+        entry.first->addHit(entry.second);
     queries.findQueryPaths();
+
     queries.searchOccurred();
 
     m_lastError = "";
@@ -326,8 +332,11 @@ static QString getNodeNameFromString(const QString &nodeString) {
 // BLAST search) to construct the Hit objects.
 // It looks at the filters to possibly exclude hits which fail to meet user-
 // defined thresholds.
-void BlastSearch::buildHitsFromBlastOutput(QString blastOutput,
-                                           Queries &queries) const {
+static std::pair<GraphSearch::NodeHits, GraphSearch::PathHits>
+buildHitsFromBlastOutput(QString blastOutput,
+                         Queries &queries) {
+    GraphSearch::NodeHits nodeHits; GraphSearch::PathHits pathHits;
+
     QStringList blastHitList = blastOutput.split("\n", Qt::SkipEmptyParts);
 
     for (const auto &hitString : blastHitList) {
@@ -383,19 +392,22 @@ void BlastSearch::buildHitsFromBlastOutput(QString blastOutput,
             if (nodeStart > nodeEnd)
                 continue;
 
-            addNodeHit(query, nodeIt.value(),
-                       queryStart, queryEnd,
-                       nodeStart, nodeEnd,
-                       percentIdentity, numberMismatches, numberGapOpens,
-                       alignmentLength, eValue, bitScore);
+            nodeHits.emplace_back(query,
+                                  new Hit(query, nodeIt.value(),
+                                          percentIdentity, alignmentLength,
+                                          numberMismatches, numberGapOpens,
+                                          queryStart, queryEnd,
+                                          nodeStart, nodeEnd, eValue, bitScore));
         }
 
         auto pathIt = g_assemblyGraph->m_deBruijnGraphPaths.find(nodeLabel.toStdString());
         if (pathIt != g_assemblyGraph->m_deBruijnGraphPaths.end()) {
-            addPathHit(query, pathIt.value(),
-                       queryStart, queryEnd,
-                       nodeStart, nodeEnd);
+            pathHits.emplace_back(pathIt.value(),
+                                  Path::MappingRange{queryStart, queryEnd,
+                                                     nodeStart, nodeEnd});
         }
 
     }
+
+    return { nodeHits, pathHits };
 }

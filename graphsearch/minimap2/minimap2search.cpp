@@ -18,6 +18,7 @@
 
 #include "minimap2search.h"
 
+#include "graphsearch/graphsearch.h"
 #include "program/settings.h"
 
 #include "graph/assemblygraph.h"
@@ -151,11 +152,12 @@ static QString getNodeNameFromString(const QString &nodeString) {
     return nodeName;
 }
 
-void Minimap2Search::buildHitsFromPAF(const QString &PAF,
-                                      Queries &queries) const {
-    QStringList hitList = PAF.split("\n", Qt::SkipEmptyParts);
+static std::pair<GraphSearch::NodeHits, GraphSearch::PathHits>
+buildHitsFromPAF(const QString &PAF,
+                 Queries &queries) {
+    GraphSearch::NodeHits nodeHits; GraphSearch::PathHits pathHits;
 
-    for (const auto &hitString : hitList) {
+    for (const auto &hitString : PAF.split("\n", Qt::SkipEmptyParts)) {
         QStringList alignmentParts = hitString.split('\t');
         if (alignmentParts.size() < 12)
             continue;
@@ -191,26 +193,29 @@ void Minimap2Search::buildHitsFromPAF(const QString &PAF,
             if (!strand)
                 continue;
 
-            addNodeHit(query, nodeIt.value(),
-                       queryStart, queryEnd,
-                       nodeStart, nodeEnd,
-                       -1, -1, -1,
-                       alignmentLength, 0, 0);
+            nodeHits.emplace_back(query,
+                                  new Hit(query, nodeIt.value(),
+                                          -1, alignmentLength,
+                                          -1, -1,
+                                          queryStart, queryEnd,
+                                          nodeStart, nodeEnd, 0, 0));
         }
 
         auto pathIt = g_assemblyGraph->m_deBruijnGraphPaths.find(nodeLabel.toStdString());
         if (pathIt != g_assemblyGraph->m_deBruijnGraphPaths.end()) {
-            addPathHit(query, pathIt.value(),
-                       queryStart, queryEnd,
-                       nodeStart, nodeEnd);
+            pathHits.emplace_back(pathIt.value(),
+                                  Path::MappingRange{queryStart, queryEnd,
+                                                     nodeStart, nodeEnd});
         }
 
     }
+
+    return { nodeHits, pathHits };
 }
 
 QString Minimap2Search::doSearch(Queries &queries, QString extraParameters) {
     GraphSearchFinishedRAII watcher(this);
-    
+
     m_lastError = "";
     if (!findTools())
         return m_lastError;
@@ -263,8 +268,12 @@ QString Minimap2Search::doSearch(Queries &queries, QString extraParameters) {
     if (m_cancelSearch)
         return (m_lastError = "Minimap2 search cancelled");
 
-    buildHitsFromPAF(minimap2Output, queries);
+    auto [nodeHits, pathHits] = buildHitsFromPAF(minimap2Output, queries);
+    // Simply glue hits to queries. Now query owns hit.
+    for (auto &entry : nodeHits)
+        entry.first->addHit(entry.second);
     queries.findQueryPaths();
+
     queries.searchOccurred();
 
     m_lastError = "";

@@ -55,10 +55,6 @@ public slots:
 
 private:
     bool findTools();
-    void buildHitsFromTblOut(QString hmmerOutput,
-                             Queries &queries) const;
-    void buildHitsFromDomTblOut(QString hmmerOutput,
-                                Queries &queries) const;
 
     QString doOneSearch(search::QuerySequenceType sequenceType,
                         search::Queries &queries, QString extraParameters);

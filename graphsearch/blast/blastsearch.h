@@ -58,8 +58,6 @@ public slots:
 
 private:
     bool findTools();
-    void buildHitsFromBlastOutput(QString blastOutput,
-                                  Queries &queries) const;
 
     QString runOneBlastSearch(search::QuerySequenceType sequenceType,
                               const search::Queries &queries,
