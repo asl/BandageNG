@@ -89,26 +89,6 @@ QString Minimap2Search::buildDatabase(const AssemblyGraph &graph, bool includePa
     if (!atLeastOneSequence)
         return (m_lastError = "Cannot build the Minimap2 database as this graph contains no sequences");
 
-    QStringList minimap2Options;
-    minimap2Options << "-d" << temporaryDir().filePath("all_nodes.idx")
-                    << temporaryDir().filePath("all_nodes.fasta");
-
-    m_buildDb = new QProcess();
-    m_buildDb->start(m_minimap2Command, minimap2Options);
-
-    bool finished = m_buildDb->waitForFinished(-1);
-    if (m_buildDb->exitCode() != 0 || !finished) {
-        m_lastError = "There was a problem building minimap2 database";
-        QString stdErr = m_buildDb->readAllStandardError();
-        m_lastError += stdErr.isEmpty() ? "." : ":\n\n" + stdErr;
-    } else if (m_cancelBuildDatabase)
-        m_lastError = "Build cancelled.";
-    else
-        m_lastError = "";
-
-    m_buildDb->deleteLater();
-    m_buildDb = nullptr;
-
     return m_lastError;
 }
 
@@ -237,7 +217,7 @@ QString Minimap2Search::doSearch(Queries &queries, QString extraParameters) {
 
     QStringList minimap2Options;
     minimap2Options << extraParameters.split(" ", Qt::SkipEmptyParts)
-                    << temporaryDir().filePath("all_nodes.idx")
+                    << temporaryDir().filePath("all_nodes.fasta")
                     << tmpFile.fileName();
 
     m_cancelSearch = false;
