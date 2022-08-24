@@ -40,10 +40,10 @@ QueryPath::QueryPath(Path path, Query *query)
     for (int i = 0; i < pathNodes.size(); ++i) {
         DeBruijnNode * node = pathNodes[i];
 
-        std::vector<const Hit*> hitsThisNode;
+        Query::Hits hitsThisNode;
         for (auto &queryHit : query->getHits()) {
-            if (queryHit.m_node == node)
-                hitsThisNode.push_back(&queryHit);
+            if (queryHit->m_node == node)
+                hitsThisNode.push_back(queryHit.get());
         }
 
         std::sort(hitsThisNode.begin(), hitsThisNode.end(),

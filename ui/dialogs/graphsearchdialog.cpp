@@ -821,7 +821,7 @@ QVariant HitsListModel::data(const QModelIndex &index, int role) const {
 
     auto column = HitsColumns(index.column());
     const auto &hit = m_hits[index.row()];
-    const auto &hitQuery = *hit.m_query;
+    const auto &hitQuery = *hit->m_query;
 
     if (role == Qt::BackgroundRole) {
         if (hitQuery.isHidden()) // Hide disabled queries
@@ -839,35 +839,35 @@ QVariant HitsListModel::data(const QModelIndex &index, int role) const {
         case HitsColumns::QueryName:
             return hitQuery.getName();
         case HitsColumns::NodeName:
-            return hit.m_node->getName();
+            return hit->m_node->getName();
         case HitsColumns::PercentIdentity:
-            if (hit.m_percentIdentity > 0)
-                return formatDoubleForDisplay(hit.m_percentIdentity, 2) + "%";
+            if (hit->m_percentIdentity > 0)
+                return formatDoubleForDisplay(hit->m_percentIdentity, 2) + "%";
             return "N/A";
         case HitsColumns::AlignmentLength:
-            return hit.m_alignmentLength;
+            return hit->m_alignmentLength;
         case HitsColumns::QueryCover:
-            return formatDoubleForDisplay(100.0 * hit.getQueryCoverageFraction(), 2) + "%";
+            return formatDoubleForDisplay(100.0 * hit->getQueryCoverageFraction(), 2) + "%";
         case HitsColumns::Mismatches:
-            if (hit.m_numberMismatches < 0)
+            if (hit->m_numberMismatches < 0)
                 return "N/A";
-            return hit.m_numberMismatches;
+            return hit->m_numberMismatches;
         case HitsColumns::GapOpens:
-            if (hit.m_numberGapOpens < 0)
+            if (hit->m_numberGapOpens < 0)
                 return "N/A";
-            return hit.m_numberGapOpens;
+            return hit->m_numberGapOpens;
         case HitsColumns::QueryStart:
-            return hit.m_queryStart;
+            return hit->m_queryStart;
         case HitsColumns::QueryEnd:
-            return hit.m_queryEnd;
+            return hit->m_queryEnd;
         case HitsColumns::NodeStart:
-            return hit.m_nodeStart;
+            return hit->m_nodeStart;
         case HitsColumns::NodeEnd:
-            return hit.m_nodeEnd;
+            return hit->m_nodeEnd;
         case HitsColumns::Evalue:
-            return hit.m_eValue.asString(false);
+            return hit->m_eValue.asString(false);
         case HitsColumns::BitScore:
-            return hit.m_bitScore;
+            return hit->m_bitScore;
     }
 
     return {};

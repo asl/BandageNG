@@ -158,7 +158,7 @@ void GraphSearch::addNodeHit(Query *query, DeBruijnNode *node,
             return;
     }
 
-    query->addHit(hit);
+    query->emplaceHit(hit);
 }
 
 void GraphSearch::addPathHit(Query *query, Path *path,
@@ -191,6 +191,6 @@ void GraphSearch::addPathHit(Query *query, Path *path,
                 continue;
         }
 
-        query->addHit(hit);
+        query->emplaceHit(hit);
     }
 }

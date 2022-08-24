@@ -548,19 +548,19 @@ void BandageTests::blastSearch()
     const auto &one_insertionHit = one_insertion->getHits().at(0);
     const auto &one_deletionHit = one_deletion->getHits().at(0);
 
-    QCOMPARE(exactHit.m_numberMismatches, 0);
-    QCOMPARE(exactHit.m_numberGapOpens, 0);
-    QCOMPARE(one_mismatchHit.m_numberMismatches, 1);
-    QCOMPARE(one_mismatchHit.m_numberGapOpens, 0);
-    QCOMPARE(one_insertionHit.m_numberMismatches, 0);
-    QCOMPARE(one_insertionHit.m_numberGapOpens, 1);
-    QCOMPARE(one_deletionHit.m_numberMismatches, 0);
-    QCOMPARE(one_deletionHit.m_numberGapOpens, 1);
+    QCOMPARE(exactHit->m_numberMismatches, 0);
+    QCOMPARE(exactHit->m_numberGapOpens, 0);
+    QCOMPARE(one_mismatchHit->m_numberMismatches, 1);
+    QCOMPARE(one_mismatchHit->m_numberGapOpens, 0);
+    QCOMPARE(one_insertionHit->m_numberMismatches, 0);
+    QCOMPARE(one_insertionHit->m_numberGapOpens, 1);
+    QCOMPARE(one_deletionHit->m_numberMismatches, 0);
+    QCOMPARE(one_deletionHit->m_numberGapOpens, 1);
 
-    QCOMPARE(exactHit.m_percentIdentity < 100.0, false);
-    QCOMPARE(one_mismatchHit.m_percentIdentity < 100.0, true);
-    QCOMPARE(one_insertionHit.m_percentIdentity < 100.0, true);
-    QCOMPARE(one_deletionHit.m_percentIdentity < 100.0, true);
+    QCOMPARE(exactHit->m_percentIdentity < 100.0, false);
+    QCOMPARE(one_mismatchHit->m_percentIdentity < 100.0, true);
+    QCOMPARE(one_insertionHit->m_percentIdentity < 100.0, true);
+    QCOMPARE(one_deletionHit->m_percentIdentity < 100.0, true);
 }
 
 

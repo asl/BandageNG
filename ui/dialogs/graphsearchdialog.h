@@ -19,6 +19,8 @@
 
 #pragma once
 
+#include "graphsearch/query.h"
+
 #include <QDialog>
 #include <QAbstractTableModel>
 #include <QStyledItemDelegate>
@@ -29,8 +31,6 @@ namespace search {
     class Hit;
     class GraphSearch;
 }
-
-using Hits = std::vector<search::Hit>;
 
 namespace Ui {
 class GraphSearchDialog;
@@ -100,7 +100,7 @@ public:
     void endUpdate() { endResetModel(); }
     bool empty() const { return m_hits.empty(); }
 
-    Hits m_hits;
+    search::Query::Hits m_hits;
 };
 
 class GraphSearchDialog : public QDialog {

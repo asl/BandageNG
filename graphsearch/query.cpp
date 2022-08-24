@@ -88,24 +88,24 @@ void Query::findQueryPaths() {
     if (m_sequenceType == PROTEIN)
         queryLength *= 3;
 
-    //Find all possible path starts within an acceptable distance from the query
-    //start.
-    std::vector<Hit *> possibleStarts;
+    // Find all possible path starts within an acceptable distance from the query
+    // start.
+    Hits possibleStarts;
     double acceptableStartFraction = 1.0 - g_settings->minQueryCoveredByPath;
-    for (auto &hit : m_hits) {
-        if (hit.queryStartFraction() <= acceptableStartFraction)
-            possibleStarts.push_back(&hit);
+    for (const auto &hit : m_hits) {
+        if (hit->queryStartFraction() <= acceptableStartFraction)
+            possibleStarts.push_back(hit.get());
     }
 
-    //Find all possible path ends.
+    // Find all possible path ends.
     std::vector<Hit *> possibleEnds;
     double acceptableEndFraction = g_settings->minQueryCoveredByPath;
-    for (auto &hit : m_hits) {
-        if (hit.queryEndFraction() >= acceptableEndFraction)
-            possibleEnds.push_back(&hit);
+    for (const auto &hit : m_hits) {
+        if (hit->queryEndFraction() >= acceptableEndFraction)
+            possibleEnds.push_back(hit.get());
     }
 
-    //For each possible start, find paths to each possible end.
+    // For each possible start, find paths to each possible end.
     QList<Path> possiblePaths;
     for (auto start : possibleStarts) {
         GraphLocation startLocation = start->getHitStart();
@@ -213,7 +213,7 @@ void Query::findQueryPaths() {
 //If a list of BLAST hits is passed to the function, it only looks in those
 //hits.  If no such list is passed, it looks in all hits for this query.
 // http://stackoverflow.com/questions/5276686/merging-ranges-in-c
-double Query::fractionCoveredByHits(const std::vector<const Hit *> &hitsToCheck) const {
+double Query::fractionCoveredByHits(const Hits &hitsToCheck) const {
     int hitBases = 0;
     int queryLength = getLength();
     if (queryLength == 0)
@@ -222,7 +222,7 @@ double Query::fractionCoveredByHits(const std::vector<const Hit *> &hitsToCheck)
     std::vector<std::pair<int, int> > ranges;
     if (hitsToCheck.empty()) {
         for (const auto &hit : m_hits)
-            ranges.emplace_back(hit.m_queryStart - 1, hit.m_queryEnd);
+            ranges.emplace_back(hit->m_queryStart - 1, hit->m_queryEnd);
     } else {
         for (auto *hit : hitsToCheck) {
             ranges.emplace_back(hit->m_queryStart - 1, hit->m_queryEnd);

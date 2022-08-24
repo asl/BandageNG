@@ -96,14 +96,14 @@ void AnnotationsManager::updateGroupFromHits(const QString &name, const std::vec
     auto &group = createAnnotationGroup(name);
     for (auto *query: queries) {
         for (const auto &hit: query->getHits()) {
-            auto &annotation = group.annotationMap[hit.m_node].emplace_back(
+            auto &annotation = group.annotationMap[hit->m_node].emplace_back(
                     std::make_unique<Annotation>(
-                            hit.m_nodeStart,
-                            hit.m_nodeEnd,
+                            hit->m_nodeStart,
+                            hit->m_nodeEnd,
                             query->getName().toStdString()));
             annotation->addView(std::make_unique<SolidView>(1.0, query->getColour()));
-            annotation->addView(std::make_unique<RainbowBlastHitView>(hit.queryStartFraction(),
-                                                                      hit.queryEndFraction()));
+            annotation->addView(std::make_unique<RainbowBlastHitView>(hit->queryStartFraction(),
+                                                                      hit->queryEndFraction()));
         }
     }
 

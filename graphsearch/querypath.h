@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include "graphsearch/hit.h"
+#include "hit.h"
 
 #include "graph/path.h"
 #include "program/scinot.h"
@@ -52,7 +52,7 @@ namespace search {
     private:
         Path m_path;
         Query *m_query;
-        std::vector<const Hit *> m_hits;
+        std::vector<const Hit*> m_hits;
 
         int getHitQueryLength() const;
         int getHitOverlap(const Hit *hit1, const Hit *hit2) const;

@@ -149,12 +149,12 @@ void Queries::findQueryPaths() {
         query->findQueryPaths();
 }
 
-std::vector<Hit> Queries::allHits() const {
-    std::vector<Hit> res;
+Query::Hits Queries::allHits() const {
+    Query::Hits res;
 
     for (const auto *query : m_queries) {
-        const auto &hits = query->getHits();
-        res.insert(res.end(), hits.begin(), hits.end());
+        for (const auto &hit : query->getHits())
+            res.push_back(hit.get());
     }
 
     return res;
@@ -171,12 +171,12 @@ std::vector<DeBruijnNode *> Queries::getNodesFromHits(const QString& queryName) 
         // Add pointers to nodes that have a hit for the selected target(s).
         for (auto *currentQuery: m_queries) {
             for (const auto &hit: currentQuery->getHits())
-                returnVector.push_back(hit.m_node);
+                returnVector.push_back(hit->m_node);
         }
     } else {
         if (Query *query = getQueryFromName(queryName)) {
             for (const auto &hit: query->getHits())
-                returnVector.push_back(hit.m_node);
+                returnVector.push_back(hit->m_node);
         }
     }
 

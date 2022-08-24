@@ -23,6 +23,7 @@
 
 #include <QString>
 #include <QColor>
+#include <memory>
 #include <utility>
 
 namespace search {
@@ -33,6 +34,8 @@ namespace search {
 
     class Query {
     public:
+        using Hits = std::vector<const Hit*>;
+
         //CREATORS
         Query(QString name, QString sequence, QByteArray aux = QByteArray());
 
@@ -62,7 +65,11 @@ namespace search {
 
         // MODIFIERS
         void setName(QString newName) { m_name = std::move(newName); }
-        void addHit(Hit newHit) { m_hits.emplace_back(newHit); }
+        template<typename... Args>
+        void emplaceHit(Args&&... args) {
+            m_hits.emplace_back(new Hit(std::forward<Args>(args)...));
+        }
+        void addHit(Hit *newHit) { m_hits.emplace_back(newHit); }
 
         void clearSearchResults();
         void setAsSearchedFor() { m_searchedFor = true; }
@@ -76,7 +83,7 @@ namespace search {
         QString m_name;
         QString m_sequence;
         QByteArray m_aux;
-        std::vector<Hit> m_hits;
+        std::vector<std::unique_ptr<Hit>> m_hits;
         QuerySequenceType m_sequenceType;
         bool m_searchedFor = false;
         bool m_shown = true;
