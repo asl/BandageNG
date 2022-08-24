@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "graphsearch/queries.h"
+#include "queries.h"
 
 #include <QDir>
 #include <QString>
@@ -36,9 +36,6 @@ class GraphSearch : public QObject {
 public:
     explicit GraphSearch(const QDir &workDir = QDir::temp(), QObject *parent = nullptr);
     ~GraphSearch();
-
-    using NodeHits = std::vector<std::pair<Query*, Hit*>>;
-    using PathHits = std::vector<std::pair<Path*, Path::MappingRange>>;
 
     // Small RAII helpers to emit signals on destruction
     class DbBuildFinishedRAII {
@@ -100,13 +97,6 @@ public:
                                             const QDir &workDir = QDir::temp(), QObject *parent = nullptr);
 
 protected:
-    static void addNodeHit(Query *query, DeBruijnNode *node,
-                           int queryStart, int queryEnd,
-                           int nodeStart, int nodeEnd,
-                           double percentIdentity,
-                           int numberMismatches, int numberGapOpens,
-                           int alignmentLength, SciNot eValue, double bitScore);
-
     static void addPathHit(Query *query, Path *path,
                            int queryStart, int queryEnd,
                            int pathStart, int pathEnd);

@@ -17,6 +17,9 @@
 
 
 #include "queries.h"
+#include "hits.h"
+
+#include "graph/debruijnnode.h"
 
 #include "program/globals.h"
 #include "program/settings.h"
@@ -181,4 +184,47 @@ std::vector<DeBruijnNode *> Queries::getNodesFromHits(const QString& queryName) 
     }
 
     return returnVector;
+}
+
+void Queries::addNodeHits(const NodeHits &nodeHits) {
+    // Simply glue hits to queries. Now query owns hit.
+    for (auto &entry : nodeHits)
+        entry.first->addHit(entry.second);
+}
+
+void Queries::addPathHits(const PathHits &hits) {
+    for (const auto &hit : hits) {
+        Query *query;
+        const Path *path;
+        Path::MappingRange range;
+        std::tie(query, path, range) = hit;
+        std::vector<const Hit*> pathHits;
+
+        int pathStart = range.mapped_range.from, pathEnd = range.mapped_range.to;
+        int queryStart = range.initial_range.from, queryEnd = range.initial_range.to;
+
+        bool invert = pathStart > pathEnd;
+        if (invert)
+            std::swap(pathStart, pathEnd);
+
+        for (auto entry: path->getNodeCovering(pathStart, pathEnd)) {
+            DeBruijnNode *node = entry.first;
+            int nodeStart = entry.second.mapped_range.from, nodeEnd = entry.second.mapped_range.to;
+            if (invert) {
+                int nodeLength = node->getLength();
+                node = node->getReverseComplement();
+                nodeEnd = nodeLength - nodeEnd + 1;
+                nodeStart = nodeLength - nodeStart + 1;
+                std::swap(nodeEnd, nodeStart);
+            }
+
+            pathHits.push_back(query->emplaceHit(query, node, -1, nodeEnd - nodeStart + 1,
+                                                 -1, -1,
+                                                 queryStart, queryEnd,
+                                                 nodeStart, nodeEnd,
+                                                 0, 0));
+        }
+
+        query->emplaceQueryPath(*path, query, pathHits);
+    }
 }

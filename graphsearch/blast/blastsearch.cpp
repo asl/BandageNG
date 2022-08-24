@@ -188,7 +188,7 @@ QString BlastSearch::runOneBlastSearch(QuerySequenceType sequenceType,
     return blastOutput;
 }
 
-static std::pair<GraphSearch::NodeHits, GraphSearch::PathHits>
+static std::pair<NodeHits, PathHits>
 buildHitsFromBlastOutput(QString blastOutput,
                          Queries &queries);
 
@@ -224,11 +224,9 @@ QString BlastSearch::doSearch(Queries &queries, QString extraParameters) {
 
     // If the code got here, then the search completed successfully.
     auto [nodeHits, pathHits] = buildHitsFromBlastOutput(blastOutput, queries);
-    // Simply glue hits to queries. Now query owns hit.
-    for (auto &entry : nodeHits)
-        entry.first->addHit(entry.second);
+    queries.addNodeHits(nodeHits);
     queries.findQueryPaths();
-
+    queries.addPathHits(pathHits);
     queries.searchOccurred();
 
     m_lastError = "";
@@ -332,10 +330,10 @@ static QString getNodeNameFromString(const QString &nodeString) {
 // BLAST search) to construct the Hit objects.
 // It looks at the filters to possibly exclude hits which fail to meet user-
 // defined thresholds.
-static std::pair<GraphSearch::NodeHits, GraphSearch::PathHits>
+static std::pair<NodeHits, PathHits>
 buildHitsFromBlastOutput(QString blastOutput,
                          Queries &queries) {
-    GraphSearch::NodeHits nodeHits; GraphSearch::PathHits pathHits;
+    NodeHits nodeHits; PathHits pathHits;
 
     QStringList blastHitList = blastOutput.split("\n", Qt::SkipEmptyParts);
 
@@ -402,7 +400,7 @@ buildHitsFromBlastOutput(QString blastOutput,
 
         auto pathIt = g_assemblyGraph->m_deBruijnGraphPaths.find(nodeLabel.toStdString());
         if (pathIt != g_assemblyGraph->m_deBruijnGraphPaths.end()) {
-            pathHits.emplace_back(pathIt.value(),
+            pathHits.emplace_back(query, pathIt.value(),
                                   Path::MappingRange{queryStart, queryEnd,
                                                      nodeStart, nodeEnd});
         }

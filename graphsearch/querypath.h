@@ -33,8 +33,7 @@ namespace search {
         QueryPath(Path path, Query *query, std::vector<const Hit*> hits);
 
         //ACCESSORS
-        Path getPath() const { return m_path; }
-
+        const Path &getPath() const { return m_path; }
         const auto &getHits() const { return m_hits; }
 
         SciNot getEvalueProduct() const;

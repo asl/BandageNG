@@ -66,8 +66,9 @@ namespace search {
         // MODIFIERS
         void setName(QString newName) { m_name = std::move(newName); }
         template<typename... Args>
-        void emplaceHit(Args&&... args) {
+        const Hit* emplaceHit(Args&&... args) {
             m_hits.emplace_back(new Hit(std::forward<Args>(args)...));
+            return m_hits.back().get();
         }
         void addHit(Hit *newHit) { m_hits.emplace_back(newHit); }
 
@@ -76,6 +77,10 @@ namespace search {
 
         void findQueryPaths();
         void addQueryPath(QueryPath path) { m_paths.emplace_back(path); }
+        template<typename... Args>
+        void emplaceQueryPath(Args&... args) {
+            m_paths.emplace_back(std::forward<Args>(args)...);
+        }
 
         void setColour(QColor newColour) { m_colour = newColour; }
         void setShown(bool newShown) { m_shown = newShown; }

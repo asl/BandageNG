@@ -168,9 +168,9 @@ static QString getNodeNameFromString(const QString &nodeString) {
     return nodeName;
 }
 
-static std::pair<GraphSearch::NodeHits, GraphSearch::PathHits>
+static std::pair<NodeHits, PathHits>
 buildHitsFromTblOut(QString hmmerOutput, Queries &queries);
-static std::pair<GraphSearch::NodeHits, GraphSearch::PathHits>
+static std::pair<NodeHits, PathHits>
 buildHitsFromDomTblOut(QString hmmerOutput, Queries &queries);
 
 QString HmmerSearch::doSearch(Queries &queries, QString extraParameters) {
@@ -179,29 +179,27 @@ QString HmmerSearch::doSearch(Queries &queries, QString extraParameters) {
     if (!findTools())
         return m_lastError;
 
-    GraphSearch::NodeHits nnodeHits; GraphSearch::PathHits npathHits;
+    NodeHits nnodeHits; PathHits npathHits;
     if (queries.getQueryCount(NUCLEOTIDE) > 0 && !m_cancelSearch) {
         QString hmmerOutput = doOneSearch(NUCLEOTIDE, queries, extraParameters);
         if (!m_lastError.isEmpty())
             return m_lastError;
         std::tie(nnodeHits, npathHits) = buildHitsFromTblOut(hmmerOutput, queries);
-        // Simply glue hits to queries. Now query owns hit.
-        for (auto &entry : nnodeHits)
-            entry.first->addHit(entry.second);
+        queries.addNodeHits(nnodeHits);
     }
 
-    GraphSearch::NodeHits pnodeHits; GraphSearch::PathHits ppathHits;
+    NodeHits pnodeHits; PathHits ppathHits;
     if (queries.getQueryCount(PROTEIN) > 0 && !m_cancelSearch) {
         QString hmmerOutput = doOneSearch(PROTEIN, queries, extraParameters);
         if (!m_lastError.isEmpty())
             return m_lastError;
         std::tie(pnodeHits, ppathHits) = buildHitsFromDomTblOut(hmmerOutput, queries);
-        // Simply glue hits to queries. Now query owns hit.
-        for (auto &entry : pnodeHits)
-            entry.first->addHit(entry.second);
+        queries.addNodeHits(pnodeHits);
     }
 
     queries.findQueryPaths();
+    queries.addPathHits(npathHits);
+    queries.addPathHits(ppathHits);
     queries.searchOccurred();
 
     return m_lastError;
@@ -335,10 +333,10 @@ void HmmerSearch::cancelSearch() {
         m_doSearch->kill();
 }
 
-static std::pair<GraphSearch::NodeHits, GraphSearch::PathHits>
+static std::pair<NodeHits, PathHits>
 buildHitsFromTblOut(QString hmmerOutput,
                     Queries &queries) {
-    GraphSearch::NodeHits nodeHits; GraphSearch::PathHits pathHits;
+    NodeHits nodeHits; PathHits pathHits;
 
     for (const auto &hitString : hmmerOutput.split('\n', Qt::SkipEmptyParts)) {
         if (hitString.startsWith('#'))
@@ -403,7 +401,7 @@ buildHitsFromTblOut(QString hmmerOutput,
 
         auto pathIt = g_assemblyGraph->m_deBruijnGraphPaths.find(nodeLabel.toStdString());
         if (pathIt != g_assemblyGraph->m_deBruijnGraphPaths.end()) {
-            pathHits.emplace_back(pathIt.value(),
+            pathHits.emplace_back(query, pathIt.value(),
                                   Path::MappingRange{queryStart, queryEnd,
                                                      nodeStart, nodeEnd});
         }
@@ -412,10 +410,10 @@ buildHitsFromTblOut(QString hmmerOutput,
     return { nodeHits, pathHits };
 }
 
-static std::pair<GraphSearch::NodeHits, GraphSearch::PathHits>
+static std::pair<NodeHits, PathHits>
 buildHitsFromDomTblOut(QString hmmerOutput,
                        Queries &queries) {
-    GraphSearch::NodeHits nodeHits; GraphSearch::PathHits pathHits;
+    NodeHits nodeHits; PathHits pathHits;
 
     for (const auto &hitString : hmmerOutput.split("\n", Qt::SkipEmptyParts)) {
         if (hitString.startsWith('#'))

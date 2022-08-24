@@ -19,6 +19,7 @@
 #pragma once
 
 #include "query.h"
+#include "hits.h"
 #include <vector>
 
 namespace search {
@@ -58,6 +59,8 @@ public:
     const Query *query(size_t idx) const { return m_queries[idx]; }
     std::vector<DeBruijnNode *> getNodesFromHits(const QString& queryName = "") const;
 
+    void addNodeHits(const NodeHits &hits);
+    void addPathHits(const PathHits &hits);
     void findQueryPaths();
 private:
     QString getUniqueName(QString name);

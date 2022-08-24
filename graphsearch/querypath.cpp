@@ -35,7 +35,7 @@ QueryPath::QueryPath(Path path, Query *query)
     //query.  It requires that the hits occur in order, i.e. that each hit in
     //the path begins later in the query than the previous hit.
 
-    const Hit * previousHit = nullptr;
+    const Hit *previousHit = nullptr;
     const auto &pathNodes = m_path.nodes();
     for (int i = 0; i < pathNodes.size(); ++i) {
         DeBruijnNode * node = pathNodes[i];

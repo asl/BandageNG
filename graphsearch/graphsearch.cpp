@@ -135,19 +135,6 @@ GraphSearch::GraphSearchFinishedRAII::~GraphSearchFinishedRAII() {
 }
 
 
-void GraphSearch::addNodeHit(Query *query, DeBruijnNode *node,
-                             int queryStart, int queryEnd,
-                             int nodeStart, int nodeEnd,
-                             double percentIdentity,
-                             int numberMismatches, int numberGapOpens,
-                             int alignmentLength, SciNot eValue, double bitScore) {
-    query->emplaceHit(query, node,
-                      percentIdentity, alignmentLength,
-                      numberMismatches, numberGapOpens,
-                      queryStart, queryEnd,
-                      nodeStart, nodeEnd, eValue, bitScore);
-}
-
 void GraphSearch::addPathHit(Query *query, Path *path,
                              int queryStart, int queryEnd,
                              int pathStart, int pathEnd) {
