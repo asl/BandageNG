@@ -38,7 +38,7 @@ class DeBruijnNode
 {
 public:
     //CREATORS
-    DeBruijnNode(QString name, float depth, const Sequence &sequence, int length = 0);
+    DeBruijnNode(QString name, float depth, const Sequence &sequence, unsigned length = 0);
     ~DeBruijnNode() = default;
 
     //ACCESSORS
@@ -53,9 +53,9 @@ public:
     const Sequence &getSequence() const;
     Sequence &getSequence();
 
-    int getLength() const {return m_length;}
+    unsigned getLength() const {return m_length;}
+    unsigned getLengthWithoutTrailingOverlap() const;
 
-    int getLengthWithoutTrailingOverlap() const;
     QByteArray getFasta(bool sign, bool newLines = true, bool evenIfEmpty = true) const;
     QByteArray getAAFasta(unsigned shift, bool sign, bool newLines, bool evenIfEmpty) const;
 
@@ -122,7 +122,7 @@ private:
 
     float m_depth;
 
-    int m_length : 27;
+    unsigned m_length : 27;
     ContiguityStatus m_contiguityStatus : 3;
     bool m_specialNode : 1;
     bool m_drawn : 1;

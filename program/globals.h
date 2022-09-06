@@ -48,6 +48,7 @@ extern std::shared_ptr<AnnotationsManager> g_annotationsManager;
 
 //Functions for formatting numbers are used in many places, and are made global.
 QString formatIntForDisplay(int num);
+QString formatIntForDisplay(unsigned num);
 QString formatIntForDisplay(long long num);
 QString formatIntForDisplay(size_t num);
 QString formatDoubleForDisplay(double num, int decimalPlacesToDisplay);

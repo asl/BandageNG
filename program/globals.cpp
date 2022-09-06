@@ -34,6 +34,11 @@ QString formatIntForDisplay(int num) {
     return locale.toString(num);
 }
 
+QString formatIntForDisplay(unsigned num) {
+    QLocale locale;
+    return locale.toString(num);
+}
+
 QString formatIntForDisplay(long long num) {
     QLocale locale;
     return locale.toString(num);

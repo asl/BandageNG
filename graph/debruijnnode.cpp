@@ -35,33 +35,29 @@
 
 //The length parameter is optional.  If it is set, then the node will use that
 //for its length.  If not set, it will just use the sequence length.
-DeBruijnNode::DeBruijnNode(QString name, float depth, const Sequence& sequence, int length) :
-    m_name(std::move(name)),
-    m_depth(depth),
-    m_sequence(sequence),
-    m_length(sequence.size()),
-    m_contiguityStatus(NOT_CONTIGUOUS),
-    m_reverseComplement(nullptr),
-    m_graphicsItemNode(nullptr),
-    m_specialNode(false),
-    m_drawn(false) {
-    if (length > 0)
-        m_length = length;
+DeBruijnNode::DeBruijnNode(QString name, float depth, const Sequence& sequence, unsigned length)
+        : m_name(std::move(name)),
+          m_depth(depth),
+          m_sequence(sequence),
+          m_contiguityStatus(NOT_CONTIGUOUS),
+          m_reverseComplement(nullptr),
+          m_graphicsItemNode(nullptr),
+          m_specialNode(false),
+          m_drawn(false) {
+    m_length = length > 0 ? length : sequence.size();
 }
 
 
 //This function adds an edge to the Node, but only if the edge hasn't already
 //been added.
-void DeBruijnNode::addEdge(DeBruijnEdge * edge)
-{
+void DeBruijnNode::addEdge(DeBruijnEdge * edge) {
     if (std::find(m_edges.begin(), m_edges.end(), edge) == m_edges.end())
         m_edges.push_back(edge);
 }
 
 
 //This function deletes an edge from the node, if it exists.
-void DeBruijnNode::removeEdge(DeBruijnEdge * edge)
-{
+void DeBruijnNode::removeEdge(DeBruijnEdge * edge) {
     m_edges.erase(std::remove(m_edges.begin(), m_edges.end(), edge), m_edges.end());
 }
 
@@ -307,28 +303,21 @@ QByteArray DeBruijnNode::getUpstreamSequence(int upstreamSequenceLength) const {
 }
 
 
-int DeBruijnNode::getLengthWithoutTrailingOverlap() const
-{
-    int length = getLength();
+unsigned DeBruijnNode::getLengthWithoutTrailingOverlap() const {
+    unsigned length = getLength();
     std::vector<DeBruijnEdge *> leavingEdges = getLeavingEdges();
 
     if (leavingEdges.empty())
         return length;
 
     int maxOverlap = 0;
-    for (auto &leavingEdge : leavingEdges)
-    {
-        int overlap = leavingEdge->getOverlap();
-        if (overlap > maxOverlap)
-            maxOverlap = overlap;
-    }
+    for (const auto *leavingEdge : leavingEdges)
+        maxOverlap = std::max(maxOverlap, leavingEdge->getOverlap());
 
-    length -= maxOverlap;
-
-    if (length < 0)
-        length = 0;
-
-    return length;
+    if (maxOverlap > length)
+        return 0;
+    
+    return length - maxOverlap;
 }
 
 
