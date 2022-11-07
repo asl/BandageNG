@@ -397,11 +397,9 @@ bool AssemblyGraph::loadCSV(const QString &filename, QStringList *columns, QStri
         std::vector<DeBruijnNode *> nodes;
         // See if this is a path name
         {
-            auto pathIt = m_deBruijnGraphPaths.equal_prefix_range(nodeName.toStdString());
-            for (; pathIt.first != pathIt.second; ++pathIt.first) {
-                const auto &pathNodes = (*pathIt.first)->nodes();
-
-                for (auto *node: pathNodes) {
+            auto pathIt = m_deBruijnGraphPaths.find(nodeName.toStdString());
+            if (pathIt != m_deBruijnGraphPaths.end()) {
+                for (auto *node : (*pathIt)->nodes()) {
                     nodes.emplace_back(node);
                     if (!g_settings->doubleMode)
                         nodes.emplace_back(node->getReverseComplement());
