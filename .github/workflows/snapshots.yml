@@ -12,88 +12,123 @@ env:
   XDG_RUNTIME_DIR: '/tmp/runtime-runner'
 
 jobs:
-  build:
-    runs-on: ${{ matrix.os }}
-    continue-on-error: ${{ matrix.experimental }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-20.04, macos-latest]
-        experimental: [false]
+  build-linux:
+    runs-on: ubuntu-20.04
+    name: '🐧 Ubuntu 20.04'
 
     steps:
-      - uses: actions/checkout@v2
+      - id: commit
+        uses: pr-mpt/actions-commit-hash@v2
+
+      - name: '🧰 Checkout'
+        uses: actions/checkout@v2
         with:
           submodules: recursive
 
-      - name: Cache Qt
+      - name: '⚙️ Cache Qt'
         id: cache-qt
         uses: actions/cache@v1
         with:
           path: ../Qt
           key: ${{ runner.os }}-QtCache
 
-      - name: Install Qt
+      - name: '⚙️ Install Qt'
         uses: jurplel/install-qt-action@v2
         with:
           cached: ${{ steps.cache-qt.outputs.cache-hit }}
           version: '6.2.3'
 
-      - name: Install appstream
-        run: |
-             if [ "$RUNNER_OS" == "Linux" ]; then
-               sudo apt-get install -y appstream
-             fi
-        shell: bash
+      - name: '⚙️ Install dependencies'
+        run: sudo apt-get install -y appstream
 
-      - name: Configure CMake
-        run: |
-             if [ "$RUNNER_OS" == "Linux" ]; then
-               cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_INSTALL_PREFIX=/usr
-             elif [ "$RUNNER_OS" == "macOS" ]; then
-               cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" -DCMAKE_INSTALL_PREFIX=/usr
-             fi
-        
-      - name: Build
+      - name: '⚙️ Configure CMake'
+        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_INSTALL_PREFIX=/usr
+
+      - name: '🚧 Build'
         run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} -j8
 
-      - name: Make AppDir
+      - name: '⚙️ Make AppDir'
         working-directory: ${{github.workspace}}/build
         run: make install DESTDIR=AppDir
 
-      - if: runner.os == 'Linux'
-        name: Make AppImage
-        working-directory: ${{github.workspace}}/build
+      - name: '⚙️ Install Linuxdeploy'
         run: |
           wget https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
           wget https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage
-
           chmod +x linuxdeploy*.AppImage
 
+      - name: '📦 Make AppImage'
+        working-directory: ${{github.workspace}}/build
+        run: |
           export EXTRA_PLATFORM_PLUGINS="libqoffscreen.so;libqminimal.so"
 
           ./linuxdeploy-x86_64.AppImage --appdir AppDir --plugin qt --output appimage
         shell: bash
 
-      - if: runner.os == 'macOS'
-        name: Make DMG
+      - name: '📤 Upload artifact: AppImage'
+        uses: actions/upload-artifact@v3
+        with:
+          name: BandageNG-Linux-${{steps.commit.outputs.short}}.AppImage
+          path: ${{github.workspace}}/build/BandageNG*.AppImage
+
+  build-mac:
+    runs-on: macos-latest
+    name: '🍎 macOS'
+    steps:
+      - id: commit
+        uses: pr-mpt/actions-commit-hash@v2
+
+      - name: '🧰 Checkout'
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: '⚙️ Cache Qt'
+        id: cache-qt
+        uses: actions/cache@v1
+        with:
+          path: ../Qt
+          key: ${{ runner.os }}-QtCache
+
+      - name: '⚙️ Install Qt'
+        uses: jurplel/install-qt-action@v2
+        with:
+          cached: ${{ steps.cache-qt.outputs.cache-hit }}
+          version: '6.2.3'
+
+      - name: '⚙️ Configure CMake'
+        run:  cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" -DCMAKE_INSTALL_PREFIX=/usr
+
+      - name: '🚧 Build'
+        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} -j8
+
+      - name: '📦 Make DMG'
         working-directory: ${{github.workspace}}/build
+        run: macdeployqt BandageNG.app -dmg
+
+      - name: '📤 Upload artifact: AppImage'
+        uses: actions/upload-artifact@v3
+        with:
+          name: BandageNG-macOS-${{steps.commit.outputs.short}}.dmg
+          path: ${{github.workspace}}/build/BandageNG*.dmg
+
+  # Upload continuous build
+  upload:
+      name: '🗂 Create release and upload artifacts'
+      needs:
+        - build-linux
+        - build-mac
+      runs-on: ubuntu-latest
+      steps:
+      - name: '📥 Download artifacts'
+        uses: actions/download-artifact@v2
+      - name: '🗂 Inspect directory after downloading artifacts'
+        run: ls -alFR
+      - name: '🚀 Create release and upload artifacts'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          macdeployqt BandageNG.app -dmg
-        shell: bash
-
-      - uses: actions/upload-artifact@v3
-        with:
-          name: Bandage-${{ runner.os }}
-          path: |
-             ${{github.workspace}}/build/BandageNG*.AppImage
-             ${{github.workspace}}/build/BandageNG*.dmg
-
-      - name: Release
-        uses: softprops/action-gh-release@v1
-        with:
-          draft : true
-          fail_on_unmatched_files : false
-          files: |
-             ${{github.workspace}}/build/BandageNG*.AppImage
-             ${{github.workspace}}/build/BandageNG*.dmg
+            wget -q https://github.com/TheAssassin/pyuploadtool/releases/download/continuous/pyuploadtool-x86_64.AppImage
+            chmod +x pyuploadtool-x86_64.AppImage
+            ./pyuploadtool-x86_64.AppImage **/BandageNG-Linux-*.AppImage
+            ./pyuploadtool-x86_64.AppImage **/BandageNG-macOS-*.dmg
