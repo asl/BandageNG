@@ -890,12 +890,10 @@ void MainWindow::graphLayoutFinished(const GraphLayout &layout) {
 }
 
 
-void MainWindow::resetScene()
-{
+void MainWindow::resetScene() {
     m_scene->blockSignals(true);
 
     g_assemblyGraph->resetEdges();
-    g_assemblyGraph->m_contiguitySearchDone = false;
 
     g_graphicsView->setScene(nullptr);
     delete m_scene;
@@ -1234,7 +1232,8 @@ void MainWindow::switchColourScheme(int idx) {
 
 
 void MainWindow::determineContiguityFromSelectedNode() {
-    g_assemblyGraph->resetNodeContiguityStatus();
+    auto *colorer = dynamic_cast<ContiguityNodeColorer*>(&*g_settings->nodeColorer);
+    colorer->reset();
 
     std::vector<DeBruijnNode *> selectedNodes = m_scene->getSelectedNodes();
     if (selectedNodes.empty()) {
@@ -1248,9 +1247,8 @@ void MainWindow::determineContiguityFromSelectedNode() {
     progress.show();
 
     for (auto *selectedNode : selectedNodes)
-        selectedNode->determineContiguity();
+        colorer->determineContiguity(selectedNode);
 
-    g_assemblyGraph->m_contiguitySearchDone = true;
     resetAllNodeColours();
 }
 
@@ -2044,12 +2042,17 @@ void MainWindow::selectNotContiguous()
     selectBasedOnContiguity(NOT_CONTIGUOUS);
 }
 
+void MainWindow::resetNodeContiguityStatus() {
+    auto *colorer = dynamic_cast<ContiguityNodeColorer*>(&*g_settings->nodeColorer);
+    if (!colorer)
+        return;
 
+    colorer->reset();
+}
 
-void MainWindow::selectBasedOnContiguity(ContiguityStatus targetContiguityStatus)
-{
-    if (!g_assemblyGraph->m_contiguitySearchDone)
-    {
+void MainWindow::selectBasedOnContiguity(ContiguityStatus targetContiguityStatus) {
+    auto *colorer = dynamic_cast<ContiguityNodeColorer*>(&*g_settings->nodeColorer);
+    if (!colorer || colorer->empty()) {
         QMessageBox::information(this, "Contiguity determination not done",
                                        "To select nodes by their contiguity status, while in 'Colour "
                                        "by contiguity' mode, you must select a node and then click "
@@ -2062,27 +2065,24 @@ void MainWindow::selectBasedOnContiguity(ContiguityStatus targetContiguityStatus
 
     for (auto *node : g_assemblyGraph->m_deBruijnGraphNodes) {
         GraphicsItemNode * graphicsItemNode = node->getGraphicsItemNode();
-
         if (graphicsItemNode == nullptr)
             continue;
 
         //For single nodes, choose the greatest contiguity status of this
         //node and its complement.
-        ContiguityStatus nodeContiguityStatus = node->getContiguityStatus();
+        ContiguityStatus nodeContiguityStatus = colorer->getContiguityStatus(node);
         if (!g_settings->doubleMode) {
-            ContiguityStatus twinContiguityStatus = node->getReverseComplement()->getContiguityStatus();
+            ContiguityStatus twinContiguityStatus = colorer->getContiguityStatus(node->getReverseComplement());
             if (twinContiguityStatus < nodeContiguityStatus)
                 nodeContiguityStatus = twinContiguityStatus;
         }
 
         if (targetContiguityStatus == CONTIGUOUS_EITHER_STRAND &&
-                (nodeContiguityStatus == CONTIGUOUS_STRAND_SPECIFIC || nodeContiguityStatus == CONTIGUOUS_EITHER_STRAND))
+            (nodeContiguityStatus == CONTIGUOUS_STRAND_SPECIFIC || nodeContiguityStatus == CONTIGUOUS_EITHER_STRAND))
             graphicsItemNode->setSelected(true);
-        else if (targetContiguityStatus == MAYBE_CONTIGUOUS &&
-                 nodeContiguityStatus == MAYBE_CONTIGUOUS)
+        else if (targetContiguityStatus == MAYBE_CONTIGUOUS && nodeContiguityStatus == MAYBE_CONTIGUOUS)
             graphicsItemNode->setSelected(true);
-        else if (targetContiguityStatus == NOT_CONTIGUOUS &&
-                 nodeContiguityStatus == NOT_CONTIGUOUS)
+        else if (targetContiguityStatus == NOT_CONTIGUOUS && nodeContiguityStatus == NOT_CONTIGUOUS)
             graphicsItemNode->setSelected(true);
     }
 
@@ -2093,9 +2093,7 @@ void MainWindow::selectBasedOnContiguity(ContiguityStatus targetContiguityStatus
 }
 
 
-
-void MainWindow::openBandageUrl()
-{
+void MainWindow::openBandageUrl() {
     QDesktopServices::openUrl(QUrl("https://github.com/asl/Bandage-NG/wiki"));
 }
 
@@ -2331,7 +2329,7 @@ void MainWindow::removeSelection()
     // stuff, as they may no longer apply.
     cleanUpAllBlast();
 
-    g_assemblyGraph->resetNodeContiguityStatus();
+    resetNodeContiguityStatus();
     resetAllNodeColours();
 }
 
@@ -2366,7 +2364,7 @@ void MainWindow::duplicateSelectedNodes()
     // Now that the graph has changed, we have to reset BLAST and contiguity
     // stuff, as they may no longer apply.
     cleanUpAllBlast();
-    g_assemblyGraph->resetNodeContiguityStatus();
+    resetNodeContiguityStatus();
     resetAllNodeColours();
 }
 
@@ -2404,7 +2402,7 @@ void MainWindow::mergeSelectedNodes() {
     // Now that the graph has changed, we have to reset BLAST and contiguity
     // stuff, as they may no longer apply.
     cleanUpAllBlast();
-    g_assemblyGraph->resetNodeContiguityStatus();
+    resetNodeContiguityStatus();
     resetAllNodeColours();
 }
 
@@ -2437,7 +2435,7 @@ void MainWindow::mergeAllPossible()
         //Now that the graph has changed, we have to reset BLAST and contiguity
         //stuff, as they may no longer apply.
         cleanUpAllBlast();
-        g_assemblyGraph->resetNodeContiguityStatus();
+        resetNodeContiguityStatus();
         resetAllNodeColours();
     }
     else

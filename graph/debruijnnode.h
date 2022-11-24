@@ -28,12 +28,6 @@
 class DeBruijnEdge;
 class GraphicsItemNode;
 
-enum ContiguityStatus {
-    STARTING, CONTIGUOUS_STRAND_SPECIFIC,
-    CONTIGUOUS_EITHER_STRAND, MAYBE_CONTIGUOUS,
-    NOT_CONTIGUOUS
-};
-
 class DeBruijnNode
 {
 public:
@@ -60,7 +54,6 @@ public:
     QByteArray getAAFasta(unsigned shift, bool sign, bool newLines, bool evenIfEmpty) const;
 
     char getBaseAt(int i) const {if (i >= 0 && i < m_sequence.size()) return m_sequence[i]; else return '\0';} // NOTE
-    ContiguityStatus getContiguityStatus() const {return m_contiguityStatus;}
     DeBruijnNode * getReverseComplement() const {return m_reverseComplement;}
     DeBruijnNode *getCanonical() { return isPositiveNode() ? this : m_reverseComplement; }
 
@@ -96,8 +89,6 @@ public:
 
     void setSequence(const QByteArray &newSeq) {m_sequence = Sequence(newSeq); m_length = m_sequence.size();}
     void setSequence(const Sequence &newSeq) {m_sequence = newSeq; m_length = m_sequence.size();}
-    void upgradeContiguityStatus(ContiguityStatus newStatus);
-    void resetContiguityStatus() {m_contiguityStatus = NOT_CONTIGUOUS;}
     void setReverseComplement(DeBruijnNode * rc) {m_reverseComplement = rc;}
     void setGraphicsItemNode(GraphicsItemNode * gin) {m_graphicsItemNode = gin;}
     void setAsSpecial() {m_specialNode = true;}
@@ -107,7 +98,6 @@ public:
     void resetNode();
     void addEdge(DeBruijnEdge * edge);
     void removeEdge(DeBruijnEdge * edge);
-    void determineContiguity();
     void labelNeighbouringNodesAsDrawn(int nodeDistance);
     void setDepth(double newDepth) {m_depth = newDepth;}
     void setName(QString newName) {m_name = std::move(newName);}
@@ -122,8 +112,7 @@ private:
 
     float m_depth;
 
-    unsigned m_length : 27;
-    ContiguityStatus m_contiguityStatus : 3;
+    unsigned m_length : 30;
     bool m_specialNode : 1;
     bool m_drawn : 1;
 
@@ -131,6 +120,6 @@ private:
     QByteArray getUpstreamSequence(int upstreamSequenceLength) const;
 
     static std::vector<DeBruijnNode *> getNodesCommonToAllPaths(std::vector< std::vector <DeBruijnNode *> > * paths,
-                                                         bool includeReverseComplements) ;
+                                                                bool includeReverseComplements) ;
     bool doesPathLeadOnlyToNode(DeBruijnNode * node, bool includeReverseComplement);
 };

@@ -107,7 +107,6 @@ public:
     double m_firstQuartileDepth;
     double m_medianDepth;
     double m_thirdQuartileDepth;
-    bool m_contiguitySearchDone;
     QString m_filename;
     QString m_depthTag;
     SequencesLoadedFromFasta m_sequencesLoadedFromFasta;
@@ -121,7 +120,6 @@ public:
     double getMeanDepth(bool drawnNodesOnly = false);
     static double getMeanDepth(const std::vector<DeBruijnNode *> &nodes);
 
-    void resetNodeContiguityStatus();
     void determineGraphInfo();
     void clearGraphInfo();
 

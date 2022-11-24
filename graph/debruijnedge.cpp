@@ -97,10 +97,9 @@ bool DeBruijnEdge::isPositiveEdge() const
 //(ending nodes to starting nodes).
 void DeBruijnEdge::tracePaths(bool forward,
                               int stepsRemaining,
-                              std::vector< std::vector <DeBruijnNode *> > * allPaths,
-                              DeBruijnNode * startingNode,
-                              std::vector<DeBruijnNode *> pathSoFar) const
-{
+                              std::vector< std::vector <DeBruijnNode *> > &allPaths,
+                              const DeBruijnNode * startingNode,
+                              std::vector<DeBruijnNode *> pathSoFar) const {
     //This can go for a while, so keep the UI responsive.
     QApplication::processEvents();
 
@@ -118,7 +117,7 @@ void DeBruijnEdge::tracePaths(bool forward,
     --stepsRemaining;
     if (stepsRemaining == 0)
     {
-        allPaths->push_back(pathSoFar);
+        allPaths.push_back(pathSoFar);
         return;
     }
 
@@ -130,7 +129,7 @@ void DeBruijnEdge::tracePaths(bool forward,
     //path search, even though steps remain.
     if (nextEdges.empty())
     {
-        allPaths->push_back(pathSoFar);
+        allPaths.push_back(pathSoFar);
         return;
     }
 
@@ -150,28 +149,24 @@ void DeBruijnEdge::tracePaths(bool forward,
         //a full loop and the path should be considered complete.
         if (nextNextNode == startingNode)
         {
-            allPaths->push_back(pathSoFar);
+            allPaths.push_back(pathSoFar);
             continue;
         }
 
         //If that node is already in the path TWICE so far, that means
         //we're caught in a loop, and we should throw this path out.
         //If it appears 0 or 1 times, then continue the path search.
-        if (timesNodeInPath(nextNextNode, &pathSoFar) < 2)
+        if (timesNodeInPath(nextNextNode, pathSoFar) < 2)
             nextEdge->tracePaths(forward, stepsRemaining, allPaths, startingNode, pathSoFar);
     }
 }
 
 
-//This function counts how many times a node appears in a path
-int DeBruijnEdge::timesNodeInPath(DeBruijnNode * node, std::vector<DeBruijnNode *> * path)
-{
-    int count = 0;
-    for (auto & i : *path)
-    {
-        if ( i == node)
-            ++count;
-    }
+// This function counts how many times a node appears in a path
+unsigned DeBruijnEdge::timesNodeInPath(const DeBruijnNode * node, const std::vector<DeBruijnNode *> &path) {
+    unsigned count = 0;
+    for (auto *i : path)
+        count += (i == node);
 
     return count;
 }
@@ -180,7 +175,7 @@ int DeBruijnEdge::timesNodeInPath(DeBruijnNode * node, std::vector<DeBruijnNode 
 
 bool DeBruijnEdge::leadsOnlyToNode(bool forward,
                                    int stepsRemaining,
-                                   DeBruijnNode * target,
+                                   const DeBruijnNode * target,
                                    std::vector<DeBruijnNode *> pathSoFar,
                                    bool includeReverseComplement) const
 {
@@ -243,9 +238,9 @@ bool DeBruijnEdge::leadsOnlyToNode(bool forward,
         //If that node is already in the path TWICE so far, that means
         //we're caught in a loop, and we should throw this path out.
         //If it appears 0 or 1 times, then continue the path search.
-        if (timesNodeInPath(nextNextNode, &pathSoFar) < 2)
+        if (timesNodeInPath(nextNextNode, pathSoFar) < 2)
         {
-            if ( !nextEdge->leadsOnlyToNode(forward, stepsRemaining, target, pathSoFar, includeReverseComplement) )
+            if (!nextEdge->leadsOnlyToNode(forward, stepsRemaining, target, pathSoFar, includeReverseComplement) )
                 return false;
         }
     }

@@ -31,6 +31,8 @@
 
 #include <unordered_set>
 
+#include <QApplication>
+
 INodeColorer::INodeColorer(NodeColorScheme scheme)
     : m_graph(g_assemblyGraph), m_scheme(scheme) {
 }
@@ -148,15 +150,164 @@ QColor CustomNodeColorer::get(const GraphicsItemNode *node) {
     return m_graph->getCustomColourForDisplay(node->m_deBruijnNode);;
 }
 
+// This function differs from the above by including all reverse complement
+// nodes in the path search.
+static std::vector<DeBruijnNode *>
+getNodesCommonToAllPaths(std::vector< std::vector <DeBruijnNode *> > &paths,
+                         bool includeReverseComplements) {
+    std::vector<DeBruijnNode *> commonNodes;
+
+    //If there are no paths, then return the empty vector.
+    if (paths.empty())
+        return commonNodes;
+
+    //If there is only one path in path, then they are all common nodes
+    commonNodes = paths[0];
+    if (paths.size() == 1)
+        return commonNodes;
+
+    //If there are two or more paths, it's necessary to find the intersection.
+    for (size_t i = 1; i < paths.size(); ++i) {
+        QApplication::processEvents();
+        std::vector<DeBruijnNode *> *path = &paths[i];
+
+        // If we are including reverse complements in the search,
+        // then it is necessary to build a new vector that includes
+        // reverse complement nodes and then use that vector.
+        std::vector<DeBruijnNode *> pathWithReverseComplements;
+        if (includeReverseComplements) {
+            for (auto *node : *path) {
+                pathWithReverseComplements.push_back(node);
+                pathWithReverseComplements.push_back(node->getReverseComplement());
+            }
+            path = &pathWithReverseComplements;
+        }
+
+        // Combine the commonNodes vector with the path vector,
+        // excluding any repeats.
+        std::sort(commonNodes.begin(), commonNodes.end());
+        std::sort(path->begin(), path->end());
+        std::vector<DeBruijnNode *> newCommonNodes;
+        std::set_intersection(commonNodes.begin(), commonNodes.end(), path->begin(), path->end(), std::back_inserter(newCommonNodes));
+        commonNodes = newCommonNodes;
+    }
+
+    return commonNodes;
+}
+
+
+// This function checks whether this node has any path leading outward that
+// unambiguously leads to the given node.
+// It checks a number of steps as set by the contiguitySearchSteps setting.
+// If includeReverseComplement is true, then this function returns true if
+// all paths lead either to the node or its reverse complement node.
+static bool doesPathLeadOnlyToNode(DeBruijnNode *sNode, const DeBruijnNode *tNode, bool includeReverseComplement) {
+    for (auto *edge : sNode->edges()) {
+        bool outgoingEdge = (sNode == edge->getStartingNode());
+        if (edge->leadsOnlyToNode(outgoingEdge, g_settings->contiguitySearchSteps, tNode,
+                                  { sNode }, includeReverseComplement))
+            return true;
+    }
+
+    return false;
+}
+
+ContiguityStatus ContiguityNodeColorer::getContiguityStatus(const DeBruijnNode* node) const {
+    auto it = m_nodeStatuses.find(node);
+    if (it == m_nodeStatuses.end())
+        return ContiguityStatus::NOT_CONTIGUOUS;
+
+    return it->second;
+}
+
+//This function only upgrades a node's status, never downgrades.
+void ContiguityNodeColorer::upgradeContiguityStatus(const DeBruijnNode *node,
+                                                    ContiguityStatus newStatus) {
+    auto &status = m_nodeStatuses[node];
+    if (newStatus > status)
+        status = newStatus;
+}
+
+// This function determines the contiguity of nodes relative to this one.
+// It has two steps:
+// -First, for each edge leaving this node, all paths outward are found.
+//  Any nodes in any path are MAYBE_CONTIGUOUS, and nodes in all of the
+//  paths are CONTIGUOUS.
+// -Second, it is necessary to check in the opposite direction - for each
+//  of the MAYBE_CONTIGUOUS nodes, do they have a path that unambiguously
+//  leads to this node?  If so, then they are CONTIGUOUS.
+void ContiguityNodeColorer::determineContiguity(DeBruijnNode* node) {
+    upgradeContiguityStatus(node, STARTING);
+
+    //A set is used to store all nodes found in the paths, as the nodes
+    //that show up as MAYBE_CONTIGUOUS will have their paths checked
+    //to this node.
+    std::set<DeBruijnNode *> allCheckedNodes;
+
+    //For each path leaving this node, find all possible paths
+    //outward.  Nodes in any of the paths for an edge are
+    //MAYBE_CONTIGUOUS.  Nodes in all of the paths for an edge
+    //are CONTIGUOUS.
+    for (auto edge : node->edges()) {
+        bool outgoingEdge = (node == edge->getStartingNode());
+
+        std::vector<std::vector<DeBruijnNode *>> allPaths;
+        edge->tracePaths(outgoingEdge, g_settings->contiguitySearchSteps, allPaths, node);
+
+        // Set all nodes in the paths as MAYBE_CONTIGUOUS
+        for (auto &path : allPaths) {
+            QApplication::processEvents();
+            for (auto *pNode : path) {
+                upgradeContiguityStatus(pNode, MAYBE_CONTIGUOUS);
+                allCheckedNodes.insert(node);
+            }
+        }
+
+        // Set all common nodes as CONTIGUOUS_STRAND_SPECIFIC
+        for (auto *pNode : getNodesCommonToAllPaths(allPaths, false))
+            upgradeContiguityStatus(pNode, CONTIGUOUS_STRAND_SPECIFIC);
+
+        // Set all common nodes (when including reverse complement nodes)
+        // as CONTIGUOUS_EITHER_STRAND
+        for (auto *pNode : getNodesCommonToAllPaths(allPaths, true)) {
+            upgradeContiguityStatus(pNode, CONTIGUOUS_EITHER_STRAND);
+            upgradeContiguityStatus(pNode->getReverseComplement(), CONTIGUOUS_EITHER_STRAND);
+        }
+    }
+
+    //For each node that was checked, then we check to see if any
+    //of its paths leads unambiuously back to the starting node (this node).
+    for (auto *cNode : allCheckedNodes) {
+        QApplication::processEvents();
+        ContiguityStatus status = getContiguityStatus(cNode);
+
+        //First check without reverse complement target for
+        //strand-specific contiguity.
+        if (status != CONTIGUOUS_STRAND_SPECIFIC &&
+            doesPathLeadOnlyToNode(cNode, node, false))
+            upgradeContiguityStatus(cNode, CONTIGUOUS_STRAND_SPECIFIC);
+
+        //Now check including the reverse complement target for
+        //either strand contiguity.
+        if (status != CONTIGUOUS_STRAND_SPECIFIC &&
+            status != CONTIGUOUS_EITHER_STRAND &&
+            doesPathLeadOnlyToNode(cNode, node, true)) {
+            upgradeContiguityStatus(cNode, CONTIGUOUS_EITHER_STRAND);
+            upgradeContiguityStatus(cNode->getReverseComplement(), CONTIGUOUS_EITHER_STRAND);
+        }
+    }
+}
+
+
 QColor ContiguityNodeColorer::get(const GraphicsItemNode *node) {
     const DeBruijnNode *deBruijnNode = node->m_deBruijnNode;
 
     // For single nodes, display the colour of whichever of the
     // twin nodes has the greatest contiguity status.
-    ContiguityStatus contiguityStatus = deBruijnNode->getContiguityStatus();
+    ContiguityStatus contiguityStatus = getContiguityStatus(deBruijnNode);
     if (!node->m_hasArrow) {
-        ContiguityStatus twinContiguityStatus = deBruijnNode->getReverseComplement()->getContiguityStatus();
-        if (twinContiguityStatus < contiguityStatus)
+        ContiguityStatus twinContiguityStatus = getContiguityStatus(deBruijnNode->getReverseComplement());
+        if (twinContiguityStatus > contiguityStatus)
             contiguityStatus = twinContiguityStatus;
     }
 

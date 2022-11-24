@@ -21,6 +21,7 @@
 
 #include "graph/debruijnnode.h"
 #include "graph/nodecolorer.h"
+#include "graph/contiguity.h"
 #include "graph/graphscope.h"
 
 #include "layout/graphlayout.h"
@@ -103,6 +104,7 @@ private:
     void setPathSelectionWidgetVisibility(bool visible);
     static QByteArray makeStringUrlSafe(QByteArray s);
     std::vector<DeBruijnNode *> addComplementaryNodes(std::vector<DeBruijnNode *> nodes);
+    void resetNodeContiguityStatus();
 
 private slots:
     void loadGraph(QString fullFileName = "");

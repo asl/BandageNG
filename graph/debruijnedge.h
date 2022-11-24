@@ -47,12 +47,12 @@ public:
     bool testExactOverlap(int overlap) const;
     void tracePaths(bool forward,
                     int stepsRemaining,
-                    std::vector<std::vector<DeBruijnNode *> > * allPaths,
-                    DeBruijnNode * startingNode,
-                    std::vector<DeBruijnNode *> pathSoFar = std::vector<DeBruijnNode *>()) const;
+                    std::vector<std::vector<DeBruijnNode *> > &allPaths,
+                    const DeBruijnNode * startingNode,
+                    std::vector<DeBruijnNode *> pathSoFar = {}) const;
     bool leadsOnlyToNode(bool forward,
                          int stepsRemaining,
-                         DeBruijnNode * target,
+                         const DeBruijnNode * target,
                          std::vector<DeBruijnNode *> pathSoFar,
                          bool includeReverseComplement) const;
     bool isPositiveEdge() const;
@@ -80,7 +80,7 @@ private:
     int m_overlap : OVERLAP_BITS;
 
     bool edgeIsVisible() const;
-    static int timesNodeInPath(DeBruijnNode * node, std::vector<DeBruijnNode *> * path) ;
+    static unsigned timesNodeInPath(const DeBruijnNode * node, const std::vector<DeBruijnNode *> &path);
     static std::vector<DeBruijnEdge *> findNextEdgesInPath(DeBruijnNode * nextNode,
-                                                    bool forward) ;
+                                                           bool forward) ;
 };

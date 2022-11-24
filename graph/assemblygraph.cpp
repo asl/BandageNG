@@ -47,7 +47,7 @@
 #include <deque>
 
 AssemblyGraph::AssemblyGraph()
-        : m_kmer(0), m_contiguitySearchDone(false),
+        : m_kmer(0),
           m_sequencesLoadedFromFasta(NOT_READY)
 {
     clearGraphInfo();
@@ -77,8 +77,7 @@ template<typename T> double getValueUsingFractionalIndex(const std::vector<T> &v
     return piece1 * (1.0 - fractionalPart) + piece2 * fractionalPart;
 }
 
-void AssemblyGraph::cleanUp()
-{
+void AssemblyGraph::cleanUp() {
     {
         for (auto &entry : m_deBruijnGraphPaths) {
             delete entry;
@@ -107,8 +106,6 @@ void AssemblyGraph::cleanUp()
     m_nodeLabels.clear();
     m_nodeCSVData.clear();
     
-    m_contiguitySearchDone = false;
-
     clearGraphInfo();
 }
 
@@ -249,13 +246,6 @@ double AssemblyGraph::getMeanDepth(const std::vector<DeBruijnNode *> &nodes)
     return depthSum / totalLength;
 }
 
-
-void AssemblyGraph::resetNodeContiguityStatus() {
-    for (auto &entry : m_deBruijnGraphNodes) {
-        entry->resetContiguityStatus();
-    }
-    m_contiguitySearchDone = false;
-}
 
 void AssemblyGraph::determineGraphInfo()
 {

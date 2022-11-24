@@ -18,10 +18,12 @@
 #pragma once
 
 #include "nodecolorer.h"
+#include "contiguity.h"
 
 #include <tsl/htrie_map.h>
 #include <vector>
 #include <unordered_set>
+#include <unordered_map>
 
 class DepthNodeColorer : public INodeColorer {
 public:
@@ -65,12 +67,24 @@ public:
     [[nodiscard]] const char* name() const override { return "Custom colors"; };
 };
 
+class DeBruijnNode;
+
 class ContiguityNodeColorer : public INodeColorer {
 public:
     using INodeColorer::INodeColorer;
 
+    void reset() override { return m_nodeStatuses.clear(); }
+    bool empty() const { return m_nodeStatuses.empty(); }
+
     QColor get(const GraphicsItemNode *node) override;
     [[nodiscard]] const char* name() const override { return "Color by contiguity"; };
+
+    void determineContiguity(DeBruijnNode*);
+    ContiguityStatus getContiguityStatus(const DeBruijnNode*) const;
+    void upgradeContiguityStatus(const DeBruijnNode *node,
+                                 ContiguityStatus newStatus);
+
+    std::unordered_map<const DeBruijnNode*, ContiguityStatus> m_nodeStatuses;
 };
 
 class GCNodeColorer : public INodeColorer {
