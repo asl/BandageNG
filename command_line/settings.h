@@ -15,19 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Bandage.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <QApplication>
-#include <filesystem>
-
 namespace CLI {
     class App;
 }
 
-struct LoadCmd {
-    std::filesystem::path m_graph;
-    bool m_draw = false;
-};
-
-CLI::App *addLoadSubcommand(CLI::App &app,
-                            LoadCmd &cmd);
-int handleLoadCmd(QApplication *app,
-                  const CLI::App &cli, const LoadCmd &cmd);
+CLI::App *addSettings(CLI::App &app);

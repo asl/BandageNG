@@ -28,5 +28,6 @@ struct ReduceCmd {
 };
 
 CLI::App *addReduceSubcommand(CLI::App &app,
-                            ReduceCmd &cmd);
-int handleReduceCmd(QApplication *app, const ReduceCmd &cmd);
+                              ReduceCmd &cmd);
+int handleReduceCmd(QApplication *app,
+                    const CLI::App &cli, const ReduceCmd &cmd);

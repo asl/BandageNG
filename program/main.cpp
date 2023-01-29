@@ -34,6 +34,7 @@
 #include "command_line/image.h"
 #include "command_line/querypaths.h"
 #include "command_line/reduce.h"
+#include "command_line/settings.h"
 #include "command_line/commoncommandlinefunctions.h"
 #include <CLI/CLI.hpp>
 
@@ -63,8 +64,11 @@ static SubCmd parseCmdLine(CLI::App &app) {
     app.description(getBandageTitleAsciiArt() + '\n' +
                     "Version: " + APP_VERSION + '\n');
     app.set_version_flag("--version", APP_VERSION);
+    app.set_help_all_flag("--helpall");
     app.require_subcommand(0, 1);
     app.fallthrough();
+
+    addSettings(app);
 
     // "BandageNG load"
     LoadCmd loadCmd;
@@ -131,19 +135,19 @@ static void chooseQtPlatform(const CLI::App &app, const SubCmd &cmd) {
 }
 
 int main(int argc, char *argv[]) {
-    CLI::App cmdline;
+    CLI::App cli;
     SubCmd cmd;
 
     g_memory.reset(new Memory());
     g_settings.reset(new Settings());
 
     try {
-        cmd = parseCmdLine(cmdline);
+        cmd = parseCmdLine(cli);
     } catch (const CLI::ParseError &e) {
-        return cmdline.exit(e);
+        return cli.exit(e);
     }
 
-    chooseQtPlatform(cmdline, cmd);
+    chooseQtPlatform(cli, cmd);
     QScopedPointer<QApplication> app(new QApplication(argc, argv));
 
     // Create the important global objects.
@@ -167,15 +171,15 @@ int main(int argc, char *argv[]) {
     return std::visit([&](const auto &command) {
         using T = std::decay_t<decltype(command)>;
         if constexpr (std::is_same_v<T, LoadCmd>) {
-            return handleLoadCmd(app.get(), command);
+            return handleLoadCmd(app.get(), cli, command);
         } else  if constexpr (std::is_same_v<T, ImageCmd>) {
-            return handleImageCmd(app.get(), command);
+            return handleImageCmd(app.get(), cli, command);
         } else  if constexpr (std::is_same_v<T, InfoCmd>) {
-            return handleInfoCmd(app.get(), command);
+            return handleInfoCmd(app.get(), cli, command);
         } else  if constexpr (std::is_same_v<T, ReduceCmd>) {
-            return handleReduceCmd(app.get(), command);
+            return handleReduceCmd(app.get(), cli, command);
         } else  if constexpr (std::is_same_v<T, QueryPathsCmd>) {
-            return handleQueryPathsCmd(app.get(), command);
+            return handleQueryPathsCmd(app.get(), cli, command);
         } else {
             MainWindow w;
             w.show();

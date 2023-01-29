@@ -29,4 +29,5 @@ struct InfoCmd {
 
 CLI::App *addInfoSubcommand(CLI::App &app,
                             InfoCmd &cmd);
-int handleInfoCmd(QApplication *app, const InfoCmd &cmd);
+int handleInfoCmd(QApplication *app,
+                  const CLI::App &cli, const InfoCmd &cmd);

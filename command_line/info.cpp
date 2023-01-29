@@ -52,7 +52,8 @@ CLI::App *addInfoSubcommand(CLI::App &app, InfoCmd &cmd) {
     return info;
 }
 
-int handleInfoCmd(QApplication *app, const InfoCmd &cmd) {
+int handleInfoCmd(QApplication *app,
+                  const CLI::App &cli, const InfoCmd &cmd) {
     QTextStream out(stdout);
     QTextStream err(stderr);
 

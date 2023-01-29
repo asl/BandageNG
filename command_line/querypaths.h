@@ -32,4 +32,5 @@ struct QueryPathsCmd {
 
 CLI::App *addQueryPathsSubcommand(CLI::App &app,
                                   QueryPathsCmd &cmd);
-int handleQueryPathsCmd(QApplication *app, const QueryPathsCmd &cmd);
+int handleQueryPathsCmd(QApplication *app,
+                        const CLI::App &cli, const QueryPathsCmd &cmd);

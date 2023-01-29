@@ -41,18 +41,8 @@ CLI::App *addReduceSubcommand(CLI::App &app, ReduceCmd &cmd) {
     return reduce;
 }
 
-/*
-static void graphScopeOptions(QStringList * text) {
-    *text << "--scope <scope>     Graph scope, from one of the following options: entire, aroundnodes, aroundblast, depthrange (default: entire)";
-    *text << "--nodes <list>      A comma-separated list of starting nodes for the aroundnodes scope (default: none)";
-    *text << "--partial           Use partial node name matching (default: exact node name matching)";
-    *text << "--distance <int>    The number of node steps away to draw for the aroundnodes and aroundblast scopes " + getRangeAndDefault(g_settings->nodeDistance);
-    *text << "--mindepth <float>  The minimum allowed depth for the depthrange scope " + getRangeAndDefault(g_settings->minDepthRange);
-    *text << "--maxdepth <float>  The maximum allowed depth for the depthrange scope "  + getRangeAndDefault(g_settings->maxDepthRange);
-}
-*/
-
-int handleReduceCmd(QApplication *app, const ReduceCmd &cmd) {
+int handleReduceCmd(QApplication *app,
+                    const CLI::App &cli, const ReduceCmd &cmd) {
     QTextStream out(stdout);
     QTextStream err(stderr);
 
@@ -65,8 +55,7 @@ int handleReduceCmd(QApplication *app, const ReduceCmd &cmd) {
         return 1;
     }
 
-#if 0
-    if (isOptionPresent("--query", &arguments)) {
+    if (cli.count("--query")) {
         if (!g_blastSearch->ready()) {
             err << g_blastSearch->lastError() << Qt::endl;
             return 1;
@@ -81,7 +70,6 @@ int handleReduceCmd(QApplication *app, const ReduceCmd &cmd) {
             return 1;
         }
     }
-#endif
 
     QString errorTitle;
     QString errorMessage;

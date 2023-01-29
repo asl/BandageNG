@@ -32,7 +32,8 @@ CLI::App *addLoadSubcommand(CLI::App &app, LoadCmd &cmd) {
     return load;
 }
 
-int handleLoadCmd(QApplication *app, const LoadCmd &cmd) {
+int handleLoadCmd(QApplication *app,
+                  const CLI::App &cli, const LoadCmd &cmd) {
     MainWindow w{cmd.m_graph.c_str(), cmd.m_draw};
 
     w.show();

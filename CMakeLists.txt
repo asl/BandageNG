@@ -87,7 +87,8 @@ set(CLI_SOURCES
     command_line/info.cpp
     command_line/load.cpp
     command_line/querypaths.cpp
-    command_line/reduce.cpp)
+    command_line/reduce.cpp
+    command_line/settings.cpp)
       
 set(RESOURCES images/images.qrc images/application.icns)
 

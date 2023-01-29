@@ -24,7 +24,6 @@ namespace CLI {
     class App;
 };
 
-
 struct ImageCmd {
     std::filesystem::path m_graph;
     std::filesystem::path m_image;
@@ -34,4 +33,5 @@ struct ImageCmd {
 };
 
 CLI::App *addImageSubcommand(CLI::App &app, ImageCmd &cmd);
-int handleImageCmd(QApplication *app, const ImageCmd &cmd);
+int handleImageCmd(QApplication *app,
+                   const CLI::App &cli, const ImageCmd &cmd);

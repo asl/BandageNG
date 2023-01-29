@@ -46,21 +46,20 @@ CLI::App *addQueryPathsSubcommand(CLI::App &app,
 
 }
 
-int handleQueryPathsCmd(QApplication *app, const QueryPathsCmd &cmd) {
+int handleQueryPathsCmd(QApplication *app,
+                        const CLI::App &cli,
+                        const QueryPathsCmd &cmd) {
     QTextStream out(stdout);
     QTextStream err(stderr);
 
     g_settings->blastQueryFilename = cmd.m_queries.c_str();
 
-#if 0
     // Ensure that the --query option isn't used, as that would overwrite the
     // queries file that is a positional argument.
-    if (isOptionPresent("--query", &arguments))
-    {
+    if (cli.count("--query")) {
         err << "Bandage-NG error: the --query option cannot be used with Bandage querypaths." << Qt::endl;
         return 1;
     }
-#endif
 
     QString outputPrefix = cmd.m_prefix.c_str();
     QString tableFilename = outputPrefix + ".tsv";

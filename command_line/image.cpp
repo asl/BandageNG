@@ -51,12 +51,11 @@ CLI::App *addImageSubcommand(CLI::App &app, ImageCmd &cmd) {
 
     image->footer("If only height or width is set, the other will be determined automatically. If both are set, the image will be exactly that size");
 
-    // FIXME: Handle scope (query, etc)!
-
     return image;
 }
 
-int handleImageCmd(QApplication *app, const ImageCmd &cmd) {
+int handleImageCmd(QApplication *app,
+                   const CLI::App &cli, const ImageCmd &cmd) {
     auto imageFileExtension = cmd.m_image.extension();
     bool pixelImage;
 
@@ -90,8 +89,7 @@ int handleImageCmd(QApplication *app, const ImageCmd &cmd) {
     // properly.
     g_absoluteZoom = 10.0;
 
-#if 0
-    if (isOptionPresent("--query", &arguments)) {
+    if (cli.count("--query")) {
         if (!g_blastSearch->ready()) {
             err << g_blastSearch->lastError() << Qt::endl;
             return 1;
@@ -106,7 +104,6 @@ int handleImageCmd(QApplication *app, const ImageCmd &cmd) {
             return 1;
         }
     }
-#endif
 
     QString errorTitle;
     QString errorMessage;

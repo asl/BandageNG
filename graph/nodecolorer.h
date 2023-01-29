@@ -53,5 +53,5 @@ public:
     [[nodiscard]] NodeColorScheme scheme() const { return m_scheme; }
 protected:
     NodeColorScheme m_scheme;
-    QSharedPointer<AssemblyGraph> m_graph;
+    QSharedPointer<AssemblyGraph> &m_graph;
 };
