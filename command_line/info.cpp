@@ -1,74 +1,63 @@
-//Copyright 2017 Ryan Wick
+// Copyright 2023 Anton Korobeynikov
 
-//This file is part of Bandage
+// This file is part of Bandage-NG
 
-//Bandage is free software: you can redistribute it and/or modify
-//it under the terms of the GNU General Public License as published by
-//the Free Software Foundation, either version 3 of the License, or
-//(at your option) any later version.
+// Bandage-NG is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 
-//Bandage is distributed in the hope that it will be useful,
-//but WITHOUT ANY WARRANTY; without even the implied warranty of
-//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//GNU General Public License for more details.
+// Bandage-NG is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
 
-//You should have received a copy of the GNU General Public License
-//along with Bandage.  If not, see <http://www.gnu.org/licenses/>.
-
+// You should have received a copy of the GNU General Public License
+// along with Bandage.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "info.h"
 #include "commoncommandlinefunctions.h"
 #include "graph/assemblygraph.h"
-#include <QPair>
 
+#include <CLI/CLI.hpp>
 
+CLI::App *addInfoSubcommand(CLI::App &app, InfoCmd &cmd) {
+    auto *info = app.add_subcommand("info", "Display information about a graph");
+    info->add_option("<graph>", cmd.m_graph, "A graph file of any type supported by Bandage")
+            ->required()->check(CLI::ExistingFile);
+    info->add_flag("--tsv", cmd.m_tsv, "Output the information in a single tab-delimited line starting with the graph file");
 
-int bandageInfo(QStringList arguments)
-{
+    info->footer(
+        "Bandage info takes a graph file as input and outputs (to stdout) the following statistics about the graph:\n"
+        "  * Node count: The number of nodes in the graph. Only positive nodes are counted (i.e. each complementary pair counts as one).\n"
+        "  * Edge count: The number of edges in the graph. Only one edge in each complementary pair is counted.\n"
+        "  * Smallest edge overlap: The smallest overlap size (in bp) for the edges in the graph.\n"
+        "  * Largest edge overlap: The smallest overlap size (in bp) for the edges in the graph. For most graphs this will be the same as the smallest edge overlap (i.e. all edges have the same overlap).\n"
+        "  * Total length: The total number of base pairs in the graph.\n"
+        "  * Total length no overlaps: The total number of base pairs in the graph, subtracting bases that are duplicated in edge overlaps.\n"
+        "  * Dead ends: The number of instances where an end of a node does not connect to any other nodes.\n"
+        "  * Percentage dead ends: The proportion of possible dead ends. The maximum number of dead ends is twice the number of nodes (occurs when there are no edges), so this value is the number of dead ends divided by twice the node count.\n"
+        "  * Connected components: The number of regions of the graph which are disconnected from each other.\n"
+        "  * Largest component: The total number of base pairs in the largest connected component.\n"
+        "  * Total length orphaned nodes: The total number of base pairs in orphan nodes (nodes with no edges).\n"
+        "  * N50: Nodes that are this length or greater will collectively add up to at least half of the total length.\n"
+        "  * Shortest node: The length of the shortest node in the graph.\n"
+        "  * Lower quartile node: The median node length for the shorter half of the nodes.\n"
+        "  * Median node: The median node length for the graph.\n"
+        "  * Upper quartile node: The median node length for the longer half of the nodes.\n"
+        "  * Longest node: The length of the longest node in the graph.\n"
+        "  * Median depth: The median depth of the graph, by base.\n"
+        "  * Estimated sequence length: An estimate of the total number of bases in the original sequence, calculated by multiplying each node's length (minus overlaps) by its depth relative to the median.");
+
+    return info;
+}
+
+int handleInfoCmd(QApplication *app, const InfoCmd &cmd) {
     QTextStream out(stdout);
     QTextStream err(stderr);
 
-    if (checkForHelp(arguments))
-    {
-        printInfoUsage(&out, false);
-        return 0;
-    }
-
-    if (checkForHelpAll(arguments))
-    {
-        printInfoUsage(&out, true);
-        return 0;
-    }
-
-    if (arguments.empty())
-    {
-        printInfoUsage(&err, false);
-        return 1;
-    }
-
-    QString graphFilename = arguments.at(0);
-    arguments.pop_front();
-
-    if (!checkIfFileExists(graphFilename))
-    {
-        outputText("Bandage-NG error: " + graphFilename + " does not exist.", &err);
-        return 1;
-    }
-
-    QString error = checkForInvalidInfoOptions(arguments);
-    if (error.length() > 0)
-    {
-        outputText("Bandage-NG error: " + error, &err);
-        return 1;
-    }
-
-    bool tsv;
-    parseInfoOptions(arguments, &tsv);
-
-    bool loadSuccess = g_assemblyGraph->loadGraphFromFile(graphFilename);
-    if (!loadSuccess)
-    {
-        err << "Bandage-NG error: could not load " << graphFilename << Qt::endl;
+    if (!g_assemblyGraph->loadGraphFromFile(cmd.m_graph.c_str())) {
+        err << "Bandage-NG error: could not load " << cmd.m_graph.c_str() << Qt::endl;
         return 1;
     }
 
@@ -98,114 +87,48 @@ int bandageInfo(QStringList arguments)
     double medianDepthByBase = g_assemblyGraph->getMedianDepthByBase();
     long long estimatedSequenceLength = g_assemblyGraph->getEstimatedSequenceLength(medianDepthByBase);
 
-    if (tsv)
-    {
-        out << graphFilename << "\t";
-        out << nodeCount << "\t";
-        out << edgeCount << "\t";
-        out << smallestOverlap << "\t";
-        out << largestOverlap << "\t";
-        out << totalLength << "\t";
-        out << totalLengthNoOverlaps << "\t";
-        out << deadEnds << "\t";
-        out << percentageDeadEnds << "%\t";
-        out << componentCount << "\t";
-        out << largestComponentLength << "\t";
-        out << totalLengthOrphanedNodes << "\t";
-        out << n50 << "\t";
-        out << shortestNode << "\t";
-        out << firstQuartile << "\t";
-        out << median << "\t";
-        out << thirdQuartile << "\t";
-        out << longestNode << "\t";
-        out << medianDepthByBase << "\t";
-        out << estimatedSequenceLength << "\n";
-    }
-    else
-    {
-        out << "Node count:                       " << nodeCount << "\n";
-        out << "Edge count:                       " << edgeCount << "\n";
-        out << "Smallest edge overlap (bp):       " << smallestOverlap << "\n";
-        out << "Largest edge overlap (bp):        " << largestOverlap << "\n";
-        out << "Total length (bp):                " << totalLength << "\n";
-        out << "Total length no overlaps (bp):    " << totalLengthNoOverlaps << "\n";
-        out << "Dead ends:                        " << deadEnds << "\n";
-        out << "Percentage dead ends:             " << percentageDeadEnds << "%\n";
-        out << "Connected components:             " << componentCount << "\n";
-        out << "Largest component (bp):           " << largestComponentLength << "\n";
-        out << "Total length orphaned nodes (bp): " << totalLengthOrphanedNodes << "\n";
-        out << "N50 (bp):                         " << n50 << "\n";
-        out << "Shortest node (bp):               " << shortestNode << "\n";
-        out << "Lower quartile node (bp):         " << firstQuartile << "\n";
-        out << "Median node (bp):                 " << median << "\n";
-        out << "Upper quartile node (bp):         " << thirdQuartile << "\n";
-        out << "Longest node (bp):                " << longestNode << "\n";
-        out << "Median depth:                     " << medianDepthByBase << "\n";
-        out << "Estimated sequence length (bp):   " << estimatedSequenceLength << "\n";
+    if (cmd.m_tsv) {
+        out << cmd.m_graph.c_str() << "\t"
+            << nodeCount << "\t"
+            << edgeCount << "\t"
+            << smallestOverlap << "\t"
+            << largestOverlap << "\t"
+            << totalLength << "\t"
+            << totalLengthNoOverlaps << "\t"
+            << deadEnds << "\t"
+            << percentageDeadEnds << "%\t"
+            << componentCount << "\t"
+            << largestComponentLength << "\t"
+            << totalLengthOrphanedNodes << "\t"
+            << n50 << "\t"
+            << shortestNode << "\t"
+            << firstQuartile << "\t"
+            << median << "\t"
+            << thirdQuartile << "\t"
+            << longestNode << "\t"
+            << medianDepthByBase << "\t"
+            << estimatedSequenceLength << "\n";
+    } else {
+        out << "Node count:                       " << nodeCount << "\n"
+            << "Edge count:                       " << edgeCount << "\n"
+            << "Smallest edge overlap (bp):       " << smallestOverlap << "\n"
+            << "Largest edge overlap (bp):        " << largestOverlap << "\n"
+            << "Total length (bp):                " << totalLength << "\n"
+            << "Total length no overlaps (bp):    " << totalLengthNoOverlaps << "\n"
+            << "Dead ends:                        " << deadEnds << "\n"
+            << "Percentage dead ends:             " << percentageDeadEnds << "%\n"
+            << "Connected components:             " << componentCount << "\n"
+            << "Largest component (bp):           " << largestComponentLength << "\n"
+            << "Total length orphaned nodes (bp): " << totalLengthOrphanedNodes << "\n"
+            << "N50 (bp):                         " << n50 << "\n"
+            << "Shortest node (bp):               " << shortestNode << "\n"
+            << "Lower quartile node (bp):         " << firstQuartile << "\n"
+            << "Median node (bp):                 " << median << "\n"
+            << "Upper quartile node (bp):         " << thirdQuartile << "\n"
+            << "Longest node (bp):                " << longestNode << "\n"
+            << "Median depth:                     " << medianDepthByBase << "\n"
+            << "Estimated sequence length (bp):   " << estimatedSequenceLength << "\n";
     }
 
     return 0;
-}
-
-
-
-void printInfoUsage(QTextStream * out, bool all)
-{
-    QStringList text;
-
-    text << "Bandage info takes a graph file as input and outputs (to stdout) the following statistics about the graph:";
-    text << "* Node count: The number of nodes in the graph. Only positive nodes are counted (i.e. each complementary pair counts as one).";
-    text << "* Edge count: The number of edges in the graph. Only one edge in each complementary pair is counted.";
-    text << "* Smallest edge overlap: The smallest overlap size (in bp) for the edges in the graph.";
-    text << "* Largest edge overlap: The smallest overlap size (in bp) for the edges in the graph. For most graphs this will be the same as the smallest edge overlap (i.e. all edges have the same overlap).";
-    text << "* Total length: The total number of base pairs in the graph.";
-    text << "* Total length no overlaps: The total number of base pairs in the graph, subtracting bases that are duplicated in edge overlaps.";
-    text << "* Dead ends: The number of instances where an end of a node does not connect to any other nodes.";
-    text << "* Percentage dead ends: The proportion of possible dead ends. The maximum number of dead ends is twice the number of nodes (occurs when there are no edges), so this value is the number of dead ends divided by twice the node count.";
-    text << "* Connected components: The number of regions of the graph which are disconnected from each other.";
-    text << "* Largest component: The total number of base pairs in the largest connected component.";
-    text << "* Total length orphaned nodes: The total number of base pairs in orphan nodes (nodes with no edges).";
-    text << "* N50: Nodes that are this length or greater will collectively add up to at least half of the total length.";
-    text << "* Shortest node: The length of the shortest node in the graph.";
-    text << "* Lower quartile node: The median node length for the shorter half of the nodes.";
-    text << "* Median node: The median node length for the graph.";
-    text << "* Upper quartile node: The median node length for the longer half of the nodes.";
-    text << "* Longest node: The length of the longest node in the graph.";
-    text << "* Median depth: The median depth of the graph, by base.";
-    text << "* Estimated sequence length: An estimate of the total number of bases in the original sequence, calculated by multiplying each node's length (minus overlaps) by its depth relative to the median.";
-    text << "";
-    text << "Usage:    Bandage info <graph> [options]";
-    text << "";
-    text << "Positional parameters:";
-    text << "<graph>             A graph file of any type supported by Bandage";
-    text << "";
-    text << "Options:  --tsv               Output the information in a single tab-delimited line starting with the graph file";
-    text << "";
-
-    getCommonHelp(&text);
-    if (all)
-        getSettingsUsage(&text);
-    getOnlineHelpMessage(&text);
-
-    outputText(text, out);
-}
-
-
-
-QString checkForInvalidInfoOptions(QStringList arguments)
-{
-    checkOptionWithoutValue("--tsv", &arguments);
-
-    QString error = checkForInvalidOrExcessSettings(&arguments);
-    if (error.length() > 0) return error;
-
-    return checkForInvalidOrExcessSettings(&arguments);
-}
-
-
-
-void parseInfoOptions(const QStringList& arguments, bool * tsv)
-{
-    int tsvIndex = arguments.indexOf("--tsv");
-    *tsv = (tsvIndex > -1);
 }

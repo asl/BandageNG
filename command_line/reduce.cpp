@@ -1,19 +1,19 @@
-//Copyright 2017 Ryan Wick
+// Copyright 2023 Anton Korobeynikov
 
-//This file is part of Bandage
+// This file is part of Bandage-NG
 
-//Bandage is free software: you can redistribute it and/or modify
-//it under the terms of the GNU General Public License as published by
-//the Free Software Foundation, either version 3 of the License, or
-//(at your option) any later version.
+// Bandage-NG is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 
-//Bandage is distributed in the hope that it will be useful,
-//but WITHOUT ANY WARRANTY; without even the implied warranty of
-//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//GNU General Public License for more details.
+// Bandage-NG is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
 
-//You should have received a copy of the GNU General Public License
-//along with Bandage.  If not, see <http://www.gnu.org/licenses/>.
+// You should have received a copy of the GNU General Public License
+// along with Bandage.  If not, see <http://www.gnu.org/licenses/>.
 
 
 #include "reduce.h"
@@ -23,67 +23,49 @@
 #include "graph/gfawriter.h"
 #include "graphsearch/blast/blastsearch.h"
 
-#include "ui/bandagegraphicsscene.h"
-#include "ui/bandagegraphicsview.h"
-
 #include "program/globals.h"
 
-#include <QDir>
-#include <QPainter>
-#include <QSvgGenerator>
-
+#include <CLI/CLI.hpp>
 #include <vector>
 
-int bandageReduce(QStringList arguments)
-{
+CLI::App *addReduceSubcommand(CLI::App &app, ReduceCmd &cmd) {
+    auto *reduce = app.add_subcommand("reduce", "Save a subgraph of a larger graph");
+    reduce->add_option("<inputgraph>", cmd.m_graph, "A graph file of any type supported by Bandage")
+            ->required()->check(CLI::ExistingFile);
+    reduce->add_option("<outputgraph>", cmd.m_out, "The filename for the GFA graph to be made (if it does not end in '.gfa', that extension will be added)")
+            ->required();
+
+    reduce->footer("Bandage reduce takes an input graph and saves a reduced subgraph using the graph scope settings. The saved graph will be in GFA format.\n"
+                   "If a graph scope is not specified, then the 'entire' scope will be used, in which case this will simply convert the input graph to GFA format.");
+
+    return reduce;
+}
+
+/*
+static void graphScopeOptions(QStringList * text) {
+    *text << "--scope <scope>     Graph scope, from one of the following options: entire, aroundnodes, aroundblast, depthrange (default: entire)";
+    *text << "--nodes <list>      A comma-separated list of starting nodes for the aroundnodes scope (default: none)";
+    *text << "--partial           Use partial node name matching (default: exact node name matching)";
+    *text << "--distance <int>    The number of node steps away to draw for the aroundnodes and aroundblast scopes " + getRangeAndDefault(g_settings->nodeDistance);
+    *text << "--mindepth <float>  The minimum allowed depth for the depthrange scope " + getRangeAndDefault(g_settings->minDepthRange);
+    *text << "--maxdepth <float>  The maximum allowed depth for the depthrange scope "  + getRangeAndDefault(g_settings->maxDepthRange);
+}
+*/
+
+int handleReduceCmd(QApplication *app, const ReduceCmd &cmd) {
     QTextStream out(stdout);
     QTextStream err(stderr);
 
-    if (checkForHelp(arguments))
-    {
-        printReduceUsage(&out, false);
-        return 0;
-    }
-
-    if (checkForHelpAll(arguments))
-    {
-        printReduceUsage(&out, true);
-        return 0;
-    }
-
-    if (arguments.size() < 2)
-    {
-        printReduceUsage(&err, false);
-        return 1;
-    }
-
-    QString inputFilename = arguments.at(0);
-    arguments.pop_front();
-
-    if (!checkIfFileExists(inputFilename))
-    {
-        outputText("Bandage-NG error: " + inputFilename + " does not exist", &err);
-        return 1;
-    }
-
-    QString outputFilename = arguments.at(0);
-    arguments.pop_front();
+    QString outputFilename = cmd.m_out.c_str();
     if (!outputFilename.endsWith(".gfa"))
         outputFilename += ".gfa";
 
-    QString error = checkForInvalidReduceOptions(arguments);
-    if (!error.isEmpty()) {
-        outputText("Bandage-NG error: " + error, &err);
+    if (!g_assemblyGraph->loadGraphFromFile(cmd.m_graph.c_str())) {
+        outputText(("Bandage-NG error: could not load " + cmd.m_graph.native()).c_str(), &err);
         return 1;
     }
 
-    if (!g_assemblyGraph->loadGraphFromFile(inputFilename)) {
-        outputText("Bandage-NG error: could not load " + inputFilename, &err);
-        return 1;
-    }
-
-    parseSettings(arguments);
-
+#if 0
     if (isOptionPresent("--query", &arguments)) {
         if (!g_blastSearch->ready()) {
             err << g_blastSearch->lastError() << Qt::endl;
@@ -99,6 +81,7 @@ int bandageReduce(QStringList arguments)
             return 1;
         }
     }
+#endif
 
     QString errorTitle;
     QString errorMessage;
@@ -122,45 +105,4 @@ int bandageReduce(QStringList arguments)
     }
 
     return 0;
-}
-
-
-void printReduceUsage(QTextStream * out, bool all)
-{
-    QStringList text;
-
-    text << "Bandage reduce takes an input graph and saves a reduced subgraph using the graph scope settings. The saved graph will be in GFA format.";
-    text << "";
-    text << "If a graph scope is not specified, then the 'entire' scope will be used, in which case this will simply convert the input graph to GFA format.";
-    text << "";
-    text << "Usage:    Bandage reduce <inputgraph> <outputgraph> [options]";
-    text << "";
-    text << "Positional parameters:";
-    text << "<inputgraph>        A graph file of any type supported by Bandage";
-    text << "<outputgraph>       The filename for the GFA graph to be made (if it does not end in '.gfa', that extension will be added)";
-    text << "";
-
-    int nextLineIndex = text.size();
-    getCommonHelp(&text);
-    text[nextLineIndex] = "Options:  " + text[nextLineIndex];
-
-    if (all)
-        getSettingsUsage(&text);
-    else
-    {
-        nextLineIndex = text.size();
-        getGraphScopeOptions(&text);
-        text[nextLineIndex] = "Settings: " + text[nextLineIndex];
-    }
-    text << "";
-    getOnlineHelpMessage(&text);
-
-    outputText(text, out);
-}
-
-
-
-QString checkForInvalidReduceOptions(QStringList arguments)
-{
-    return checkForInvalidOrExcessSettings(&arguments);
 }

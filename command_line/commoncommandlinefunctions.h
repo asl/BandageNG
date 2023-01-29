@@ -29,6 +29,9 @@
 #include <QStringList>
 #include "program/settings.h"
 
+#include <string>
+#include <set>
+
 QStringList getArgumentList(int argc, char *argv[]);
 
 bool checkForHelp(const QStringList& arguments);
@@ -95,7 +98,7 @@ QString getRangeAndDefault(const QString& min, QString max, QString defaultVal);
 QString getDefaultColour(QColor colour);
 QString getDefaultColorMap(ColorMap colorMap);
 
-QString getBandageTitleAsciiArt();
+std::string getBandageTitleAsciiArt();
 bool isOption(QString text);
 bool isSectionHeader(const QString& text);
 bool isListItem(QString text);

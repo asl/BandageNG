@@ -1,114 +1,40 @@
-//Copyright 2017 Ryan Wick
+// Copyright 2023 Anton Korobeynikov
 
-//This file is part of Bandage
+// This file is part of Bandage-NG
 
-//Bandage is free software: you can redistribute it and/or modify
-//it under the terms of the GNU General Public License as published by
-//the Free Software Foundation, either version 3 of the License, or
-//(at your option) any later version.
+// Bandage-NG is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 
-//Bandage is distributed in the hope that it will be useful,
-//but WITHOUT ANY WARRANTY; without even the implied warranty of
-//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//GNU General Public License for more details.
+// Bandage-NG is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
 
-//You should have received a copy of the GNU General Public License
-//along with Bandage.  If not, see <http://www.gnu.org/licenses/>.
-
+// You should have received a copy of the GNU General Public License
+// along with Bandage.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "load.h"
 #include "commoncommandlinefunctions.h"
 #include "ui/mainwindow.h"
 #include <QApplication>
 
-int bandageLoad(QStringList arguments)
-{
-    QTextStream out(stdout);
-    QTextStream err(stderr);
+#include <CLI/CLI.hpp>
+#include <filesystem>
 
-    if (checkForHelp(arguments))
-    {
-        printLoadUsage(&out, false);
-        return 0;
-    }
+CLI::App *addLoadSubcommand(CLI::App &app, LoadCmd &cmd) {
+    auto *load = app.add_subcommand("load", "Launch the BandageNG GUI and load a graph file");
+    load->add_flag("--draw", cmd.m_draw, "Draw graph after loading");
+    load->add_option("<graph>", cmd.m_graph, "A graph file of any type supported by Bandage")
+            ->required()->check(CLI::ExistingFile);
 
-    if (checkForHelpAll(arguments))
-    {
-        printLoadUsage(&out, true);
-        return 0;
-    }
+    return load;
+}
 
-    if (arguments.empty())
-    {
-        printLoadUsage(&err, false);
-        return 1;
-    }
+int handleLoadCmd(QApplication *app, const LoadCmd &cmd) {
+    MainWindow w{cmd.m_graph.c_str(), cmd.m_draw};
 
-    QString filename = arguments.at(0);
-    arguments.pop_front();
-
-    if (!checkIfFileExists(filename))
-    {
-        outputText("Bandage-NG error: " + filename + " does not exist", &err);
-        return 1;
-    }
-
-    QString error = checkForInvalidLoadOptions(arguments);
-    if (error.length() > 0)
-    {
-        outputText("Bandage-NG error: " + error, &err);
-        return 1;
-    }
-
-    bool drawGraph;
-    parseLoadOptions(arguments, &drawGraph);
-
-    MainWindow w(filename, drawGraph);
     w.show();
-    return QApplication::exec();
-}
-
-
-void printLoadUsage(QTextStream * out, bool all)
-{
-    QStringList text;
-
-    text << "Bandage load will open the Bandage GUI and immediately load the specified graph file.";
-    text << "";
-    text << "Usage:    Bandage load <graph> [options]";
-    text << "";
-    text << "Positional parameters:";
-    text << "<graph>             A graph file of any type supported by Bandage";
-    text << "";
-    text << "Options:  --draw              Draw graph after loading";
-    text << "";
-
-    getCommonHelp(&text);
-    if (all)
-        getSettingsUsage(&text);
-    getOnlineHelpMessage(&text);
-
-    outputText(text, out);
-}
-
-
-
-QString checkForInvalidLoadOptions(QStringList arguments)
-{
-    checkOptionWithoutValue("--draw", &arguments);
-
-    QString error = checkForInvalidOrExcessSettings(&arguments);
-    if (error.length() > 0) return error;
-
-    return checkForInvalidOrExcessSettings(&arguments);
-}
-
-
-
-void parseLoadOptions(const QStringList& arguments, bool * drawGraph)
-{
-    int drawIndex = arguments.indexOf("--draw");
-    *drawGraph = (drawIndex > -1);
-
-    parseSettings(arguments);
+    return app->exec();
 }

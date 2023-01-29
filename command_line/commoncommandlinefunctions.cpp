@@ -1281,7 +1281,7 @@ QString getDefaultColorMap(ColorMap colorMap)
     return "(default: " + getColorMapName(colorMap) + ")";
 }
 
-QString getBandageTitleAsciiArt()
+std::string getBandageTitleAsciiArt()
 {
     return "  ____                  _                  \n |  _ \\                | |                 \n | |_) | __ _ _ __   __| | __ _  __ _  ___ \n |  _ < / _` | '_ \\ / _` |/ _` |/ _` |/ _ \\\n | |_) | (_| | | | | (_| | (_| | (_| |  __/\n |____/ \\__,_|_| |_|\\__,_|\\__,_|\\__, |\\___|\n                                 __/ |     \n                                |___/      ";
 }

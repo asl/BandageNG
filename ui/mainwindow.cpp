@@ -125,7 +125,7 @@ MainWindow::MainWindow(QString fileToLoadOnStartup, bool drawGraphAfterLoad) :
     ui->bedButton->setContent(ui->bedLoadWidget);
     ui->annotationsButton->setContent(ui->annotationsListWidget);
     ui->blastDetailsButton->setContent(ui->blastDetailsWidget);
-    
+
     //If this is a Mac, change the 'Delete' shortcuts to 'Backspace' instead.
 #ifdef Q_OS_MAC
     ui->actionHide_selected_nodes->setShortcut(Qt::Key_Backspace);
@@ -209,14 +209,14 @@ MainWindow::MainWindow(QString fileToLoadOnStartup, bool drawGraphAfterLoad) :
 }
 
 
-//This function runs after the MainWindow has been shown.  This code is not
-//included in the constructor because it can perform a BLAST search, which
-//will fill the BLAST query combo box and screw up widget sizes.
+// This function runs after the MainWindow has been shown.  This code is not
+// included in the constructor because it can perform a BLAST search, which
+// will fill the BLAST query combo box and screw up widget sizes.
 void MainWindow::afterMainWindowShow() {
     if (m_alreadyShown)
         return;
 
-    //If the user passed a filename as a command line argument, try to open it now.
+    // If the user passed a filename as a command line argument, try to open it now.
     if (!m_fileToLoadOnStartup.isEmpty()) {
         auto start = std::chrono::system_clock::now();
         loadGraph(m_fileToLoadOnStartup);
@@ -231,12 +231,13 @@ void MainWindow::afterMainWindowShow() {
         setupBlastQueryComboBox();
     }
 
-    //If the draw option was used and the graph appears to have loaded (i.e. there
-    //is at least one node), then draw the graph.
+    // If the draw option was used and the graph appears to have loaded (i.e. there
+    // is at least one node), then draw the graph.
+    // FIXME: This does not work as graph loading is asynchronous now. We need to wait until it is loaded
     if (!m_fileToLoadOnStartup.isEmpty() && m_drawGraphAfterLoad && !g_assemblyGraph->m_deBruijnGraphNodes.empty())
         drawGraph();
 
-    //If a csv query filename is present, pull the info automatically.
+    // If a csv query filename is present, pull the info automatically.
     if (!g_settings->csvFilename.isEmpty())
         loadCSV(g_settings->csvFilename);
 

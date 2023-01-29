@@ -1,19 +1,19 @@
-//Copyright 2017 Ryan Wick
+// Copyright 2023 Anton Korobeynikov
 
-//This file is part of Bandage
+// This file is part of Bandage-NG
 
-//Bandage is free software: you can redistribute it and/or modify
-//it under the terms of the GNU General Public License as published by
-//the Free Software Foundation, either version 3 of the License, or
-//(at your option) any later version.
+// Bandage-NG is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 
-//Bandage is distributed in the hope that it will be useful,
-//but WITHOUT ANY WARRANTY; without even the implied warranty of
-//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//GNU General Public License for more details.
+// Bandage-NG is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
 
-//You should have received a copy of the GNU General Public License
-//along with Bandage.  If not, see <http://www.gnu.org/licenses/>.
+// You should have received a copy of the GNU General Public License
+// along with Bandage.  If not, see <http://www.gnu.org/licenses/>.
 
 
 #include "image.h"
@@ -24,7 +24,6 @@
 #include "graphsearch/blast/blastsearch.h"
 
 #include "program/globals.h"
-#include "program/settings.h"
 #include "layout/graphlayout.h"
 #include "layout/graphlayoutworker.h"
 
@@ -34,87 +33,64 @@
 #include <vector>
 #include <QPainter>
 #include <QSvgGenerator>
-#include <QDir>
 
-int bandageImage(QStringList arguments)
-{
+#include <CLI/CLI.hpp>
+
+CLI::App *addImageSubcommand(CLI::App &app, ImageCmd &cmd) {
+    auto *image = app.add_subcommand("image", "Generate an image file of a graph");
+    image->add_option("<graph>", cmd.m_graph, "A graph file of any type supported by Bandage")
+            ->required()->check(CLI::ExistingFile);
+    image->add_option("<output_file>", cmd.m_image, "The image file to be created (must end in '.jpg', '.png' or '.svg')")
+            ->required();
+    image->add_option("--height", cmd.m_height, "Image height")
+            ->default_val(cmd.m_height)->check(CLI::Range(1, 32767));
+    image->add_option("--width", cmd.m_width, "Image width")
+            ->check(CLI::Range(1, 32767));
+    image->add_option("--color", cmd.m_color, "csv file with 2 columns: first the node name second the node color")
+            ->check(CLI::ExistingFile);
+
+    image->footer("If only height or width is set, the other will be determined automatically. If both are set, the image will be exactly that size");
+
+    // FIXME: Handle scope (query, etc)!
+
+    return image;
+}
+
+int handleImageCmd(QApplication *app, const ImageCmd &cmd) {
+    auto imageFileExtension = cmd.m_image.extension();
+    bool pixelImage;
+
     QTextStream out(stdout);
     QTextStream err(stderr);
-
-    if (checkForHelp(arguments))
-    {
-        printImageUsage(&out, false);
-        return 0;
-    }
-
-    if (checkForHelpAll(arguments))
-    {
-        printImageUsage(&out, true);
-        return 0;
-    }
-
-    if (arguments.size() < 2)
-    {
-        printImageUsage(&err, false);
-        return 1;
-    }
-
-    QString graphFilename = arguments.at(0);
-    arguments.pop_front();
-
-    if (!checkIfFileExists(graphFilename))
-    {
-        outputText("Bandage-NG error: " + graphFilename + " does not exist", &err);
-        return 1;
-    }
-
-    QString imageSaveFilename = arguments.at(0);
-    arguments.pop_front();
-
-    QString imageFileExtension = imageSaveFilename.right(4);
-    bool pixelImage;
     if (imageFileExtension == ".png" || imageFileExtension == ".jpg")
         pixelImage = true;
     else if (imageFileExtension == ".svg")
         pixelImage = false;
-    else
-    {
+    else {
         outputText("Bandage-NG error: the output filename must end in .png, .jpg or .svg", &err);
         return 1;
     }
 
-    QString error = checkForInvalidImageOptions(arguments);
-    if (error.length() > 0)
-    {
-        outputText("Bandage-NG error: " + error, &err);
+    bool loadSuccess = g_assemblyGraph->loadGraphFromFile(cmd.m_graph.c_str());
+    if (!loadSuccess) {
+        outputText(("Bandage-NG error: could not load " + cmd.m_graph.native()).c_str(), &err); // FIXME
         return 1;
     }
 
-    bool loadSuccess = g_assemblyGraph->loadGraphFromFile(graphFilename);
-    if (!loadSuccess)
-    {
-        outputText("Bandage-NG error: could not load " + graphFilename, &err);
-        return 1;
-    }
-
-    int width = 0;
-    int height = 0;
-
-    //Since frame rate performance doesn't matter for a fixed image, set the
-    //default node outline to a nonzero value.
+    // Since frame rate performance doesn't matter for a fixed image, set the
+    // default node outline to a nonzero value.
     g_settings->outlineThickness = 0.3;
 
-    parseImageOptions(arguments, &width, &height);
-
-    //For Bandage image, it is necessary to position node labels at the
-    //centre of the node, not the visible centre(s).  This is because there
-    //is no viewport.
+    // For Bandage image, it is necessary to position node labels at the
+    // centre of the node, not the visible centre(s).  This is because there
+    // is no viewport.
     g_settings->positionTextNodeCentre = true;
 
-    //The zoom level needs to be set so rainbow-style BLAST hits are rendered
-    //properly.
+    // The zoom level needs to be set so rainbow-style BLAST hits are rendered
+    // properly.
     g_absoluteZoom = 10.0;
 
+#if 0
     if (isOptionPresent("--query", &arguments)) {
         if (!g_blastSearch->ready()) {
             err << g_blastSearch->lastError() << Qt::endl;
@@ -130,6 +106,7 @@ int bandageImage(QStringList arguments)
             return 1;
         }
     }
+#endif
 
     QString errorTitle;
     QString errorMessage;
@@ -145,19 +122,18 @@ int bandageImage(QStringList arguments)
         return 1;
     }
 
-    QString csvPath = parseColorsOption(arguments);
-    if (csvPath != "") {
+    if (!cmd.m_color.empty()) {
         QString errormsg;
         QStringList columns;
         bool coloursLoaded = false;
 
-        if (!g_assemblyGraph->loadCSV(csvPath, &columns, &errormsg, &coloursLoaded)) {
+        if (!g_assemblyGraph->loadCSV(cmd.m_color.c_str(), &columns, &errormsg, &coloursLoaded)) {
             err << errormsg << Qt::endl;
             return 1;
         }
 
         if (!coloursLoaded) {
-            err << csvPath << " didn't contain color" << Qt::endl;
+            err << cmd.m_color.c_str() << " didn't contain color" << Qt::endl;
             return 1;
         }
          g_settings->initializeColorer(CUSTOM_COLOURS);
@@ -177,8 +153,9 @@ int bandageImage(QStringList arguments)
     }
     double sceneRectAspectRatio = scene.sceneRect().width() / scene.sceneRect().height();
 
-    //Determine image size
-    //If neither height nor width set, use a default of height = 1000.
+    // Determine image size
+    // If neither height nor width set, use a default of height = 1000.
+    unsigned height = cmd.m_height, width = cmd.m_width;
     if (height == 0 && width == 0)
         height = 1000;
 
@@ -190,21 +167,18 @@ int bandageImage(QStringList arguments)
 
     bool success = true;
     QPainter painter;
-    if (pixelImage)
-    {
+    if (pixelImage) {
         QImage image(width, height, QImage::Format_ARGB32);
         image.fill(Qt::white);
         painter.begin(&image);
         painter.setRenderHint(QPainter::Antialiasing);
         painter.setRenderHint(QPainter::TextAntialiasing);
         scene.render(&painter);
-        success = image.save(imageSaveFilename);
+        success = image.save(cmd.m_image.c_str());
         painter.end();
-    }
-    else //SVG
-    {
+    } else { //SVG
         QSvgGenerator generator;
-        generator.setFileName(imageSaveFilename);
+        generator.setFileName(cmd.m_image.c_str());
         generator.setSize(QSize(width, height));
         generator.setViewBox(QRect(0, 0, width, height));
         painter.begin(&generator);
@@ -215,86 +189,10 @@ int bandageImage(QStringList arguments)
         painter.end();
     }
 
-    int returnCode;
-    if (!success)
-    {
+    if (!success) {
         out << "There was an error writing the image to file." << Qt::endl;
-        returnCode = 1;
+        return 1;
     }
-    else
-        returnCode = 0;
 
-
-    return returnCode;
-}
-
-
-void printImageUsage(QTextStream * out, bool all)
-{
-    QStringList text;
-
-    text << "Bandage image will generate an image file of the graph visualisation without opening the GUI.";
-    text << "";
-    text << "Usage:    Bandage image <graph> <outputfile> [options]";
-    text << "";
-    text << "Positional parameters:";
-    text << "<graph>             A graph file of any type supported by Bandage";
-    text << "<outputfile>        The image file to be created (must end in '.jpg', '.png' or '.svg')";
-    text << "";
-    text << "Options:  --height <int>      Image height (default: 1000)";
-    text << "--width <int>       Image width (default: not set)";
-    text << "--color <file>       csv file with 2 column first the node name second the node color";
-    text << "";
-    text << "If only height or width is set, the other will be determined automatically. If both are set, the image will be exactly that size.";
-    text << "";
-
-    getCommonHelp(&text);
-    if (all)
-        getSettingsUsage(&text);
-    getOnlineHelpMessage(&text);
-
-    outputText(text, out);
-}
-
-QString checkForInvalidImageOptions(QStringList arguments)
-{
-    QString error = checkOptionForInt("--height", &arguments, IntSetting(0, 1, 32767), false);
-    if (error.length() > 0) return error;
-
-    error = checkOptionForInt("--width", &arguments, IntSetting(0, 1, 32767), false);
-    if (error.length() > 0) return error;
-
-    error = checkOptionForString("--colors", &arguments, QStringList(), "a path of csv file");
-    if (error.length() > 0) return error;
-
-    return checkForInvalidOrExcessSettings(&arguments);
-}
-
-
-
-
-//This function parses the command line options.  It assumes that the options
-//have already been checked for correctness.
-void parseImageOptions(QStringList arguments, int * width, int * height)
-{
-    if (isOptionPresent("--height", &arguments))
-        *height = getIntOption("--height", &arguments);
-
-    if (isOptionPresent("--width", &arguments))
-        *width = getIntOption("--width", &arguments);
-
-    parseSettings(arguments);
-}
-
-//This function parses the command line options. It assumes that the options
-//have already been checked for correctness.
-QString parseColorsOption(QStringList arguments)
-{
-    QString path = "";
-    if (isOptionPresent("--colors", &arguments))
-        path = getStringOption("--colors", &arguments);
-
-    parseSettings(arguments);
-
-    return path;
+    return 0;
 }

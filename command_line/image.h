@@ -1,31 +1,37 @@
-//Copyright 2017 Ryan Wick
+// Copyright 2023 Anton Korobeynikov
 
-//This file is part of Bandage
+// This file is part of Bandage-NG
 
-//Bandage is free software: you can redistribute it and/or modify
-//it under the terms of the GNU General Public License as published by
-//the Free Software Foundation, either version 3 of the License, or
-//(at your option) any later version.
+// Bandage-NG is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 
-//Bandage is distributed in the hope that it will be useful,
-//but WITHOUT ANY WARRANTY; without even the implied warranty of
-//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//GNU General Public License for more details.
+// Bandage-NG is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
 
-//You should have received a copy of the GNU General Public License
-//along with Bandage.  If not, see <http://www.gnu.org/licenses/>.
+// You should have received a copy of the GNU General Public License
+// along with Bandage.  If not, see <http://www.gnu.org/licenses/>.
+
+#pragma once
+
+#include <QApplication>
+#include <filesystem>
+
+namespace CLI {
+    class App;
+};
 
 
-#ifndef IMAGE_H
-#define IMAGE_H
+struct ImageCmd {
+    std::filesystem::path m_graph;
+    std::filesystem::path m_image;
+    unsigned m_height = 1000;
+    unsigned m_width = 0;
+    std::filesystem::path m_color;
+};
 
-#include <QStringList>
-#include <QTextStream>
-
-int bandageImage(QStringList arguments);
-void printImageUsage(QTextStream * out, bool all);
-QString checkForInvalidImageOptions(QStringList arguments);
-void parseImageOptions(QStringList arguments, int * width, int * height);
-QString parseColorsOption(QStringList arguments);
-
-#endif // IMAGE_H
+CLI::App *addImageSubcommand(CLI::App &app, ImageCmd &cmd);
+int handleImageCmd(QApplication *app, const ImageCmd &cmd);

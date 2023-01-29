@@ -1,29 +1,24 @@
-//Copyright 2017 Ryan Wick
+// Copyright 2017 Ryan Wick
+// Copyright 2022-2023 Anton Korobeynikov
 
-//This file is part of Bandage
+// This file is part of Bandage
 
-//Bandage is free software: you can redistribute it and/or modify
-//it under the terms of the GNU General Public License as published by
-//the Free Software Foundation, either version 3 of the License, or
-//(at your option) any later version.
+// Bandage is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 
-//Bandage is distributed in the hope that it will be useful,
-//but WITHOUT ANY WARRANTY; without even the implied warranty of
-//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//GNU General Public License for more details.
+// Bandage is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
 
-//You should have received a copy of the GNU General Public License
-//along with Bandage.  If not, see <http://www.gnu.org/licenses/>.
+// You should have received a copy of the GNU General Public License
+// along with Bandage.  If not, see <http://www.gnu.org/licenses/>.
 
 
+#include "CLI/Argv.hpp"
 #include "graph/assemblygraph.h"
-
-#include "command_line/load.h"
-#include "command_line/info.h"
-#include "command_line/image.h"
-#include "command_line/querypaths.h"
-#include "command_line/reduce.h"
-#include "command_line/commoncommandlinefunctions.h"
 
 #include "program/settings.h"
 #include "program/memory.h"
@@ -34,9 +29,18 @@
 #include "graph/annotationsmanager.h"
 #include "ui/bandagegraphicsview.h"
 
+#include "command_line/load.h"
+#include "command_line/info.h"
+#include "command_line/image.h"
+#include "command_line/querypaths.h"
+#include "command_line/reduce.h"
+#include "command_line/commoncommandlinefunctions.h"
+#include <CLI/CLI.hpp>
+
 #include <QApplication>
 #include <QString>
 #include <QTextStream>
+#include <variant>
 
 #ifndef Q_OS_WIN32
 #include <sys/ioctl.h>
@@ -46,165 +50,137 @@
 #define APP_VERSION "<unknown version>"
 #endif
 
-void printUsage(QTextStream * out, bool all)
-{
-    QStringList text;
+using SubCmd = std::variant<std::monostate,
+                            LoadCmd,
+                            ImageCmd,
+                            InfoCmd,
+                            ReduceCmd,
+                            QueryPathsCmd>;
 
-    // FIXME: Put argv[0] here
-    text << "";
-    text << "Usage:    BandageNG <command> [options]";
-    text << "";
-    text << "Commands: <blank>      Launch the Bandage-NG GUI";
-    text << "load         Launch the Bandage-NG GUI and load a graph file";
-    text << "info         Display information about a graph";
-    text << "image        Generate an image file of a graph";
-    text << "querypaths   Output graph paths for BLAST queries";
-    text << "reduce       Save a subgraph of a larger graph";
-    text << "";
-    text << "Options:  --help       View this help message";
-    text << "--helpall    View all command line settings";
-    text << "--version    View Bandage version number";
-    text << "";
+static SubCmd parseCmdLine(CLI::App &app) {
+    SubCmd subcmd;
 
-    if (all)
-        getSettingsUsage(&text);
-    getOnlineHelpMessage(&text);
+    app.description(getBandageTitleAsciiArt() + '\n' +
+                    "Version: " + APP_VERSION + '\n');
+    app.set_version_flag("--version", APP_VERSION);
+    app.require_subcommand(0, 1);
+    app.fallthrough();
 
-    outputText(text, out);
-}
+    // "BandageNG load"
+    LoadCmd loadCmd;
+    auto *load = addLoadSubcommand(app, loadCmd);
 
-int main(int argc, char *argv[])
-{
-    QStringList arguments = getArgumentList(argc, argv);
+    // "BandgeNG image"
+    ImageCmd imageCmd;
+    auto *image = addImageSubcommand(app, imageCmd);
 
-    QString first;
-    if (!arguments.empty())
-        first = arguments[0];
+    // "BandageNG info"
+    InfoCmd infoCmd;
+    auto *info = addInfoSubcommand(app, infoCmd);
 
-    //When launched from the app bundle, OS X can pass a process serial number
-    //as the first argument. If so, we throw it out.
-    if (first.contains("-psn_"))
-    {
-        arguments.pop_front();
-        first = "";
-        if (!arguments.empty())
-            first = arguments[0];
+    // "BandageNG reduce"
+    ReduceCmd reduceCmd;
+    auto *reduce = addReduceSubcommand(app, reduceCmd);
+
+    // "BandageNG rquerypaths"
+    QueryPathsCmd qpCmd;
+    auto *qp = addQueryPathsSubcommand(app, qpCmd);
+
+    app.footer("Online Bandage help: https://github.com/asl/BandageNG/wiki");
+
+    app.parse();
+
+    if (app.got_subcommand(load)) {
+        g_memory->commandLineCommand = BANDAGE_LOAD; // FIXME: not needed
+        subcmd = loadCmd;
+    } else if (app.got_subcommand(image)) {
+        g_memory->commandLineCommand = BANDAGE_IMAGE; // FIXME: not needed
+        subcmd = imageCmd;
+    } else if (app.got_subcommand(info)) {
+        g_memory->commandLineCommand = BANDAGE_INFO; // FIXME: not needed
+        subcmd = infoCmd;
+    } else if (app.got_subcommand(reduce)) {
+        g_memory->commandLineCommand = BANDAGE_REDUCE; // FIXME: not needed
+        subcmd = reduceCmd;
+    } else if (app.got_subcommand(qp)) {
+        g_memory->commandLineCommand = BANDAGE_QUERY_PATHS; // FIXME: not needed
+        subcmd = qpCmd;
     }
 
-    // Create the application. Some ways of running Bandage require the normal platform while other command line only
-    // ways use the minimal platform. Frustratingly, Bandage image cannot render text properly with the minimal
-    // platform, so we need to use the full platform if Bandage image is run with text labels.
-    bool imageWithText = (first.toLower() == "image") &&
-                         (arguments.contains("--names") || arguments.contains("--lengths") ||
-                          arguments.contains("--depth") || arguments.contains("--blasthits"));
-    bool guiNeeded = (first == "") || first.startsWith("-") || (first.toLower() == "load") || imageWithText;
-    if (checkForHelp(arguments) || checkForHelpAll(arguments))
-        guiNeeded = false;
-    // Only use minimal platform on Linux. Both Windows and MacOS X always have full platform available
-    // (as there is no real headless mode)
+    return subcmd;
+}
+
+static void chooseQtPlatform(const CLI::App &app, const SubCmd &cmd) {
+    // Chose default Qt platform. Some ways of running Bandage require the
+    // normal platform while other command line only ways use the minimal
+    // platform. Frustratingly, Bandage image cannot render text properly with
+    // the minimal platform, so we need to use the full platform if Bandage
+    // image is run with text labels.
+    bool imageWithText = false; //std::holds_alternative<ImageCmd>(cmd) &&
+    //(app.count("--names") || app.count("--lengths") ||
+    //                      app.count("--depth") || app.count("--blasthits"));
+    bool guiNeeded = std::holds_alternative<std::monostate>(cmd) ||
+                     std::holds_alternative<LoadCmd>(cmd) || imageWithText;
+
+    // Only use minimal platform on Linux. Both Windows and MacOS X always have
+    // full platform available (as there is no real headless mode)
 #ifdef Q_OS_LINUX
-    if (!guiNeeded)
+    if (!guiNeeded && qgetenv("QT_QPA_PLATFORM").empty())
         qputenv("QT_QPA_PLATFORM", QByteArrayLiteral("minimal"));
 #endif
-    new QApplication(argc, argv);
+}
 
-    //Create the important global objects.
-    g_settings.reset(new Settings());
+int main(int argc, char *argv[]) {
+    CLI::App cmdline;
+    SubCmd cmd;
+
     g_memory.reset(new Memory());
+    g_settings.reset(new Settings());
+
+    try {
+        cmd = parseCmdLine(cmdline);
+    } catch (const CLI::ParseError &e) {
+        return cmdline.exit(e);
+    }
+
+    chooseQtPlatform(cmdline, cmd);
+    QScopedPointer<QApplication> app(new QApplication(argc, argv));
+
+    // Create the important global objects.
     g_blastSearch.reset(new search::BlastSearch());
     g_assemblyGraph.reset(new AssemblyGraph());
     g_graphicsView = new BandageGraphicsView();
     g_annotationsManager = std::make_shared<AnnotationsManager>();
 
-    //Save the terminal width (useful for displaying help text neatly).
-    #ifndef Q_OS_WIN32
+    // Save the terminal width (useful for displaying help text neatly).
+#ifndef Q_OS_WIN32
     struct winsize ws;
     ioctl(0, TIOCGWINSZ, &ws);
     g_memory->terminalWidth = ws.ws_col;
     if (g_memory->terminalWidth < 50) g_memory->terminalWidth = 50;
     if (g_memory->terminalWidth > 300) g_memory->terminalWidth = 300;
-    #endif //Q_OS_WIN32
+#endif //Q_OS_WIN32
 
-    QApplication::setApplicationName("Bandage-NG");
-    QApplication::setApplicationVersion(APP_VERSION);
+    app->setApplicationName("Bandage-NG");
+    app->setApplicationVersion(APP_VERSION);
 
-    QTextStream out(stdout);
-    QTextStream err(stderr);
-    //If the first argument was a recognised command, move to that command's function.
-    if (!arguments.empty())
-    {
-        if (checkForVersion(arguments))
-        {
-            out << "Version: " << QApplication::applicationVersion() << Qt::endl;
-            return 0;
-        }
-        if (first.toLower() == "load")
-        {
-            arguments.pop_front();
-            g_memory->commandLineCommand = BANDAGE_LOAD;
-            return bandageLoad(arguments);
-        }
-        else if (first.toLower() == "info")
-        {
-            arguments.pop_front();
-            g_memory->commandLineCommand = BANDAGE_INFO;
-            return bandageInfo(arguments);
-        }
-        else if (first.toLower() == "image")
-        {
-            arguments.pop_front();
-            g_memory->commandLineCommand = BANDAGE_IMAGE;
-            return bandageImage(arguments);
-        }
-        else if (first.toLower() == "querypaths")
-        {
-            arguments.pop_front();
-            g_memory->commandLineCommand = BANDAGE_QUERY_PATHS;
-            return bandageQueryPaths(arguments);
-        }
-        else if (first.toLower() == "reduce")
-        {
-            arguments.pop_front();
-            g_memory->commandLineCommand = BANDAGE_REDUCE;
-            return bandageReduce(arguments);
-        }
+    return std::visit([&](const auto &command) {
+        using T = std::decay_t<decltype(command)>;
+        if constexpr (std::is_same_v<T, LoadCmd>) {
+            return handleLoadCmd(app.get(), command);
+        } else  if constexpr (std::is_same_v<T, ImageCmd>) {
+            return handleImageCmd(app.get(), command);
+        } else  if constexpr (std::is_same_v<T, InfoCmd>) {
+            return handleInfoCmd(app.get(), command);
+        } else  if constexpr (std::is_same_v<T, ReduceCmd>) {
+            return handleReduceCmd(app.get(), command);
+        } else  if constexpr (std::is_same_v<T, QueryPathsCmd>) {
+            return handleQueryPathsCmd(app.get(), command);
+        } else {
+            MainWindow w;
+            w.show();
 
-        //Since a recognised command was not seen, we now check to see if the user
-        //was looking for help information.
-        else if (checkForHelp(arguments))
-        {
-            out << Qt::endl;
-            out << getBandageTitleAsciiArt() << Qt::endl;
-            out << "Version: " << QApplication::applicationVersion();
-            printUsage(&out, false);
-            return 0;
+            return app->exec();
         }
-        else if (checkForHelpAll(arguments))
-        {
-            out << Qt::endl;
-            out << getBandageTitleAsciiArt() << Qt::endl;
-            out << "Version: " << QApplication::applicationVersion();
-            printUsage(&out, true);
-            return 0;
-        }
-    }
-
-    //If the code got here, we assume the user is simply launching Bandage,
-    //with or without some options to specify settings.
-
-    //Check the settings.
-    QStringList argumentsCopy = arguments;
-    QString error = checkForInvalidOrExcessSettings(&argumentsCopy);
-    if (error.length() > 0)
-    {
-        outputText("Bandage-NG error: " + error, &err);
-        return 1;
-    }
-
-    //If the code got here, then the settings are good.  Parse them now and
-    //run the program.
-    parseSettings(arguments);
-    MainWindow w;
-    w.show();
-    return QApplication::exec();
+    }, cmd);
 }
