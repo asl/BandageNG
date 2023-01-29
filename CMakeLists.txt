@@ -96,8 +96,12 @@ add_subdirectory(thirdparty)
 include_directories(thirdparty)
 
 include(FetchContent)
+# Lexy for GFA parser
 FetchContent_Declare(lexy URL https://lexy.foonathan.net/download/lexy-src.zip)
 FetchContent_MakeAvailable(lexy)
+# CLI11 for cmdline parsing
+FetchContent_Declare(cli11 GIT_REPOSITORY https://github.com/CLIUtils/CLI11 GIT_TAG main)
+FetchContent_MakeAvailable(cli11)
 
 add_library(BandageLayout STATIC layout/graphlayoutworker.cpp layout/io.cpp layout/graphlayout.cpp)
 target_link_libraries(BandageLayout PRIVATE OGDF Qt6::Concurrent Qt6::Gui Qt6::Widgets)
