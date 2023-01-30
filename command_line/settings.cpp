@@ -42,7 +42,11 @@ std::istringstream &operator>>(std::istringstream &in, QString &val) {
 std::istringstream &operator>>(std::istringstream &in, QColor &val) {
     std::string s;
     in >> s;
+#if QT_VERSION < QT_VERSION_CHECK(6, 4, 0)
+    val.setNamedColor(s);
+#else
     val = QColor::fromString(s);
+#endif                
 
     return in;
 }
@@ -56,7 +60,11 @@ struct QColorValidator : public Validator {
     QColorValidator() {
         name_ = "QCOLOR";
         func_ = [](const std::string &str) {
+#if QT_VERSION < QT_VERSION_CHECK(6, 4, 0)
+            if (!QColor::isValidColor(str))
+#else
             if (!QColor::isValidColorName(str))
+#endif                
                 return std::string("This is not a valid color name: " + str);
             return std::string{};
         };
