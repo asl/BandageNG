@@ -47,7 +47,7 @@ jobs:
         with:
           cache: true
           cache-key-prefix: ${{ runner.os }}-QtCache
-          version: '6.2.3'
+          version: '6.2.*'
 
       - name: Install BLAST
         run: |
