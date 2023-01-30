@@ -871,7 +871,15 @@ static void parseSettings(const QStringList &commandLineSettings) {
     CLI::App app;
     addSettings(app);
 
+#if QT_VERSION < QT_VERSION_CHECK(6, 4, 0)
+    try {
+        app.parse(argv.size(), argv.data());
+    } catch (const CLI::ParseError &e) {
+        QFAIL(e.what());
+    }
+#else
     QVERIFY_THROWS_NO_EXCEPTION(app.parse(argv.size(), argv.data()));
+#endif
 }
 
 

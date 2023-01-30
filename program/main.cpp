@@ -128,7 +128,7 @@ static void chooseQtPlatform(const CLI::App &app, const SubCmd &cmd) {
     // Only use minimal platform on Linux. Both Windows and MacOS X always have
     // full platform available (as there is no real headless mode)
 #ifdef Q_OS_LINUX
-    if (!guiNeeded && qgetenv("QT_QPA_PLATFORM").empty())
+    if (!guiNeeded && qEnvironmentVariableIsEmpty("QT_QPA_PLATFORM"))
         qputenv("QT_QPA_PLATFORM", QByteArrayLiteral("minimal"));
 #endif
 }
