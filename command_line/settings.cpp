@@ -61,6 +61,39 @@ struct QColorValidator : public Validator {
     }
 };
 
+
+class RangeOrOff : public Validator {
+  public:
+    template <typename T>
+    RangeOrOff(T min_val, T max_val, bool allow_off,
+               const std::string &validator_name = std::string{})
+            : Validator(validator_name) {
+        if (validator_name.empty()) {
+            std::stringstream out;
+            out << detail::type_name<T>() << " in [" << min_val << " - " << max_val << "]";
+            if (allow_off)
+                out << ", or \"off\"";
+            description(out.str());
+        }
+
+        func_ = [min_val, max_val, allow_off](std::string &input) {
+            if (input == "off")
+                return allow_off ? std::string{} : std::string{"value cannot be off"};
+
+            using CLI::detail::lexical_cast;
+            T val;
+            bool converted = lexical_cast(input, val);
+            if ((!converted) || (val < min_val || val > max_val)) {
+                std::stringstream out;
+                out << "Value " << input << " not in range [";
+                out << min_val << " - " << max_val << "]";
+                return out.str();
+            }
+            return std::string{};
+        };
+    }
+};
+
 namespace detail {
 
 template <>
@@ -142,10 +175,15 @@ template<class Setting>
 static CLI::Option *add_setting(CLI::App &app,
                                 std::string name,
                                 Setting &setting,
-                                std::string description) {
-    return app.add_option(std::move(name), setting, std::move(description))
-                ->check(CLI::Range(setting.min, setting.max))
-                ->capture_default_str();
+                                std::string description, bool allowOff = false) {
+    auto *opt = app.add_option(std::move(name), setting, std::move(description))
+                ->check(CLI::RangeOrOff(setting.min, setting.max, allowOff));
+    if (setting.on)
+        opt->capture_default_str();
+    else
+        opt->default_str("off");
+
+    return opt;
 }
 
 
@@ -373,15 +411,15 @@ static CLI::App *addQueryPathsSettings(CLI::App &app) {
     add_setting(*bqp, "--minpatcov", g_settings->minQueryCoveredByPath,
                 "Minimum fraction of a BLAST query which must be covered by a query path");
     add_setting(*bqp, "--minhitcov", g_settings->minQueryCoveredByHits,
-                "Minimum fraction of a BLAST query which must be covered by BLAST hits in a query path");
+                "Minimum fraction of a BLAST query which must be covered by BLAST hits in a query path", /* allow off */ true);
     add_setting(*bqp, "--minmeanid", g_settings->minMeanHitIdentity,
-                "Minimum mean identity of BLAST hits in a query path");
+                "Minimum mean identity of BLAST hits in a query path", /* allow off */ true);
     add_setting(*bqp, "--maxevprod", g_settings->maxEValueProduct,
-                "Maximum e-value product for all BLAST hits in a query path");
+                "Maximum e-value product for all BLAST hits in a query path", /* allow off */ true);
     add_setting(*bqp, "--minpatlen", g_settings->minLengthPercentage,
-                "Minimum allowed relative path length as compared to the query");
+                "Minimum allowed relative path length as compared to the query", /* allow off */ true);
     add_setting(*bqp, "--maxpatlen", g_settings->maxLengthPercentage,
-                "Maximum allowed relative path length as compared to the query");
+                "Maximum allowed relative path length as compared to the query", /* allow off */ true);
     add_setting(*bqp, "--minlendis", g_settings->minLengthBaseDiscrepancy,
                 "Minimum allowed length discrepancy (in bases) between a BLAST query and its path in the graph");
     add_setting(*bqp, "--maxlendis", g_settings->maxLengthBaseDiscrepancy,
