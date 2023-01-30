@@ -54,7 +54,6 @@ void getSettingsUsage(QStringList * text)
     *text << dashes;
     *text << "These settings control the graph scope.  If the aroundnodes scope is used, then the --nodes option must also be used.  If the aroundblast scope is used, a BLAST query must be given with the --query option.";
     getGraphScopeOptions(text);
-    *text << "--double            Draw graph in double mode (default: off)";
     *text << "";
     *text << "Graph size";
     *text << dashes;
@@ -78,6 +77,7 @@ void getSettingsUsage(QStringList * text)
     *text << "--selcol <col>      Colour for selections " + getDefaultColour(g_settings->selectionColour);
     *text << "--noaa              Disable antialiasing (default: antialiasing on)";
     *text << "--singlearr         Show node arrowheads in single mode (default: node arrowheads are note shown)";
+    *text << "--double            Draw graph in double mode (default: off)";
     *text << "";
     *text << "Text appearance";
     *text << dashes;

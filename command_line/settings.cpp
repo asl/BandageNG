@@ -138,6 +138,17 @@ bool lexical_cast(const std::string &input, SciNotSetting &val) {
     return true;
 }
 
+template<class Setting>
+static CLI::Option *add_setting(CLI::App &app,
+                                std::string name,
+                                Setting &setting,
+                                std::string description) {
+    return app.add_option(std::move(name), setting, std::move(description))
+                ->check(CLI::Range(setting.min, setting.max))
+                ->capture_default_str();
+}
+
+
 static CLI::App *addGraphScopeSettings(CLI::App &app) {
     auto *scope = app.add_option_group("Graph scope",
                                        "These settings control the graph scope. "
@@ -154,29 +165,23 @@ static CLI::App *addGraphScopeSettings(CLI::App &app) {
                     {"depthrange", GraphScope::DEPTH_RANGE}}))
             ->default_val("entire");
     scope->add_flag("--exact,!--partial", g_settings->startingNodesExactMatch, "Choose between exact or partial node name matching (default: exact)");
-    scope->add_option("--distance", g_settings->nodeDistance, "The number of node steps away to draw for the aroundnodes and aroundblast scopes")
-            ->default_str(getRangeAndDefault(g_settings->nodeDistance).toStdString()); // FIXME
-    scope->add_option("--mindepth", g_settings->minDepthRange, "The minimum allowed depth for the depthrange scope")
-            ->default_str(getRangeAndDefault(g_settings->minDepthRange).toStdString()); // FIXME
-    scope->add_option("--maxdepth", g_settings->maxDepthRange, "The maximum allowed depth for the depthrange scope")
-            ->default_str(getRangeAndDefault(g_settings->maxDepthRange).toStdString()); // FIXME
-    scope->add_option("--nodes", g_settings->startingNodes, "A comma-separated list of starting nodes for the aroundnodes scope (default: none)");
+    add_setting(*scope, "--distance", g_settings->nodeDistance, "The number of node steps away to draw for the aroundnodes and aroundblast scopes");
+    add_setting(*scope, "--mindepth", g_settings->minDepthRange, "The minimum allowed depth for the depthrange scope");
+    add_setting(*scope, "--maxdepth", g_settings->maxDepthRange, "The maximum allowed depth for the depthrange scope");
+    scope->add_option("--nodes", g_settings->startingNodes, "A comma-separated list of starting nodes for the aroundnodes scope (default: none)")
+            ->capture_default_str();
 
     return scope;
 }
 
 static CLI::App *addGraphSizeSettings(CLI::App &app) {
     auto *size = app.add_option_group("Graph size");
-    size->add_option("--nodelen", g_settings->manualNodeLengthPerMegabase, "Node length per megabase")
-            ->default_str(getRangeAndDefault(g_settings->manualNodeLengthPerMegabase, "auto").toStdString());
-    size->add_option("--minnodlen", g_settings->minimumNodeLength, "Minimum node length")
-            ->default_str(getRangeAndDefault(g_settings->minimumNodeLength).toStdString());
-    size->add_option("--edgelen", g_settings->edgeLength, "Edge length")
-            ->default_str(getRangeAndDefault(g_settings->edgeLength).toStdString());
-    size->add_option("--edgewidth", g_settings->edgeLength, "Edge width")
-            ->default_str(getRangeAndDefault(g_settings->edgeWidth).toStdString());
-    size->add_option("--doubsep", g_settings->doubleModeNodeSeparation, "Double mode node separation")
-            ->default_str(getRangeAndDefault(g_settings->doubleModeNodeSeparation).toStdString());
+    add_setting(*size, "--nodelen", g_settings->manualNodeLengthPerMegabase, "Node length per megabase")
+            ->default_str("auto");
+    add_setting(*size, "--minnodlen", g_settings->minimumNodeLength, "Minimum node length");
+    add_setting(*size, "--edgelen", g_settings->edgeLength, "Edge length");
+    add_setting(*size, "--edgewidth", g_settings->edgeLength, "Edge width");
+    add_setting(*size, "--doubsep", g_settings->doubleModeNodeSeparation, "Double mode node separation");
     size->callback([size]() {
         if (size->count("--nodelen"))
             g_settings->nodeLengthMode = MANUAL_NODE_LENGTH;
@@ -187,11 +192,8 @@ static CLI::App *addGraphSizeSettings(CLI::App &app) {
 
 static CLI::App *addGraphLayoutSettings(CLI::App &app) {
     auto *layout = app.add_option_group("Graph layout");
-    layout->add_option("--nodseglen", g_settings->nodeSegmentLength, "Node segment length")
-            ->default_str(getRangeAndDefault(g_settings->nodeSegmentLength).toStdString());
-    layout->add_option("--iter", g_settings->graphLayoutQuality, "Graph layout iterations")
-            ->default_str(getRangeAndDefault(g_settings->graphLayoutQuality).toStdString())
-            ->check(CLI::Range(0, 4));
+    add_setting(*layout, "--nodseglen", g_settings->nodeSegmentLength, "Node segment length");
+    add_setting(*layout, "--iter", g_settings->graphLayoutQuality, "Graph layout iterations");
     layout->add_flag("--linear", g_settings->linearLayout, "Linear graph layout")
             ->capture_default_str();
 
@@ -206,8 +208,7 @@ static CLI::App *addGraphAppearanceSettings(CLI::App &app) {
     ga->add_option("--outcol", g_settings->outlineColour, "Color for node outlines")
             ->check(CLI::QColorValidator())
             ->default_str(getDefaultColour(g_settings->outlineColour).toStdString());
-    ga->add_option("--outline", g_settings->outlineThickness, "Node outline thickness")
-            ->default_str(getRangeAndDefault(g_settings->outlineThickness).toStdString());
+    add_setting(*ga, "--outline", g_settings->outlineThickness, "Node outline thickness");
     ga->add_option("--selcol", g_settings->selectionColour, "Color for selections")
             ->check(CLI::QColorValidator())
             ->default_str(getDefaultColour(g_settings->selectionColour).toStdString());
@@ -227,8 +228,7 @@ static CLI::App *addTextAppearanceSettings(CLI::App &app) {
             ->default_str(getDefaultColour(g_settings->textColour).toStdString());
     ta->add_option("--toutcol", g_settings->textOutlineColour, "Color for text outline")
             ->default_str(getDefaultColour(g_settings->textOutlineColour).toStdString());
-    ta->add_option("--toutline", g_settings->textOutlineThickness, "Surround text with an outline with this thickness")
-            ->default_str( getRangeAndDefault(g_settings->textOutlineThickness).toStdString());
+    add_setting(*ta, "--toutline", g_settings->textOutlineThickness, "Surround text with an outline with this thickness");
     ta->add_flag("--centre", g_settings->positionTextNodeCentre, "Node labels appear at the centre of the node")
             ->capture_default_str();
 
@@ -245,12 +245,9 @@ static CLI::App *addNodeWidthsSettings(CLI::App &app) {
                                     "  d = mean depth\n"
                                     "  e = power of depth effect on width\n"
                                     );
-    nw->add_option("--nodewidth", g_settings->averageNodeWidth, "Average node width")
-            ->default_str(getRangeAndDefault(g_settings->averageNodeWidth).toStdString());
-    nw->add_option("--depwidth", g_settings->depthEffectOnWidth, "Depth effect on width")
-            ->default_str(getRangeAndDefault(g_settings->depthEffectOnWidth).toStdString());
-    nw->add_option("--deppower", g_settings->depthPower, "Power of depth effect on width")
-            ->default_str(getRangeAndDefault(g_settings->depthPower).toStdString());
+    add_setting(*nw, "--nodewidth", g_settings->averageNodeWidth, "Average node width");
+    add_setting(*nw, "--depwidth", g_settings->depthEffectOnWidth, "Depth effect on width");
+    add_setting(*nw, "--deppower", g_settings->depthPower, "Power of depth effect on width");
 
     return nw;
 }
@@ -265,8 +262,9 @@ static CLI::App *addNodeLabelsSettings(CLI::App &app) {
     // For backward compatibility we allow enabling blast annotation text by "--blasthits" option.
     // To be removed when we can set up annotations from CLI.
     nl->add_flag("--blasthits", g_settings->defaultBlastAnnotationSetting.showText, "Label BLAST hits");
-    auto *fs = nl->add_option("--fontsize", "Font size for node labels")
-               ->default_str(getRangeAndDefault(1, 100, g_settings->labelFont.pointSize()).toStdString());
+    // Value here is dummy just to provide defaults and range
+    static IntSetting fontSize(g_settings->labelFont.pointSize(), 1, 100);
+    auto *fs = add_setting(*nl, "--fontsize", fontSize, "Font size for node labels");
     nl->callback([fs](){
         if (fs->count()) {
             QFont font = g_settings->labelFont;
@@ -304,18 +302,12 @@ static CLI::App *addNodeColorsSettings(CLI::App &app) {
 
 static CLI::App *addRandomColorsSettings(CLI::App &app) {
     auto *rc = app.add_option_group("Random color scheme", "These settings only apply when the random colour scheme is used.");
-    rc->add_option("--ransatpos", g_settings->randomColourPositiveSaturation, "Positive node saturation")
-            ->default_str(getRangeAndDefault(g_settings->randomColourPositiveSaturation).toStdString());
-    rc->add_option("--ransatneg", g_settings->randomColourNegativeSaturation, "Negative node saturation")
-            ->default_str( getRangeAndDefault(g_settings->randomColourNegativeSaturation).toStdString());
-    rc->add_option("--ranligpos", g_settings->randomColourPositiveLightness, "Positive node lightness")
-            ->default_str( getRangeAndDefault(g_settings->randomColourPositiveLightness).toStdString());
-    rc->add_option("--ranligneg", g_settings->randomColourNegativeLightness, "Negative node lightness")
-            ->default_str(getRangeAndDefault(g_settings->randomColourNegativeLightness).toStdString());
-    rc->add_option("--ranopapos", g_settings->randomColourPositiveOpacity, "Positive node opacity")
-            ->default_str(getRangeAndDefault(g_settings->randomColourPositiveOpacity).toStdString());
-    rc->add_option("--ranopaneg", g_settings->randomColourNegativeOpacity, "Negative node opacity")
-            ->default_str(getRangeAndDefault(g_settings->randomColourNegativeOpacity).toStdString());
+    add_setting(*rc, "--ransatpos", g_settings->randomColourPositiveSaturation, "Positive node saturation");
+    add_setting(*rc, "--ransatneg", g_settings->randomColourNegativeSaturation, "Negative node saturation");
+    add_setting(*rc, "--ranligpos", g_settings->randomColourPositiveLightness, "Positive node lightness");
+    add_setting(*rc, "--ranligneg", g_settings->randomColourNegativeLightness, "Negative node lightness");
+    add_setting(*rc, "--ranopapos", g_settings->randomColourPositiveOpacity, "Positive node opacity");
+    add_setting(*rc, "--ranopaneg", g_settings->randomColourNegativeOpacity, "Negative node opacity");
 
     return rc;
 }
@@ -336,10 +328,10 @@ static CLI::App *addDepthColorsSettings(CLI::App &app) {
     auto *dc = app.add_option_group("Depth / GC color scheme", "These settings only apply when the depth / GC colour scheme is used.");
 
     //dc->add_option("--colormap <mapname>  Color map to use "->default_str(getDefaultColorMap(g_settings->colorMap);
-    dc->add_option("--depvallow", g_settings->lowDepthValue, "Low depth value ")
-            ->default_str(getRangeAndDefault(g_settings->lowDepthValue, "auto").toStdString());
-    dc->add_option("--depvalhi", g_settings->highDepthValue, "High depth value ")
-            ->default_str(getRangeAndDefault(g_settings->highDepthValue, "auto").toStdString());
+    add_setting(*dc, "--depvallow", g_settings->lowDepthValue, "Low depth value")
+            ->default_str("auto");
+    add_setting(*dc, "--depvalhi", g_settings->highDepthValue, "High depth value")
+            ->default_str("auto");
     dc->callback([dc]() {
         if (dc->count("--depvallow") || dc->count("--depvalhi"))
             g_settings->autoDepthValue = false;
@@ -358,21 +350,16 @@ static CLI::App *addBlastSearchSettings(CLI::App &app) {
                    "Parameters to be used by blastn and tblastn when conducting a BLAST search in Bandage-NG.\n"
                    "Format BLAST parameters exactly as they would be used for blastn/tblastn on the command line, and enclose them in quotes.");
 
-    bs->add_option("--alfilter", g_settings->blastAlignmentLengthFilter,
-                   "Alignment length filter for BLAST hits. Hits with shorter alignments will be excluded ")
-            ->default_str(getRangeAndDefault(g_settings->blastAlignmentLengthFilter).toStdString());
-    bs->add_option("--qcfilter", g_settings->blastQueryCoverageFilter,
-                   "Query coverage filter for BLAST hits. Hits with less coverage will be excluded ")
-            ->default_str(getRangeAndDefault(g_settings->blastQueryCoverageFilter).toStdString());
-    bs->add_option("--ifilter", g_settings->blastIdentityFilter,
-                   "Identity filter for BLAST hits. Hits with less identity will be excluded ")
-            ->default_str(getRangeAndDefault(g_settings->blastIdentityFilter).toStdString());
-    bs->add_option("--evfilter", g_settings->blastEValueFilter,
-                   "E-value filter for BLAST hits. Hits with larger e-values will be excluded ")
-            ->default_str(getRangeAndDefault(g_settings->blastEValueFilter).toStdString());
-    bs->add_option("--bsfilter", g_settings->blastBitScoreFilter,
-                   "Bit score filter for BLAST hits. Hits with lower bit scores will be excluded ")
-            ->default_str(getRangeAndDefault(g_settings->blastBitScoreFilter).toStdString());
+    add_setting(*bs, "--alfilter", g_settings->blastAlignmentLengthFilter,
+                "Alignment length filter for BLAST hits. Hits with shorter alignments will be excluded");
+    add_setting(*bs, "--qcfilter", g_settings->blastQueryCoverageFilter,
+                "Query coverage filter for BLAST hits. Hits with less coverage will be excluded");
+    add_setting(*bs, "--ifilter", g_settings->blastIdentityFilter,
+                "Identity filter for BLAST hits. Hits with less identity will be excluded");
+    add_setting(*bs, "--evfilter", g_settings->blastEValueFilter,
+                "E-value filter for BLAST hits. Hits with larger e-values will be excluded");
+    add_setting(*bs, "--bsfilter", g_settings->blastBitScoreFilter,
+                "Bit score filter for BLAST hits. Hits with lower bit scores will be excluded");
 
     return bs;
 }
@@ -381,33 +368,24 @@ static CLI::App *addQueryPathsSettings(CLI::App &app) {
     auto *bqp = app.add_option_group("BLAST query paths",
                                      "These settings control how Bandage-NG searches for query paths after conducting a BLAST search");
 
-    bqp->add_option("--pathnodes", g_settings->maxQueryPathNodes,
-                    "The number of allowed nodes in a BLAST query path ")
-            ->default_str(getRangeAndDefault(g_settings->maxQueryPathNodes).toStdString());
-    bqp->add_option("--minpatcov", g_settings->minQueryCoveredByPath,
-                    "Minimum fraction of a BLAST query which must be covered by a query path ")
-            ->default_str(getRangeAndDefault(g_settings->minQueryCoveredByPath).toStdString());
-    bqp->add_option("--minhitcov", g_settings->minQueryCoveredByHits,
-                    "Minimum fraction of a BLAST query which must be covered by BLAST hits in a query path ")
-            ->default_str(getRangeAndDefault(g_settings->minQueryCoveredByHits).toStdString());
-    bqp->add_option("--minmeanid", g_settings->minMeanHitIdentity,
-                    "Minimum mean identity of BLAST hits in a query path ")
-            ->default_str(getRangeAndDefault(g_settings->minMeanHitIdentity).toStdString());
-    bqp->add_option("--maxevprod", g_settings->maxEValueProduct,
-                    "Maximum e-value product for all BLAST hits in a query path ")
-            ->default_str(getRangeAndDefault(g_settings->maxEValueProduct).toStdString());
-    bqp->add_option("--minpatlen", g_settings->minLengthPercentage,
-                    "Minimum allowed relative path length as compared to the query ")
-            ->default_str(getRangeAndDefault(g_settings->minLengthPercentage).toStdString());
-    bqp->add_option("--maxpatlen", g_settings->maxLengthPercentage,
-                    "Maximum allowed relative path length as compared to the query ")
-            ->default_str(getRangeAndDefault(g_settings->maxLengthPercentage).toStdString());
-    bqp->add_option("--minlendis", g_settings->minLengthBaseDiscrepancy,
-                    "Minimum allowed length discrepancy (in bases) between a BLAST query and its path in the graph ")
-            ->default_str(getRangeAndDefault(g_settings->minLengthBaseDiscrepancy).toStdString());
-    bqp->add_option("--maxlendis", g_settings->maxLengthBaseDiscrepancy,
-                    "Maximum allowed length discrepancy (in bases) between a BLAST query and its path in the graph ")
-            ->default_str(getRangeAndDefault(g_settings->maxLengthBaseDiscrepancy).toStdString());
+    add_setting(*bqp, "--pathnodes", g_settings->maxQueryPathNodes,
+                "The number of allowed nodes in a BLAST query path");
+    add_setting(*bqp, "--minpatcov", g_settings->minQueryCoveredByPath,
+                "Minimum fraction of a BLAST query which must be covered by a query path");
+    add_setting(*bqp, "--minhitcov", g_settings->minQueryCoveredByHits,
+                "Minimum fraction of a BLAST query which must be covered by BLAST hits in a query path");
+    add_setting(*bqp, "--minmeanid", g_settings->minMeanHitIdentity,
+                "Minimum mean identity of BLAST hits in a query path");
+    add_setting(*bqp, "--maxevprod", g_settings->maxEValueProduct,
+                "Maximum e-value product for all BLAST hits in a query path");
+    add_setting(*bqp, "--minpatlen", g_settings->minLengthPercentage,
+                "Minimum allowed relative path length as compared to the query");
+    add_setting(*bqp, "--maxpatlen", g_settings->maxLengthPercentage,
+                "Maximum allowed relative path length as compared to the query");
+    add_setting(*bqp, "--minlendis", g_settings->minLengthBaseDiscrepancy,
+                "Minimum allowed length discrepancy (in bases) between a BLAST query and its path in the graph");
+    add_setting(*bqp, "--maxlendis", g_settings->maxLengthBaseDiscrepancy,
+                "Maximum allowed length discrepancy (in bases) between a BLAST query and its path in the graph");
 
     return bqp;
 }

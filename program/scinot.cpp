@@ -183,3 +183,9 @@ void SciNot::power(double p) {
     m_exponent = wholePart;
     normalise();
 }
+
+std::ostream& operator<<(std::ostream &os, SciNot e) {
+    os << e.asString(false).toStdString();
+
+    return os;
+}
