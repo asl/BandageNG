@@ -17,6 +17,7 @@
 
 #include "load.h"
 #include "commoncommandlinefunctions.h"
+#include "program/settings.h"
 #include "ui/mainwindow.h"
 #include <QApplication>
 

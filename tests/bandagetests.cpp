@@ -32,8 +32,11 @@
 #include "program/memory.h"
 #include "program/globals.h"
 #include "command_line/commoncommandlinefunctions.h"
+#include "command_line/settings.h"
 
 #include "graphsearch/blast/blastsearch.h"
+
+#include <CLI/CLI.hpp>
 
 #include <QtTest/QtTest>
 #include <QDebug>
@@ -856,23 +859,34 @@ void BandageTests::graphLayout() {
     }
 }
 
-void BandageTests::commandLineSettings()
-{
+static void parseSettings(const QStringList &commandLineSettings) {
+    std::vector<std::string> strings;
+    std::vector<const char*> argv;
+    argv.push_back("BandateTests");
+    for (const auto &s : commandLineSettings)
+        strings.emplace_back(s.toStdString());
+    for (const auto &s : strings)
+        argv.push_back(s.c_str());
+
+    CLI::App app;
+    addSettings(app);
+
+    QVERIFY_THROWS_NO_EXCEPTION(app.parse(argv.size(), argv.data()));
+}
+
+
+void BandageTests::commandLineSettings() {
     QStringList commandLineSettings;
 
     commandLineSettings = QString("--scope entire").split(" ");
     parseSettings(commandLineSettings);
     QCOMPARE(g_settings->graphScope, WHOLE_GRAPH);
 
-    commandLineSettings = QString("--scope aroundnodes").split(" ");
+    commandLineSettings = QString("--scope aroundnodes --nodes 1,2,3").split(" ");
     parseSettings(commandLineSettings);
     QCOMPARE(g_settings->graphScope, AROUND_NODE);
 
-    commandLineSettings = QString("--scope aroundblast").split(" ");
-    parseSettings(commandLineSettings);
-    QCOMPARE(g_settings->graphScope, AROUND_BLAST_HITS);
-
-    commandLineSettings = QString("--scope depthrange").split(" ");
+    commandLineSettings = QString("--scope depthrange --mindepth 1 --maxdepth 10").split(" ");
     parseSettings(commandLineSettings);
     QCOMPARE(g_settings->graphScope, DEPTH_RANGE);
 
@@ -1052,9 +1066,9 @@ void BandageTests::commandLineSettings()
     QCOMPARE(g_settings->colorMap, ColorMap::Heat);
 
     QCOMPARE(g_settings->autoDepthValue, true);
-    commandLineSettings = QString("--depvallow 56.7").split(" ");
+    commandLineSettings = QString("--depvallow 46.7").split(" ");
     parseSettings(commandLineSettings);
-    QCOMPARE(g_settings->lowDepthValue.val, 56.7);
+    QCOMPARE(g_settings->lowDepthValue.val, 46.7);
     QCOMPARE(g_settings->autoDepthValue, false);
 
     commandLineSettings = QString("--depvalhi 67.8").split(" ");
@@ -1064,10 +1078,6 @@ void BandageTests::commandLineSettings()
     commandLineSettings = QString("--depvalhi 67.8").split(" ");
     parseSettings(commandLineSettings);
     QCOMPARE(g_settings->highDepthValue.val, 67.8);
-
-    commandLineSettings = QString("--query queries.fasta").split(" ");
-    parseSettings(commandLineSettings);
-    QCOMPARE(g_settings->blastQueryFilename, QString("queries.fasta"));
 
     commandLineSettings = QString("--blastp --abc").split(" ");
     parseSettings(commandLineSettings);

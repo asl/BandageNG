@@ -16,8 +16,10 @@
 // along with Bandage.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "info.h"
+
 #include "commoncommandlinefunctions.h"
 #include "graph/assemblygraph.h"
+#include "program/settings.h"
 
 #include <CLI/CLI.hpp>
 

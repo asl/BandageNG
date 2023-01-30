@@ -24,6 +24,7 @@
 #include "graphsearch/blast/blastsearch.h"
 
 #include "program/globals.h"
+#include "program/settings.h"
 
 #include <CLI/CLI.hpp>
 #include <vector>

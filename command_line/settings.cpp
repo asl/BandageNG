@@ -16,10 +16,12 @@
 // along with Bandage.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "settings.h"
+#include "CLI/Error.hpp"
 #include "commoncommandlinefunctions.h"
 
 #include "graph/graphscope.h"
 #include "graph/nodecolorer.h"
+#include "program/colormap.h"
 #include "program/globals.h"
 #include "program/settings.h"
 
@@ -164,8 +166,12 @@ bool lexical_cast(const std::string &input, SciNotSetting &val) {
     if (input == "off")
         val.on = false;
     else {
+        if (!SciNot::isValidSciNotString(input.c_str()))
+            return false;
+
         val.on = true;
-        return CLI::detail::lexical_cast(input, val.val);
+        val.val = SciNot(input.c_str());
+        return true;
     }
 
     return true;
@@ -206,8 +212,39 @@ static CLI::App *addGraphScopeSettings(CLI::App &app) {
     add_setting(*scope, "--distance", g_settings->nodeDistance, "The number of node steps away to draw for the aroundnodes and aroundblast scopes");
     add_setting(*scope, "--mindepth", g_settings->minDepthRange, "The minimum allowed depth for the depthrange scope");
     add_setting(*scope, "--maxdepth", g_settings->maxDepthRange, "The maximum allowed depth for the depthrange scope");
+    scope->add_option("--query", g_settings->blastQueryFilename, "A FASTA file of either nucleotide or protein sequences to be used as BLAST queries")
+            ->check(CLI::ExistingFile);
     scope->add_option("--nodes", g_settings->startingNodes, "A comma-separated list of starting nodes for the aroundnodes scope (default: none)")
             ->capture_default_str();
+
+    scope->callback([scope]() {
+        switch (g_settings->graphScope) {
+            default:
+                break;
+            case AROUND_NODE:
+                if (g_settings->startingNodes.isEmpty())
+                    throw CLI::ValidationError("Bandage-NG error",
+                                               "A list of starting nodes must be given with the --nodes option\nwhen the aroundnodes scope is used.");
+                break;
+            case AROUND_BLAST_HITS:
+                if (g_settings->blastQueryFilename.isEmpty())
+                    throw CLI::ValidationError("Bandage-NG error",
+                                               "A BLAST query must be given with the --query option when the\naroundblast scope is used.");
+                break;
+            case DEPTH_RANGE:
+                if (!scope->count("--mindepth") || !scope->count("--maxdepth"))
+                    throw CLI::ValidationError("Bandage-NG error",
+                                               "A depth range must be given with the --mindepth and\n--maxdepth options when the depthrange scope is used.");
+                break;
+        }
+
+        // Make sure that the min depth is less than or equal to the max read
+        // depth.
+        if (g_settings->minDepthRange > g_settings->maxDepthRange)
+             throw CLI::ValidationError("Bandage-NG error",
+                                        "the maximum depth (--maxdepth=" + std::to_string(g_settings->maxDepthRange) + ") "
+                                        "must be greater than or equal to the minimum depth (--mindepth=" + std::to_string(g_settings->minDepthRange) + ").");
+    });
 
     return scope;
 }
@@ -218,7 +255,7 @@ static CLI::App *addGraphSizeSettings(CLI::App &app) {
             ->default_str("auto");
     add_setting(*size, "--minnodlen", g_settings->minimumNodeLength, "Minimum node length");
     add_setting(*size, "--edgelen", g_settings->edgeLength, "Edge length");
-    add_setting(*size, "--edgewidth", g_settings->edgeLength, "Edge width");
+    add_setting(*size, "--edgewidth", g_settings->edgeWidth, "Edge width");
     add_setting(*size, "--doubsep", g_settings->doubleModeNodeSeparation, "Double mode node separation");
     size->callback([size]() {
         if (size->count("--nodelen"))
@@ -252,7 +289,7 @@ static CLI::App *addGraphAppearanceSettings(CLI::App &app) {
             ->default_str(getDefaultColour(g_settings->selectionColour).toStdString());
     ga->add_flag("--aa,!--noaa", g_settings->antialiasing, "Enable / disable antialiasing")
             ->capture_default_str();
-    ga->add_flag("--single,!--double", g_settings->doubleMode, "Draw graph in single / double mode")
+    ga->add_flag("--double,!--single", g_settings->doubleMode, "Draw graph in single / double mode")
             ->capture_default_str();
     ga->add_flag("--singlearr", g_settings->arrowheadsInSingleMode, "Show node arrowheads in single mode")
             ->capture_default_str();
@@ -269,6 +306,9 @@ static CLI::App *addTextAppearanceSettings(CLI::App &app) {
     add_setting(*ta, "--toutline", g_settings->textOutlineThickness, "Surround text with an outline with this thickness");
     ta->add_flag("--centre", g_settings->positionTextNodeCentre, "Node labels appear at the centre of the node")
             ->capture_default_str();
+    ta->callback([ta]() {
+        g_settings->textOutline = (g_settings->textOutlineThickness == 0.0);
+    });
 
     return ta;
 }
@@ -365,7 +405,24 @@ static CLI::App *addUniformColorsSettings(CLI::App &app) {
 static CLI::App *addDepthColorsSettings(CLI::App &app) {
     auto *dc = app.add_option_group("Depth / GC color scheme", "These settings only apply when the depth / GC colour scheme is used.");
 
-    //dc->add_option("--colormap <mapname>  Color map to use "->default_str(getDefaultColorMap(g_settings->colorMap);
+    dc->add_option("--colormap", g_settings->colorMap, "Color map to use")
+            ->transform(CLI::CheckedTransformer(
+                std::vector<std::pair<std::string, ColorMap>>{
+                    {"viridis", Viridis},
+                    {"parula",  Parula},
+                    {"heat",    Heat},
+                    {"jet",     Jet},
+                    {"turbo",   Turbo},
+                    {"hot",     Hot},
+                    {"gray",    Gray},
+                    {"magma",   Magma},
+                    {"inferno", Inferno},
+                    {"plasma",  Plasma},
+                    {"cividis", Cividis},
+                    {"github",  Github},
+                    {"cubehelix", Cubehelix}
+                }))
+            ->default_str("viridis");
     add_setting(*dc, "--depvallow", g_settings->lowDepthValue, "Low depth value")
             ->default_str("auto");
     add_setting(*dc, "--depvalhi", g_settings->highDepthValue, "High depth value")
@@ -373,6 +430,11 @@ static CLI::App *addDepthColorsSettings(CLI::App &app) {
     dc->callback([dc]() {
         if (dc->count("--depvallow") || dc->count("--depvalhi"))
             g_settings->autoDepthValue = false;
+
+        if (g_settings->lowDepthValue > g_settings->highDepthValue)
+            throw CLI::ValidationError("Bandage-NG error",
+                                       "the maximum depth (--depvalhi=" + std::to_string(g_settings->highDepthValue) + ") "
+                                       "must be greater than or equal to the minimum depth (--depvalhi=" + std::to_string(g_settings->lowDepthValue) + ").");
     });
 
     return dc;
@@ -380,10 +442,6 @@ static CLI::App *addDepthColorsSettings(CLI::App &app) {
 
 static CLI::App *addBlastSearchSettings(CLI::App &app) {
     auto *bs = app.add_option_group("BLAST search");
-
-    bs->add_option("--query", g_settings->blastQueryFilename, "A FASTA file of either nucleotide or protein sequences to be used as BLAST queries")
-            ->check(CLI::ExistingFile);
-
     bs->add_option("--blastp", g_settings->blastSearchParameters,
                    "Parameters to be used by blastn and tblastn when conducting a BLAST search in Bandage-NG.\n"
                    "Format BLAST parameters exactly as they would be used for blastn/tblastn on the command line, and enclose them in quotes.");
@@ -421,9 +479,33 @@ static CLI::App *addQueryPathsSettings(CLI::App &app) {
     add_setting(*bqp, "--maxpatlen", g_settings->maxLengthPercentage,
                 "Maximum allowed relative path length as compared to the query", /* allow off */ true);
     add_setting(*bqp, "--minlendis", g_settings->minLengthBaseDiscrepancy,
-                "Minimum allowed length discrepancy (in bases) between a BLAST query and its path in the graph");
+                "Minimum allowed length discrepancy (in bases) between a BLAST query and its path in the graph", /* allow off */ true);
     add_setting(*bqp, "--maxlendis", g_settings->maxLengthBaseDiscrepancy,
-                "Maximum allowed length discrepancy (in bases) between a BLAST query and its path in the graph");
+                "Maximum allowed length discrepancy (in bases) between a BLAST query and its path in the graph", /* allow off */ true);
+
+    bqp->callback([bqp]() {
+        // Make sure that the min path length is less than or equal to the max path
+        // length.
+        bool minLengthPercentageOn = g_settings->minLengthPercentage.on;
+        bool maxLengthPercentageOn = g_settings->maxLengthPercentage.on;
+        double minLengthPercentage = g_settings->minLengthPercentage;
+        double maxLengthPercentage = g_settings->maxLengthPercentage;
+        if (minLengthPercentageOn && maxLengthPercentageOn &&
+            minLengthPercentage > maxLengthPercentage)
+            throw CLI::ValidationError("Bandage-NG error",
+                                       "the maximum BLAST query path length percent discrepancy must be greater than or equal to the minimum length discrepancy.");
+
+        // Make sure that the min length discrepancy is less than or equal to the max
+        // length discrepancy.
+        bool minLengthBaseDiscrepancyOn = g_settings->minLengthBaseDiscrepancy.on;
+        bool maxLengthBaseDiscrepancyOn = g_settings->maxLengthBaseDiscrepancy.on;
+        int minLengthBaseDiscrepancy = g_settings->minLengthBaseDiscrepancy;
+        int maxLengthBaseDiscrepancy = g_settings->maxLengthBaseDiscrepancy;
+        if (minLengthBaseDiscrepancyOn && maxLengthBaseDiscrepancyOn &&
+            minLengthBaseDiscrepancy > maxLengthBaseDiscrepancy)
+            throw CLI::ValidationError("Bandage-NG error",
+                                       "the maximum BLAST query path length base discrepancy must be greater than or equal to the minimum length discrepancy.");
+    });
 
     return bqp;
 }

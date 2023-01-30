@@ -34,6 +34,8 @@ public:
     SciNot(double coefficient, int exponent);
     SciNot(const QString& sciNotString);
     SciNot(double num);
+    SciNot(const SciNot&) = default;
+    SciNot& operator=(const SciNot&) = default;
 
     // ACCESSORS
     bool operator<(SciNot const &other) const;

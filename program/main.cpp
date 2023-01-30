@@ -17,7 +17,6 @@
 // along with Bandage.  If not, see <http://www.gnu.org/licenses/>.
 
 
-#include "CLI/Argv.hpp"
 #include "graph/assemblygraph.h"
 
 #include "program/settings.h"
@@ -181,6 +180,15 @@ int main(int argc, char *argv[]) {
         } else  if constexpr (std::is_same_v<T, QueryPathsCmd>) {
             return handleQueryPathsCmd(app.get(), cli, command);
         } else {
+            // Filter our few incompativle options
+            if (cli.count("--query")) {
+                std::cerr << "A graph must be given (e.g. via BandageNG load) to use the --query option" << std::endl;
+                return 1;
+            } else if (cli.count("--csv")) {
+                std::cerr << "A graph must be given (e.g. via BandageNG load) to use the --csv option" << std::endl;
+                return 1;
+            }
+
             MainWindow w;
             w.show();
 

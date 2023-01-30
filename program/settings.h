@@ -63,7 +63,9 @@ class SciNotSetting
 {
 public:
     SciNotSetting(SciNot v, SciNot minimum, SciNot maximum, bool isOn = true) {val = v; min = minimum; max = maximum; on = isOn;}
-    SciNotSetting() {val = 0.0; min = 0.0; max = 0.0;}
+    SciNotSetting()
+            : SciNotSetting(0.0, 0.0, 0.0) {}
+
     SciNot val, min, max;
     bool on;
     operator SciNot() const {return val;}
