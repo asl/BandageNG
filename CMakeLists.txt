@@ -85,6 +85,7 @@ set(CLI_SOURCES
     command_line/commoncommandlinefunctions.cpp
     command_line/image.cpp
     command_line/info.cpp
+    command_line/layout.cpp
     command_line/load.cpp
     command_line/querypaths.cpp
     command_line/reduce.cpp

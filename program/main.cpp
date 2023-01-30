@@ -28,6 +28,7 @@
 #include "graph/annotationsmanager.h"
 #include "ui/bandagegraphicsview.h"
 
+#include "command_line/layout.h"
 #include "command_line/load.h"
 #include "command_line/info.h"
 #include "command_line/image.h"
@@ -55,7 +56,8 @@ using SubCmd = std::variant<std::monostate,
                             ImageCmd,
                             InfoCmd,
                             ReduceCmd,
-                            QueryPathsCmd>;
+                            QueryPathsCmd,
+                            LayoutCmd>;
 
 static SubCmd parseCmdLine(CLI::App &app) {
     SubCmd subcmd;
@@ -85,9 +87,13 @@ static SubCmd parseCmdLine(CLI::App &app) {
     ReduceCmd reduceCmd;
     auto *reduce = addReduceSubcommand(app, reduceCmd);
 
-    // "BandageNG rquerypaths"
+    // "BandageNG querypaths"
     QueryPathsCmd qpCmd;
     auto *qp = addQueryPathsSubcommand(app, qpCmd);
+
+    // "BandageNG layout"
+    LayoutCmd laCmd;
+    auto *la = addLayoutSubcommand(app, laCmd);
 
     app.footer("Online Bandage help: https://github.com/asl/BandageNG/wiki");
 
@@ -108,6 +114,8 @@ static SubCmd parseCmdLine(CLI::App &app) {
     } else if (app.got_subcommand(qp)) {
         g_memory->commandLineCommand = BANDAGE_QUERY_PATHS; // FIXME: not needed
         subcmd = qpCmd;
+    } else if (app.got_subcommand(la)) {
+        subcmd = laCmd;
     }
 
     return subcmd;
@@ -179,6 +187,8 @@ int main(int argc, char *argv[]) {
             return handleReduceCmd(app.get(), cli, command);
         } else  if constexpr (std::is_same_v<T, QueryPathsCmd>) {
             return handleQueryPathsCmd(app.get(), cli, command);
+        } else  if constexpr (std::is_same_v<T, LayoutCmd>) {
+            return handleLayoutCmd(app.get(), cli, command);
         } else {
             // Filter our few incompativle options
             if (cli.count("--query")) {
