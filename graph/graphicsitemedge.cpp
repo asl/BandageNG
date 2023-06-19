@@ -87,9 +87,10 @@ static QPointF extendLine(QPointF start, QPointF end, double extensionLength) {
 
 // This function handles the special case of an edge that connects a node
 // to itself where the node graphics item has only one line segment.
-static void makeSpecialPathConnectingNodeToSelf(QPainterPath &path,
-                                                const QPointF &startLocation, const QPointF &beforeStartLocation,
-                                                const QPointF &endLocation, const QPointF &afterEndLocation) {
+static void
+makeSpecialPathConnectingNodeToSelf(QPainterPath &path,
+                                    const QPointF &startLocation, const QPointF &beforeStartLocation,
+                                    const QPointF &endLocation, const QPointF &afterEndLocation) {
     double extensionLength = g_settings->edgeLength;
     QPointF controlPoint1 = extendLine(beforeStartLocation, startLocation, extensionLength),
             controlPoint2 = extendLine(afterEndLocation, endLocation, extensionLength);
@@ -107,9 +108,10 @@ static void makeSpecialPathConnectingNodeToSelf(QPainterPath &path,
 
 // This function handles the special case of an edge that connects a node to its
 // reverse complement and is displayed in single mode.
-static void makeSpecialPathConnectingNodeToReverseComplement(QPainterPath &path,
-                                                             const QPointF &startLocation, const QPointF &beforeStartLocation,
-                                                             const QPointF &endLocation, const QPointF &afterEndLocation) {
+static void
+makeSpecialPathConnectingNodeToReverseComplement(QPainterPath &path,
+                                                 const QPointF &startLocation, const QPointF &beforeStartLocation,
+                                                 const QPointF &endLocation, const QPointF &afterEndLocation) {
     double extensionLength = g_settings->edgeLength / 2.0;
     QPointF controlPoint1 = extendLine(beforeStartLocation, startLocation, extensionLength),
             controlPoint2 = extendLine(afterEndLocation, endLocation, extensionLength);
@@ -126,12 +128,10 @@ static void makeSpecialPathConnectingNodeToReverseComplement(QPainterPath &path,
     path.cubicTo(pathMidPoint - perpendicularShift, controlPoint2, endLocation);
 }
 
-void GraphicsItemEdge::remakePath() {
-    QPointF startLocation, beforeStartLocation, endLocation, afterEndLocation;
-    getControlPointLocations(m_deBruijnEdge,
-                             startLocation, beforeStartLocation,
-                             endLocation, afterEndLocation);
-
+// Ordinary path is just a single cubic Bezier curve.
+static void makeOrdinaryPath(QPainterPath &path,
+                             const QPointF &startLocation, const QPointF &beforeStartLocation,
+                             const QPointF &endLocation, const QPointF &afterEndLocation) {
     double edgeDistance = QLineF(startLocation, endLocation).length();
 
     double extensionLength = g_settings->edgeLength;
@@ -141,14 +141,25 @@ void GraphicsItemEdge::remakePath() {
     QPointF controlPoint1 = extendLine(beforeStartLocation, startLocation, extensionLength),
             controlPoint2 = extendLine(afterEndLocation, endLocation, extensionLength);
 
+    path.moveTo(startLocation);
+    path.cubicTo(controlPoint1, controlPoint2, endLocation);
+}
+
+
+void GraphicsItemEdge::remakePath() {
+    QPointF startLocation, beforeStartLocation, endLocation, afterEndLocation;
+    getControlPointLocations(m_deBruijnEdge,
+                             startLocation, beforeStartLocation,
+                             endLocation, afterEndLocation);
+
     QPainterPath path;
 
     // If this edge is connecting a node to itself, and that node
     // is made of only one line segment, then a special path is
     // required, otherwise the edge will be mostly hidden underneath
     // the node.
-    DeBruijnNode * startingNode = m_deBruijnEdge->getStartingNode();
-    DeBruijnNode * endingNode = m_deBruijnEdge->getEndingNode();
+    DeBruijnNode *startingNode = m_deBruijnEdge->getStartingNode();
+    DeBruijnNode *endingNode = m_deBruijnEdge->getEndingNode();
     if (startingNode == endingNode) {
         GraphicsItemNode * graphicsItemNode = startingNode->getGraphicsItemNode();
         if (!graphicsItemNode)
@@ -157,6 +168,9 @@ void GraphicsItemEdge::remakePath() {
             makeSpecialPathConnectingNodeToSelf(path,
                                                 startLocation, beforeStartLocation,
                                                 endLocation, afterEndLocation);
+        else
+            makeOrdinaryPath(path, startLocation, beforeStartLocation,
+                             endLocation, afterEndLocation);
     } else if (startingNode == endingNode->getReverseComplement() &&
                !g_settings->doubleMode) {
         //If we are in single mode and the edge connects a node to its reverse
@@ -164,11 +178,9 @@ void GraphicsItemEdge::remakePath() {
         makeSpecialPathConnectingNodeToReverseComplement(path,
                                                          startLocation, beforeStartLocation,
                                                          endLocation, afterEndLocation);
-    } else {
-        // Otherwise, the path is just a single cubic Bezier curve.
-        path.moveTo(startLocation);
-        path.cubicTo(controlPoint1, controlPoint2, endLocation);
-    }
+    } else
+        makeOrdinaryPath(path, startLocation, beforeStartLocation,
+                         endLocation, afterEndLocation);
 
     setPath(path);
 }
