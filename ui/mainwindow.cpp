@@ -475,7 +475,7 @@ void MainWindow::displayGraphDetails()
 {
     ui->nodeCountLabel->setText(formatIntForDisplay(g_assemblyGraph->m_nodeCount));
     ui->edgeCountLabel->setText(formatIntForDisplay(g_assemblyGraph->m_edgeCount));
-    ui->pathCountLabel->setText(formatIntForDisplay(g_assemblyGraph->m_pathCount));
+    ui->pathCountLabel->setText(formatIntForDisplay(g_assemblyGraph->pathCount()));
     ui->totalLengthLabel->setText(formatIntForDisplay(g_assemblyGraph->m_totalLength));
 }
 

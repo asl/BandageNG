@@ -47,8 +47,7 @@
 #include <deque>
 
 AssemblyGraph::AssemblyGraph()
-        : m_kmer(0),
-          m_sequencesLoadedFromFasta(NOT_READY)
+        : m_sequencesLoadedFromFasta(NOT_READY)
 {
     clearGraphInfo();
 }
@@ -286,7 +285,6 @@ void AssemblyGraph::determineGraphInfo()
     m_edgeCount = edgeCount;
     m_totalLength = totalLength;
     m_meanDepth = getMeanDepth();
-    m_pathCount = m_deBruijnGraphPaths.size();
 
     std::sort(nodeDepths.begin(), nodeDepths.end());
 

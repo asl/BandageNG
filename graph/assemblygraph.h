@@ -96,10 +96,10 @@ public:
 
     tsl::htrie_map<char, Path*> m_deBruijnGraphPaths;
 
-    int m_kmer;
     int m_nodeCount;
     int m_edgeCount;
-    int m_pathCount;
+    unsigned pathCount() const { return m_deBruijnGraphPaths.size(); }
+    
     long long m_totalLength;
     long long m_shortestContig;
     long long m_longestContig;
