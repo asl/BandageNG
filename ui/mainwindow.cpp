@@ -441,7 +441,7 @@ void MainWindow::loadGraphPaths(QString fullFileName) {
     QString selectedFilter = "GAF paths (*.gaf)";
     if (fullFileName.isEmpty())
         fullFileName = QFileDialog::getOpenFileName(this, "Load graph paths", "",
-                                                    "GAF paths (*.gaf);;GFA paths (*.gfa);;SPAligner TSV paths (*.tsv)",
+                                                    "GAF paths (*.gaf);;GFA paths (*.gfa);;SPAligner TSV paths (*.tsv);;SPAdes paths (*.paths)",
                                                     &selectedFilter);
 
     if (fullFileName.isEmpty())
@@ -452,8 +452,10 @@ void MainWindow::loadGraphPaths(QString fullFileName) {
             io::loadGFAPaths(*g_assemblyGraph, fullFileName);
         else if (selectedFilter == "SPAligner TSV paths (*.tsv)")
             io::loadSPAlignerPaths(*g_assemblyGraph, fullFileName);
-        else
+        else if (selectedFilter == "GAF paths (*.gaf)")
             io::loadGAFPaths(*g_assemblyGraph, fullFileName);
+        else
+            io::loadSPAdesPaths(*g_assemblyGraph, fullFileName);
     } catch (std::exception &e) {
         QString errorTitle = "Error loading graph paths";
         QString errorMessage = "There was an error when attempting to load:\n"

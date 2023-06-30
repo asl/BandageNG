@@ -25,6 +25,7 @@
 
 #include <QFile>
 #include <QTextStream>
+#include <stdexcept>
 
 namespace io {
     bool loadGFAPaths(AssemblyGraph &graph,
@@ -160,6 +161,70 @@ namespace io {
                 for (size_t pathIdx = 0; pathIdx < pathParts.size(); ++pathIdx) {
                     addPath(name + "_" + std::to_string(pathIdx),
                             pathParts[pathIdx], startParts[pathIdx], endParts[pathIdx]);
+                }
+            }
+        }
+
+        return true;
+    }
+
+    bool loadSPAdesPaths(AssemblyGraph &graph,
+                         QString fileName) {
+        enum class State {
+            PathName, // e.g. NODE_1_length_348461_cov_16.477994, we verify NODE_ prefix
+            Segment,  // Ends with ";" or newline
+        };
+
+        QFile inputFile(fileName);
+        if (!inputFile.open(QIODevice::ReadOnly))
+            return false;
+
+        QTextStream in(&inputFile);
+        State state = State::PathName;
+
+        std::string pathName;
+        unsigned pathIdx;
+        while (!in.atEnd()) {
+            QByteArray line = in.readLine().toLatin1();
+            if (line.length() == 0)
+                continue;
+
+            switch (state) {
+                case State::PathName: {
+                    if (!line.startsWith("NODE_"))
+                        throw std::logic_error("invalid path name: does not start with NODE");
+                    pathName = line.toStdString(); pathIdx = 1;
+                    state = State::Segment;
+                    break;
+                }
+                case State::Segment: {
+                    if (line.endsWith(";")) {
+                        state = State::Segment;
+                        line = line.chopped(1);
+                    } else
+                        state = State::PathName;
+
+                    auto addPath = [&](const std::string &name,
+                                       const QString &path) {
+                        std::vector<DeBruijnNode *> pathNodes;
+                        for (const auto &nodeName: path.split(","))
+                            pathNodes.push_back(graph.m_deBruijnGraphNodes.at(nodeName.toStdString()));
+
+                        auto *p = new Path(Path::makeFromOrderedNodes(pathNodes, false));
+                        graph.m_deBruijnGraphPaths[name] = p;
+                    };
+
+                    // Parse but do not add reverse-complementary paths
+                    if (pathName.at(pathName.size() - 1) == '\'')
+                        continue;
+
+                    if (pathIdx == 1 && state == State::PathName)
+                        // Keep the name as-is in case of single-segment path
+                        addPath(pathName, line);
+                    else
+                        addPath(pathName + "_" + std::to_string(pathIdx++), line);
+
+                    break;
                 }
             }
         }
