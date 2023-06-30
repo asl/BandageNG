@@ -432,12 +432,12 @@ void BandageTests::graphLocationFunctions()
 
 void BandageTests::loadCsvData()
 {
-    QVERIFY(g_assemblyGraph->loadGraphFromFile(testFile("test.fastg")));
+    QVERIFY(g_assemblyGraph->loadGraphFromFile(testFile("test.gfa")));
 
     QString errormsg;
     QStringList columns;
     bool coloursLoaded = false;
-    g_assemblyGraph->loadCSV(testFile("test.csv"), &columns, &errormsg, &coloursLoaded);
+    QVERIFY(g_assemblyGraph->loadCSV(testFile("test.csv"), &columns, &errormsg, &coloursLoaded));
 
     DeBruijnNode * node6Plus = g_assemblyGraph->m_deBruijnGraphNodes["6+"];
     DeBruijnNode * node6Minus = g_assemblyGraph->m_deBruijnGraphNodes["6-"];
@@ -448,6 +448,7 @@ void BandageTests::loadCsvData()
     DeBruijnNode * node5Minus = g_assemblyGraph->m_deBruijnGraphNodes["5-"];
     DeBruijnNode * node8Plus = g_assemblyGraph->m_deBruijnGraphNodes["8+"];
     DeBruijnNode * node9Plus = g_assemblyGraph->m_deBruijnGraphNodes["9+"];
+    DeBruijnNode * node14Plus = g_assemblyGraph->m_deBruijnGraphNodes["14+"];
 
     QCOMPARE(columns.size(), 3);
     QCOMPARE(errormsg, QString("There were 2 unmatched entries in the CSV."));
@@ -492,6 +493,14 @@ void BandageTests::loadCsvData()
     QCOMPARE(g_assemblyGraph->getCsvLine(node9Plus, 3), QString(""));
     QCOMPARE(g_assemblyGraph->getCsvLine(node9Plus, 4), QString(""));
     QCOMPARE(g_assemblyGraph->getCsvLine(node9Plus, 5), QString(""));
+
+    errormsg = "";
+    QVERIFY(g_assemblyGraph->loadCSV(testFile("test_paths.csv"), &columns, &errormsg, &coloursLoaded));
+    QCOMPARE(columns.size(), 3);
+    QCOMPARE(errormsg, "");
+    QCOMPARE(g_assemblyGraph->getAllCsvData(node4Plus).join("|"), "P21|P22|P23");
+    QCOMPARE(g_assemblyGraph->getAllCsvData(node8Plus).join("|"), "P21|P22|P23");
+    QCOMPARE(g_assemblyGraph->getAllCsvData(node14Plus).join("|"), "P11|P12|P13");
 }
 
 

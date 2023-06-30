@@ -41,6 +41,7 @@
 #include <QSet>
 
 #include <algorithm>
+#include <iterator>
 #include <limits>
 #include <cmath>
 #include <utility>
@@ -360,7 +361,7 @@ bool AssemblyGraph::loadCSV(const QString &filename, QStringList *columns, QStri
     }
     headers.pop_front();
 
-    //Check to see if any of the columns holds colour data.
+    // Check to see if any of the columns holds colour data.
     int colourCol = -1;
     for (size_t i = 0; i < headers.size(); ++i) {
         QString header = headers[i].toLower();
@@ -384,14 +385,14 @@ bool AssemblyGraph::loadCSV(const QString &filename, QStringList *columns, QStri
         
         std::vector<DeBruijnNode *> nodes;
         // See if this is a path name
-        {
-            auto pathIt = m_deBruijnGraphPaths.find(nodeName.toStdString());
-            if (pathIt != m_deBruijnGraphPaths.end()) {
-                for (auto *node : (*pathIt)->nodes()) {
-                    nodes.emplace_back(node);
-                    if (!g_settings->doubleMode)
-                        nodes.emplace_back(node->getReverseComplement());
-                }
+        // Match using unique prefix of path name. This allows us to load segmented SPAdes
+        // scaffold paths (e.g. NODE_1_foo_1) and assign CSV data to all of them
+        for (auto range = m_deBruijnGraphPaths.equal_prefix_range(nodeName.toStdString());
+             range.first != range.second; ++range.first) {
+            for (auto *node : (*range.first)->nodes()) {
+                nodes.emplace_back(node);
+                if (!g_settings->doubleMode)
+                    nodes.emplace_back(node->getReverseComplement());
             }
         }
 
