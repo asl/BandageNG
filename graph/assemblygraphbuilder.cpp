@@ -534,6 +534,10 @@ namespace io {
                                    handleGapLink(record, graph);
                                } else if constexpr (std::is_same_v<T, gfa::path>) {
                                    handlePath(record, graph);
+                               } else if constexpr (std::is_same_v<T, gfa::walk>) {
+                                   record.print();
+                                   fprintf(stdout, "\n");
+
                                }
                            },
                            *result);

@@ -161,7 +161,7 @@ struct path {
     std::vector<gfa::tag> tags;
 
     explicit path(std::string_view n, std::vector<std::string_view> s, std::vector<gfa::tag> t)
-            : name{n}, segments(std::move(s)),  tags(std::move(t)) {}
+            : name{n}, segments(std::move(s)), tags(std::move(t)) {}
 
     explicit path(std::string_view n, std::vector<std::string_view> s, std::vector<cigar_string> o, std::vector<gfa::tag> t)
             : name{n}, segments(std::move(s)), overlaps(std::move(o)), tags(std::move(t)) {}
@@ -194,7 +194,55 @@ struct path {
     }
 };
 
-using record = std::variant<header, segment, link, gaplink, path>;
+struct walk {
+    using opt_uint64_t = std::optional<uint64_t>;
+
+    std::string_view SampleId;
+    unsigned HapIndex;
+    std::string_view SeqId;
+    opt_uint64_t SeqStart;
+    opt_uint64_t SeqEnd;
+    std::vector<std::string_view> Walk;
+
+    std::vector<gfa::tag> tags;
+
+    explicit walk(std::string_view s, unsigned h, std::string_view seq,
+                  opt_uint64_t ss, opt_uint64_t se, std::vector<std::string_view> w,
+                  std::vector<gfa::tag> t)
+            : SampleId(s), HapIndex(h), SeqId(seq),
+              SeqStart(std::move(ss)), SeqEnd(std::move(se)),
+              Walk(std::move(w)),
+              tags(std::move(t)) {}
+
+    void print() const {
+        std::fputc('W', stdout);
+        std::fprintf(stdout, "\t%s", std::string(SampleId).c_str());
+        std::fprintf(stdout, "\t%u", HapIndex);
+        std::fprintf(stdout, "\t%s", std::string(SeqId).c_str());
+        if (SeqStart.has_value())
+            std::fprintf(stdout, "\t%" PRIu64, *SeqStart);
+        else
+            std::fprintf(stdout, "\t*");
+        if (SeqEnd.has_value())
+            std::fprintf(stdout, "\t%" PRIu64, *SeqEnd);
+        else
+            std::fprintf(stdout, "\t*");
+        std::fputc('\t', stdout);
+        if (Walk.empty())
+            std::fputc('*', stdout);
+        else
+            for (const auto& seg : Walk)
+                std::fprintf(stdout, "%s", std::string(seg).c_str());
+
+        for (const auto &tag : tags) {
+            std::fputc('\t', stdout);
+            tag.print();
+        }
+    }
+
+};
+
+using record = std::variant<header, segment, link, gaplink, path, walk>;
 
 std::optional<gfa::record> parseRecord(const char* line, size_t len);
 } // namespace gfa

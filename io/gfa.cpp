@@ -35,7 +35,6 @@ namespace gfa {
 namespace grammar {
 namespace dsl = lexy::dsl;
 
-using cigar::grammar::tag;
 using cigar::grammar::tab;
 
 struct segment_name {
@@ -179,6 +178,60 @@ struct path {
     static constexpr auto value = lexy::construct<gfa::path>;
 };
 
+// Walk line
+// =========
+// Required fields
+// Column  Field        Type        Regexp              Description
+// 1       RecordType   Character   W                   Record type
+// 2       SampleId     String      [!-)+-<>-~][!-~]*   Sample identifier
+// 3       HapIndex     Integer     [0-9]+              Haplotype index
+// 4       SeqId        String      [!-)+-<>-~][!-~]*   Sequence identifier
+// 5       SeqStart     Integer     \*\|[0-9]+          Optional Start position
+// 6       SeqEnd       Integer     \*\|[0-9]+          Optional End position (BED-like half-close-half-open)
+// 7       Walk         String      ([><][!-;=?-~]+)+   Walk
+struct walk {
+    static constexpr auto name = "GFA walk record";
+
+    struct sample_id : public segment_name {
+        static constexpr auto name = "sample id";
+    };
+
+    struct sequence_id : public segment_name {
+        static constexpr auto name = "sequence id";
+    };
+
+
+    struct oriented_wsegment {
+        static constexpr auto rule = dsl::capture(dsl::token(LEXY_ASCII_ONE_OF("<>") + dsl::identifier(dsl::ascii::word)));
+        static constexpr auto value = lexy::as_string<std::string_view>;
+    };
+
+    struct wsegments {
+        static constexpr auto rule = dsl::list(dsl::p<oriented_segment>);
+        static constexpr auto value = lexy::as_list<std::vector<std::string_view>>;
+    };
+
+    struct opt_uint64_t {
+        static constexpr auto rule = LEXY_LIT("*") | dsl::integer<std::uint64_t>;
+        static constexpr auto value =
+                lexy::callback<gfa::walk::opt_uint64_t>(
+                    [](uint64_t val) { return val; },
+                    []() { return std::optional<std::uint64_t>(); });
+    };
+
+    static constexpr auto rule =
+            LEXY_LIT("W") >>
+            tab + dsl::p<sample_id> + // SampleId
+            tab + dsl::integer<unsigned> + // HapIndex
+            tab + dsl::p<sequence_id> + // SeqId
+            tab + dsl::p<opt_uint64_t> + // SeqStart
+            tab + dsl::p<opt_uint64_t> + // SeqEnd
+            tab + dsl::p<wsegments> + // Walk
+            dsl::p<opt_tags>;
+    static constexpr auto value = lexy::construct<gfa::walk>;
+};
+
+
 struct record {
     static constexpr auto name = "GFA record";
 
@@ -194,8 +247,9 @@ struct record {
         return dsl::p<header> |
                dsl::p<segment> |
                dsl::p<link> |
-               dsl::p<gaplink> |                
+               dsl::p<gaplink> |
                dsl::p<path> |
+               dsl::p<walk> |
                comment |
                // Explicitly ignore all other records (though require proper tab-delimited format)
                dsl::ascii::alpha >> tab + dsl::until(dsl::newline).or_eof() |
