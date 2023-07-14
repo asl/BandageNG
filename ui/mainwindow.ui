@@ -141,6 +141,23 @@
                </widget>
               </item>
               <item row="3" column="0">
+               <widget class="QLabel" name="label_6w">
+                <property name="text">
+                 <string>Walks:</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="1">
+               <widget class="QLabel" name="walkCountLabel">
+                <property name="text">
+                 <string>0</string>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="0">
                <widget class="QLabel" name="label_8">
                 <property name="text">
                  <string>Total length:</string>
@@ -150,7 +167,7 @@
                 </property>
                </widget>
               </item>
-              <item row="3" column="1">
+              <item row="4" column="1">
                <widget class="QLabel" name="totalLengthLabel">
                 <property name="text">
                  <string>0</string>
@@ -1024,8 +1041,8 @@ When in double mode, you can include '+' or '-' at the end of the node name to s
                  </size>
                 </property>
                 <property name="toolTip">
-                 <string>Select one or more nodes and then click this button. Bandage will 
-then colour which other nodes in the graph are likely to be contiguous 
+                 <string>Select one or more nodes and then click this button. Bandage will
+then colour which other nodes in the graph are likely to be contiguous
                                         with your selected node(s).</string>
                 </property>
                </widget>

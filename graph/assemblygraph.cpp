@@ -79,6 +79,7 @@ template<typename T> double getValueUsingFractionalIndex(const std::vector<T> &v
 
 void AssemblyGraph::cleanUp() {
     m_deBruijnGraphPaths.clear();
+    m_deBruijnGraphWalks.clear();
 
     {
         for (auto &entry : m_deBruijnGraphNodes) {

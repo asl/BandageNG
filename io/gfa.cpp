@@ -41,7 +41,7 @@ struct segment_name {
     static constexpr auto name = "segment name";
     static constexpr auto rule =
             dsl::identifier(dsl::ascii::graph - LEXY_LIT("=") - LEXY_LIT("*") - LEXY_LIT(",") - LEXY_LIT(";"),
-                            dsl::ascii::graph - LEXY_LIT(",") - LEXY_LIT(";"));
+                            dsl::ascii::graph - LEXY_LIT(",") - LEXY_LIT(";") - LEXY_LIT("<") - LEXY_LIT(">"));
     static constexpr auto value = lexy::as_string<std::string_view>;
 };
 
@@ -63,7 +63,7 @@ struct oriented_segment {
     // static constexpr auto rule = dsl::capture(dsl::token(dsl::p<segment_name> + dsl::p<segment_orientation>));
     static constexpr auto rule =
             dsl::identifier(dsl::ascii::graph - LEXY_LIT("=") - LEXY_LIT("*") - LEXY_LIT(",") - LEXY_LIT(";"),
-                            dsl::ascii::graph - LEXY_LIT(",") - LEXY_LIT(";"));
+                            dsl::ascii::graph - LEXY_LIT(",") - LEXY_LIT(";") - LEXY_LIT("<") - LEXY_LIT(">"));
     static constexpr auto value = lexy::as_string<std::string_view>;
 };
 
@@ -202,7 +202,7 @@ struct walk {
 
 
     struct oriented_wsegment {
-        static constexpr auto rule = dsl::capture(dsl::token(LEXY_ASCII_ONE_OF("<>") + dsl::identifier(dsl::ascii::word)));
+        static constexpr auto rule = dsl::capture(dsl::token(LEXY_ASCII_ONE_OF("<>") + dsl::p<segment_name>));
         static constexpr auto value = lexy::as_string<std::string_view>;
     };
 

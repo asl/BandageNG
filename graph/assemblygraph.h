@@ -58,7 +58,7 @@ class AssemblyGraph : public QObject
     Q_OBJECT
 
     friend class AssemblyGraphBuilder;
-    
+
 public:
     AssemblyGraph();
     ~AssemblyGraph() override;
@@ -94,12 +94,22 @@ public:
     phmap::parallel_flat_hash_map<const DeBruijnNode*, std::vector<gfa::tag>> m_nodeTags;
     phmap::parallel_flat_hash_map<const DeBruijnEdge*, std::vector<gfa::tag>> m_edgeTags;
 
+    // Paths
     tsl::htrie_map<char, Path> m_deBruijnGraphPaths;
+
+    // Walks
+    struct Walk {
+        std::string sampleId;
+        unsigned hapIndex;
+        Path walk;
+    };
+    tsl::htrie_map<char, Walk> m_deBruijnGraphWalks;
 
     int m_nodeCount;
     int m_edgeCount;
     unsigned pathCount() const { return m_deBruijnGraphPaths.size(); }
-    
+    unsigned walkCount() const { return m_deBruijnGraphWalks.size(); }
+
     long long m_totalLength;
     long long m_shortestContig;
     long long m_longestContig;

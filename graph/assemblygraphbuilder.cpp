@@ -498,6 +498,34 @@ namespace io {
             graph.m_deBruijnGraphPaths.emplace(record.name, Path(Path::makeFromOrderedNodes(pathNodes, false)));
         }
 
+        void handleWalk(const gfa::walk &record,
+                        AssemblyGraph &graph) {
+            std::vector<DeBruijnNode *> walkNodes;
+            walkNodes.reserve(record.Walk.size());
+
+            for (const auto &node: record.Walk) {
+                char orientation = node.front();
+                std::string nodeName;
+                nodeName.reserve(node.size());
+                nodeName = node.substr(1);
+                if (orientation == '>')
+                    nodeName.push_back('+');
+                else if (orientation == '<')
+                    nodeName.push_back('-');
+                else
+                    throw AssemblyGraphError(std::string("invalid path string: ").append(node));
+
+                walkNodes.push_back(graph.m_deBruijnGraphNodes.at(nodeName));
+            }
+
+            Path p(Path::makeFromOrderedNodes(walkNodes, false));
+
+            // Start / end positions on path are zero-based, graph location is 1-based. So we'd just trim
+            // the corresponding amounts
+            //p.trim(path->pstart, path->plen - path->pend - 1);
+            graph.m_deBruijnGraphWalks.emplace(record.SeqId,
+                                               AssemblyGraph::Walk{std::string(record.SampleId), record.HapIndex, std::move(p)});
+        }
 
     public:
         using AssemblyGraphBuilder::AssemblyGraphBuilder;
@@ -535,9 +563,7 @@ namespace io {
                                } else if constexpr (std::is_same_v<T, gfa::path>) {
                                    handlePath(record, graph);
                                } else if constexpr (std::is_same_v<T, gfa::walk>) {
-                                   record.print();
-                                   fprintf(stdout, "\n");
-
+                                   handleWalk(record, graph);
                                }
                            },
                            *result);
