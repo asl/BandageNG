@@ -133,14 +133,14 @@ namespace gfa {
         return gfaLinkLine;
     }
 
-    static QByteArray getGfaPathLine(const std::string &name, const Path *path,
+    static QByteArray getGfaPathLine(const std::string &name, const Path &path,
                                      const AssemblyGraph &graph) {
         QByteArray gfaPathLine = "P\t";
         gfaPathLine += name;
         gfaPathLine += '\t';
 
-        const auto &nodes = path->nodes();
-        const auto &edges = path->edges();
+        const auto &nodes = path.nodes();
+        const auto &edges = path.edges();
 
         // edges is one less than nodes for linear paths and of
         // same length for circular paths

@@ -94,7 +94,7 @@ public:
     phmap::parallel_flat_hash_map<const DeBruijnNode*, std::vector<gfa::tag>> m_nodeTags;
     phmap::parallel_flat_hash_map<const DeBruijnEdge*, std::vector<gfa::tag>> m_edgeTags;
 
-    tsl::htrie_map<char, Path*> m_deBruijnGraphPaths;
+    tsl::htrie_map<char, Path> m_deBruijnGraphPaths;
 
     int m_nodeCount;
     int m_edgeCount;

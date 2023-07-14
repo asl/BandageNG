@@ -60,7 +60,7 @@ namespace graph {
                     return {};
                 }
 
-                return (*pathIt)->nodes();
+                return pathIt->nodes();
             }
             case AROUND_BLAST_HITS: {
                 std::vector<DeBruijnNode *> startingNodes;

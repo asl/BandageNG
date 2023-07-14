@@ -50,8 +50,8 @@ namespace io {
 
                 for (const auto &node: path->segments)
                     pathNodes.push_back(graph.m_deBruijnGraphNodes.at(node));
-                graph.m_deBruijnGraphPaths[path->name] = new Path(
-                        Path::makeFromOrderedNodes(pathNodes, false));
+                graph.m_deBruijnGraphPaths.emplace(path->name,
+                                                   Path::makeFromOrderedNodes(pathNodes, false));
             }
         }
 
@@ -94,11 +94,11 @@ namespace io {
                 pathNodes.push_back(graph.m_deBruijnGraphNodes.at(nodeName));
             }
 
-            Path *p = new Path(Path::makeFromOrderedNodes(pathNodes, false));
+            Path p(Path::makeFromOrderedNodes(pathNodes, false));
             // Start / end positions on path are zero-based, graph location is 1-based. So we'd just trim
             // the corresponding amounts
-            p->trim(path->pstart, path->plen - path->pend - 1);
-            graph.m_deBruijnGraphPaths[path->name] = p;
+            p.trim(path->pstart, path->plen - path->pend - 1);
+            graph.m_deBruijnGraphPaths.emplace(path->name, std::move(p));
         }
 
         return true;
@@ -143,14 +143,14 @@ namespace io {
                 for (const auto &nodeName: pathPart.split(","))
                     pathNodes.push_back(graph.m_deBruijnGraphNodes.at(nodeName.toStdString()));
 
-                auto *p = new Path(Path::makeFromOrderedNodes(pathNodes, false));
+                Path p(Path::makeFromOrderedNodes(pathNodes, false));
                 int sPos = start.toInt(); // if conversion fails, we'd end with zero, we're ok with it.
                 bool ok = false;
                 int ePos = end.toInt(&ok); // if conversion fails, we'd need end of the node, not zero here.
                 if (!ok)
                     ePos = pathNodes.back()->getLength() - 1;
-                p->trim(sPos, pathNodes.back()->getLength() - ePos - 1);
-                graph.m_deBruijnGraphPaths[name] = p;
+                p.trim(sPos, pathNodes.back()->getLength() - ePos - 1);
+                graph.m_deBruijnGraphPaths.emplace(name, std::move(p));
             };
             if (pathParts.size() == 1) {
                 // Keep the name as-is
@@ -210,8 +210,8 @@ namespace io {
                         for (const auto &nodeName: path.split(","))
                             pathNodes.push_back(graph.m_deBruijnGraphNodes.at(nodeName.toStdString()));
 
-                        auto *p = new Path(Path::makeFromOrderedNodes(pathNodes, false));
-                        graph.m_deBruijnGraphPaths[name] = p;
+                        graph.m_deBruijnGraphPaths.emplace(name,
+                                                           Path::makeFromOrderedNodes(pathNodes, false));
                     };
 
                     // Parse but do not add reverse-complementary paths

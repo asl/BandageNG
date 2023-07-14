@@ -82,7 +82,7 @@ QString BlastSearch::buildDatabase(const AssemblyGraph &graph, bool includePaths
                 if (m_cancelBuildDatabase)
                     return (m_lastError = "Build cancelled.");
 
-                out << it.value()->getFasta(it.key().c_str());
+                out << it.value().getFasta(it.key().c_str());
             }
         }
     }
@@ -400,7 +400,7 @@ buildHitsFromBlastOutput(QString blastOutput,
 
         auto pathIt = g_assemblyGraph->m_deBruijnGraphPaths.find(nodeLabel.toStdString());
         if (pathIt != g_assemblyGraph->m_deBruijnGraphPaths.end()) {
-            pathHits.emplace_back(query, pathIt.value(),
+            pathHits.emplace_back(query, &pathIt.value(),
                                   Path::MappingRange{queryStart, queryEnd,
                                                      nodeStart, nodeEnd});
         }

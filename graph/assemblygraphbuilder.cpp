@@ -495,7 +495,7 @@ namespace io {
 
             for (const auto &node: record.segments)
                 pathNodes.push_back(graph.m_deBruijnGraphNodes.at(node));
-            graph.m_deBruijnGraphPaths[record.name] = new Path(Path::makeFromOrderedNodes(pathNodes, false));
+            graph.m_deBruijnGraphPaths.emplace(record.name, Path(Path::makeFromOrderedNodes(pathNodes, false)));
         }
 
 

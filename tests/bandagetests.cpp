@@ -227,8 +227,8 @@ void BandageTests::loadGAF()
     QCOMPARE(node14->getLength(), 42);
 
     QVERIFY(io::loadGAFPaths(*g_assemblyGraph, testFile("test.gaf")));
-    Path *p = g_assemblyGraph->m_deBruijnGraphPaths["read"];
-    QCOMPARE(p->getLength(), 71);
+    const Path &p = g_assemblyGraph->m_deBruijnGraphPaths["read"];
+    QCOMPARE(p.getLength(), 71);
 }
 
 void BandageTests::loadSPAdesPaths()
@@ -247,13 +247,13 @@ void BandageTests::loadSPAdesPaths()
     QCOMPARE(node14->getLength(), 120);
 
     QVERIFY(io::loadSPAdesPaths(*g_assemblyGraph, testFile("test.paths")));
-    Path *p1 = g_assemblyGraph->m_deBruijnGraphPaths["NODE_FIRST"];
-    QCOMPARE(p1->getLength(), 4060);
+    const Path &p1 = g_assemblyGraph->m_deBruijnGraphPaths["NODE_FIRST"];
+    QCOMPARE(p1.getLength(), 4060);
 
-    Path *p21 = g_assemblyGraph->m_deBruijnGraphPaths["NODE_SECOND_1"];
-    QCOMPARE(p21->getLength(), 4000);
-    Path *p22 = g_assemblyGraph->m_deBruijnGraphPaths["NODE_SECOND_2"];
-    QCOMPARE(p22->getLength(), 6000);
+    const Path &p21 = g_assemblyGraph->m_deBruijnGraphPaths["NODE_SECOND_1"];
+    QCOMPARE(p21.getLength(), 4000);
+    const Path &p22 = g_assemblyGraph->m_deBruijnGraphPaths["NODE_SECOND_2"];
+    QCOMPARE(p22.getLength(), 6000);
 }
 
 

@@ -1653,11 +1653,11 @@ void MainWindow::selectPathNodes()
         return;
     }
 
-    Path *p = *pathIt;
+    const Path &p = *pathIt;
 
     QString posText = ui->pathSelectionPositionLineEdit->text();
     if (posText.isEmpty()) {
-        for (auto *node : p->nodes())
+        for (auto *node : p.nodes())
             nodesToSelect.push_back(node);
     } else {
         bool ok = true;
@@ -1682,7 +1682,7 @@ void MainWindow::selectPathNodes()
             }
         }
 
-        nodesToSelect = p->getNodesAt(startPos, endPos);
+        nodesToSelect = p.getNodesAt(startPos, endPos);
     }
 
     doSelectNodes(nodesToSelect, nodesNotInGraph, ui->pathSelectionRecolorRadioButton->isChecked());

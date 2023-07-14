@@ -78,13 +78,7 @@ template<typename T> double getValueUsingFractionalIndex(const std::vector<T> &v
 }
 
 void AssemblyGraph::cleanUp() {
-    {
-        for (auto &entry : m_deBruijnGraphPaths) {
-            delete entry;
-        }
-        m_deBruijnGraphPaths.clear();
-    }
-
+    m_deBruijnGraphPaths.clear();
 
     {
         for (auto &entry : m_deBruijnGraphNodes) {
@@ -389,7 +383,7 @@ bool AssemblyGraph::loadCSV(const QString &filename, QStringList *columns, QStri
         // scaffold paths (e.g. NODE_1_foo_1) and assign CSV data to all of them
         for (auto range = m_deBruijnGraphPaths.equal_prefix_range(nodeName.toStdString());
              range.first != range.second; ++range.first) {
-            for (auto *node : (*range.first)->nodes()) {
+            for (auto *node : (*range.first).nodes()) {
                 nodes.emplace_back(node);
                 if (!g_settings->doubleMode)
                     nodes.emplace_back(node->getReverseComplement());
