@@ -15,6 +15,7 @@
 
 
 #include "mainwindow.h"
+#include "graph/graphscope.h"
 #include "ui_mainwindow.h"
 
 #include "ui/dialogs/settingsdialog.h"
@@ -381,6 +382,7 @@ void MainWindow::loadGraph(QString fullFileName) {
 
             setupPathSelectionLineEdit(ui->pathSelectionLineEdit);
             setupPathSelectionLineEdit(ui->pathSelectionLineEdit2);
+            setupWalkSelectionLineEdit(ui->walkSelectionLineEdit);
         }  catch (const AssemblyGraphError &err) {
             QString errorTitle = "Error loading graph";
             QString errorMessage = "There was an error when attempting to load\n"
@@ -659,6 +661,7 @@ void MainWindow::graphScopeChanged()
         setNodeDistanceWidgetVisibility(false);
         setDepthRangeWidgetVisibility(false);
         setPathSelectionWidgetVisibility(false);
+        setWalkSelectionWidgetVisibility(false);
 
         ui->graphDrawingGridLayout->addWidget(ui->nodeStyleInfoText, 1, 0, 1, 1);
         ui->graphDrawingGridLayout->addWidget(ui->nodeStyleLabel, 1, 1, 1, 1);
@@ -675,6 +678,7 @@ void MainWindow::graphScopeChanged()
         setNodeDistanceWidgetVisibility(true);
         setDepthRangeWidgetVisibility(false);
         setPathSelectionWidgetVisibility(false);
+        setWalkSelectionWidgetVisibility(false);
 
         ui->nodeDistanceInfoText->setToolTip("<html>Nodes will be drawn if they are specified in the above list or are "
                                               "within this many steps of those nodes.<br><br>"
@@ -706,8 +710,9 @@ void MainWindow::graphScopeChanged()
         setNodeDistanceWidgetVisibility(true);
         setDepthRangeWidgetVisibility(false);
         setPathSelectionWidgetVisibility(true);
+        setWalkSelectionWidgetVisibility(false);
 
-        ui->nodeDistanceInfoText->setToolTip("<html>Nodes will be drawn if they are specified in the above list or are "
+        ui->nodeDistanceInfoText->setToolTip("<html>Path nodes will be drawn if they are specified in the above list or are "
                                               "within this many steps of those nodes.<br><br>"
                                               "A value of 0 will result in only the specified nodes being drawn. "
                                               "A large value will result in large sections of the graph around "
@@ -728,12 +733,42 @@ void MainWindow::graphScopeChanged()
         break;
 
     case 3:
+        g_settings->graphScope = AROUND_WALKS;
+
+        setStartingNodesWidgetVisibility(false);
+        setNodeDistanceWidgetVisibility(true);
+        setDepthRangeWidgetVisibility(false);
+        setPathSelectionWidgetVisibility(false);
+        setWalkSelectionWidgetVisibility(true);
+
+        ui->nodeDistanceInfoText->setToolTip("<html>Walk nodes will be drawn if they are specified in the above list or are "
+                                              "within this many steps of those nodes.<br><br>"
+                                              "A value of 0 will result in only the specified nodes being drawn. "
+                                              "A large value will result in large sections of the graph around "
+                                              "the specified nodes being drawn.</html>");
+
+        ui->graphDrawingGridLayout->addWidget(ui->walkSelectionInfoText, 1, 0, 1, 1);
+        ui->graphDrawingGridLayout->addWidget(ui->walkSelectionLabel,    1, 1, 1, 1);
+        ui->graphDrawingGridLayout->addWidget(ui->walkSelectionLineEdit,  1, 2, 1, 1);
+        ui->graphDrawingGridLayout->addWidget(ui->nodeDistanceInfoText, 2, 0, 1, 1);
+        ui->graphDrawingGridLayout->addWidget(ui->nodeDistanceLabel, 2, 1, 1, 1);
+        ui->graphDrawingGridLayout->addWidget(ui->nodeDistanceSpinBox, 2, 2, 1, 1);
+        ui->graphDrawingGridLayout->addWidget(ui->nodeStyleInfoText, 3, 0, 1, 1);
+        ui->graphDrawingGridLayout->addWidget(ui->nodeStyleLabel, 3, 1, 1, 1);
+        ui->graphDrawingGridLayout->addWidget(ui->nodeStyleWidget, 3, 2, 1, 1);
+        ui->graphDrawingGridLayout->addWidget(ui->drawGraphInfoText, 4, 0, 1, 1);
+        ui->graphDrawingGridLayout->addWidget(ui->drawGraphButton, 4, 1, 1, 2);
+
+        break;
+
+    case 4:
         g_settings->graphScope = AROUND_BLAST_HITS;
 
         setStartingNodesWidgetVisibility(false);
         setNodeDistanceWidgetVisibility(true);
         setDepthRangeWidgetVisibility(false);
         setPathSelectionWidgetVisibility(false);
+        setWalkSelectionWidgetVisibility(false);
 
         ui->nodeDistanceInfoText->setToolTip("<html>Nodes will be drawn if they contain a BLAST hit or are within this "
                                               "many steps of nodes with a BLAST hit.<br><br>"
@@ -752,13 +787,14 @@ void MainWindow::graphScopeChanged()
 
         break;
 
-    case 4:
+    case 5:
         g_settings->graphScope = DEPTH_RANGE;
 
         setStartingNodesWidgetVisibility(false);
         setNodeDistanceWidgetVisibility(false);
         setDepthRangeWidgetVisibility(true);
         setPathSelectionWidgetVisibility(false);
+        setWalkSelectionWidgetVisibility(false);
 
         ui->graphDrawingGridLayout->addWidget(ui->minDepthInfoText, 1, 0, 1, 1);
         ui->graphDrawingGridLayout->addWidget(ui->minDepthLabel, 1, 1, 1, 1);
@@ -809,6 +845,13 @@ void MainWindow::setPathSelectionWidgetVisibility(bool visible)
     ui->pathSelectionLineEdit->setVisible(visible);
 }
 
+void MainWindow::setWalkSelectionWidgetVisibility(bool visible)
+{
+    ui->walkSelectionInfoText->setVisible(visible);
+    ui->walkSelectionLabel->setVisible(visible);
+    ui->walkSelectionLineEdit->setVisible(visible);
+}
+
 void MainWindow::setupPathSelectionLineEdit(QLineEdit *lineEdit) {
     lineEdit->clear();
 
@@ -844,6 +887,42 @@ void MainWindow::setupPathSelectionLineEdit(QLineEdit *lineEdit) {
     lineEdit->setEnabled(true);
 }
 
+// FIXME: dedup with path search
+void MainWindow::setupWalkSelectionLineEdit(QLineEdit *lineEdit) {
+    lineEdit->clear();
+
+    if (g_assemblyGraph->m_deBruijnGraphWalks.empty())
+        return;
+
+    auto *matchedPaths = new QStringListModel(this);
+    auto *completer = new QCompleter(matchedPaths);
+    completer->setCompletionMode(QCompleter::UnfilteredPopupCompletion);
+    lineEdit->setCompleter(completer);
+
+    connect(lineEdit, &QLineEdit::textEdited,
+            [matchedPaths](const QString &text) {
+                QStringList res;
+
+                auto prefix_range = g_assemblyGraph->m_deBruijnGraphWalks.equal_prefix_range(text.toStdString());
+                size_t sz = std::distance(prefix_range.first, prefix_range.second);
+                if (sz > 1000) {
+                    res << "Too many walks to show";
+                } else {
+                    for (auto it = prefix_range.first; it != prefix_range.second; ++it)
+                        res.push_back(it.key().c_str());
+                }
+
+                if (res.empty())
+                    res << "No walks matching prefix";
+
+                res.sort();
+
+                matchedPaths->setStringList(res);
+            });
+
+    lineEdit->setEnabled(true);
+}
+
 
 void MainWindow::drawGraph() {
     QString errorTitle;
@@ -856,7 +935,8 @@ void MainWindow::drawGraph() {
                          ui->minDepthSpinBox->value(), ui->maxDepthSpinBox->value(),
                          m_blastSearchDialog ? &m_blastSearchDialog->search()->queries() : nullptr,
                          ui->blastQueryComboBox->currentText(),
-                         ui->pathSelectionLineEdit->displayText(),
+                         g_settings->graphScope == GraphScope::AROUND_PATHS ?
+                         ui->pathSelectionLineEdit->displayText() : ui->walkSelectionLineEdit->displayText(),
                          ui->nodeDistanceSpinBox->value());
 
     auto startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,

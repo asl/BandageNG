@@ -477,7 +477,7 @@ When in double mode, you can include '+' or '-' at the end of the node name to s
                </widget>
               </item>
               <item row="4" column="0">
-               <widget class="InfoTextWidget" name="nodeDistanceInfoText" native="true">
+               <widget class="InfoTextWidget" name="walkSelectionInfoText" native="true">
                 <property name="enabled">
                  <bool>true</bool>
                 </property>
@@ -496,6 +496,51 @@ When in double mode, you can include '+' or '-' at the end of the node name to s
                </widget>
               </item>
               <item row="4" column="1">
+               <widget class="QLabel" name="walkSelectionLabel">
+                <property name="enabled">
+                 <bool>true</bool>
+                </property>
+                <property name="text">
+                 <string>Sequence:</string>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="2">
+               <widget class="QLineEdit" name="walkSelectionLineEdit">
+                <property name="enabled">
+                 <bool>true</bool>
+                </property>
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="focusPolicy">
+                 <enum>Qt::StrongFocus</enum>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="0">
+               <widget class="InfoTextWidget" name="nodeDistanceInfoText" native="true">
+                <property name="enabled">
+                 <bool>true</bool>
+                </property>
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="minimumSize">
+                 <size>
+                  <width>16</width>
+                  <height>16</height>
+                 </size>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="1">
                <widget class="QLabel" name="nodeDistanceLabel">
                 <property name="enabled">
                  <bool>true</bool>
@@ -505,7 +550,7 @@ When in double mode, you can include '+' or '-' at the end of the node name to s
                 </property>
                </widget>
               </item>
-              <item row="4" column="2">
+              <item row="5" column="2">
                <widget class="QSpinBox" name="nodeDistanceSpinBox">
                 <property name="enabled">
                  <bool>true</bool>
@@ -682,6 +727,11 @@ When in double mode, you can include '+' or '-' at the end of the node name to s
                 <item>
                  <property name="text">
                   <string>Around paths</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Around sequence walk</string>
                  </property>
                 </item>
                 <item>
@@ -2091,6 +2141,7 @@ then colour which other nodes in the graph are likely to be contiguous
           </property>
          </widget>
         </item>
+
         <item>
          <widget class="QWidget" name="selectedNodesSpacerWidget" native="true">
           <layout class="QVBoxLayout" name="verticalLayout_5">

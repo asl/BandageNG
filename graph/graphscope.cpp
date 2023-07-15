@@ -62,6 +62,16 @@ namespace graph {
 
                 return pathIt->nodes();
             }
+            case AROUND_WALKS: {
+                auto pathIt = graph.m_deBruijnGraphWalks.find(graphScope.walk().toStdString());
+                if (pathIt == graph.m_deBruijnGraphWalks.end()) {
+                    *errorTitle = "Invalid walk";
+                    *errorMessage = "No walk with such sequence name is loaded";
+                    return {};
+                }
+
+                return pathIt->walk.nodes();
+            }
             case AROUND_BLAST_HITS: {
                 std::vector<DeBruijnNode *> startingNodes;
                 if (const auto *queries = graphScope.queries())
@@ -102,6 +112,8 @@ namespace graph {
                 return Scope::aroundNodes(nodesList, distance);
             case AROUND_PATHS:
                 return Scope::aroundPath(pathName, distance);
+            case AROUND_WALKS:
+                return Scope::aroundWalk(pathName, distance);
             case AROUND_BLAST_HITS:
                 return Scope::aroundHits(blastQueries, blastQueryName, distance);
             case DEPTH_RANGE:

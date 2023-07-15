@@ -31,6 +31,7 @@ enum GraphScope {
     WHOLE_GRAPH,
     AROUND_NODE,
     AROUND_PATHS,
+    AROUND_WALKS,
     AROUND_BLAST_HITS,
     DEPTH_RANGE
 };
@@ -74,6 +75,10 @@ namespace graph {
             return std::get<QString>(m_opt);
         }
 
+        QString walk() const {
+            return std::get<QString>(m_opt);
+        }
+
         static Scope wholeGraph() {
             return {};
         }
@@ -90,6 +95,15 @@ namespace graph {
         static Scope aroundPath(QString pathList, unsigned distance = 0) {
             Scope res;
             res.m_scope = AROUND_PATHS;
+            res.m_opt = pathList;
+            res.m_distance = distance;
+
+            return res;
+        }
+
+        static Scope aroundWalk(QString pathList, unsigned distance = 0) {
+            Scope res;
+            res.m_scope = AROUND_WALKS;
             res.m_opt = pathList;
             res.m_distance = distance;
 

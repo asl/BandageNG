@@ -94,6 +94,7 @@ private:
     void setGraphScopeComboBox(GraphScope graphScope);
     void setupBlastQueryComboBox();
     void setupPathSelectionLineEdit(QLineEdit *lineEdit);
+    void setupWalkSelectionLineEdit(QLineEdit *lineEdit);
     bool checkForImageSave();
 
     void setSelectedNodesWidgetsVisibility(bool visible);
@@ -102,6 +103,8 @@ private:
     void setNodeDistanceWidgetVisibility(bool visible);
     void setDepthRangeWidgetVisibility(bool visible);
     void setPathSelectionWidgetVisibility(bool visible);
+    void setWalkSelectionWidgetVisibility(bool visible);
+
     static QByteArray makeStringUrlSafe(QByteArray s);
     std::vector<DeBruijnNode *> addComplementaryNodes(std::vector<DeBruijnNode *> nodes);
     void resetNodeContiguityStatus();
