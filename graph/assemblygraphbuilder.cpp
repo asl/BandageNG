@@ -528,7 +528,7 @@ namespace io {
             p.trim(trimStart, trimEnd);
 
             graph.m_deBruijnGraphWalks.emplace(record.SeqId,
-                                               AssemblyGraph::Walk{std::string(record.SampleId), record.HapIndex, std::move(p)});
+                                               Walk{std::string(record.SampleId), record.HapIndex, std::move(p)});
         }
 
     public:

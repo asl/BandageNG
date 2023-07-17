@@ -113,4 +113,10 @@ private:
     bool checkForOtherEdges();
 };
 
+struct Walk {
+    std::string sampleId;
+    unsigned hapIndex;
+    Path walk;
+};
+
 #endif // PATH_H

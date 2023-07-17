@@ -98,11 +98,6 @@ public:
     tsl::htrie_map<char, Path> m_deBruijnGraphPaths;
 
     // Walks
-    struct Walk {
-        std::string sampleId;
-        unsigned hapIndex;
-        Path walk;
-    };
     tsl::htrie_map<char, Walk> m_deBruijnGraphWalks;
 
     int m_nodeCount;

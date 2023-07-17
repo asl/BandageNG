@@ -142,7 +142,10 @@ private slots:
                        const std::vector<QString> &nodesNotInGraph,
                        bool recolor = false);
     void selectPathNodes();
+    void selectWalkNodes();
+
     void showPathListDialog();
+    void showWalkListDialog();
     void selectUserSpecifiedNodes();
     void graphLayoutFinished(const GraphLayout &layout);
     void openBlastSearchDialog();

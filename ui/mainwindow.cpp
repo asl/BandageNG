@@ -30,6 +30,7 @@
 #include "ui/dialogs/changenodedepthdialog.h"
 #include "ui/dialogs/graphinfodialog.h"
 #include "ui/dialogs/pathlistdialog.h"
+#include "ui/dialogs/walklistdialog.h"
 
 #include "graphsearch/blast/blastsearch.h"
 #include "graphsearch/minimap2/minimap2search.h"
@@ -165,6 +166,8 @@ MainWindow::MainWindow(QString fileToLoadOnStartup, bool drawGraphAfterLoad) :
     connect(ui->selectNodesButton, SIGNAL(clicked()), this, SLOT(selectUserSpecifiedNodes()));
     connect(ui->pathSelectButton, SIGNAL(clicked()), this, SLOT(selectPathNodes()));
     connect(ui->pathListButton, &QPushButton::clicked, this, &MainWindow::showPathListDialog);
+    connect(ui->walkSelectButton, SIGNAL(clicked()), this, SLOT(selectWalkNodes()));
+    connect(ui->walkListButton, &QPushButton::clicked, this, &MainWindow::showWalkListDialog);
     connect(ui->selectionSearchNodesLineEdit, SIGNAL(returnPressed()), this, SLOT(selectUserSpecifiedNodes()));
     connect(ui->actionAbout, SIGNAL(triggered()), this, SLOT(openAboutDialog()));
     connect(ui->blastSearchButton, SIGNAL(clicked()), this, SLOT(openBlastSearchDialog()));
@@ -383,6 +386,7 @@ void MainWindow::loadGraph(QString fullFileName) {
             setupPathSelectionLineEdit(ui->pathSelectionLineEdit);
             setupPathSelectionLineEdit(ui->pathSelectionLineEdit2);
             setupWalkSelectionLineEdit(ui->walkSelectionLineEdit);
+            setupWalkSelectionLineEdit(ui->walkSelectionLineEdit2);
         }  catch (const AssemblyGraphError &err) {
             QString errorTitle = "Error loading graph";
             QString errorMessage = "There was an error when attempting to load\n"
@@ -1722,8 +1726,7 @@ void MainWindow::selectUserSpecifiedNodes()
     doSelectNodes(nodesToSelect, nodesNotInGraph);
 }
 
-void MainWindow::selectPathNodes()
-{
+void MainWindow::selectPathNodes() {
     std::vector<QString> nodesNotInGraph;
     std::vector<DeBruijnNode *> nodesToSelect;
 
@@ -1767,6 +1770,53 @@ void MainWindow::selectPathNodes()
     }
 
     doSelectNodes(nodesToSelect, nodesNotInGraph, ui->pathSelectionRecolorRadioButton->isChecked());
+}
+
+// FIXME: deduplicate
+void MainWindow::selectWalkNodes() {
+    std::vector<QString> nodesNotInGraph;
+    std::vector<DeBruijnNode *> nodesToSelect;
+
+    QString walkName = ui->walkSelectionLineEdit2->displayText();
+    auto walkIt = g_assemblyGraph->m_deBruijnGraphWalks.find(walkName.toStdString());
+    if (walkIt == g_assemblyGraph->m_deBruijnGraphWalks.end()) {
+        QMessageBox::information(this, "Sequence walk not found", "Sequence named \"" + walkName + "\" is not found. Maybe you wanted to select nodes instead?");
+        return;
+    }
+
+    const auto &p = *walkIt;
+
+    QString posText = ui->walkSelectionPositionLineEdit->text();
+    if (posText.isEmpty()) {
+        for (auto *node : p.walk.nodes())
+            nodesToSelect.push_back(node);
+    } else {
+        bool ok = true;
+        auto posParts = posText.split(":");
+        if (posParts.size() != 1 && posParts.size() != 2) {
+            QMessageBox::information(this, "Invalid position", "Invalid sequence walk position: " + posText);
+            return;
+        }
+
+        int startPos = posParts.front().toInt(&ok);
+        if (!ok) {
+            QMessageBox::information(this, "Invalid position", "Invalid sequence walk position: " + posParts.front());
+            return;
+        }
+
+        int endPos = startPos;
+        if (posParts.size() == 2) {
+            endPos = posParts.back().toInt(&ok);
+            if (!ok) {
+                QMessageBox::information(this, "Invalid position", "Invalid sequence walk position: " + posParts.back());
+                return;
+            }
+        }
+
+        nodesToSelect = p.walk.getNodesAt(startPos, endPos);
+    }
+
+    doSelectNodes(nodesToSelect, nodesNotInGraph, ui->walkSelectionRecolorRadioButton->isChecked());
 }
 
 
@@ -2622,4 +2672,18 @@ void MainWindow::showPathListDialog() {
 
     PathListDialog pathListDialog(*g_assemblyGraph, selectedNodes, this);
     pathListDialog.exec();
+}
+
+// FIXME: dedup
+void MainWindow::showWalkListDialog() {
+    std::vector<DeBruijnNode*> selectedNodes;
+    for (auto *node : m_scene->getSelectedNodes()) {
+        selectedNodes.push_back(node);
+        // In single mode add also reverse-complements
+        if (!g_settings->doubleMode)
+            selectedNodes.push_back(node->getReverseComplement());
+    }
+
+    WalkListDialog walkListDialog(*g_assemblyGraph, selectedNodes, this);
+    walkListDialog.exec();
 }

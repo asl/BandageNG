@@ -45,6 +45,7 @@ set(LIB_SOURCES
     ui/widgets/colourbutton.cpp
     ui/dialogs/enteronequerydialog.cpp
     ui/dialogs/pathlistdialog.cpp
+    ui/dialogs/walklistdialog.cpp
     ui/graphicsviewzoom.cpp
     ui/dialogs/graphinfodialog.cpp
     ui/widgets/infotextwidget.cpp
@@ -90,7 +91,7 @@ set(CLI_SOURCES
     command_line/querypaths.cpp
     command_line/reduce.cpp
     command_line/settings.cpp)
-      
+
 set(RESOURCES images/images.qrc images/application.icns)
 
 add_compile_definitions(APP_VERSION="${PROJECT_VERSION}-dev")
