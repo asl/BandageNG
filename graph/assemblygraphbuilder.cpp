@@ -522,7 +522,11 @@ namespace io {
 
             // Start / end positions on path are zero-based, graph location is 1-based. So we'd just trim
             // the corresponding amounts
-            //p.trim(path->pstart, path->plen - path->pend - 1);
+            unsigned len = p.getLength();
+            unsigned trimStart = record.SeqStart ? *record.SeqStart : 0;
+            unsigned trimEnd = record.SeqEnd ? len - *record.SeqEnd - 1 : 0;
+            p.trim(trimStart, trimEnd);
+
             graph.m_deBruijnGraphWalks.emplace(record.SeqId,
                                                AssemblyGraph::Walk{std::string(record.SampleId), record.HapIndex, std::move(p)});
         }
