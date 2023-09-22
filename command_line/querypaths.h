@@ -28,6 +28,7 @@ struct QueryPathsCmd {
     std::string m_prefix;
     bool m_pathFasta = false;
     bool m_hitsFasta = false;
+    bool m_gfaPaths = false;
 };
 
 CLI::App *addQueryPathsSubcommand(CLI::App &app,

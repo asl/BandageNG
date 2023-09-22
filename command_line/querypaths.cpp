@@ -38,9 +38,9 @@ CLI::App *addQueryPathsSubcommand(CLI::App &app,
             ->required();
     qp->add_flag("--pathfasta", cmd.m_pathFasta, "Put all query path sequences in a multi-FASTA file, not in the TSV file");
     qp->add_flag("--hitsfasta", cmd.m_hitsFasta, "Produce a multi-FASTA file of all BLAST hits in the query paths");
+    qp->add_flag("--gfapaths", cmd.m_gfaPaths, "Align to GFA path sequences in addition to nodes");
 
     qp->footer("Bandage querypaths searches for queries in the graph using BLAST and outputs the results to a tab-delimited file.");
-
 
     return qp;
 
@@ -85,7 +85,11 @@ int handleQueryPathsCmd(QApplication *app,
 
     QDateTime startTime = QDateTime::currentDateTime();
 
-    out << Qt::endl << "(" << QDateTime::currentDateTime().toString("dd MMM yyyy hh:mm:ss") << ") Loading graph...        " << Qt::flush;
+    auto log = [&out](const char * msg) {
+        out << "(" << QDateTime::currentDateTime().toString("dd MMM yyyy hh:mm:ss") << ") " << msg  << Qt::flush;
+    };
+
+    log("Loading graph...        ");
 
     if (!g_assemblyGraph->loadGraphFromFile(cmd.m_graph.c_str())) {
         err << "Bandage-NG error: could not load " << cmd.m_graph.c_str() << Qt::endl;
@@ -98,17 +102,17 @@ int handleQueryPathsCmd(QApplication *app,
     }
     out << "done" << Qt::endl;
 
-    out << "(" << QDateTime::currentDateTime().toString("dd MMM yyyy hh:mm:ss") << ") Running BLAST search... " << Qt::flush;
+    log("Running BLAST search... ");
     QString blastError = g_blastSearch->doAutoGraphSearch(*g_assemblyGraph,
                                                           g_settings->blastQueryFilename,
-                                                          false, /* include paths */
+                                                          cmd.m_gfaPaths,
                                                           g_settings->blastSearchParameters);
     if (!blastError.isEmpty()) {
         err << Qt::endl << blastError << Qt::endl;
         return 1;
     }
     out << "done" << Qt::endl;
-    out << "(" << QDateTime::currentDateTime().toString("dd MMM yyyy hh:mm:ss") << ") Saving results...       " << Qt::flush;
+    log("Saving results...       ");
 
     // Create the table file.
     tableFile.open(QIODevice::WriteOnly | QIODevice::Text);
@@ -213,7 +217,7 @@ int handleQueryPathsCmd(QApplication *app,
 
     out << "done" << Qt::endl;
 
-    out << Qt::endl << "Results:      " + tableFilename << Qt::endl;
+    out << Qt::endl << "Results: " + tableFilename << Qt::endl;
     if (cmd.m_pathFasta)
         out << "              " + pathFastaFilename << Qt::endl;
     if (cmd.m_hitsFasta)
