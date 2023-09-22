@@ -35,8 +35,8 @@
 // ---------------------------------------------------------------------------
 
 #define PHMAP_VERSION_MAJOR 1
-#define PHMAP_VERSION_MINOR 0
-#define PHMAP_VERSION_PATCH 0
+#define PHMAP_VERSION_MINOR 3
+#define PHMAP_VERSION_PATCH 11
 
 // Included for the __GLIBC__ macro (or similar macros on other systems).
 #include <limits.h>
@@ -100,7 +100,7 @@
 #endif
 
 #if CHAR_BIT != 8
-    #error "phmap assumes CHAR_BIT == 8."
+    #warning "phmap assumes CHAR_BIT == 8."
 #endif
 
 // phmap currently assumes that an int is 4 bytes. 
@@ -120,7 +120,8 @@
     #define PHMAP_HAVE_BUILTIN(x) 0
 #endif
 
-#if (defined(_MSVC_LANG) && _MSVC_LANG >= 201703) || __cplusplus >= 201703
+#if (!defined(__GNUC__) || defined(__clang__) || __GNUC__ >= 5) && \
+    ((defined(_MSVC_LANG) && _MSVC_LANG >= 201703L) || __cplusplus >= 201703L)
     #define PHMAP_HAVE_CC17 1
 #else
     #define PHMAP_HAVE_CC17 0
@@ -128,33 +129,24 @@
 
 #define PHMAP_BRANCHLESS 1
 
-// ----------------------------------------------------------------
-// Checks whether `std::is_trivially_destructible<T>` is supported.
-// ----------------------------------------------------------------
-#ifdef PHMAP_HAVE_STD_IS_TRIVIALLY_DESTRUCTIBLE
-    #error PHMAP_HAVE_STD_IS_TRIVIALLY_DESTRUCTIBLE cannot be directly set
-#elif defined(_LIBCPP_VERSION) ||                                        \
-    (!defined(__clang__) && defined(__GNUC__) && defined(__GLIBCXX__) && \
-     (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 8))) ||        \
-    defined(_MSC_VER)
-    #define PHMAP_HAVE_STD_IS_TRIVIALLY_DESTRUCTIBLE 1
+#ifdef __has_feature
+#define PHMAP_HAVE_FEATURE(f) __has_feature(f)
+#else
+#define PHMAP_HAVE_FEATURE(f) 0
 #endif
 
-// --------------------------------------------------------------
-// Checks whether `std::is_trivially_default_constructible<T>` is 
-// supported.
-// --------------------------------------------------------------
-#if defined(PHMAP_HAVE_STD_IS_TRIVIALLY_CONSTRUCTIBLE)
-    #error PHMAP_HAVE_STD_IS_TRIVIALLY_CONSTRUCTIBLE cannot be directly set
-#elif defined(PHMAP_HAVE_STD_IS_TRIVIALLY_ASSIGNABLE)
-    #error PHMAP_HAVE_STD_IS_TRIVIALLY_ASSIGNABLE cannot directly set
-#elif (defined(__clang__) && defined(_LIBCPP_VERSION)) ||        \
-    (!defined(__clang__) && defined(__GNUC__) &&                 \
-     (__GNUC__ > 5 || (__GNUC__ == 5 && __GNUC_MINOR__ >= 1)) && \
-     (defined(_LIBCPP_VERSION) || defined(__GLIBCXX__))) ||      \
-    (defined(_MSC_VER) && !defined(__NVCC__))
-    #define PHMAP_HAVE_STD_IS_TRIVIALLY_CONSTRUCTIBLE 1
-    #define PHMAP_HAVE_STD_IS_TRIVIALLY_ASSIGNABLE 1
+// Portable check for GCC minimum version:
+// https://gcc.gnu.org/onlinedocs/cpp/Common-Predefined-Macros.html
+#if defined(__GNUC__) && defined(__GNUC_MINOR__)
+    #define PHMAP_INTERNAL_HAVE_MIN_GNUC_VERSION(x, y) (__GNUC__ > (x) || __GNUC__ == (x) && __GNUC_MINOR__ >= (y))
+#else
+    #define PHMAP_INTERNAL_HAVE_MIN_GNUC_VERSION(x, y) 0
+#endif
+
+#if defined(__clang__) && defined(__clang_major__) && defined(__clang_minor__)
+    #define PHMAP_INTERNAL_HAVE_MIN_CLANG_VERSION(x, y) (__clang_major__ > (x) || __clang_major__ == (x) && __clang_minor__ >= (y))
+#else
+    #define PHMAP_INTERNAL_HAVE_MIN_CLANG_VERSION(x, y) 0
 #endif
 
 // -------------------------------------------------------------------
@@ -163,7 +155,7 @@
 // -------------------------------------------------------------------
 #ifdef PHMAP_HAVE_THREAD_LOCAL
     #error PHMAP_HAVE_THREAD_LOCAL cannot be directly set
-#elif defined(__APPLE__)
+#elif defined(__APPLE__) && defined(__clang__)
     #if __has_feature(cxx_thread_local) && \
         !(TARGET_OS_IPHONE && __IPHONE_OS_VERSION_MIN_REQUIRED < __IPHONE_9_0)
         #define PHMAP_HAVE_THREAD_LOCAL 1
@@ -323,7 +315,11 @@
 #endif
 
 #if PHMAP_HAVE_CC17
-    #define PHMAP_HAVE_SHARED_MUTEX 1
+    #ifdef __has_include
+       #if __has_include(<shared_mutex>)
+           #define PHMAP_HAVE_SHARED_MUTEX 1
+       #endif
+    #endif
 #endif
 
 #ifndef PHMAP_HAVE_STD_STRING_VIEW

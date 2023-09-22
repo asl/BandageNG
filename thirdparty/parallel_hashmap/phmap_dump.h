@@ -44,6 +44,8 @@ namespace priv {
 
 #if !defined(PHMAP_NON_DETERMINISTIC) && !defined(PHMAP_DISABLE_DUMP)
 
+static constexpr size_t s_version_base = std::numeric_limits<size_t>::max() - 10;
+static constexpr size_t s_version = s_version_base;
 // ------------------------------------------------------------------------
 // dump/load for raw_hash_set
 // ------------------------------------------------------------------------
@@ -53,12 +55,14 @@ bool raw_hash_set<Policy, Hash, Eq, Alloc>::phmap_dump(OutputArchive& ar) const 
     static_assert(type_traits_internal::IsTriviallyCopyable<value_type>::value,
                     "value_type should be trivially copyable");
 
+    ar.saveBinary(&s_version, sizeof(size_t));
     ar.saveBinary(&size_, sizeof(size_t));
+    ar.saveBinary(&capacity_, sizeof(size_t));
     if (size_ == 0)
         return true;
-    ar.saveBinary(&capacity_, sizeof(size_t));
     ar.saveBinary(ctrl_,  sizeof(ctrl_t) * (capacity_ + Group::kWidth + 1));
     ar.saveBinary(slots_, sizeof(slot_type) * capacity_);
+    ar.saveBinary(&growth_left(), sizeof(size_t));
     return true;
 }
 
@@ -68,15 +72,29 @@ bool raw_hash_set<Policy, Hash, Eq, Alloc>::phmap_load(InputArchive& ar) {
     static_assert(type_traits_internal::IsTriviallyCopyable<value_type>::value,
                     "value_type should be trivially copyable");
     raw_hash_set<Policy, Hash, Eq, Alloc>().swap(*this); // clear any existing content
-    ar.loadBinary(&size_, sizeof(size_t));
-    if (size_ == 0)
-        return true;
+
+    size_t version = 0;
+    ar.loadBinary(&version, sizeof(size_t));
+    if (version < s_version_base) {
+        // we didn't store the version, version actually contains the size
+        size_ = version;
+    } else {
+        ar.loadBinary(&size_, sizeof(size_t));
+    }
     ar.loadBinary(&capacity_, sizeof(size_t));
 
-    // allocate memory for ctrl_ and slots_
-    initialize_slots(capacity_);
+    if (capacity_) {
+        // allocate memory for ctrl_ and slots_
+        initialize_slots(capacity_);
+    }
+    if (size_ == 0)
+        return true;
     ar.loadBinary(ctrl_,  sizeof(ctrl_t) * (capacity_ + Group::kWidth + 1));
     ar.loadBinary(slots_, sizeof(slot_type) * capacity_);
+    if (version >= s_version_base) {
+        // growth_left should be restored after calling initialize_slots() which resets it.
+        ar.loadBinary(&growth_left(), sizeof(size_t));
+    }
     return true;
 }
 
@@ -156,6 +174,19 @@ public:
         return true;
     }
 
+    template<typename V>
+    typename std::enable_if<type_traits_internal::IsTriviallyCopyable<V>::value, bool>::type
+    saveBinary(const V& v) {
+        ofs_.write(reinterpret_cast<const char *>(&v), sizeof(V));
+        return true;
+    }
+
+    template<typename Map>
+    auto saveBinary(const Map& v) -> decltype(v.phmap_dump(*this), bool())
+    {
+        return v.phmap_dump(*this);
+    }
+
 private:
     std::ofstream ofs_;
 };
@@ -172,6 +203,19 @@ public:
         return true;
     }
 
+    template<typename V>
+    typename std::enable_if<type_traits_internal::IsTriviallyCopyable<V>::value, bool>::type
+    loadBinary(V* v) {
+        ifs_.read(reinterpret_cast<char *>(v), sizeof(V));
+        return true;
+    }
+
+    template<typename Map>
+    auto loadBinary(Map* v) -> decltype(v->phmap_load(*this), bool())
+    {
+        return v->phmap_load(*this);
+    }
+    
 private:
     std::ifstream ifs_;
 };
