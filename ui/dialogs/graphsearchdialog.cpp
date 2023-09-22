@@ -248,7 +248,7 @@ void GraphSearchDialog::buildDatabase(bool separateThread) {
     connect(m_graphSearch.get(), SIGNAL(finishedDbBuild(QString)), this, SLOT(graphDatabaseBuildFinished(QString)));
     connect(progress, SIGNAL(halt()), m_graphSearch.get(), SLOT(cancelDatabaseBuild()));
 
-    auto builder = [this]() { m_graphSearch->buildDatabase(*g_assemblyGraph); };
+    auto builder = [this]() { m_graphSearch->buildDatabase(*g_assemblyGraph, ui->includeGFAPaths->isChecked()); };
     if (separateThread) {
         QFuture<void> res = QtConcurrent::run(builder);
     } else
@@ -419,6 +419,8 @@ void GraphSearchDialog::setUiStep(SearchUiState uiState) {
         ui->blastHitsTable->setEnabled(false);
         ui->blastSearchWidget->setEnabled(false);
         ui->blastHitsTableInfoText->setEnabled(false);
+        ui->includeGFAPaths->setEnabled(true);
+        ui->includeGFAPathsInfoText->setEnabled(true);
         break;
 
     case GRAPH_DB_BUILD_IN_PROGRESS:
@@ -447,6 +449,8 @@ void GraphSearchDialog::setUiStep(SearchUiState uiState) {
         ui->blastHitsTable->setEnabled(false);
         ui->blastSearchWidget->setEnabled(false);
         ui->blastHitsTableInfoText->setEnabled(false);
+        ui->includeGFAPaths->setEnabled(true);
+        ui->includeGFAPathsInfoText->setEnabled(true);
         break;
 
     case GRAPH_DB_BUILT_BUT_NO_QUERIES:
@@ -475,6 +479,8 @@ void GraphSearchDialog::setUiStep(SearchUiState uiState) {
         ui->blastHitsTable->setEnabled(false);
         ui->blastSearchWidget->setEnabled(false);
         ui->blastHitsTableInfoText->setEnabled(false);
+        ui->includeGFAPaths->setEnabled(false);
+        ui->includeGFAPathsInfoText->setEnabled(false);
         break;
 
     case READY_FOR_GRAPH_SEARCH:
@@ -502,6 +508,8 @@ void GraphSearchDialog::setUiStep(SearchUiState uiState) {
         ui->blastHitsTable->setEnabled(false);
         ui->blastSearchWidget->setEnabled(true);
         ui->blastHitsTableInfoText->setEnabled(false);
+        ui->includeGFAPaths->setEnabled(false);
+        ui->includeGFAPathsInfoText->setEnabled(false);
         break;
 
     case GRAPH_SEARCH_IN_PROGRESS:
@@ -529,6 +537,8 @@ void GraphSearchDialog::setUiStep(SearchUiState uiState) {
         ui->blastHitsTable->setEnabled(false);
         ui->blastSearchWidget->setEnabled(true);
         ui->blastHitsTableInfoText->setEnabled(false);
+        ui->includeGFAPaths->setEnabled(false);
+        ui->includeGFAPathsInfoText->setEnabled(false);
         break;
 
     case GRAPH_SEARCH_COMPLETE:
@@ -556,6 +566,8 @@ void GraphSearchDialog::setUiStep(SearchUiState uiState) {
         ui->blastHitsTable->setEnabled(true);
         ui->blastSearchWidget->setEnabled(true);
         ui->blastHitsTableInfoText->setEnabled(true);
+        ui->includeGFAPaths->setEnabled(false);
+        ui->includeGFAPathsInfoText->setEnabled(false);
         break;
     }
 }

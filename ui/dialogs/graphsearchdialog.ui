@@ -14,101 +14,67 @@
    <string>Graph Search</string>
   </property>
   <layout class="QGridLayout" name="gridLayout_2" columnstretch="0,0,0">
-   <item row="3" column="1">
-    <widget class="QLabel" name="step2Label">
+   <item row="0" column="0">
+    <widget class="QLabel" name="step1TickLabel">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="minimumSize">
+      <size>
+       <width>32</width>
+       <height>32</height>
+      </size>
+     </property>
+     <property name="maximumSize">
+      <size>
+       <width>32</width>
+       <height>32</height>
+      </size>
+     </property>
      <property name="text">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Step 2: &lt;/span&gt;enter BLAST queries&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string/>
+     </property>
+     <property name="scaledContents">
+      <bool>true</bool>
      </property>
     </widget>
    </item>
-   <item row="12" column="2" rowspan="2">
-    <widget class="QWidget" name="blastHitsWidget" native="true">
-     <layout class="QHBoxLayout" name="horizontalLayout_7">
-      <property name="leftMargin">
-       <number>0</number>
-      </property>
-      <property name="topMargin">
-       <number>0</number>
-      </property>
-      <property name="rightMargin">
-       <number>0</number>
-      </property>
-      <property name="bottomMargin">
-       <number>0</number>
-      </property>
-      <item>
-       <widget class="InfoTextWidget" name="blastHitsTableInfoText" native="true">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="minimumSize">
-         <size>
-          <width>16</width>
-          <height>16</height>
-         </size>
-        </property>
-        <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The hits are displayed in this table after a graph search is run.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Query name&lt;/span&gt;: This is the name of the query for the hit.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Node name&lt;/span&gt;: This is the name of the graph node that the query matched.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Percent identity&lt;/span&gt;: This is the sequence similarity over the length of the hit. 100% identity means that the query and node are identical over the length of the hit.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Alignment length&lt;/span&gt;: This is the length of the alignment as measured against the node. It is equal to node end minus node start plus one.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Query cover&lt;/span&gt;: This is the fraction of the query covered by the hit. It is equivalent to the 'qcovhsp' output option in BLAST.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Mismatches&lt;/span&gt;: This is the number of locations (bases for nucleotide sequence, amino acids for protein sequences) where the query and node sequences differ.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Gap opens&lt;/span&gt;: This is the number of gaps in the alignment due to either insertions or deletions.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Query start&lt;/span&gt;: This is the position where the alignment starts relative to the query.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Query end&lt;/span&gt;: This is the position where the alignment ends relative to the query.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Node start&lt;/span&gt;: This is the position where the alignment starts relative to the node sequence.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Node end&lt;/span&gt;: This is the position where the alignment ends relative to the node sequence.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;E-value&lt;/span&gt;: This is the calculated expect value (if any).&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Bit score&lt;/span&gt;: This is the calculated bit score (if any).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QTableView" name="blastHitsTable"/>
-      </item>
-     </layout>
+   <item row="3" column="0">
+    <widget class="QLabel" name="step2TickLabel">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="minimumSize">
+      <size>
+       <width>32</width>
+       <height>32</height>
+      </size>
+     </property>
+     <property name="maximumSize">
+      <size>
+       <width>32</width>
+       <height>32</height>
+      </size>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="scaledContents">
+      <bool>true</bool>
+     </property>
     </widget>
    </item>
-   <item row="0" column="2">
-    <widget class="QWidget" name="buildBlastDatabaseWidget" native="true">
-     <layout class="QHBoxLayout" name="horizontalLayout">
-      <property name="leftMargin">
-       <number>0</number>
-      </property>
-      <property name="topMargin">
-       <number>0</number>
-      </property>
-      <property name="rightMargin">
-       <number>0</number>
-      </property>
-      <property name="bottomMargin">
-       <number>0</number>
-      </property>
-      <item>
-       <widget class="InfoTextWidget" name="buildBlastDatabaseInfoText" native="true">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="minimumSize">
-         <size>
-          <width>16</width>
-          <height>16</height>
-         </size>
-        </property>
-        <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;This step runs necessary database building steps on the graph node sequences, preparing them for further search.&lt;br/&gt;&lt;br/&gt;The database files generated are temporary and will be deleted when Bandage is closed. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="buildBlastDatabaseButton">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="text">
-         <string>Build BLAST database</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
+   <item row="11" column="0" colspan="3">
+    <widget class="Line" name="line_4">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
     </widget>
    </item>
    <item row="3" column="2">
@@ -305,210 +271,11 @@
      </layout>
     </widget>
    </item>
-   <item row="3" column="0">
-    <widget class="QLabel" name="step2TickLabel">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
-     <property name="minimumSize">
-      <size>
-       <width>32</width>
-       <height>32</height>
-      </size>
-     </property>
-     <property name="maximumSize">
-      <size>
-       <width>32</width>
-       <height>32</height>
-      </size>
-     </property>
+   <item row="3" column="1">
+    <widget class="QLabel" name="step2Label">
      <property name="text">
-      <string/>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Step 2: &lt;/span&gt;enter BLAST queries&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
-     <property name="scaledContents">
-      <bool>true</bool>
-     </property>
-    </widget>
-   </item>
-   <item row="0" column="1">
-    <widget class="QLabel" name="step1Label">
-     <property name="font">
-      <font>
-       <bold>false</bold>
-      </font>
-     </property>
-     <property name="text">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Step 1: &lt;/span&gt;build BLAST database&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-     </property>
-    </widget>
-   </item>
-   <item row="18" column="2">
-    <widget class="QDialogButtonBox" name="buttonBox">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-     <property name="standardButtons">
-      <set>QDialogButtonBox::Close</set>
-     </property>
-    </widget>
-   </item>
-   <item row="8" column="0">
-    <widget class="QLabel" name="step3TickLabel">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
-     <property name="minimumSize">
-      <size>
-       <width>32</width>
-       <height>32</height>
-      </size>
-     </property>
-     <property name="maximumSize">
-      <size>
-       <width>32</width>
-       <height>32</height>
-      </size>
-     </property>
-     <property name="text">
-      <string/>
-     </property>
-     <property name="scaledContents">
-      <bool>true</bool>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="0" colspan="3">
-    <widget class="Line" name="line_3">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-    </widget>
-   </item>
-   <item row="17" column="2">
-    <widget class="Line" name="line">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-    </widget>
-   </item>
-   <item row="7" column="0" colspan="3">
-    <widget class="Line" name="line_2">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-    </widget>
-   </item>
-   <item row="8" column="1">
-    <widget class="QLabel" name="step3Label">
-     <property name="text">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Step 3:&lt;/span&gt; run BLAST search&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-     </property>
-    </widget>
-   </item>
-   <item row="11" column="0" colspan="3">
-    <widget class="Line" name="line_4">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-    </widget>
-   </item>
-   <item row="12" column="1">
-    <widget class="QLabel" name="hitsLabel">
-     <property name="font">
-      <font>
-       <bold>true</bold>
-      </font>
-     </property>
-     <property name="text">
-      <string>Hits:</string>
-     </property>
-    </widget>
-   </item>
-   <item row="0" column="0">
-    <widget class="QLabel" name="step1TickLabel">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
-     <property name="minimumSize">
-      <size>
-       <width>32</width>
-       <height>32</height>
-      </size>
-     </property>
-     <property name="maximumSize">
-      <size>
-       <width>32</width>
-       <height>32</height>
-      </size>
-     </property>
-     <property name="text">
-      <string/>
-     </property>
-     <property name="scaledContents">
-      <bool>true</bool>
-     </property>
-    </widget>
-   </item>
-   <item row="13" column="1">
-    <spacer name="verticalSpacer_2">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>40</height>
-      </size>
-     </property>
-    </spacer>
-   </item>
-   <item row="4" column="2">
-    <widget class="QWidget" name="blastQueriesWidget2" native="true">
-     <layout class="QHBoxLayout" name="horizontalLayout_2">
-      <property name="leftMargin">
-       <number>0</number>
-      </property>
-      <property name="topMargin">
-       <number>0</number>
-      </property>
-      <property name="rightMargin">
-       <number>0</number>
-      </property>
-      <property name="bottomMargin">
-       <number>0</number>
-      </property>
-      <item>
-       <widget class="InfoTextWidget" name="blastQueriesTableInfoText" native="true">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="minimumSize">
-         <size>
-          <width>16</width>
-          <height>16</height>
-         </size>
-        </property>
-        <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The queries are displayed in this table. Before a graph search is run, some information about the queries is not yet available and will show a dash.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Colour&lt;/span&gt;: Each query is automatically assigned a colour which is used for the 'Blast hits (solid)' graph colour scheme. This colour can be changed by clicking in the table cell. &lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Show&lt;/span&gt;: if this box is ticked, the query's hits will be able to be viewed on the graph. If this box is not ticked, the query's hits will be hidden on the graph.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Query name&lt;/span&gt;: If a query is loaded from a FASTA file, its name is the sequence ID (the text between the '&amp;gt;' and the first space in the description line). Query names are editable by double clicking in their table cell.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Type&lt;/span&gt;: This is either 'nucl' for nucleotide sequences or 'prot' for protein sequences. Nucleotide sequences will be searched for using blastn, while protein sequences will be search for with tblastn. Both types can be used simultaneously.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Length&lt;/span&gt;: This is the length of the query, in bases (for nucleotide queries) or amino acids (for protein queries).&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Hits&lt;/span&gt;: This is the number of hits acquired for the query.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Query cover&lt;/span&gt;: This is the total fraction of the query captured by all of the hits. However, the hits may not be proximal to each other. For example, if the first half a query was found in one part of the graph and the second half in a different part, this value would be 100%. This value is equivalent to the 'qcovs' output option in BLAST.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Paths&lt;/span&gt;: These are the number of possible paths through the graph which represent the entire query. If there is at least one path, you can click on this button to view a table of the paths' properties.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QTableView" name="blastQueriesTable"/>
-      </item>
-     </layout>
     </widget>
    </item>
    <item row="4" column="1">
@@ -523,6 +290,20 @@
       </size>
      </property>
     </spacer>
+   </item>
+   <item row="1" column="0" colspan="3">
+    <widget class="Line" name="line_3">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+    </widget>
+   </item>
+   <item row="8" column="1">
+    <widget class="QLabel" name="step3Label">
+     <property name="text">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Step 3:&lt;/span&gt; run BLAST search&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+    </widget>
    </item>
    <item row="9" column="1">
     <spacer name="verticalSpacer_3">
@@ -539,6 +320,18 @@
       </size>
      </property>
     </spacer>
+   </item>
+   <item row="12" column="1">
+    <widget class="QLabel" name="hitsLabel">
+     <property name="font">
+      <font>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="text">
+      <string>Hits:</string>
+     </property>
+    </widget>
    </item>
    <item row="8" column="2" rowspan="2">
     <widget class="QWidget" name="blastSearchWidget" native="true">
@@ -674,8 +467,248 @@
       <property name="text">
        <string>HMMER</string>
       </property>
-     </item>     
+     </item>
     </widget>
+   </item>
+   <item row="0" column="2">
+    <widget class="QWidget" name="buildBlastDatabaseWidget" native="true">
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <property name="leftMargin">
+       <number>0</number>
+      </property>
+      <property name="topMargin">
+       <number>0</number>
+      </property>
+      <property name="rightMargin">
+       <number>0</number>
+      </property>
+      <property name="bottomMargin">
+       <number>0</number>
+      </property>
+      <item>
+       <widget class="InfoTextWidget" name="buildBlastDatabaseInfoText" native="true">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>16</width>
+          <height>16</height>
+         </size>
+        </property>
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;This step runs necessary database building steps on the graph node sequences, preparing them for further search.&lt;br/&gt;&lt;br/&gt;The database files generated are temporary and will be deleted when Bandage is closed. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="buildBlastDatabaseButton">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string>Build BLAST database</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="18" column="2">
+    <layout class="QHBoxLayout" name="horizontalLayout_5">
+     <item>
+      <widget class="InfoTextWidget" name="includeGFAPathsInfoText" native="true">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>16</width>
+         <height>16</height>
+        </size>
+       </property>
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Include GFA paths (if present) in addition to node sequences to the search.&lt;/p&gt;&lt;p&gt;Enabling this option will add GFA paths hits directly to query paths. Also, the path hits will be split into individual node hits (though some hit information will not be available).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="includeGFAPaths">
+       <property name="text">
+        <string>Include GFA paths</string>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
+       <property name="tristate">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QDialogButtonBox" name="buttonBox">
+       <property name="standardButtons">
+        <set>QDialogButtonBox::Close</set>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item row="17" column="2">
+    <widget class="Line" name="line">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="2">
+    <widget class="QWidget" name="blastQueriesWidget2" native="true">
+     <layout class="QHBoxLayout" name="horizontalLayout_2">
+      <property name="leftMargin">
+       <number>0</number>
+      </property>
+      <property name="topMargin">
+       <number>0</number>
+      </property>
+      <property name="rightMargin">
+       <number>0</number>
+      </property>
+      <property name="bottomMargin">
+       <number>0</number>
+      </property>
+      <item>
+       <widget class="InfoTextWidget" name="blastQueriesTableInfoText" native="true">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>16</width>
+          <height>16</height>
+         </size>
+        </property>
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The queries are displayed in this table. Before a graph search is run, some information about the queries is not yet available and will show a dash.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Colour&lt;/span&gt;: Each query is automatically assigned a colour which is used for the 'Blast hits (solid)' graph colour scheme. This colour can be changed by clicking in the table cell. &lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Show&lt;/span&gt;: if this box is ticked, the query's hits will be able to be viewed on the graph. If this box is not ticked, the query's hits will be hidden on the graph.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Query name&lt;/span&gt;: If a query is loaded from a FASTA file, its name is the sequence ID (the text between the '&amp;gt;' and the first space in the description line). Query names are editable by double clicking in their table cell.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Type&lt;/span&gt;: This is either 'nucl' for nucleotide sequences or 'prot' for protein sequences. Nucleotide sequences will be searched for using blastn, while protein sequences will be search for with tblastn. Both types can be used simultaneously.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Length&lt;/span&gt;: This is the length of the query, in bases (for nucleotide queries) or amino acids (for protein queries).&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Hits&lt;/span&gt;: This is the number of hits acquired for the query.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Query cover&lt;/span&gt;: This is the total fraction of the query captured by all of the hits. However, the hits may not be proximal to each other. For example, if the first half a query was found in one part of the graph and the second half in a different part, this value would be 100%. This value is equivalent to the 'qcovs' output option in BLAST.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Paths&lt;/span&gt;: These are the number of possible paths through the graph which represent the entire query. If there is at least one path, you can click on this button to view a table of the paths' properties.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QTableView" name="blastQueriesTable"/>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="8" column="0">
+    <widget class="QLabel" name="step3TickLabel">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="minimumSize">
+      <size>
+       <width>32</width>
+       <height>32</height>
+      </size>
+     </property>
+     <property name="maximumSize">
+      <size>
+       <width>32</width>
+       <height>32</height>
+      </size>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="scaledContents">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="1">
+    <widget class="QLabel" name="step1Label">
+     <property name="font">
+      <font>
+       <bold>false</bold>
+      </font>
+     </property>
+     <property name="text">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Step 1: &lt;/span&gt;build BLAST database&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+    </widget>
+   </item>
+   <item row="7" column="0" colspan="3">
+    <widget class="Line" name="line_2">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+    </widget>
+   </item>
+   <item row="12" column="2" rowspan="2">
+    <widget class="QWidget" name="blastHitsWidget" native="true">
+     <layout class="QHBoxLayout" name="horizontalLayout_7">
+      <property name="leftMargin">
+       <number>0</number>
+      </property>
+      <property name="topMargin">
+       <number>0</number>
+      </property>
+      <property name="rightMargin">
+       <number>0</number>
+      </property>
+      <property name="bottomMargin">
+       <number>0</number>
+      </property>
+      <item>
+       <widget class="InfoTextWidget" name="blastHitsTableInfoText" native="true">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>16</width>
+          <height>16</height>
+         </size>
+        </property>
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The hits are displayed in this table after a graph search is run.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Query name&lt;/span&gt;: This is the name of the query for the hit.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Node name&lt;/span&gt;: This is the name of the graph node that the query matched.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Percent identity&lt;/span&gt;: This is the sequence similarity over the length of the hit. 100% identity means that the query and node are identical over the length of the hit.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Alignment length&lt;/span&gt;: This is the length of the alignment as measured against the node. It is equal to node end minus node start plus one.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Query cover&lt;/span&gt;: This is the fraction of the query covered by the hit. It is equivalent to the 'qcovhsp' output option in BLAST.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Mismatches&lt;/span&gt;: This is the number of locations (bases for nucleotide sequence, amino acids for protein sequences) where the query and node sequences differ.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Gap opens&lt;/span&gt;: This is the number of gaps in the alignment due to either insertions or deletions.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Query start&lt;/span&gt;: This is the position where the alignment starts relative to the query.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Query end&lt;/span&gt;: This is the position where the alignment ends relative to the query.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Node start&lt;/span&gt;: This is the position where the alignment starts relative to the node sequence.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Node end&lt;/span&gt;: This is the position where the alignment ends relative to the node sequence.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;E-value&lt;/span&gt;: This is the calculated expect value (if any).&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Bit score&lt;/span&gt;: This is the calculated bit score (if any).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QTableView" name="blastHitsTable"/>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="13" column="1">
+    <spacer name="verticalSpacer_2">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
    </item>
   </layout>
  </widget>
@@ -703,33 +736,33 @@
  <connections>
   <connection>
    <sender>buttonBox</sender>
-   <signal>rejected()</signal>
-   <receiver>GraphSearchDialog</receiver>
-   <slot>reject()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>603</x>
-     <y>748</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>286</x>
-     <y>274</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>buttonBox</sender>
    <signal>accepted()</signal>
    <receiver>GraphSearchDialog</receiver>
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>535</x>
-     <y>748</y>
+     <x>812</x>
+     <y>724</y>
     </hint>
     <hint type="destinationlabel">
-     <x>157</x>
-     <y>274</y>
+     <x>610</x>
+     <y>376</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>rejected()</signal>
+   <receiver>GraphSearchDialog</receiver>
+   <slot>reject()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>812</x>
+     <y>724</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>610</x>
+     <y>376</y>
     </hint>
    </hints>
   </connection>
