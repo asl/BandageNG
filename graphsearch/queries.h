@@ -53,6 +53,7 @@ public:
     size_t getQueryCount(QuerySequenceType sequenceType) const;
     bool isQueryPresent(const Query * query) const;
     Query::Hits allHits() const;
+    size_t numHits() const;
     const auto &queries() const { return m_queries; }
     auto &queries() { return m_queries; }
     Query *query(size_t idx) { return m_queries[idx]; }

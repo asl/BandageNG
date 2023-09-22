@@ -152,6 +152,15 @@ void Queries::findQueryPaths() {
         query->findQueryPaths();
 }
 
+size_t Queries::numHits() const {
+    size_t res = 0;
+
+    for (const auto *query : m_queries)
+        res += query->getHits().size();
+
+    return res;
+}
+
 Query::Hits Queries::allHits() const {
     Query::Hits res;
 

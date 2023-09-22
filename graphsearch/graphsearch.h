@@ -65,6 +65,7 @@ public:
     size_t getQueryCountWithAtLeastOnePath() const { return m_queries.getQueryCountWithAtLeastOnePath(); }
     size_t getQueryPathCount() const { return m_queries.getQueryPathCount(); }
     size_t getQueryCount(QuerySequenceType sequenceType) const { return m_queries.getQueryCount(sequenceType); }
+    size_t getNumHits() const { return m_queries.numHits(); }
 
     static bool findProgram(const QString& programName, QString * command);
 

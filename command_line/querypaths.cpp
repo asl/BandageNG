@@ -96,6 +96,7 @@ int handleQueryPathsCmd(QApplication *app,
         err << g_blastSearch->lastError() << Qt::endl;
         return 1;
     }
+    out << "done" << Qt::endl;
 
     out << "(" << QDateTime::currentDateTime().toString("dd MMM yyyy hh:mm:ss") << ") Running BLAST search... " << Qt::flush;
     QString blastError = g_blastSearch->doAutoGraphSearch(*g_assemblyGraph,
@@ -219,6 +220,7 @@ int handleQueryPathsCmd(QApplication *app,
         out << "              " + hitsFastaFilename << Qt::endl;
 
     out << Qt::endl << "Summary: Total BLAST queries:           " << g_blastSearch->getQueryCount() << Qt::endl;
+    out << "         Total hits:                    " << g_blastSearch->getNumHits() << Qt::endl;
     out << "         Queries with found paths:      " << g_blastSearch->getQueryCountWithAtLeastOnePath() << Qt::endl;
     out << "         Total query paths:             " << g_blastSearch->getQueryPathCount() << Qt::endl;
 
