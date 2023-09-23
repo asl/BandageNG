@@ -26,6 +26,7 @@
 #include <CLI/CLI.hpp>
 
 #include <QDateTime>
+#include <type_traits>
 
 CLI::App *addQueryPathsSubcommand(CLI::App &app,
                                   QueryPathsCmd &cmd) {
@@ -149,6 +150,25 @@ int handleQueryPathsCmd(QApplication *app,
     QList<QString> hitSequenceIDs;
     QList<QByteArray> hitSequences;
 
+    auto maybeNA = [](auto val) -> QString {
+        using ValT = typeof(val);
+        if constexpr (std::is_same_v<ValT, double>) {
+            if (isnan(val))
+            return "N/A";
+        } else if constexpr (std::is_same_v<ValT, SciNot>) {
+            if (isnan(val.toDouble()))
+                return "N/A";
+            return val.asString(false);
+        } else {
+            if (val < 0)
+                return "N/A";
+
+            return QString::number(val);
+        }
+
+        return "N/A";
+    };
+
     for (const auto *query : g_blastSearch->queries()) {
         unsigned num = 0;
         for (const auto & queryPath : query->getPaths()) {
@@ -157,14 +177,14 @@ int handleQueryPathsCmd(QApplication *app,
             tableOut << query->getName() << "\t"
                      << path.getString(true) << "\t"
                      << QString::number(path.getLength()) << "\t"
-                     << QString::number(100.0 * queryPath.getPathQueryCoverage()) << "%\t"
-                     << QString::number(100.0 * queryPath.getHitsQueryCoverage()) << "%\t"
-                     << QString::number(queryPath.getMeanHitPercIdentity()) << "%\t"
-                     << QString::number(queryPath.getTotalHitMismatches()) << "\t"
-                     << QString::number(queryPath.getTotalHitGapOpens()) << "\t"
-                     << QString::number(100.0 * queryPath.getRelativePathLength()) << "%\t"
+                     << QString::number(queryPath.getPathQueryCoverage()) << "\t"
+                     << QString::number(queryPath.getHitsQueryCoverage()) << "\t"
+                     << maybeNA(queryPath.getMeanHitPercIdentity()) << "\t"
+                     << maybeNA(queryPath.getTotalHitMismatches()) << "\t"
+                     << maybeNA(queryPath.getTotalHitGapOpens()) << "\t"
+                     << QString::number(queryPath.getRelativePathLength()) << "\t"
                      << queryPath.getAbsolutePathLengthDifferenceString(false) << "\t"
-                     << queryPath.getEvalueProduct().asString(false) << "\t";
+                     << maybeNA(queryPath.getEvalueProduct()) << "\t";
 
             // If we are using a separate file for the path sequences, save the
             // sequence along with its ID to save later, and store the ID here.

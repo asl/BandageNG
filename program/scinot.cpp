@@ -63,7 +63,8 @@ SciNot::SciNot(const QString& sciNotString) :
 SciNot::SciNot(double num) :
     m_coefficient(num), m_exponent(0)
 {
-    normalise();
+    if (!isnan(num))
+        normalise();
 }
 
 

@@ -231,7 +231,7 @@ void Queries::addPathHits(const PathHits &hits) {
                                                  -1, -1,
                                                  queryStart, queryEnd,
                                                  nodeStart, nodeEnd,
-                                                 0, 0));
+                                                 NAN, -1));
         }
 
         query->emplaceQueryPath(*path, query, pathHits);

@@ -200,8 +200,12 @@ QVariant QueryPathsModel::data(const QModelIndex &index, int role) const {
             return formatDoubleForDisplay(100.0 * queryPath.getRelativePathLength(), 2) + "%";
         case QueryPathsColumns::LengthDisc:
             return queryPath.getAbsolutePathLengthDifferenceString(true);
-        case QueryPathsColumns::Evalue:
-            return queryPath.getEvalueProduct().asString(false);
+        case QueryPathsColumns::Evalue: {
+            SciNot res = queryPath.getEvalueProduct();
+            if (isnan(res.toDouble()))
+                return "N/A";
+            return res.asString(false);
+        }
         case QueryPathsColumns::Copy: {
             QByteArray pathSequence = queryPath.getPath().getPathSequence();
             return pathSequence.length() < 8 ? pathSequence : pathSequence.left(8) + "...";
