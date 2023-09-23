@@ -30,16 +30,18 @@ using namespace search;
 
 enum class QueryPathsColumns : int {
     PathString = 0,
-    Length = 1,
-    QueryCoveragePath = 2,
-    QueryCoverageHits = 3,
-    PercIdentity = 4,
-    Mismatches = 5,
-    GapOpens = 6,
-    RelativeLength = 7,
-    LengthDisc = 8,
-    Evalue = 9,
-    Copy = 10,
+    Length,
+    QueryStart,
+    QueryEnd,
+    QueryCoveragePath,
+    QueryCoverageHits,
+    PercIdentity,
+    Mismatches,
+    GapOpens,
+    RelativeLength,
+    LengthDisc,
+    Evalue,
+    Copy,
     TotalColumns = Copy + 1
 };
 
@@ -133,6 +135,10 @@ QVariant QueryPathsModel::headerData(int section, Qt::Orientation orientation, i
             return "Path";
         case QueryPathsColumns::Length:
             return "Length";
+        case QueryPathsColumns::QueryStart:
+            return "Query\nstart";
+        case QueryPathsColumns::QueryEnd:
+            return "Query\nend";
         case QueryPathsColumns::QueryCoveragePath:
             return "Query\ncovered\nby path";
         case QueryPathsColumns::QueryCoverageHits:
@@ -173,6 +179,18 @@ QVariant QueryPathsModel::data(const QModelIndex &index, int role) const {
             return queryPath.getPath().getString(true);
         case QueryPathsColumns::Length:
             return queryPath.getPath().getLength();
+        case QueryPathsColumns::QueryStart: {
+            int start = queryPath.queryStart();
+            if (start < 0)
+                return "N/A";
+            return start;
+        }
+        case QueryPathsColumns::QueryEnd: {
+            int end = queryPath.queryEnd();
+            if (end < 0)
+                return "N/A";
+            return end;
+        }
         case QueryPathsColumns::QueryCoveragePath:
             return formatDoubleForDisplay(100.0 * queryPath.getPathQueryCoverage(), 2) + "%";
         case QueryPathsColumns::QueryCoverageHits:

@@ -35,6 +35,9 @@ namespace search {
         //ACCESSORS
         const Path &getPath() const { return m_path; }
         const auto &getHits() const { return m_hits; }
+        int queryStart() const;
+        int queryEnd() const;
+        size_t queryLength() const;
 
         SciNot getEvalueProduct() const;
         double getMeanHitPercIdentity() const;

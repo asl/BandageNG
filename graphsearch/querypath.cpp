@@ -199,6 +199,21 @@ QString QueryPath::getAbsolutePathLengthDifferenceString(bool commas) const {
         return lengthDiscSign + QString::number(lengthDisc);
 }
 
+size_t QueryPath::queryLength() const { return m_query->getLength(); }
+
+int QueryPath::queryStart() const {
+    if (m_hits.empty())
+        return -1;
+
+    return m_hits.front()->m_queryStart;
+}
+
+int QueryPath::queryEnd() const {
+    if (m_hits.empty())
+        return -1;
+
+    return m_hits.back()->m_queryEnd;
+}
 
 //This function returns the fraction of the query that is covered by the entire
 //path.
