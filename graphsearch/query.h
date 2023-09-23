@@ -78,7 +78,7 @@ namespace search {
         void findQueryPaths();
         void addQueryPath(QueryPath path) { m_paths.emplace_back(path); }
         template<typename... Args>
-        void emplaceQueryPath(Args&... args) {
+        void emplaceQueryPath(Args&&... args) {
             m_paths.emplace_back(std::forward<Args>(args)...);
         }
 

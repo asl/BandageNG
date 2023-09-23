@@ -17,6 +17,7 @@
 
 
 #include "queries.h"
+#include "querypath.h"
 #include "hits.h"
 
 #include "graph/debruijnnode.h"
@@ -234,6 +235,28 @@ void Queries::addPathHits(const PathHits &hits) {
                                                  NAN, -1));
         }
 
-        query->emplaceQueryPath(*path, query, pathHits);
+        QueryPath queryPath(*path, query, pathHits);
+
+        // We now want to throw out any paths for which the hits fail to meet the
+        // thresholds in settings.
+        if (queryPath.getPathQueryCoverage() < g_settings->minQueryCoveredByPath)
+            continue;
+        if (g_settings->minQueryCoveredByHits.on &&
+            queryPath.getHitsQueryCoverage() < g_settings->minQueryCoveredByHits)
+            continue;
+        if (g_settings->minLengthPercentage.on &&
+            queryPath.getRelativePathLength() < g_settings->minLengthPercentage)
+            continue;
+        if (g_settings->maxLengthPercentage.on &&
+            queryPath.getRelativePathLength() > g_settings->maxLengthPercentage)
+            continue;
+        if (g_settings->minLengthBaseDiscrepancy.on &&
+            queryPath.getAbsolutePathLengthDifference() < g_settings->minLengthBaseDiscrepancy)
+            continue;
+        if (g_settings->maxLengthBaseDiscrepancy.on &&
+            queryPath.getAbsolutePathLengthDifference() > g_settings->maxLengthBaseDiscrepancy)
+            continue;
+
+        query->emplaceQueryPath(std::move(queryPath));
     }
 }
