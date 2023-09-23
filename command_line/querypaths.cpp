@@ -123,6 +123,8 @@ int handleQueryPathsCmd(QApplication *app,
     tableOut << "Query\t"
                 "Path\t"
                 "Length\t"
+                "Query start\t"
+                "Query end\t"
                 "Query covered by path\t"
                 "Query covered by hits\t"
                 "Mean hit identity\t"
@@ -174,17 +176,19 @@ int handleQueryPathsCmd(QApplication *app,
         for (const auto & queryPath : query->getPaths()) {
             Path path = queryPath.getPath();
 
-            tableOut << query->getName() << "\t"
-                     << path.getString(true) << "\t"
-                     << QString::number(path.getLength()) << "\t"
-                     << QString::number(queryPath.getPathQueryCoverage()) << "\t"
-                     << QString::number(queryPath.getHitsQueryCoverage()) << "\t"
-                     << maybeNA(queryPath.getMeanHitPercIdentity()) << "\t"
-                     << maybeNA(queryPath.getTotalHitMismatches()) << "\t"
-                     << maybeNA(queryPath.getTotalHitGapOpens()) << "\t"
-                     << QString::number(queryPath.getRelativePathLength()) << "\t"
-                     << queryPath.getAbsolutePathLengthDifferenceString(false) << "\t"
-                     << maybeNA(queryPath.getEvalueProduct()) << "\t";
+            tableOut << query->getName() << '\t'
+                     << path.getString(true) << '\t'
+                     << QString::number(path.getLength()) << '\t'
+                     << QString::number(queryPath.queryStart()) << '\t'
+                     << QString::number(queryPath.queryEnd()) << '\t'
+                     << QString::number(queryPath.getPathQueryCoverage()) << '\t'
+                     << QString::number(queryPath.getHitsQueryCoverage()) << '\t'
+                     << maybeNA(queryPath.getMeanHitPercIdentity()) << '\t'
+                     << maybeNA(queryPath.getTotalHitMismatches()) << '\t'
+                     << maybeNA(queryPath.getTotalHitGapOpens()) << '\t'
+                     << QString::number(queryPath.getRelativePathLength()) << '\t'
+                     << queryPath.getAbsolutePathLengthDifferenceString(false) << '\t'
+                     << maybeNA(queryPath.getEvalueProduct()) << '\t';
 
             // If we are using a separate file for the path sequences, save the
             // sequence along with its ID to save later, and store the ID here.
