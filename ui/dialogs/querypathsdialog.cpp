@@ -220,7 +220,7 @@ QVariant QueryPathsModel::data(const QModelIndex &index, int role) const {
             return queryPath.getAbsolutePathLengthDifferenceString(true);
         case QueryPathsColumns::Evalue: {
             SciNot res = queryPath.getEvalueProduct();
-            if (isnan(res.toDouble()))
+            if (std::isnan(res.toDouble()))
                 return "N/A";
             return res.asString(false);
         }

@@ -877,7 +877,7 @@ QVariant HitsListModel::data(const QModelIndex &index, int role) const {
         case HitsColumns::NodeEnd:
             return hit->m_nodeEnd;
         case HitsColumns::Evalue:
-            if (isnan(hit->m_eValue.toDouble()))
+            if (std::isnan(hit->m_eValue.toDouble()))
                 return "N/A";
             return hit->m_eValue.asString(false);
         case HitsColumns::BitScore:

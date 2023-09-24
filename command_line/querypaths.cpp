@@ -155,10 +155,10 @@ int handleQueryPathsCmd(QApplication *app,
     auto maybeNA = [](auto val) -> QString {
         using ValT = typeof(val);
         if constexpr (std::is_same_v<ValT, double>) {
-            if (isnan(val))
+            if (std::isnan(val))
             return "N/A";
         } else if constexpr (std::is_same_v<ValT, SciNot>) {
-            if (isnan(val.toDouble()))
+            if (std::isnan(val.toDouble()))
                 return "N/A";
             return val.asString(false);
         } else {
