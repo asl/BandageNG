@@ -120,8 +120,8 @@ Settings::Settings()
 
     maxHitsForQueryPath = IntSetting(100, 0, 1000000);
     maxQueryPathNodes = IntSetting(6, 1, 50);
-    minQueryCoveredByPath = FloatSetting(0.9, 0.3, 1.0);
-    minQueryCoveredByHits = FloatSetting(0.9, 0.3, 1.0, true);
+    minQueryCoveredByPath = FloatSetting(0.9, 0.15, 1.0);
+    minQueryCoveredByHits = FloatSetting(0.9, 0.15, 1.0, true);
     minMeanHitIdentity = FloatSetting(0.5, 0.0, 1.0, true);
     maxEValueProduct = SciNotSetting(SciNot(1.0, -10), SciNot(1.0, -999), SciNot(9.9, 1), true);
     minLengthPercentage = FloatSetting(0.95, 0.0, 10000.0, true);
