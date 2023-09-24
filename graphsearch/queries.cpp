@@ -17,6 +17,7 @@
 
 
 #include "queries.h"
+#include "graph/path.h"
 #include "querypath.h"
 #include "hits.h"
 
@@ -217,6 +218,7 @@ void Queries::addPathHits(const PathHits &hits) {
         if (invert)
             std::swap(pathStart, pathEnd);
 
+        std::vector<DeBruijnNode*> pathNodes;
         for (auto entry: path->getNodeCovering(pathStart, pathEnd)) {
             DeBruijnNode *node = entry.first;
             int nodeStart = entry.second.mapped_range.from, nodeEnd = entry.second.mapped_range.to;
@@ -228,6 +230,7 @@ void Queries::addPathHits(const PathHits &hits) {
                 std::swap(nodeEnd, nodeStart);
             }
 
+            pathNodes.push_back(node);
             pathHits.push_back(query->emplaceHit(query, node, -1, nodeEnd - nodeStart + 1,
                                                  -1, -1,
                                                  queryStart, queryEnd,
@@ -235,7 +238,18 @@ void Queries::addPathHits(const PathHits &hits) {
                                                  NAN, -1));
         }
 
-        QueryPath queryPath(*path, query, pathHits);
+        if (invert) {
+            std::reverse(pathNodes.begin(), pathNodes.end());
+            std::reverse(pathHits.begin(), pathHits.end());
+        }
+
+        Path p(Path::makeFromOrderedNodes(pathNodes, false));
+        // Something went wrong, ignore
+        if (p.nodes().size() != pathNodes.size())
+            continue;
+        p.trim(pathHits.front()->m_nodeStart - 1, pathHits.back()->m_node->getLength() - pathHits.back()->m_nodeEnd);
+
+        QueryPath queryPath(std::move(p), query, pathHits);
 
         // We now want to throw out any paths for which the hits fail to meet the
         // thresholds in settings.
