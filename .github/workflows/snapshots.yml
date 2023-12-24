@@ -15,6 +15,7 @@ env:
 
 jobs:
   build-linux:
+    if: ${{ false }}  # disable for now    
     runs-on: ubuntu-20.04
     name: '🐧 Ubuntu 20.04'
 
@@ -70,6 +71,7 @@ jobs:
           path: ${{github.workspace}}/build/BandageNG*.AppImage
 
   build-mac:
+    if: ${{ false }}  # disable for now    
     runs-on: macos-latest
     name: '🍎 macOS'
     steps:
@@ -107,7 +109,6 @@ jobs:
           path: ${{github.workspace}}/build/BandageNG*.dmg
 
   build-windows:
-    if: ${{ false }}  # disable for now
     runs-on: windows-latest
     name: '🧊 Windows'
     steps:
@@ -140,6 +141,7 @@ jobs:
 
   # Upload continuous build
   upload:
+      if: ${{ false }}  # disable for now
       name: '🗂 Create release and upload artifacts'
       needs:
         - build-linux
