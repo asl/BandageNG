@@ -12,6 +12,7 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 find_package(Qt6 REQUIRED COMPONENTS Widgets Svg Test Concurrent)
 find_package(ZLIB REQUIRED)
+message(STATUS "Found ZLIB ${ZLIB_LIBRARIES}")
 
 set(LIB_SOURCES
     graphsearch/hit.cpp

@@ -109,7 +109,7 @@ jobs:
           path: ${{github.workspace}}/build/BandageNG*.dmg
 
   build-windows:
-    runs-on: windows-2019 # 2022 seems not to install zlib by default anymore
+    runs-on: windows-latest
     name: '🧊 Windows'
     steps:
       - id: commit
@@ -133,8 +133,12 @@ jobs:
           cache-key-prefix: ${{ runner.os }}-QtCache
           version: ${{env.QT_VERSION}}
 
+      - name: '⚙️ Install Zlib'
+        run: |
+          C:\msys64\usr\bin\pacman -S zlib-devel --noconfirm
+          
       - name: '⚙️ Configure CMake'
-        run:  cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_INSTALL_PREFIX=/usr
+        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_LIBRARY_PATH=C:\msys64\usr\lib
 
       - name: '🚧 Build'
         run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} -j8
