@@ -109,7 +109,7 @@ jobs:
           path: ${{github.workspace}}/build/BandageNG*.dmg
 
   build-windows:
-    runs-on: windows-latest
+    runs-on: windows-2019 # 2022 seems not to install zlib by default anymore
     name: '🧊 Windows'
     steps:
       - id: commit
