@@ -36,6 +36,11 @@
 
 #include <zlib.h>
 
+#if defined(_MSC_VER)
+#include <BaseTsd.h>
+typedef SSIZE_T ssize_t;
+#endif
+
 static bool checkFirstLineOfFile(const QString& fullFileName, const QString& regExp) {
     QFile inputFile(fullFileName);
     if (inputFile.open(QIODevice::ReadOnly)) {
