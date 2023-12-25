@@ -25,13 +25,15 @@
 #include <utility>
 
 class DeBruijnNode;
-class AnnotationSetting;
+struct AnnotationSetting;
 namespace search {
     class Query;
     class Queries;
 }
 
 // Often used function for access const reference to value in map even if it doesn't exist
+// FIXME: Make it work with MSVC
+#if 0
 template <typename K, typename V, template<typename, typename, typename...> typename MapLike>
 const V &getFromMapOrDefaultConstructed(const MapLike<K, V> &map, const K &key) {
     auto it = map.find(key);
@@ -42,6 +44,7 @@ const V &getFromMapOrDefaultConstructed(const MapLike<K, V> &map, const K &key) 
         return defaultConstructed;
     }
 }
+#endif
 
 struct AnnotationGroup {
     using AnnotationVector = std::vector<std::unique_ptr<Annotation>>;
@@ -52,7 +55,12 @@ struct AnnotationGroup {
     AnnotationMap annotationMap;
 
     const AnnotationVector &getAnnotations(const DeBruijnNode *node) const {
-        return getFromMapOrDefaultConstructed(annotationMap, node);
+            auto it = annotationMap.find(node);
+            if (it != annotationMap.end())
+                return it->second;
+
+            static const AnnotationVector defaultConstructed{};
+            return defaultConstructed;
     }
 };
 
