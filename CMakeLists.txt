@@ -90,8 +90,8 @@ set(CLI_SOURCES
     command_line/querypaths.cpp
     command_line/reduce.cpp
     command_line/settings.cpp)
-
-set(RESOURCES images/images.qrc images/application.icns)
+      
+set(RESOURCES images/images.qrc images/application.icns images/application.rc)
 
 message(STATUS "Building Bandage-NG version ${PROJECT_VERSION}")
 add_compile_definitions(APP_VERSION="${PROJECT_VERSION}-dev")
