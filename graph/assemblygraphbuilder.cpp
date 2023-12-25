@@ -129,7 +129,18 @@ static ssize_t gzgetdelim(char **buf, size_t *bufsiz, int delimiter, gzFile fp) 
 }
 
 static ssize_t gzgetline(char **buf, size_t *bufsiz, gzFile fp) {
-    return gzgetdelim(buf, bufsiz, '\n', fp);
+    ssize_t read = gzgetdelim(buf, bufsiz, '\n', fp);
+    // Very big hammer to handle CRLF line endings: if the last symbol of a line
+    // is CR, then replace it with 0
+    if (read >= 2) {
+        char *last = *buf + read - 2;
+        if (*last == '\r') {
+            *last = '\0';
+            read -= 1;
+        }
+    }
+
+    return read;
 }
 
 

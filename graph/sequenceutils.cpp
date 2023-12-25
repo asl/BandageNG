@@ -29,12 +29,12 @@ namespace utils {
         int currentIndex = 0;
         while (charactersRemaining > interval) {
             output += sequence.mid(currentIndex, interval);
-            output += "\n";
+            output += '\n';
             charactersRemaining -= interval;
             currentIndex += interval;
         }
         output += sequence.mid(currentIndex);
-        output += "\n";
+        output += '\n';
 
         return output;
     }
