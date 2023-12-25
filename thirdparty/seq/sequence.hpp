@@ -22,8 +22,10 @@
 #include <cstring>
 
 // Silence bogus gcc warnings
+#if defined(__GCC__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wconversion"
+#endif
 
 class Sequence {
     // Type to store Seq in Sequences
@@ -432,4 +434,6 @@ std::ostream &operator<<(std::ostream &os, const Sequence &s) {
     return os;
 }
 
+#if defined(__GCC__)
 #pragma GCC diagnostic pop
+#endif
