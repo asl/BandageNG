@@ -59,8 +59,9 @@ int handleInfoCmd(QApplication *app,
     QTextStream out(stdout);
     QTextStream err(stderr);
 
-    if (!g_assemblyGraph->loadGraphFromFile(cmd.m_graph.c_str())) {
-        err << "Bandage-NG error: could not load " << cmd.m_graph.c_str() << Qt::endl;
+    QString inputFile = QString::fromStdString(cmd.m_graph.generic_string());
+    if (!g_assemblyGraph->loadGraphFromFile(inputFile)) {
+        err << "Bandage-NG error: could not load " << inputFile << Qt::endl;
         return 1;
     }
 

@@ -72,9 +72,10 @@ int handleImageCmd(QApplication *app,
         return 1;
     }
 
-    bool loadSuccess = g_assemblyGraph->loadGraphFromFile(cmd.m_graph.c_str());
+    QString inputFile = QString::fromStdString(cmd.m_graph.generic_string());
+    bool loadSuccess = g_assemblyGraph->loadGraphFromFile(inputFile);
     if (!loadSuccess) {
-        outputText(("Bandage-NG error: could not load " + cmd.m_graph.native()).c_str(), &err); // FIXME
+        outputText("Bandage-NG error: could not load " + inputFile, &err);
         return 1;
     }
 
@@ -125,14 +126,15 @@ int handleImageCmd(QApplication *app,
         QString errormsg;
         QStringList columns;
         bool coloursLoaded = false;
+        QString filename = QString::fromStdString(cmd.m_color.generic_string());
 
-        if (!g_assemblyGraph->loadCSV(cmd.m_color.c_str(), &columns, &errormsg, &coloursLoaded)) {
+        if (!g_assemblyGraph->loadCSV(filename, &columns, &errormsg, &coloursLoaded)) {
             err << errormsg << Qt::endl;
             return 1;
         }
 
         if (!coloursLoaded) {
-            err << cmd.m_color.c_str() << " didn't contain color" << Qt::endl;
+            err << filename << " didn't contain color" << Qt::endl;
             return 1;
         }
          g_settings->initializeColorer(CUSTOM_COLOURS);
@@ -173,11 +175,11 @@ int handleImageCmd(QApplication *app,
         painter.setRenderHint(QPainter::Antialiasing);
         painter.setRenderHint(QPainter::TextAntialiasing);
         scene.render(&painter);
-        success = image.save(cmd.m_image.c_str());
+        success = image.save(QString::fromStdString(cmd.m_image.generic_string()));
         painter.end();
     } else { //SVG
         QSvgGenerator generator;
-        generator.setFileName(cmd.m_image.c_str());
+        generator.setFileName(QString::fromStdString(cmd.m_image.generic_string()));
         generator.setSize(QSize(width, height));
         generator.setViewBox(QRect(0, 0, width, height));
         painter.begin(&generator);

@@ -47,12 +47,13 @@ int handleReduceCmd(QApplication *app,
     QTextStream out(stdout);
     QTextStream err(stderr);
 
-    QString outputFilename = cmd.m_out.c_str();
+    QString outputFilename = QString::fromStdString(cmd.m_out.generic_string());
     if (!outputFilename.endsWith(".gfa"))
         outputFilename += ".gfa";
 
-    if (!g_assemblyGraph->loadGraphFromFile(cmd.m_graph.c_str())) {
-        outputText(("Bandage-NG error: could not load " + cmd.m_graph.native()).c_str(), &err);
+    QString inputFilename = QString::fromStdString(cmd.m_graph.generic_string());
+    if (!g_assemblyGraph->loadGraphFromFile(inputFilename)) {
+        outputText("Bandage-NG error: could not load " + inputFilename, &err);
         return 1;
     }
 

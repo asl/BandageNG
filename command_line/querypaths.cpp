@@ -53,7 +53,7 @@ int handleQueryPathsCmd(QApplication *app,
     QTextStream out(stdout);
     QTextStream err(stderr);
 
-    g_settings->blastQueryFilename = cmd.m_queries.c_str();
+    g_settings->blastQueryFilename = QString::fromStdString(cmd.m_queries.generic_string());
 
     // Ensure that the --query option isn't used, as that would overwrite the
     // queries file that is a positional argument.
@@ -92,8 +92,9 @@ int handleQueryPathsCmd(QApplication *app,
 
     log("Loading graph...        ");
 
-    if (!g_assemblyGraph->loadGraphFromFile(cmd.m_graph.c_str())) {
-        err << "Bandage-NG error: could not load " << cmd.m_graph.c_str() << Qt::endl;
+    QString inputFile = QString::fromStdString(cmd.m_graph.generic_string());
+    if (!g_assemblyGraph->loadGraphFromFile(inputFile)) {
+        err << "Bandage-NG error: could not load " << inputFile << Qt::endl;
         return 1;
     }
 

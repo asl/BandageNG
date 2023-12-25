@@ -35,7 +35,8 @@ CLI::App *addLoadSubcommand(CLI::App &app, LoadCmd &cmd) {
 
 int handleLoadCmd(QApplication *app,
                   const CLI::App &cli, const LoadCmd &cmd) {
-    MainWindow w{cmd.m_graph.c_str(), cmd.m_draw};
+    QString inputFile = QString::fromStdString(cmd.m_graph.generic_string());
+    MainWindow w{inputFile, cmd.m_draw};
 
     w.show();
     return app->exec();

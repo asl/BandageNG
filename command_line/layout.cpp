@@ -60,9 +60,10 @@ int handleLayoutCmd(QApplication *app,
         return 1;
     }
 
-    bool loadSuccess = g_assemblyGraph->loadGraphFromFile(cmd.m_graph.c_str());
+    QString inputFile = QString::fromStdString(cmd.m_graph.generic_string());
+    bool loadSuccess = g_assemblyGraph->loadGraphFromFile(inputFile);
     if (!loadSuccess) {
-        outputText(("Bandage-NG error: could not load " + cmd.m_graph.native()).c_str(), &err); // FIXME
+        outputText("Bandage-NG error: could not load " + inputFile, &err);
         return 1;
     }
 
@@ -103,12 +104,13 @@ int handleLayoutCmd(QApplication *app,
                               g_settings->linearLayout,
                               g_settings->componentSeparation).layoutGraph(*g_assemblyGraph);
 
+    auto outputFile = QString::fromStdString(cmd.m_layout.generic_string());
     bool success = (isTSV ?
-                    layout::io::saveTSV(cmd.m_layout.c_str(), layout) :
-                    layout::io::save(cmd.m_layout.c_str(), layout));
+                    layout::io::saveTSV(outputFile, layout) :
+                    layout::io::save(outputFile, layout));
     
     if (!success) {
-        out << "There was an error writing the layout to file." << Qt::endl;
+        out << "There was an error writing the layout to " << outputFile << Qt::endl;
         return 1;
     }
 
