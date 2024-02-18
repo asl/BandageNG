@@ -513,12 +513,19 @@ namespace io {
                 else if (orientation == '<')
                     nodeName.push_back('-');
                 else
-                    throw AssemblyGraphError(std::string("invalid path string: ").append(node));
+                    throw AssemblyGraphError(std::string("invalid walk string: ").append(node));
 
                 walkNodes.push_back(graph.m_deBruijnGraphNodes.at(nodeName));
             }
 
             Path p(Path::makeFromOrderedNodes(walkNodes, false));
+            // We were unable to build path through the graph, likely the input
+            // file is invalid
+            if (p.nodes().size() != walkNodes.size()) {
+                fprintf(stderr, "malformed walk string, cannot reconstruct walk through the graph");
+                record.print();
+                throw AssemblyGraphError(std::string("malformed walk string, cannot reconstruct walk through the graph"));
+            }
 
             // Start / end positions on path are zero-based, graph location is 1-based. So we'd just trim
             // the corresponding amounts
