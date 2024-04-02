@@ -115,6 +115,7 @@ private:
 
 struct Walk {
     std::string sampleId;
+    unsigned seqStart, seqEnd;
     unsigned hapIndex;
     Path walk;
 };

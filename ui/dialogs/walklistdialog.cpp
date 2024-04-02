@@ -30,8 +30,10 @@ enum Columns : unsigned {
     HapIndex = 1,
     Sequence = 2,
     Length = 3,
-    NodePosition = 4,
-    WalkNodes = 5,
+    SeqStart = 4,
+    SeqEnd = 5,
+    NodePosition = 6,
+    WalkNodes = 7,
     TotalColumns = WalkNodes + 1
 };
 
@@ -55,7 +57,7 @@ WalkListDialog::WalkListDialog(const AssemblyGraph &graph,
     ui->buttonBox->button(QDialogButtonBox::Close)->setAutoDefault(false);
 
     ui->walksView->setModel(new WalkListModel(graph, startNodes, ui->walksView));
-    ui->walksView->sortByColumn(2, Qt::AscendingOrder);
+    ui->walksView->sortByColumn(Columns::Sequence, Qt::AscendingOrder);
     ui->walksView->setSortingEnabled(true);
     ui->walksView->setColumnHidden(Columns::NodePosition, startNodes.size() != 1);
     ui->walksView->resizeColumnsToContents();
@@ -124,15 +126,31 @@ void WalkListModel::sort(int column, Qt::SortOrder order) {
                  [order](const auto &lhs, const auto &rhs) {
                 const auto &lSample = lhs.second->sampleId;
                 const auto &rSample = rhs.second->sampleId;
-                     
+
                 return order == Qt::SortOrder::AscendingOrder ?
                        lSample < rSample : rSample < lSample;
             });
-            break;            
+            break;
         case Columns::Length:
             std::sort(m_orderedWalks.begin(), m_orderedWalks.end(),
                       [order](const auto &lhs, const auto &rhs) {
                           unsigned l = lhs.second->walk.getLength(), r = rhs.second->walk.getLength();
+                          return order == Qt::SortOrder::AscendingOrder ?
+                                 l < r : r < l;
+                      });
+            break;
+        case Columns::SeqStart:
+            std::sort(m_orderedWalks.begin(), m_orderedWalks.end(),
+                      [order](const auto &lhs, const auto &rhs) {
+                          unsigned l = lhs.second->seqStart, r = rhs.second->seqStart;
+                          return order == Qt::SortOrder::AscendingOrder ?
+                                 l < r : r < l;
+                      });
+            break;
+        case Columns::SeqEnd:
+            std::sort(m_orderedWalks.begin(), m_orderedWalks.end(),
+                      [order](const auto &lhs, const auto &rhs) {
+                          unsigned l = lhs.second->seqEnd, r = rhs.second->seqEnd;
                           return order == Qt::SortOrder::AscendingOrder ?
                                  l < r : r < l;
                       });
@@ -155,11 +173,15 @@ QVariant WalkListModel::headerData(int section, Qt::Orientation orientation, int
         case Columns::Sample:
             return "Sample";
         case Columns::HapIndex:
-            return "Haplotype";            
+            return "Haplotype";
         case Columns::Sequence:
             return "Sequence";
         case Columns::Length:
             return "Length";
+        case Columns::SeqStart:
+            return "Sequence start";
+        case Columns::SeqEnd:
+            return "Sequence end";
         case Columns::NodePosition:
             return "Node positions";
         case Columns::WalkNodes:
@@ -184,9 +206,13 @@ QVariant WalkListModel::data(const QModelIndex &index, int role) const {
             case Columns::Sample:
                 return entry.second->sampleId.c_str();
             case Columns::HapIndex:
-                return entry.second->hapIndex;                
+                return entry.second->hapIndex;
             case Columns::Length:
                 return entry.second->walk.getLength();
+            case Columns::SeqStart:
+                return entry.second->seqStart;
+            case Columns::SeqEnd:
+                return entry.second->seqEnd;
             case Columns::NodePosition: {
                 if (m_node == nullptr)
                     return {};

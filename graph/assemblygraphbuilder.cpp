@@ -519,23 +519,20 @@ namespace io {
             }
 
             Path p(Path::makeFromOrderedNodes(walkNodes, false));
-            // We were unable to build path through the graph, likely the input
-            // file is invalid
             if (p.nodes().size() != walkNodes.size()) {
-                fprintf(stderr, "malformed walk string, cannot reconstruct walk through the graph");
-                record.print();
+                // We were unable to build path through the graph, likely the input
+                // file is invalid
                 throw AssemblyGraphError(std::string("malformed walk string, cannot reconstruct walk through the graph"));
             }
 
-            // Start / end positions on path are zero-based, graph location is 1-based. So we'd just trim
-            // the corresponding amounts
             unsigned len = p.getLength();
-            unsigned trimStart = record.SeqStart ? *record.SeqStart : 0;
-            unsigned trimEnd = record.SeqEnd ? len - *record.SeqEnd - 1 : 0;
-            p.trim(trimStart, trimEnd);
+            unsigned seqStart = record.SeqStart ? *record.SeqStart : 0;
+            unsigned seqEnd = record.SeqEnd ? *record.SeqEnd : len;
 
             graph.m_deBruijnGraphWalks.emplace(record.SeqId,
-                                               Walk{std::string(record.SampleId), record.HapIndex, std::move(p)});
+                                               Walk{std::string(record.SampleId),
+                                                   seqStart, seqEnd, record.HapIndex,
+                                                   std::move(p)});
         }
 
     public:
