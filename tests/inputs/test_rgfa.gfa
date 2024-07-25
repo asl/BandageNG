@@ -13,5 +13,6 @@ L	v5	+	v6	+	0M
 L	v6	+	v4	+	0M
 L	v1	+	v7	+	0M
 L	v7	+	v6	+	0M
-W	foo	>v1>v2>v5>v6>v4	SM:Z:Bob
-W	bar	>v1>v7>v6>v4	SM:Z:Mary
+W	foo	1	foo#chr1	*	*	>v1>v2>v5>v6>v4	SM:Z:Bob
+W	bar	1	bar#chr1	*	*	>v1>v7>v6>v4	SM:Z:Mary
+

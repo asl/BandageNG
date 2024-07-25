@@ -168,8 +168,8 @@ test_exit_code "$bandagepath --version" 0
 
 # BandageNG incorrect settings tests
 test_all "$bandagepath --abc" 109 "" "The following argument was not expected: --abc Run with --help or --helpall for more information."
-test_all "$bandagepath --scope" 114 "" "--scope: 1 required SCOPE:value in {entire->0,aroundnodes->1,aroundblast->3,depthrange->4} OR {0,1,3,4} missing Run with --help or --helpall for more information."
-test_all "$bandagepath --scope abc" 105 "" "--scope: Check abc value in {entire->0,aroundnodes->1,aroundblast->3,depthrange->4} OR {0,1,3,4} FAILED Run with --help or --helpall for more information."
+test_all "$bandagepath --scope" 114 "" "--scope: 1 required SCOPE:value in {entire->0,aroundnodes->1,aroundblast->4,depthrange->5} OR {0,1,4,5} missing Run with --help or --helpall for more information."
+test_all "$bandagepath --scope abc" 105 "" "--scope: Check abc value in {entire->0,aroundnodes->1,aroundblast->4,depthrange->5} OR {0,1,4,5} FAILED Run with --help or --helpall for more information."
 test_all "$bandagepath --nodes" 114 "" "--nodes: 1 required TEXT missing Run with --help or --helpall for more information."
 test_all "$bandagepath --distance" 114 "" "--distance: 1 required INT:INT in [0 - 100] missing Run with --help or --helpall for more information."
 test_all "$bandagepath --distance abc" 105 "" "--distance: Value abc not in range [0 - 100] Run with --help or --helpall for more information."
