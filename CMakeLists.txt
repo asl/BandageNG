@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.13)
-project(BandageNG VERSION 2023.02 LANGUAGES CXX)
+project(BandageNG VERSION 2024.07 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -69,18 +69,18 @@ set(LIB_SOURCES
     graphsearch/graphsearch.cpp)
 
 set(FORMS
-        ui/dialogs/aboutdialog.ui
-        ui/dialogs/hitfiltersdialog.ui
-        ui/dialogs/graphsearchdialog.ui
-        ui/dialogs/changenodedepthdialog.ui
-        ui/dialogs/changenodenamedialog.ui
-        ui/dialogs/enteronequerydialog.ui
-        ui/dialogs/graphinfodialog.ui
-        ui/mainwindow.ui
-        ui/dialogs/myprogressdialog.ui
-        ui/dialogs/pathspecifydialog.ui
-        ui/dialogs/querypathsdialog.ui
-        ui/dialogs/settingsdialog.ui)
+    ui/dialogs/aboutdialog.ui
+    ui/dialogs/hitfiltersdialog.ui
+    ui/dialogs/graphsearchdialog.ui
+    ui/dialogs/changenodedepthdialog.ui
+    ui/dialogs/changenodenamedialog.ui
+    ui/dialogs/enteronequerydialog.ui
+    ui/dialogs/graphinfodialog.ui
+    ui/mainwindow.ui
+    ui/dialogs/myprogressdialog.ui
+    ui/dialogs/pathspecifydialog.ui
+    ui/dialogs/querypathsdialog.ui
+    ui/dialogs/settingsdialog.ui)
 
 set(CLI_SOURCES
     command_line/commoncommandlinefunctions.cpp
@@ -94,6 +94,7 @@ set(CLI_SOURCES
 
 set(RESOURCES images/images.qrc images/application.icns)
 
+message(STATUS "Building Bandage-NG version ${PROJECT_VERSION}")
 add_compile_definitions(APP_VERSION="${PROJECT_VERSION}-dev")
 include_directories(ui)
 
