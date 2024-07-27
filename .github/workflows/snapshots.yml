@@ -21,10 +21,10 @@ jobs:
 
     steps:
       - id: commit
-        uses: pr-mpt/actions-commit-hash@v2
+        uses: pr-mpt/actions-commit-hash@v3
 
       - name: '🧰 Checkout'
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: recursive
 
@@ -76,10 +76,10 @@ jobs:
     name: '🍎 macOS'
     steps:
       - id: commit
-        uses: pr-mpt/actions-commit-hash@v2
+        uses: pr-mpt/actions-commit-hash@v3
 
       - name: '🧰 Checkout'
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: recursive
 
@@ -113,10 +113,10 @@ jobs:
     name: '🧊 Windows'
     steps:
       - id: commit
-        uses: pr-mpt/actions-commit-hash@v2
+        uses: pr-mpt/actions-commit-hash@v3
 
       - name: '🧰 Checkout'
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: recursive
 
@@ -146,7 +146,7 @@ jobs:
           windeployqt BandageNG --release --compiler-runtime
           7z a BandageNG-win-${{steps.commit.outputs.short}}.zip BandageNG -r
 
-       - name: '📤 Upload artifact: ZIP'
+      - name: '📤 Upload artifact: ZIP'
         uses: actions/upload-artifact@v3
         with:
           name: BandageNG-win-${{steps.commit.outputs.short}}.zip
