@@ -15,7 +15,7 @@ env:
 
 jobs:
   build-linux:
-    if: ${{ false }}  # disable for now    
+    if: ${{ false }}  # disable for now
     runs-on: ubuntu-20.04
     name: '🐧 Ubuntu 20.04'
 
@@ -71,7 +71,7 @@ jobs:
           path: ${{github.workspace}}/build/BandageNG*.AppImage
 
   build-mac:
-    if: ${{ false }}  # disable for now    
+    if: ${{ false }}  # disable for now
     runs-on: macos-latest
     name: '🍎 macOS'
     steps:
@@ -124,7 +124,6 @@ jobs:
         uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: x64
-          spectre: true
 
       - name: '⚙️ Install Qt'
         uses: jurplel/install-qt-action@v3
@@ -138,6 +137,20 @@ jobs:
 
       - name: '🚧 Build'
         run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} -j8
+
+      - name: '📦 Make package'
+        working-directory: ${{github.workspace}}/build
+        run: |
+          mkdir BandageNG
+          cp Release/BandageNG.exe BandageNG/
+          windeployqt BandageNG --release --compiler-runtime
+          7z a BandageNG-win-${{steps.commit.outputs.short}}.zip BandageNG -r
+
+       - name: '📤 Upload artifact: ZIP'
+        uses: actions/upload-artifact@v3
+        with:
+          name: BandageNG-win-${{steps.commit.outputs.short}}.zip
+          path: ${{github.workspace}}/build/BandageNG*.zip
 
   # Upload continuous build
   upload:
@@ -162,3 +175,4 @@ jobs:
             chmod +x pyuploadtool-x86_64.AppImage
             ./pyuploadtool-x86_64.AppImage **/BandageNG-Linux-*.AppImage
             ./pyuploadtool-x86_64.AppImage **/BandageNG-macOS-*.dmg
+            ./pyuploadtool-x86_64.AppImage **/BandageNG-win-*.zip
