@@ -65,7 +65,7 @@ jobs:
         shell: bash
 
       - name: '📤 Upload artifact: AppImage'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: BandageNG-Linux-${{steps.commit.outputs.short}}.AppImage
           path: ${{github.workspace}}/build/BandageNG*.AppImage
@@ -103,7 +103,7 @@ jobs:
           mv *.dmg BandageNG-macOS-${{steps.commit.outputs.short}}.dmg
 
       - name: '📤 Upload artifact: DMG'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: BandageNG-macOS-${{steps.commit.outputs.short}}.dmg
           path: ${{github.workspace}}/build/BandageNG*.dmg
@@ -147,7 +147,7 @@ jobs:
           7z a BandageNG-win-${{steps.commit.outputs.short}}.zip BandageNG -r
 
       - name: '📤 Upload artifact: ZIP'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: BandageNG-win-${{steps.commit.outputs.short}}.zip
           path: ${{github.workspace}}/build/BandageNG*.zip
