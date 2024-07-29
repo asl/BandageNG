@@ -15,14 +15,9 @@
 #ifndef LLVM_ADT_SPARSEBITVECTOR_H
 #define LLVM_ADT_SPARSEBITVECTOR_H
 
-// because raw_ostream need many dependencies
-#define DISABLE_RAW_OSTREAM
-
 #include "llvm/ADT/bit.h"
 #include "llvm/Support/ErrorHandling.h"
-#ifndef DISABLE_RAW_OSTREAM
 #include "llvm/Support/raw_ostream.h"
-#endif
 #include <cassert>
 #include <climits>
 #include <cstring>
@@ -877,7 +872,6 @@ operator-(const SparseBitVector<ElementSize> &LHS,
   return Result;
 }
 
-#ifndef DISABLE_RAW_OSTREAM
 // Dump a SparseBitVector to a stream
 template <unsigned ElementSize>
 void dump(const SparseBitVector<ElementSize> &LHS, raw_ostream &out) {
@@ -893,7 +887,6 @@ void dump(const SparseBitVector<ElementSize> &LHS, raw_ostream &out) {
   }
   out << "]\n";
 }
-#endif
 
 } // end namespace llvm
 
