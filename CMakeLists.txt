@@ -121,7 +121,7 @@ target_link_libraries(BandageIo PRIVATE Qt6::Gui Qt6::Widgets foonathan::lexy)
 
 # FIXME: Untagle this
 add_library(BandageLib STATIC ${LIB_SOURCES} ${FORMS} graphsearch/graphsearchers.cpp)
-target_link_libraries(BandageLib PRIVATE BandageLayout BandageIo Qt6::Concurrent Qt6::Widgets Qt6::Svg ${bandage_zlib})
+target_link_libraries(BandageLib PRIVATE BandageLayout BandageIo llvmSupport Qt6::Concurrent Qt6::Widgets Qt6::Svg ${bandage_zlib})
 target_include_directories(BandageLib INTERFACE ".")
 
 add_library(BandageCLI STATIC ${CLI_SOURCES})

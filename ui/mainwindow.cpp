@@ -348,67 +348,57 @@ void MainWindow::loadGraph(QString fullFileName) {
     progress->setWindowModality(Qt::WindowModal);
     progress->show();
 
-    auto *watcher = new QFutureWatcher<bool>;
+    auto *watcher = new QFutureWatcher<llvm::Error>;
     connect(watcher, &QFutureWatcher<bool>::finished,
-            this, [=]() {
-        try {
-            // Note that this will rethrow the exceptions, if any
-            bool loaded = watcher->result();
-            if (builder->hasComplexOverlaps())
-                QMessageBox::warning(this, "Unsupported CIGAR",
-                                     "This GFA file contains "
-                                     "links with complex CIGAR strings (containing "
-                                     "operators other than M).\n\n"
-                                     "Bandage does not support edge overlaps that are not "
-                                     "perfect, so the behaviour of such edges in this graph "
-                                     "is undefined.");
+            this,
+            [=]() {
+                if (auto E = watcher->future().takeResult()) {
+                    QString errorTitle = "Error loading graph";
+                    QString errorMessage = "There was an error when attempting to load\n"
+                                           + fullFileName + ":\n"
+                                           + QString::fromStdString(llvm::toString(std::move(E))) + "\n\n"
+                                           + "Please verify that this file has the correct format.";
+                    QMessageBox::warning(this, errorTitle, errorMessage);
+                    resetScene();
+                    cleanUp();
+                    clearGraphDetails();
+                    setUiState(NO_GRAPH_LOADED);
+                    return;
+                }
 
-            setUiState(GRAPH_LOADED);
-            setWindowTitle("BandageNG - " + fullFileName);
+                if (builder->hasComplexOverlaps())
+                    QMessageBox::warning(this, "Unsupported CIGAR",
+                                         "This GFA file contains "
+                                         "links with complex CIGAR strings (containing "
+                                         "operators other than M).\n\n"
+                                         "Bandage does not support edge overlaps that are not "
+                                         "perfect, so the behaviour of such edges in this graph "
+                                         "is undefined.");
 
-            g_assemblyGraph->determineGraphInfo();
-            displayGraphDetails();
-            g_memory->rememberedPath = QFileInfo(fullFileName).absolutePath();
-            g_memory->clearGraphSpecificMemory();
+                setUiState(GRAPH_LOADED);
+                setWindowTitle("BandageNG - " + fullFileName);
 
-            bool customColours = builder->hasCustomColours(),
-                    customLabels = builder->hasCustomLabels();
+                g_assemblyGraph->determineGraphInfo();
+                displayGraphDetails();
+                g_memory->rememberedPath = QFileInfo(fullFileName).absolutePath();
+                g_memory->clearGraphSpecificMemory();
 
-            // If the graph has custom colours, automatically switch the colour scheme to custom colours.
-            if (customColours)
-                switchColourScheme(CUSTOM_COLOURS);
+                bool customColours = builder->hasCustomColours(),
+                      customLabels = builder->hasCustomLabels();
 
-            // If the graph doesn't have custom colours, but the colour scheme is on 'Custom', automatically switch it back
-            // to the default of 'Random colours'.
-            if (!customColours && ui->coloursComboBox->currentIndex() == 6)
-                ui->coloursComboBox->setCurrentIndex(0);
+                // If the graph has custom colours, automatically switch the colour scheme to custom colours.
+                if (customColours)
+                    switchColourScheme(CUSTOM_COLOURS);
 
-            setupPathSelectionLineEdit(ui->pathSelectionLineEdit);
-            setupPathSelectionLineEdit(ui->pathSelectionLineEdit2);
-            setupWalkSelectionLineEdit(ui->walkSelectionLineEdit);
-            setupWalkSelectionLineEdit(ui->walkSelectionLineEdit2);
-        }  catch (const AssemblyGraphError &err) {
-            QString errorTitle = "Error loading graph";
-            QString errorMessage = "There was an error when attempting to load\n"
-                                   + fullFileName + ":\n"
-                                   + err.what() + "\n\n"
-                                   + "Please verify that this file has the correct format.";
-            QMessageBox::warning(this, errorTitle, errorMessage);
-            resetScene();
-            cleanUp();
-            clearGraphDetails();
-            setUiState(NO_GRAPH_LOADED);
-        } catch (...) {
-            QString errorTitle = "Error loading graph";
-            QString errorMessage = "There was an error when attempting to load:\n"
-                                   + fullFileName + "\n\n"
-                                   + "Please verify that this file has the correct format.";
-            QMessageBox::warning(this, errorTitle, errorMessage);
-            resetScene();
-            cleanUp();
-            clearGraphDetails();
-            setUiState(NO_GRAPH_LOADED);
-        }
+                // If the graph doesn't have custom colours, but the colour scheme is on 'Custom', automatically switch it back
+                // to the default of 'Random colours'.
+                if (!customColours && ui->coloursComboBox->currentIndex() == 6)
+                    ui->coloursComboBox->setCurrentIndex(0);
+
+                setupPathSelectionLineEdit(ui->pathSelectionLineEdit);
+                setupPathSelectionLineEdit(ui->pathSelectionLineEdit2);
+                setupWalkSelectionLineEdit(ui->walkSelectionLineEdit);
+                setupWalkSelectionLineEdit(ui->walkSelectionLineEdit2);
     });
     connect(watcher, SIGNAL(finished()), progress, SLOT(deleteLater()));
     connect(watcher, SIGNAL(finished()), watcher, SLOT(deleteLater()));

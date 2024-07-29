@@ -22,3 +22,6 @@ else()
   FetchContent_MakeAvailable(zlib_ng)
   set(bandage_zlib zlibstatic PARENT_SCOPE)
 endif()
+
+include_directories(.)
+add_subdirectory(llvm)

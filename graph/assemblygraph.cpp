@@ -100,7 +100,7 @@ void AssemblyGraph::cleanUp() {
     m_nodeColors.clear();
     m_nodeLabels.clear();
     m_nodeCSVData.clear();
-    
+
     clearGraphInfo();
 }
 
@@ -377,7 +377,7 @@ bool AssemblyGraph::loadCSV(const QString &filename, QStringList *columns, QStri
 
         QStringList cols = utils::splitCsv(in.readLine(), sep);
         QString nodeName(cols[0]);
-        
+
         std::vector<DeBruijnNode *> nodes;
         // See if this is a path name
         // Match using unique prefix of path name. This allows us to load segmented SPAdes
@@ -501,16 +501,13 @@ QString AssemblyGraph::getNodeNameFromString(QString string) const
 // Returns true if successful, false if not.
 bool AssemblyGraph::loadGraphFromFile(const QString& filename) {
     cleanUp();
-    
+
     auto builder = io::AssemblyGraphBuilder::get(filename);
     if (!builder)
         return false;
-    
-    try {
-        builder->build(*this);
-    } catch (...) {
+
+    if (auto E = builder->build(*this))
         return false;
-    }
 
     determineGraphInfo();
 

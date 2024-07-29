@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "llvm/Support/Error.h"
+
 #include <QString>
 #include <memory>
 
@@ -25,7 +27,7 @@ class AssemblyGraph;
 namespace io {
     class AssemblyGraphBuilder {
     public:
-        virtual bool build(AssemblyGraph &graph) = 0;
+        virtual llvm::Error build(AssemblyGraph &graph) = 0;
         virtual ~AssemblyGraphBuilder() = default;
 
         static std::unique_ptr<AssemblyGraphBuilder> get(const QString &fullFileName);
