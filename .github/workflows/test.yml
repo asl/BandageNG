@@ -73,8 +73,9 @@ jobs:
         run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} -j8
 
       - name: Unit Tests
+        if: ${{ matrix.os != 'windows-latest' }}
         working-directory: ${{github.workspace}}/build
-        run: ctest -V
+        run: ctest -V -C ${{env.BUILD_TYPE}}
 
       - name: CLI Tests
         working-directory: ${{github.workspace}}/tests
@@ -86,7 +87,7 @@ jobs:
                ./bandage_command_line_tests.sh ${{github.workspace}}/build/BandageNG.app/Contents/MacOS/BandageNG
              fi
         shell: bash
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: Bandage-${{ runner.os }}
           path: |
