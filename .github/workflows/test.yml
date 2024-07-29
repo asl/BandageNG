@@ -11,6 +11,7 @@ env:
   BUILD_TYPE: Release
   QT_QPA_PLATFORM: offscreen
   XDG_RUNTIME_DIR: '/tmp/runtime-runner'
+  QT_VERSION: 6.2.*
 
 jobs:
   build:
@@ -19,7 +20,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
         experimental: [false]
 
     steps:
@@ -33,7 +34,7 @@ jobs:
         shell: bash
 
       - name: Checkout repository and submodules
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: recursive
 
@@ -43,12 +44,18 @@ jobs:
           key: ${{ matrix.os }}
           variant: sccache
 
+      - name: '⚙️ Configure MSVC'
+        if: ${{ matrix.os == 'windows-latest' }}
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
       - name: Install Qt
         uses: jurplel/install-qt-action@v3
         with:
           cache: true
           cache-key-prefix: ${{ runner.os }}-QtCache
-          version: '6.2.*'
+          version: ${{env.QT_VERSION}}
 
       - name: Install BLAST
         run: |
@@ -85,4 +92,6 @@ jobs:
           path: |
              ${{github.workspace}}/build/BandageNG
              ${{github.workspace}}/build/BandageNG.app
+             ${{github.workspace}}/build/BandageNG.exe
              ${{github.workspace}}/build/BandageTests
+             ${{github.workspace}}/build/BandageTests.exe
