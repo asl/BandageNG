@@ -11,6 +11,7 @@
 #include "llvm/ADT/StringExtras.h"
 #include "llvm/Support/Error.h"
 #include <bitset>
+#include <climits>
 
 using namespace llvm;
 

@@ -54,12 +54,6 @@
 #endif
 #endif
 
-#ifdef _WIN32
-#include "llvm/Support/ConvertUTF.h"
-#include "llvm/Support/Signals.h"
-#include "llvm/Support/Windows/WindowsSupport.h"
-#endif
-
 using namespace llvm;
 
 raw_ostream::~raw_ostream() {

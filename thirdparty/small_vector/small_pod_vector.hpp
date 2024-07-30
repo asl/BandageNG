@@ -6,6 +6,7 @@
 #include <llvm/ADT/PointerIntPair.h>
 #include <llvm/Support/Compiler.h>
 
+#include <cstdlib>
 #include <cstring>
 #include <vector>
 #include <type_traits>
