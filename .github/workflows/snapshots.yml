@@ -161,11 +161,11 @@ jobs:
 
   # Upload continuous build
   upload:
-      if: ${{ false }}  # disable for now
       name: '🗂 Create release and upload artifacts'
       needs:
         - build-linux
         - build-mac
+        - build-windows
       runs-on: ubuntu-20.04
       steps:
       - name: '⚙️ Install dependencies'
