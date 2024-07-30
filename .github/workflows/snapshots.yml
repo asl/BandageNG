@@ -171,7 +171,7 @@ jobs:
       - name: '⚙️ Install dependencies'
         run: sudo apt-get install -y libfuse2
       - name: '📥 Download artifacts'
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
       - name: '🗂 Inspect directory after downloading artifacts'
         run: ls -alFR
       - name: '🚀 Create release and upload artifacts'
