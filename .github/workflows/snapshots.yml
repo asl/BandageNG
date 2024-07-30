@@ -149,7 +149,7 @@ jobs:
         working-directory: ${{github.workspace}}/build
         run: |
           mkdir BandageNG
-          cp Release/BandageNG.exe BandageNG/
+          cp BandageNG.exe BandageNG/
           windeployqt BandageNG --release --compiler-runtime
           7z a BandageNG-win-${{steps.commit.outputs.short}}.zip BandageNG -r
 
