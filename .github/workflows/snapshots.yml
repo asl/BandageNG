@@ -27,6 +27,9 @@ jobs:
         with:
           submodules: recursive
 
+      - name: '⚙️ Grab cmake & ninja'
+        uses: lukka/get-cmake@latest
+
       - name: '⚙️ Install Qt'
         uses: jurplel/install-qt-action@v3
         with:
@@ -38,14 +41,14 @@ jobs:
         run: sudo apt-get install -y appstream
 
       - name: '⚙️ Configure CMake'
-        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_INSTALL_PREFIX=/usr
+        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_INSTALL_PREFIX=/usr -G Ninja
 
       - name: '🚧 Build'
-        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} -j8
+        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
 
       - name: '⚙️ Make AppDir'
         working-directory: ${{github.workspace}}/build
-        run: make install DESTDIR=AppDir
+        run: DESTDIR=AppDir cmake --install ${{github.workspace}}/build
 
       - name: '⚙️ Install Linuxdeploy'
         working-directory: ${{github.workspace}}/build
@@ -81,6 +84,9 @@ jobs:
         with:
           submodules: recursive
 
+      - name: '⚙️ Grab cmake & ninja'
+        uses: lukka/get-cmake@latest
+
       - name: '⚙️ Install Qt'
         uses: jurplel/install-qt-action@v3
         with:
@@ -89,10 +95,10 @@ jobs:
           version: ${{env.QT_VERSION}}
 
       - name: '⚙️ Configure CMake'
-        run:  cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" -DCMAKE_INSTALL_PREFIX=/usr
+        run:  cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" -DCMAKE_INSTALL_PREFIX=/usr -G Ninja
 
       - name: '🚧 Build'
-        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} -j8
+        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
 
       - name: '📦 Make DMG'
         working-directory: ${{github.workspace}}/build
@@ -118,6 +124,9 @@ jobs:
         with:
           submodules: recursive
 
+      - name: '⚙️ Grab cmake & ninja'
+        uses: lukka/get-cmake@latest
+
       - name: '⚙️ Configure MSVC'
         uses: ilammy/msvc-dev-cmd@v1
         with:
@@ -131,10 +140,10 @@ jobs:
           version: ${{env.QT_VERSION}}
 
       - name: '⚙️ Configure CMake'
-        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_INSTALL_PREFIX=/usr
+        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DCMAKE_INSTALL_PREFIX=/usr -G Ninja
 
       - name: '🚧 Build'
-        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} -j8
+        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
 
       - name: '📦 Make package'
         working-directory: ${{github.workspace}}/build
