@@ -308,8 +308,7 @@ static void buildGraph(ogdf::Graph &ogdfGraph,
     }
 
     // Then loop through each edge determining its drawn status and adding it to OGDF if it is drawn.
-    for (const auto &entry : graph.m_deBruijnGraphEdges) {
-        const DeBruijnEdge *edge = entry.second;
+    for (const DeBruijnEdge *edge : graph.m_deBruijnGraphEdges) {
         if (!edge->isDrawn())
             continue;
 

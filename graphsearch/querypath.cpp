@@ -126,7 +126,6 @@ SciNot QueryPath::getEvalueProduct() const {
 
 int QueryPath::getHitOverlap(const Hit * hit1, const Hit * hit2) const {
     int hit1Start, hit1End, hit2Start, hit2End;
-    QPair<DeBruijnNode *, DeBruijnNode *> possibleEdge(hit1->m_node, hit2->m_node);
 
     // Overlap in the same node is simple.
     if (hit1->m_node == hit2->m_node) {
@@ -138,17 +137,29 @@ int QueryPath::getHitOverlap(const Hit * hit1, const Hit * hit2) const {
 
     // Overlap in connected nodes is a bit more complex - we need to express
     // the second hit's coordinates in terms of the first hit's node.
-    else if (g_assemblyGraph->m_deBruijnGraphEdges.contains(possibleEdge)) {
-        DeBruijnEdge * edge = g_assemblyGraph->m_deBruijnGraphEdges[possibleEdge];
-        int overlap = edge->getOverlap();
-        hit1Start = hit1->m_nodeStart;
-        hit1End = hit1->m_nodeEnd;
-        int hit1NodeLen = hit1->m_node->getLength();
-        hit2Start = hit2->m_nodeStart + hit1NodeLen - overlap;
-        hit2End = hit2->m_nodeEnd + hit1NodeLen - overlap;
+    else {
+        bool found = false;
+        for (const DeBruijnEdge *edge : hit1->m_node->edges()) {
+            if (edge->getEndingNode() != hit2->m_node)
+                continue;
+            if (edge->getOverlapType() == JUMP)
+                continue;
+
+            found = true;
+
+            int overlap = edge->getOverlap();
+            hit1Start = hit1->m_nodeStart;
+            hit1End = hit1->m_nodeEnd;
+            int hit1NodeLen = hit1->m_node->getLength();
+            hit2Start = hit2->m_nodeStart + hit1NodeLen - overlap;
+            hit2End = hit2->m_nodeEnd + hit1NodeLen - overlap;
+
+            break;
+        }
+
+        if (!found)
+            return 0;
     }
-    else
-        return 0;
 
     int overlap = std::min(hit1End, hit2End) - std::max(hit1Start, hit2Start);
     if (overlap > 0)

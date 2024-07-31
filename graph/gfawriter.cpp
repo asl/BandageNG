@@ -173,8 +173,7 @@ namespace gfa {
         }
 
         QList<const DeBruijnEdge *> edgesToSave;
-        for (auto &entry: graph.m_deBruijnGraphEdges) {
-            const DeBruijnEdge *edge = entry.second;
+        for (const DeBruijnEdge *edge : graph.m_deBruijnGraphEdges) {
             if (edge->isPositiveEdge())
                 edgesToSave.push_back(edge);
         }
@@ -203,8 +202,7 @@ namespace gfa {
         }
 
         QList<const DeBruijnEdge *> edgesToSave;
-        for (auto &entry: graph.m_deBruijnGraphEdges) {
-            const DeBruijnEdge *edge = entry.second;
+        for (const DeBruijnEdge *edge : graph.m_deBruijnGraphEdges) {
             if (edge->getStartingNode()->thisNodeOrReverseComplementIsDrawn() &&
                 edge->getEndingNode()->thisNodeOrReverseComplementIsDrawn() &&
                 edge->isPositiveEdge())

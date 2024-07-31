@@ -68,9 +68,8 @@ public:
 
     using DeBruijnLink = QPair<DeBruijnNode*, DeBruijnNode*>;
 
-    // Edges are stored in a map with a key of the starting and ending node
-    // pointers.
-    phmap::parallel_flat_hash_map<DeBruijnLink, DeBruijnEdge*> m_deBruijnGraphEdges;
+    // Edges are stored in a set for fast removal
+    phmap::parallel_flat_hash_set<DeBruijnEdge*> m_deBruijnGraphEdges;
 
     // Custom colors
     phmap::parallel_flat_hash_map<const DeBruijnNode*, QColor> m_nodeColors;

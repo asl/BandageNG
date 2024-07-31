@@ -1770,12 +1770,12 @@ DeBruijnEdge * BandageTests::getEdgeFromNodeNames(QString startingNodeName,
     DeBruijnNode * startingNode = g_assemblyGraph->m_deBruijnGraphNodes[startingNodeName.toStdString()];
     DeBruijnNode * endingNode = g_assemblyGraph->m_deBruijnGraphNodes[endingNodeName.toStdString()];
 
-    QPair<DeBruijnNode*, DeBruijnNode*> nodePair(startingNode, endingNode);
+    for (DeBruijnEdge *edge : startingNode->edges()) {
+        if (edge->getEndingNode() == endingNode)
+            return edge;
+    }
 
-    if (g_assemblyGraph->m_deBruijnGraphEdges.contains(nodePair))
-        return g_assemblyGraph->m_deBruijnGraphEdges[nodePair];
-    else
-        return 0;
+    return nullptr;
 }
 
 

@@ -241,8 +241,7 @@ void BandageGraphicsScene::addGraphicsItemsToScene(AssemblyGraph &graph,
 
     // Then make the GraphicsItemEdge objects and add them to the scene first,
     // so they are drawn underneath
-    for (auto &entry : graph.m_deBruijnGraphEdges) {
-        DeBruijnEdge * edge = entry.second;
+    for (DeBruijnEdge *edge : graph.m_deBruijnGraphEdges) {
         if (!edge->isDrawn())
             continue;
 

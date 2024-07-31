@@ -18,6 +18,7 @@
 
 #include "assemblygraph.h"
 #include "debruijnedge.h"
+#include "graph/debruijnnode.h"
 #include "path.h"
 #include "io.h"
 #include "graphicsitemedge.h"
@@ -89,8 +90,8 @@ void AssemblyGraph::cleanUp() {
     }
 
     {
-        for (auto &entry : m_deBruijnGraphEdges) {
-            delete entry.second;
+        for (DeBruijnEdge *edge : m_deBruijnGraphEdges) {
+            delete edge;
         }
         m_deBruijnGraphEdges.clear();
     }
@@ -163,9 +164,9 @@ void AssemblyGraph::createDeBruijnEdge(const QString& node1Name, const QString& 
     forwardEdge->setOverlapType(overlapType);
     backwardEdge->setOverlapType(overlapType);
 
-    m_deBruijnGraphEdges.emplace(std::make_pair(forwardEdge->getStartingNode(), forwardEdge->getEndingNode()), forwardEdge);
+    m_deBruijnGraphEdges.emplace(forwardEdge);
     if (!isOwnPair)
-        m_deBruijnGraphEdges.emplace(std::make_pair(backwardEdge->getStartingNode(), backwardEdge->getEndingNode()), backwardEdge);
+        m_deBruijnGraphEdges.emplace(backwardEdge);
 
     (*node1)->addEdge(forwardEdge);
     (*node2)->addEdge(forwardEdge);
@@ -181,8 +182,8 @@ void AssemblyGraph::resetNodes()
 
 void AssemblyGraph::resetEdges()
 {
-    for (auto &entry : m_deBruijnGraphEdges) {
-        entry.second->reset();
+    for (DeBruijnEdge *edge : m_deBruijnGraphEdges) {
+        edge->reset();
     }
 }
 
@@ -271,8 +272,7 @@ void AssemblyGraph::determineGraphInfo()
     //Count up the edges that will be shown in single mode (i.e. positive
     //edges).
     int edgeCount = 0;
-    for (auto &entry : m_deBruijnGraphEdges) {
-        DeBruijnEdge * edge = entry.second;
+    for (const DeBruijnEdge * edge : m_deBruijnGraphEdges) {
         if (edge->isPositiveEdge())
             ++edgeCount;
     }
@@ -543,8 +543,8 @@ void AssemblyGraph::markNodesToDraw(const graph::Scope &scope,
     }
 
     // Then loop through each edge determining its drawn status
-    for (auto &entry : m_deBruijnGraphEdges)
-        entry.second->determineIfDrawn();
+    for (DeBruijnEdge *edge : m_deBruijnGraphEdges)
+        edge->determineIfDrawn();
 }
 
 static QStringList removeNullStringsFromList(const QStringList& in) {
@@ -686,8 +686,8 @@ std::vector<DeBruijnNode *> AssemblyGraph::getNodesInDepthRange(double min, doub
 }
 
 void AssemblyGraph::setAllEdgesExactOverlap(int overlap) {
-    for (auto &entry : m_deBruijnGraphEdges) {
-        entry.second->setExactOverlap(overlap);
+    for (DeBruijnEdge *edge : m_deBruijnGraphEdges) {
+        edge->setExactOverlap(overlap);
     }
 }
 
@@ -700,8 +700,8 @@ void AssemblyGraph::autoDetermineAllEdgesExactOverlap()
         return;
 
     //Determine the overlap for each edge.
-    for (auto &entry : m_deBruijnGraphEdges) {
-        entry.second->autoDetermineExactOverlap();
+    for (DeBruijnEdge *edge : m_deBruijnGraphEdges) {
+        edge->autoDetermineExactOverlap();
     }
 
     //The expectation here is that most overlaps will be
@@ -743,8 +743,7 @@ void AssemblyGraph::autoDetermineAllEdgesExactOverlap()
 
     //For each edge, see if one of the more common overlaps also works.
     //If so, use that instead.
-    for (auto &entry : m_deBruijnGraphEdges) {
-        DeBruijnEdge * edge = entry.second;
+    for (DeBruijnEdge *edge : m_deBruijnGraphEdges) {
         for (int sortedOverlap : sortedOverlaps)
         {
             if (edge->getOverlap() == sortedOverlap)
@@ -767,8 +766,8 @@ std::vector<int> AssemblyGraph::makeOverlapCountVector()
 {
     std::vector<int> overlapCounts;
 
-    for (auto &entry : m_deBruijnGraphEdges) {
-        int overlap = entry.second->getOverlap();
+    for (const DeBruijnEdge *edge : m_deBruijnGraphEdges) {
+        int overlap = edge->getOverlap();
 
         //Add the overlap to the count vector
         if (int(overlapCounts.size()) < overlap + 1)
@@ -859,11 +858,11 @@ void AssemblyGraph::deleteEdges(const std::vector<DeBruijnEdge *> &edges)
     }
 
     //Remove the edges from the graph,
-    for (auto edge : edgesToDelete) {
+    for (DeBruijnEdge *edge : edgesToDelete) {
         DeBruijnNode * startingNode = edge->getStartingNode();
         DeBruijnNode * endingNode = edge->getEndingNode();
 
-        m_deBruijnGraphEdges.erase(QPair<DeBruijnNode*, DeBruijnNode*>(startingNode, endingNode));
+        m_deBruijnGraphEdges.erase(edge);
         startingNode->removeEdge(edge);
         endingNode->removeEdge(edge);
 
@@ -1665,8 +1664,8 @@ QPair<int, int> AssemblyGraph::getOverlapRange() const
 {
     int smallestOverlap = std::numeric_limits<int>::max();
     int largestOverlap = 0;
-    for (auto &entry : m_deBruijnGraphEdges) {
-        int overlap = entry.second->getOverlap();
+    for (const DeBruijnEdge *edge : m_deBruijnGraphEdges) {
+        int overlap = edge->getOverlap();
         if (overlap < smallestOverlap)
             smallestOverlap = overlap;
         if (overlap > largestOverlap)

@@ -413,16 +413,11 @@ namespace io {
                 return nodeOrErr.takeError();
 
             DeBruijnEdge *edgePtr = nullptr, *rcEdgePtr = nullptr;
-
-            // Ignore dups, hifiasm seems to create them
-            if (graph.m_deBruijnGraphEdges.count({fromNodePtr, toNodePtr}))
-                return std::pair{ nullptr, nullptr };
-
             edgePtr = new DeBruijnEdge(fromNodePtr, toNodePtr);
 
             bool isOwnPair = fromNodePtr == toNodePtr->getReverseComplement() &&
                              toNodePtr == fromNodePtr->getReverseComplement();
-            graph.m_deBruijnGraphEdges[{fromNodePtr, toNodePtr}] = edgePtr;
+            graph.m_deBruijnGraphEdges.emplace(edgePtr);
             fromNodePtr->addEdge(edgePtr);
             toNodePtr->addEdge(edgePtr);
 
@@ -436,7 +431,7 @@ namespace io {
                 rcToNodePtr->addEdge(rcEdgePtr);
                 edgePtr->setReverseComplement(rcEdgePtr);
                 rcEdgePtr->setReverseComplement(edgePtr);
-                graph.m_deBruijnGraphEdges[{rcToNodePtr, rcFromNodePtr}] = rcEdgePtr;
+                graph.m_deBruijnGraphEdges.emplace(rcEdgePtr);
             }
 
             hasCustomColours_ |= maybeAddCustomColor(edgePtr, tags, "CB", graph);

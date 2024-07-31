@@ -53,6 +53,6 @@ namespace layout {
 
         // Then loop through each edge determining its drawn status
         for (auto &entry : graph.m_deBruijnGraphEdges)
-            entry.second->determineIfDrawn();
+            entry->determineIfDrawn();
     }
 }
