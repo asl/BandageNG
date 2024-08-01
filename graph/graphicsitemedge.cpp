@@ -58,48 +58,42 @@ QPainterPath GraphicsItemEdge::shape() const {
 }
 
 static void getControlPointLocations(const DeBruijnEdge *edge,
-                                     QPointF &startLocation, QPointF &beforeStartLocation,
-                                     QPointF &endLocation, QPointF &afterEndLocation) {
+                                     QLineF &start, QLineF &end) {
     DeBruijnNode *startingNode = edge->getStartingNode();
     DeBruijnNode *endingNode = edge->getEndingNode();
 
     if (const auto *startingGraphicsItemNode = startingNode->getGraphicsItemNode()) {
-        startLocation = startingGraphicsItemNode->getLast();
-        beforeStartLocation = startingGraphicsItemNode->getSecondLast();
+        start = startingGraphicsItemNode->getLastSegment();
     } else if (const auto *startingGraphicsItemRcNode =
                startingNode->getReverseComplement()->getGraphicsItemNode()) {
-        startLocation = startingGraphicsItemRcNode->getFirst();
-        beforeStartLocation = startingGraphicsItemRcNode->getSecond();
+        auto segment = startingGraphicsItemRcNode->getFirstSegment();
+        start.setPoints(segment.p2(), segment.p1());
     }
 
     if (const auto *endingGraphicsItemNode = endingNode->getGraphicsItemNode()) {
-        endLocation = endingGraphicsItemNode->getFirst();
-        afterEndLocation = endingGraphicsItemNode->getSecond();
+        end = endingGraphicsItemNode->getFirstSegment();
     } else if (const auto *endingGraphicsItemRcNode
                = endingNode->getReverseComplement()->getGraphicsItemNode()) {
-        endLocation = endingGraphicsItemRcNode->getLast();
-        afterEndLocation = endingGraphicsItemRcNode->getSecondLast();
+        auto segment = endingGraphicsItemRcNode->getLastSegment();
+        end.setPoints(segment.p2(), segment.p1());
     }
 }
 
-static QPointF extendLine(QPointF start, QPointF end, double extensionLength) {
-    double extensionRatio = extensionLength / QLineF(start, end).length();
-    QPointF difference = end - start;
-    difference *= extensionRatio;
-    return end + difference;
+static QPointF extendLine(QLineF line, double extensionLength) {
+    double extensionRatio = extensionLength / line.length();
+    QPointF dP = line.p2() - line.p1();
+    return line.p2() + dP * extensionRatio;
 }
 
 // This function handles the special case of an edge that connects a node
 // to itself where the node graphics item has only one line segment.
 static void
-makeSpecialPathConnectingNodeToSelf(QPainterPath &path,
-                                    const QPointF &startLocation, const QPointF &beforeStartLocation,
-                                    const QPointF &endLocation, const QPointF &afterEndLocation) {
+makeSpecialPathConnectingNodeToSelf(QPainterPath &path, const QLineF &nodeLine) {
+    QPointF startLocation = nodeLine.p2(), endLocation = nodeLine.p1();
     double extensionLength = g_settings->edgeLength;
-    QPointF controlPoint1 = extendLine(beforeStartLocation, startLocation, extensionLength),
-            controlPoint2 = extendLine(afterEndLocation, endLocation, extensionLength);
+    QPointF controlPoint1 = extendLine(nodeLine, extensionLength),
+            controlPoint2 = extendLine(QLineF(nodeLine.p2(), nodeLine.p1()), extensionLength);
 
-    QLineF nodeLine(startLocation, endLocation);
     QLineF normalUnitLine = nodeLine.normalVector().unitVector();
     QPointF perpendicularShift = (normalUnitLine.p2() - normalUnitLine.p1()) * g_settings->edgeLength;
     QPointF nodeMidPoint = (startLocation + endLocation) / 2.0;
@@ -113,12 +107,11 @@ makeSpecialPathConnectingNodeToSelf(QPainterPath &path,
 // This function handles the special case of an edge that connects a node to its
 // reverse complement and is displayed in single mode.
 static void
-makeSpecialPathConnectingNodeToReverseComplement(QPainterPath &path,
-                                                 const QPointF &startLocation, const QPointF &beforeStartLocation,
-                                                 const QPointF &endLocation, const QPointF &afterEndLocation) {
+makeSpecialPathConnectingNodeToReverseComplement(QPainterPath &path, const QLineF &nodeLine) {
+    QPointF startLocation = nodeLine.p2(), endLocation = nodeLine.p2();
     double extensionLength = g_settings->edgeLength / 2.0;
-    QPointF controlPoint1 = extendLine(beforeStartLocation, startLocation, extensionLength),
-            controlPoint2 = extendLine(afterEndLocation, endLocation, extensionLength);
+    QPointF controlPoint1 = extendLine(nodeLine, extensionLength),
+            controlPoint2 = extendLine(nodeLine, extensionLength);
 
     QPointF startToControl = controlPoint1 - startLocation;
     QPointF pathMidPoint = startLocation + startToControl * 3.0;
@@ -134,16 +127,16 @@ makeSpecialPathConnectingNodeToReverseComplement(QPainterPath &path,
 
 // Ordinary path is just a single cubic Bezier curve.
 static void makeOrdinaryPath(QPainterPath &path,
-                             const QPointF &startLocation, const QPointF &beforeStartLocation,
-                             const QPointF &endLocation, const QPointF &afterEndLocation) {
+                             const QLineF &startSegment, const QLineF &endSegment) {
+    QPointF startLocation = startSegment.p2(), endLocation = endSegment.p1();
     double edgeDistance = QLineF(startLocation, endLocation).length();
 
     double extensionLength = g_settings->edgeLength;
     if (extensionLength > edgeDistance / 2.0)
         extensionLength = edgeDistance / 2.0;
 
-    QPointF controlPoint1 = extendLine(beforeStartLocation, startLocation, extensionLength),
-            controlPoint2 = extendLine(afterEndLocation, endLocation, extensionLength);
+    QPointF controlPoint1 = extendLine(startSegment, extensionLength),
+            controlPoint2 = extendLine(QLineF(endSegment.p2(), endSegment.p1()), extensionLength);
 
     path.moveTo(startLocation);
     path.cubicTo(controlPoint1, controlPoint2, endLocation);
@@ -151,10 +144,8 @@ static void makeOrdinaryPath(QPainterPath &path,
 
 
 void GraphicsItemEdge::remakePath() {
-    QPointF startLocation, beforeStartLocation, endLocation, afterEndLocation;
-    getControlPointLocations(m_deBruijnEdge,
-                             startLocation, beforeStartLocation,
-                             endLocation, afterEndLocation);
+    QLineF startSegment, endSegment;
+    getControlPointLocations(m_deBruijnEdge, startSegment, endSegment);
 
     QPainterPath path;
 
@@ -169,22 +160,16 @@ void GraphicsItemEdge::remakePath() {
         if (!graphicsItemNode)
             graphicsItemNode = startingNode->getReverseComplement()->getGraphicsItemNode();
         if (graphicsItemNode && graphicsItemNode->m_linePoints.size() == 2)
-            makeSpecialPathConnectingNodeToSelf(path,
-                                                startLocation, beforeStartLocation,
-                                                endLocation, afterEndLocation);
+            makeSpecialPathConnectingNodeToSelf(path, startSegment);
         else
-            makeOrdinaryPath(path, startLocation, beforeStartLocation,
-                             endLocation, afterEndLocation);
+            makeOrdinaryPath(path, startSegment, endSegment);
     } else if (startingNode == endingNode->getReverseComplement() &&
                !g_settings->doubleMode) {
-        //If we are in single mode and the edge connects a node to its reverse
-        //complement, then we need a special path to make it visible.
-        makeSpecialPathConnectingNodeToReverseComplement(path,
-                                                         startLocation, beforeStartLocation,
-                                                         endLocation, afterEndLocation);
+        // If we are in single mode and the edge connects a node to its reverse
+        // complement, then we need a special path to make it visible.
+        makeSpecialPathConnectingNodeToReverseComplement(path, startSegment);
     } else
-        makeOrdinaryPath(path, startLocation, beforeStartLocation,
-                         endLocation, afterEndLocation);
+        makeOrdinaryPath(path, startSegment, endSegment);
 
     setPath(path);
 }
