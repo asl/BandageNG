@@ -59,7 +59,8 @@ namespace io {
     }
 
     bool loadGFALinks(AssemblyGraph &graph,
-                      QString fileName) {
+                      QString fileName,
+                      std::vector<DeBruijnEdge*> *newEdges) {
         QFile inputFile(fileName);
         if (!inputFile.open(QIODevice::ReadOnly))
             return false;
@@ -82,11 +83,11 @@ namespace io {
 
                 auto nodeIt = graph.m_deBruijnGraphNodes.find(fromNodeName);
                 if (nodeIt == graph.m_deBruijnGraphNodes.end())
-                    return false;
+                    throw std::logic_error("Cannot find node: " + fromNodeName);
                 DeBruijnNode *fromNode = *nodeIt;
                 nodeIt = graph.m_deBruijnGraphNodes.find(toNodeName);
                 if (nodeIt == graph.m_deBruijnGraphNodes.end())
-                    return false;
+                    throw std::logic_error("Cannot find node: " + toNodeName);
                 DeBruijnNode *toNode = *nodeIt;
 
                 DeBruijnEdge *edgePtr = nullptr, *rcEdgePtr = nullptr;
@@ -128,6 +129,12 @@ namespace io {
                     graph.setCustomStyle(edgePtr, Qt::DotLine);
                 if (!graph.hasCustomStyle(rcEdgePtr))
                     graph.setCustomStyle(rcEdgePtr, Qt::DotLine);
+
+                if (newEdges) {
+                    newEdges->push_back(edgePtr);
+                    if (rcEdgePtr)
+                        newEdges->push_back(rcEdgePtr);
+                }
             }
         }
 

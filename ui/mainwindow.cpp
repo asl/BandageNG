@@ -40,6 +40,7 @@
 #include "graph/debruijnedge.h"
 #include "graph/graphicsitemnode.h"
 #include "graph/graphicsitemedge.h"
+#include "graph/graphicsitemlink.h"
 #include "graph/path.h"
 #include "graph/sequenceutils.h"
 #include "graph/io.h"
@@ -139,6 +140,7 @@ MainWindow::MainWindow(QString fileToLoadOnStartup, bool drawGraphAfterLoad) :
     connect(ui->actionLoad_CSV, SIGNAL(triggered(bool)), this, SLOT(loadCSV()));
     connect(ui->actionLoad_layout, SIGNAL(triggered()), this, SLOT(loadGraphLayout()));
     connect(ui->actionLoad_paths, SIGNAL(triggered()), this, SLOT(loadGraphPaths()));
+    connect(ui->actionLoad_links, SIGNAL(triggered()), this, SLOT(loadGraphLinks()));
     connect(ui->actionExit, SIGNAL(triggered()), this, SLOT(close()));
     connect(ui->graphScopeComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(graphScopeChanged()));
     connect(ui->zoomSpinBox, SIGNAL(valueChanged(double)), this, SLOT(zoomSpinBoxChanged()));
@@ -468,6 +470,65 @@ void MainWindow::loadGraphPaths(QString fullFileName) {
     displayGraphDetails();
     setupPathSelectionLineEdit(ui->pathSelectionLineEdit);
     setupPathSelectionLineEdit(ui->pathSelectionLineEdit2);
+}
+
+void MainWindow::loadGraphLinks(QString fullFileName) {
+    QString selectedFilter = "GFA links (*.gfa)";
+    if (fullFileName.isEmpty())
+        fullFileName = QFileDialog::getOpenFileName(this, "Load additional links", "",
+                                                    "GFA links (*.gfa)",
+                                                    &selectedFilter);
+
+    if (fullFileName.isEmpty())
+        return; // user clicked on cancel
+
+    std::vector<DeBruijnEdge*> newEdges;
+    try {
+        if (selectedFilter == "GFA links (*.gfa)")
+            io::loadGFALinks(*g_assemblyGraph, fullFileName, &newEdges);
+    } catch (std::exception &e) {
+        QString errorTitle = "Error loading graph links";
+        QString errorMessage = "There was an error when attempting to load:\n"
+                               + fullFileName + ":\n"
+                               + e.what() + "\n\n"
+                               + "Please verify that this file has the correct format.";
+        QMessageBox::warning(this, errorTitle, errorMessage);
+        return;
+    }
+
+    // FIXME: ugly!
+    g_assemblyGraph->determineGraphInfo();
+    displayGraphDetails();
+
+    if (m_uiState == GRAPH_LOADED)
+        return;
+
+    // Now we need to iterate over new edges and add them to scene
+    m_scene->blockSignals(true);
+    for (DeBruijnEdge *edge : newEdges) {
+        edge->determineIfDrawn();
+        if (!edge->isDrawn())
+            continue;
+
+        auto *graphicsItemEdge =
+                edge->getOverlapType() == EdgeOverlapType::EXTRA_LINK ?
+                new GraphicsItemLink(edge, *g_assemblyGraph) :
+                new GraphicsItemEdge(edge, *g_assemblyGraph);
+
+        graphicsItemEdge->setZValue(-1.0);
+        edge->setGraphicsItemEdge(graphicsItemEdge);
+        graphicsItemEdge->setFlag(QGraphicsItem::ItemIsSelectable);
+        m_scene->addItem(graphicsItemEdge);
+    }
+    m_scene->blockSignals(false);
+
+    m_scene->setSceneRectangle();
+    zoomToFitScene();
+    g_graphicsView->viewport()->update();
+    selectionChanged();
+
+    // Move the focus to the view so the user can use keyboard controls to navigate.
+    g_graphicsView->setFocus();
 }
 
 void MainWindow::displayGraphDetails()
@@ -1951,6 +2012,7 @@ void MainWindow::setUiState(UiState uiState)
         ui->actionLoad_CSV->setEnabled(false);
         ui->actionLoad_layout->setEnabled(false);
         ui->actionLoad_paths->setEnabled(false);
+        ui->actionLoad_links->setEnabled(false);
         ui->actionExport_layout->setEnabled(false);
         break;
     case GRAPH_LOADED:
@@ -1965,6 +2027,7 @@ void MainWindow::setUiState(UiState uiState)
         ui->actionLoad_CSV->setEnabled(true);
         ui->actionLoad_layout->setEnabled(true);
         ui->actionLoad_paths->setEnabled(true);
+        ui->actionLoad_links->setEnabled(true);
         ui->actionExport_layout->setEnabled(false);
         break;
     case GRAPH_DRAWN:
@@ -1980,6 +2043,7 @@ void MainWindow::setUiState(UiState uiState)
         ui->actionLoad_CSV->setEnabled(true);
         ui->actionLoad_layout->setEnabled(true);
         ui->actionLoad_paths->setEnabled(true);
+        ui->actionLoad_links->setEnabled(true);
         ui->actionExport_layout->setEnabled(true);
         break;
     }

@@ -2615,6 +2615,7 @@ then colour which other nodes in the graph are likely to be contiguous
     <addaction name="actionLoad_CSV"/>
     <addaction name="actionLoad_layout"/>
     <addaction name="actionLoad_paths"/>
+    <addaction name="actionLoad_links"/>
     <addaction name="separator"/>
     <addaction name="actionSave_image_current_view"/>
     <addaction name="actionSave_image_entire_scene"/>
@@ -3092,6 +3093,16 @@ then colour which other nodes in the graph are likely to be contiguous
    </property>
    <property name="text">
     <string>Load paths</string>
+   </property>
+  </action>
+  <action name="actionLoad_links">
+   <property name="icon">
+    <iconset>
+     <normalon>:/icons/load-256.png</normalon>
+    </iconset>
+   </property>
+   <property name="text">
+    <string>Load links</string>
    </property>
   </action>
   <action name="actionZoom_to_fit_graph">

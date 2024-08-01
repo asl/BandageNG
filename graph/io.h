@@ -59,7 +59,8 @@ namespace io {
                                    AssemblyGraph &graph);
 
     bool loadGFAPaths(AssemblyGraph &graph, QString fileName);
-    bool loadGFALinks(AssemblyGraph &graph, QString fileName);
+    bool loadGFALinks(AssemblyGraph &graph, QString fileName,
+                      std::vector<DeBruijnEdge*> *newEdges = nullptr);
     bool loadGAFPaths(AssemblyGraph &graph, QString fileName);
     bool loadSPAlignerPaths(AssemblyGraph &graph, QString fileName);
     bool loadSPAdesPaths(AssemblyGraph &graph, QString fileName);
