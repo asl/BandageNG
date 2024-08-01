@@ -179,6 +179,7 @@ void SettingsDialog::loadOrSaveSettingsToOrFromWidgets(bool setWidgets, Settings
     doubleFunctionPointer(&settings->depthEffectOnWidth, ui->depthEffectOnWidthSpinBox, true);
     doubleFunctionPointer(&settings->depthPower, ui->depthPowerSpinBox, false);
     doubleFunctionPointer(&settings->edgeWidth, ui->edgeWidthSpinBox, false);
+    doubleFunctionPointer(&settings->linkWidth, ui->linkWidthSpinBox, false);
     doubleFunctionPointer(&settings->outlineThickness, ui->outlineThicknessSpinBox, false);
     doubleFunctionPointer(&settings->textOutlineThickness, ui->textOutlineThicknessSpinBox, false);
     colourFunctionPointer(&settings->edgeColour, ui->edgeColourButton);
