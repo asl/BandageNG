@@ -606,19 +606,36 @@ QString MainWindow::getSelectedEdgeListText()
     std::sort(selectedEdges.begin(), selectedEdges.end(), DeBruijnEdge::compareEdgePointers);
 
     QString edgeText;
-    for (size_t i = 0; i < selectedEdges.size(); ++i)
-    {
-        edgeText += selectedEdges[i]->getStartingNode()->getName();
+    for (size_t i = 0; i < selectedEdges.size(); ++i) {
+        const auto *edge = selectedEdges[i];
+        edgeText += edge->getStartingNode()->getName();
         edgeText += " to ";
-        edgeText += selectedEdges[i]->getEndingNode()->getName();
-        int overlap = selectedEdges[i]->getOverlap();
-        if (selectedEdges[i]->getOverlapType() != EdgeOverlapType::JUMP)
-            edgeText += QString(" (%1bp)").arg(overlap);
-        else {
-            edgeText += " (jump link" +
-                        (overlap ? QString(" %1bp)").arg(overlap)
-                                 : ")");
+        edgeText += edge->getEndingNode()->getName();
+        int overlap = edge->getOverlap();
+
+        switch (edge->getOverlapType()) {
+            case EdgeOverlapType::EXTRA_LINK: {
+                edgeText += " (link";
+                auto tags = g_assemblyGraph->m_edgeTags.find(edge);
+                if (tags != g_assemblyGraph->m_edgeTags.end()) {
+                    if (auto wt = gfa::getTag<float>("WT", tags->second))
+                        edgeText += QString(", weight: %1").arg(*wt);
+                    if (auto wt = gfa::getTag<int64_t>("WT", tags->second))
+                        edgeText += QString(", weight: %1").arg(*wt);
+                }
+
+                edgeText += ")";
+                break;
+            }
+            case EdgeOverlapType::JUMP:
+                edgeText += " (jump link" +
+                            (overlap ? QString(" %1bp)").arg(overlap)
+                             : ")");
+                break;
+            default:
+                edgeText += QString(" (%1bp)").arg(overlap);
         }
+
         if (i != selectedEdges.size() - 1)
             edgeText += ", ";
     }
