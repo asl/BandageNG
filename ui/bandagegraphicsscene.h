@@ -55,7 +55,8 @@ public:
     static void removeAllGraphicsEdgesFromNode(DeBruijnNode *node,
                                                bool reverseComplement);
 
-    void duplicateGraphicsNode(DeBruijnNode * originalNode, DeBruijnNode * newNode);
+    void duplicateGraphicsNode(DeBruijnNode * originalNode, DeBruijnNode * newNode,
+                               const AssemblyGraph &graph);
 
 private:
     void removeGraphicsItemNodes(const std::unordered_set<GraphicsItemNode*> &nodes);

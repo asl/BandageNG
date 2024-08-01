@@ -918,8 +918,8 @@ void AssemblyGraph::duplicateNodePair(DeBruijnNode * node, BandageGraphicsScene 
     originalPosNode->setDepth(newDepth);
     originalNegNode->setDepth(newDepth);
 
-    scene->duplicateGraphicsNode(originalPosNode, newPosNode);
-    scene->duplicateGraphicsNode(originalNegNode, newNegNode);
+    scene->duplicateGraphicsNode(originalPosNode, newPosNode, *this);
+    scene->duplicateGraphicsNode(originalNegNode, newNegNode, *this);
 }
 
 QString AssemblyGraph::getNewNodeName(QString oldNodeName) const
@@ -963,7 +963,8 @@ static bool canAddNodeToEndOfMergeList(const DeBruijnNode *lastNode,
 static void mergeGraphicsNodes(const std::vector<DeBruijnNode *> &originalNodes,
                                const std::vector<DeBruijnNode *> &revCompOriginalNodes,
                                DeBruijnNode * newNode,
-                               BandageGraphicsScene * scene);
+                               const AssemblyGraph &graph,
+                               BandageGraphicsScene *scene);
 
 //This function will merge the given nodes, if possible.  Nodes can only be
 //merged if they are in a simple, unbranching path with no extra edges.  If the
@@ -1065,7 +1066,8 @@ bool AssemblyGraph::mergeNodes(QList<DeBruijnNode *> nodes, BandageGraphicsScene
         createDeBruijnEdge(enteringEdge->getStartingNode()->getName(), newPosNodeName, enteringEdge->getOverlap(),
                            enteringEdge->getOverlapType());
 
-    mergeGraphicsNodes(orderedList, revCompOrderedList, newPosNode, scene);
+    mergeGraphicsNodes(orderedList, revCompOrderedList, newPosNode,
+                       *this, scene);
 
     deleteNodes(orderedList);
 
@@ -1077,8 +1079,9 @@ bool AssemblyGraph::mergeNodes(QList<DeBruijnNode *> nodes, BandageGraphicsScene
 
 
 static bool mergeGraphicsNodes2(const std::vector<DeBruijnNode *> &originalNodes,
-                                DeBruijnNode * newNode,
-                                BandageGraphicsScene * scene) {
+                                DeBruijnNode *newNode,
+                                const AssemblyGraph &graph,
+                                BandageGraphicsScene *scene) {
     bool success = true;
     std::vector<QPointF> linePoints;
 
@@ -1122,7 +1125,7 @@ static bool mergeGraphicsNodes2(const std::vector<DeBruijnNode *> &originalNodes
         scene->addItem(newGraphicsItemNode);
 
         for (auto *newEdge : newNode->edges()) {
-            auto * graphicsItemEdge = new GraphicsItemEdge(newEdge);
+            auto * graphicsItemEdge = new GraphicsItemEdge(newEdge, graph);
             graphicsItemEdge->setZValue(-1.0);
             newEdge->setGraphicsItemEdge(graphicsItemEdge);
             graphicsItemEdge->setFlag(QGraphicsItem::ItemIsSelectable);
@@ -1135,14 +1138,15 @@ static bool mergeGraphicsNodes2(const std::vector<DeBruijnNode *> &originalNodes
 static void mergeGraphicsNodes(const std::vector<DeBruijnNode *> &originalNodes,
                                const std::vector<DeBruijnNode *> &revCompOriginalNodes,
                                DeBruijnNode * newNode,
+                               const AssemblyGraph &graph,
                                BandageGraphicsScene * scene) {
-    bool success = mergeGraphicsNodes2(originalNodes, newNode, scene);
+    bool success = mergeGraphicsNodes2(originalNodes, newNode, graph, scene);
     if (success)
         newNode->setAsDrawn();
 
     if (g_settings->doubleMode) {
         DeBruijnNode * newRevComp = newNode->getReverseComplement();
-        bool revCompSuccess = mergeGraphicsNodes2(revCompOriginalNodes, newRevComp, scene);
+        bool revCompSuccess = mergeGraphicsNodes2(revCompOriginalNodes, newRevComp, graph, scene);
         if (revCompSuccess)
             newRevComp->setAsDrawn();
     }

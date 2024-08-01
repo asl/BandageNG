@@ -312,7 +312,7 @@ static void buildGraph(ogdf::Graph &ogdfGraph,
         if (!edge->isDrawn())
             continue;
 
-        if (edge->getOverlapType() == JUMP)
+        if (edge->getOverlapType() == JUMP || edge->getOverlapType() == EXTRA_LINK)
             continue;
 
         addToOgdfGraph(edge,ogdfGraph, ogdfEdgeLengths, layout);

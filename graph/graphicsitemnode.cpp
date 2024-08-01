@@ -660,6 +660,23 @@ std::vector<QPointF> GraphicsItemNode::getCentres() const
     return centres;
 }
 
+QLineF GraphicsItemNode::getMedianSegment() const {
+    // If the number of segments is even, we just return the middle segment:
+    // [-----]x[-----]y[-----]
+    // Otherwise, we return the centres of two middle segments
+    // [--x--][--y--]
+    size_t sz = m_linePoints.size();
+    if (sz % 2 == 0) {
+        return { m_linePoints[sz/2 - 1], m_linePoints[sz/2] };
+    } else {
+        size_t midIdx = (sz - 1) / 2;
+        QPointF mid = m_linePoints[midIdx];
+        QPointF left = m_linePoints[midIdx - 1];
+        QPointF right = m_linePoints[midIdx + 1];
+        return { (mid + left) / 2, (mid + right) / 2 };
+    }
+}
+
 QStringList GraphicsItemNode::getNodeText() const
 {
     QStringList nodeText;

@@ -26,6 +26,7 @@ set(LIB_SOURCES
     graph/debruijnedge.cpp
     graph/debruijnnode.cpp
     graph/graphicsitemedge.cpp
+    graph/graphicsitemlink.cpp
     graph/graphicsitemnode.cpp
     graph/graphlocation.cpp
     graph/path.cpp
@@ -90,7 +91,7 @@ set(CLI_SOURCES
     command_line/querypaths.cpp
     command_line/reduce.cpp
     command_line/settings.cpp)
-      
+
 set(RESOURCES images/images.qrc images/application.icns images/application.rc)
 
 message(STATUS "Building Bandage-NG version ${PROJECT_VERSION}")

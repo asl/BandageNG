@@ -66,7 +66,7 @@ public:
     //Nodes are stored in a map with a key of the node's name.
     tsl::htrie_map<char, DeBruijnNode*> m_deBruijnGraphNodes;
 
-    using DeBruijnLink = QPair<DeBruijnNode*, DeBruijnNode*>;
+    using DeBruijnLink = std::pair<DeBruijnNode*, DeBruijnNode*>;
 
     // Edges are stored in a set for fast removal
     phmap::parallel_flat_hash_set<DeBruijnEdge*> m_deBruijnGraphEdges;

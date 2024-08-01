@@ -24,16 +24,19 @@
 #include <QPointF>
 
 class DeBruijnEdge;
+class AssemblyGraph;
 
 class GraphicsItemEdge : public QGraphicsPathItem {
 public:
-    explicit GraphicsItemEdge(DeBruijnEdge * deBruijnEdge, QGraphicsItem * parent = nullptr);
+    explicit GraphicsItemEdge(DeBruijnEdge *deBruijnEdge, const AssemblyGraph &graph,
+                              QGraphicsItem *parent = nullptr);
 
     void paint(QPainter * painter, const QStyleOptionGraphicsItem *, QWidget *) override;
     QPainterPath shape() const override;
 
-    void remakePath();
+    virtual void remakePath();
     DeBruijnEdge *edge() const { return m_deBruijnEdge; }
+
 private:
     DeBruijnEdge *m_deBruijnEdge;
     QColor m_edgeColor;

@@ -30,10 +30,12 @@
 #include <QPen>
 #include <QLineF>
 
-GraphicsItemEdge::GraphicsItemEdge(DeBruijnEdge * deBruijnEdge, QGraphicsItem * parent)
+GraphicsItemEdge::GraphicsItemEdge(DeBruijnEdge *deBruijnEdge,
+                                   const AssemblyGraph &graph,
+                                   QGraphicsItem *parent)
     : QGraphicsPathItem(parent), m_deBruijnEdge(deBruijnEdge) {
-    m_edgeColor = g_assemblyGraph->getCustomColour(deBruijnEdge);
-    auto style = g_assemblyGraph->getCustomStyle(deBruijnEdge);
+    m_edgeColor = graph.getCustomColour(deBruijnEdge);
+    auto style = graph.getCustomStyle(deBruijnEdge);
     m_penStyle = style.lineStyle;
     m_width = style.width;
 
@@ -58,23 +60,25 @@ QPainterPath GraphicsItemEdge::shape() const {
 static void getControlPointLocations(const DeBruijnEdge *edge,
                                      QPointF &startLocation, QPointF &beforeStartLocation,
                                      QPointF &endLocation, QPointF &afterEndLocation) {
-    DeBruijnNode * startingNode = edge->getStartingNode();
-    DeBruijnNode * endingNode = edge->getEndingNode();
+    DeBruijnNode *startingNode = edge->getStartingNode();
+    DeBruijnNode *endingNode = edge->getEndingNode();
 
-    if (startingNode->hasGraphicsItem()) {
-        startLocation = startingNode->getGraphicsItemNode()->getLast();
-        beforeStartLocation = startingNode->getGraphicsItemNode()->getSecondLast();
-    } else if (startingNode->getReverseComplement()->hasGraphicsItem()) {
-        startLocation = startingNode->getReverseComplement()->getGraphicsItemNode()->getFirst();
-        beforeStartLocation = startingNode->getReverseComplement()->getGraphicsItemNode()->getSecond();
+    if (const auto *startingGraphicsItemNode = startingNode->getGraphicsItemNode()) {
+        startLocation = startingGraphicsItemNode->getLast();
+        beforeStartLocation = startingGraphicsItemNode->getSecondLast();
+    } else if (const auto *startingGraphicsItemRcNode =
+               startingNode->getReverseComplement()->getGraphicsItemNode()) {
+        startLocation = startingGraphicsItemRcNode->getFirst();
+        beforeStartLocation = startingGraphicsItemRcNode->getSecond();
     }
 
-    if (endingNode->hasGraphicsItem()) {
-        endLocation = endingNode->getGraphicsItemNode()->getFirst();
-        afterEndLocation = endingNode->getGraphicsItemNode()->getSecond();
-    } else if (endingNode->getReverseComplement()->hasGraphicsItem()) {
-        endLocation = endingNode->getReverseComplement()->getGraphicsItemNode()->getLast();
-        afterEndLocation = endingNode->getReverseComplement()->getGraphicsItemNode()->getSecondLast();
+    if (const auto *endingGraphicsItemNode = endingNode->getGraphicsItemNode()) {
+        endLocation = endingGraphicsItemNode->getFirst();
+        afterEndLocation = endingGraphicsItemNode->getSecond();
+    } else if (const auto *endingGraphicsItemRcNode
+               = endingNode->getReverseComplement()->getGraphicsItemNode()) {
+        endLocation = endingGraphicsItemRcNode->getLast();
+        afterEndLocation = endingGraphicsItemRcNode->getSecondLast();
     }
 }
 
