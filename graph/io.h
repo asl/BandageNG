@@ -17,12 +17,16 @@
 
 #pragma once
 
+#include "io/cigar.h"
+
 #include "llvm/Support/Error.h"
 
 #include <QString>
 #include <memory>
+#include <vector>
 
 class AssemblyGraph;
+class DeBruijnEdge;
 
 namespace io {
     class AssemblyGraphBuilder {
@@ -49,7 +53,13 @@ namespace io {
         bool jumpsAsLinks_ = false;
     };
 
+    bool handleStandargGFAEdgeTags(const DeBruijnEdge *edgePtr,
+                                   const DeBruijnEdge *rcEdgePtr,
+                                   const std::vector<cigar::tag> &tags,
+                                   AssemblyGraph &graph);
+
     bool loadGFAPaths(AssemblyGraph &graph, QString fileName);
+    bool loadGFALinks(AssemblyGraph &graph, QString fileName);
     bool loadGAFPaths(AssemblyGraph &graph, QString fileName);
     bool loadSPAlignerPaths(AssemblyGraph &graph, QString fileName);
     bool loadSPAdesPaths(AssemblyGraph &graph, QString fileName);

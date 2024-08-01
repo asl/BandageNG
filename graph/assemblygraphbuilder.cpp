@@ -204,32 +204,89 @@ static bool attemptToLoadSequencesFromFasta(AssemblyGraph &graph) {
     return atLeastOneNodeSequenceLoaded;
 }
 
+static constexpr unsigned makeGFATag(const char name[2]) {
+    return (unsigned) name[0] << 8 | name[1];
+}
+
+static bool isStandardGFATag(const char name[2]) {
+    switch (makeGFATag(name)) {
+        case makeGFATag("dp"):
+        case makeGFATag("DP"):
+        case makeGFATag("LN"):
+        case makeGFATag("KC"):
+        case makeGFATag("FC"):
+        case makeGFATag("RC"):
+        case makeGFATag("LB"):
+        case makeGFATag("L2"):
+        case makeGFATag("CB"):
+        case makeGFATag("C2"):
+            return true;
+    }
+
+    return false;
+}
+
+
+template<class Container, class Key>
+static void maybeAddGFATags(Key k, Container &c,
+                            const std::vector<gfa::tag> &tags,
+                            bool ignoreStandard = true) {
+    bool tagsInserted = false;
+    for (const auto &tag: tags) {
+        if (ignoreStandard && isStandardGFATag(tag.name))
+            continue;
+        c[k].push_back(tag);
+        tagsInserted = true;
+    }
+
+    if (tagsInserted)
+        c[k].shrink_to_fit();
+}
+
+template<class Entity>
+static bool maybeAddCustomColor(const Entity *e,
+                                const std::vector<gfa::tag> &tags,
+                                const char *tag,
+                                AssemblyGraph &graph) {
+    if (auto cb = gfa::getTag<std::string>(tag, tags)) {
+        graph.setCustomColour(e, cb->c_str());
+        return true;
+    }
+
+    return false;
+}
+
 namespace io {
+    bool handleStandargGFAEdgeTags(const DeBruijnEdge *edgePtr,
+                                   const DeBruijnEdge *rcEdgePtr,
+                                   const std::vector<gfa::tag> &tags,
+                                   AssemblyGraph &graph) {
+        bool hasCustomColours = false;
+        hasCustomColours |= maybeAddCustomColor(edgePtr, tags, "CB", graph);
+        hasCustomColours |= maybeAddCustomColor(rcEdgePtr, tags, "C2", graph);
+
+        if (auto wd = gfa::getTag<float>("WD", tags)) {
+            graph.setCustomStyle(edgePtr, *wd);
+            graph.setCustomStyle(rcEdgePtr, *wd);
+        } else if (auto wd = gfa::getTag<int64_t>("WD", tags)) {
+            graph.setCustomStyle(edgePtr, *wd);
+            graph.setCustomStyle(rcEdgePtr, *wd);
+        }
+
+        if (auto ps = gfa::getTag<int64_t>("PS", tags)) {
+            graph.setCustomStyle(edgePtr, Qt::PenStyle(*ps));
+            graph.setCustomStyle(rcEdgePtr, Qt::PenStyle(*ps));
+        }
+
+        maybeAddGFATags(edgePtr, graph.m_edgeTags, tags, false);
+        if (rcEdgePtr)
+            maybeAddGFATags(rcEdgePtr, graph.m_edgeTags, tags, false);
+
+        return hasCustomColours;
+    }
+
     class GFAAssemblyGraphBuilder : public AssemblyGraphBuilder {
-    private:
-        static constexpr unsigned makeTag(const char name[2]) {
-            return (unsigned) name[0] << 8 | name[1];
-        }
-
-        static bool isStandardTag(const char name[2]) {
-            switch (makeTag(name)) {
-                case makeTag("dp"):
-                case makeTag("DP"):
-                case makeTag("LN"):
-                case makeTag("KC"):
-                case makeTag("FC"):
-                case makeTag("RC"):
-                case makeTag("LB"):
-                case makeTag("L2"):
-                case makeTag("CB"):
-                case makeTag("C2"):
-                    return true;
-            }
-
-            return false;
-        }
-
-
+      private:
         static DeBruijnNode *maybeAddSegment(const std::string &nodeName,
                                              double nodeDepth, Sequence sequence,
                                              AssemblyGraph &graph) {
@@ -278,35 +335,6 @@ namespace io {
         addSegmentPair(const std::string &nodeName,
                        AssemblyGraph &graph) {
             return addSegmentPair(nodeName, 0, Sequence(), graph);
-        }
-
-        template<class Container, class Key>
-        static void maybeAddTags(Key k, Container &c,
-                                 const std::vector<gfa::tag> &tags,
-                                 bool ignoreStandard = true) {
-            bool tagsInserted = false;
-            for (const auto &tag: tags) {
-                if (ignoreStandard && isStandardTag(tag.name))
-                    continue;
-                c[k].push_back(tag);
-                tagsInserted = true;
-            }
-
-            if (tagsInserted)
-                c[k].shrink_to_fit();
-        }
-
-        template<class Entity>
-        static bool maybeAddCustomColor(const Entity *e,
-                                        const std::vector<gfa::tag> &tags,
-                                        const char *tag,
-                                        AssemblyGraph &graph) {
-            if (auto cb = gfa::getTag<std::string>(tag, tags)) {
-                graph.setCustomColour(e, cb->c_str());
-                return true;
-            }
-
-            return false;
         }
 
         llvm::Expected<bool> handleSegment(const gfa::segment &record,
@@ -364,17 +392,6 @@ namespace io {
 
             auto [nodePtr, oppositeNodePtr] = nodePairOrErr.get();
 
-            auto lb = gfa::getTag<std::string>("LB", record.tags);
-            auto l2 = gfa::getTag<std::string>("L2", record.tags);
-            hasCustomLabels_ = hasCustomLabels_ || lb || l2;
-            if (lb) graph.setCustomLabel(nodePtr, lb->c_str());
-            if (l2) graph.setCustomLabel(oppositeNodePtr, l2->c_str());
-
-            hasCustomColours_ |= maybeAddCustomColor(nodePtr, record.tags, "CB", graph);
-            hasCustomColours_ |= maybeAddCustomColor(oppositeNodePtr, record.tags, "C2", graph);
-
-            maybeAddTags(nodePtr, graph.m_nodeTags, record.tags);
-            maybeAddTags(oppositeNodePtr, graph.m_nodeTags, record.tags);
 
             return sequencesAreMissing;
         }
@@ -434,27 +451,8 @@ namespace io {
                 graph.m_deBruijnGraphEdges.emplace(rcEdgePtr);
             }
 
-            hasCustomColours_ |= maybeAddCustomColor(edgePtr, tags, "CB", graph);
-            hasCustomColours_ |= maybeAddCustomColor(rcEdgePtr, tags, "C2", graph);
-
-            if (auto wd = gfa::getTag<float>("WD", tags)) {
-                graph.setCustomStyle(edgePtr, *wd);
-                graph.setCustomStyle(rcEdgePtr, *wd);
-            } else if (auto wd = gfa::getTag<int64_t>("WD", tags)) {
-                graph.setCustomStyle(edgePtr, *wd);
-                graph.setCustomStyle(rcEdgePtr, *wd);
-            }
-
-            if (auto ps = gfa::getTag<int64_t>("PS", tags)) {
-                graph.setCustomStyle(edgePtr, Qt::PenStyle(*ps));
-                graph.setCustomStyle(rcEdgePtr, Qt::PenStyle(*ps));
-            }
-
-            maybeAddTags(edgePtr, graph.m_edgeTags, tags,
-                         false);
-            if (rcEdgePtr)
-                maybeAddTags(rcEdgePtr, graph.m_edgeTags, tags,
-                             false);
+            hasCustomColours_ =
+                    handleStandargGFAEdgeTags(edgePtr, rcEdgePtr, tags, graph);
 
             return std::pair{edgePtr, rcEdgePtr};
         }

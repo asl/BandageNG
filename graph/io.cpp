@@ -58,6 +58,82 @@ namespace io {
         return true;
     }
 
+    bool loadGFALinks(AssemblyGraph &graph,
+                      QString fileName) {
+        QFile inputFile(fileName);
+        if (!inputFile.open(QIODevice::ReadOnly))
+            return false;
+
+        QTextStream in(&inputFile);
+        while (!in.atEnd()) {
+            QByteArray line = in.readLine().toLatin1();
+            if (line.length() == 0)
+                continue;
+
+            auto val = gfa::parseRecord(line.data(), line.length());
+            if (!val)
+                continue;
+
+            if (auto *link = std::get_if<gfa::gaplink>(&*val)) {
+                std::string fromNodeName{link->lhs};
+                fromNodeName.push_back(link->lhs_revcomp ? '-' : '+');
+                std::string toNodeName{link->rhs};
+                toNodeName.push_back(link->rhs_revcomp ? '-' : '+');
+
+                auto nodeIt = graph.m_deBruijnGraphNodes.find(fromNodeName);
+                if (nodeIt == graph.m_deBruijnGraphNodes.end())
+                    return false;
+                DeBruijnNode *fromNode = *nodeIt;
+                nodeIt = graph.m_deBruijnGraphNodes.find(toNodeName);
+                if (nodeIt == graph.m_deBruijnGraphNodes.end())
+                    return false;
+                DeBruijnNode *toNode = *nodeIt;
+
+                DeBruijnEdge *edgePtr = nullptr, *rcEdgePtr = nullptr;
+                edgePtr = new DeBruijnEdge(fromNode, toNode);
+
+                bool isOwnPair = fromNode == toNode->getReverseComplement() &&
+                                 toNode == fromNode->getReverseComplement();
+                graph.m_deBruijnGraphEdges.emplace(edgePtr);
+                fromNode->addEdge(edgePtr);
+                toNode->addEdge(edgePtr);
+
+                if (isOwnPair) {
+                    edgePtr->setReverseComplement(edgePtr);
+                } else {
+                    auto *rcFromNodePtr = fromNode->getReverseComplement();
+                    auto *rcToNodePtr = toNode->getReverseComplement();
+                    rcEdgePtr = new DeBruijnEdge(rcToNodePtr, rcFromNodePtr);
+                    rcFromNodePtr->addEdge(rcEdgePtr);
+                    rcToNodePtr->addEdge(rcEdgePtr);
+                    edgePtr->setReverseComplement(rcEdgePtr);
+                    rcEdgePtr->setReverseComplement(edgePtr);
+                    graph.m_deBruijnGraphEdges.emplace(rcEdgePtr);
+                }
+
+                handleStandargGFAEdgeTags(edgePtr, rcEdgePtr, link->tags, graph);
+
+                edgePtr->setOverlap(0);
+                edgePtr->setOverlapType(EdgeOverlapType::EXTRA_LINK);
+                if (rcEdgePtr) {
+                    rcEdgePtr->setOverlap(edgePtr->getOverlap());
+                    rcEdgePtr->setOverlapType(edgePtr->getOverlapType());
+                }
+
+                if (!graph.hasCustomColour(edgePtr))
+                    graph.setCustomColour(edgePtr, "green");
+                if (!graph.hasCustomColour(rcEdgePtr))
+                    graph.setCustomColour(rcEdgePtr, "green");
+                if (!graph.hasCustomStyle(edgePtr))
+                    graph.setCustomStyle(edgePtr, Qt::DotLine);
+                if (!graph.hasCustomStyle(rcEdgePtr))
+                    graph.setCustomStyle(rcEdgePtr, Qt::DotLine);
+            }
+        }
+
+        return true;
+    }
+
     bool loadGAFPaths(AssemblyGraph &graph,
                       QString fileName) {
         QFile inputFile(fileName);
