@@ -495,7 +495,8 @@ namespace io {
         }
 
         llvm::Error handleGapLink(const gfa::gaplink &record,
-                                  AssemblyGraph &graph) {
+                                  AssemblyGraph &graph,
+                                  bool isLink = false) {
             // FIXME: get rid of severe duplication!
             std::string fromNode{record.lhs};
             fromNode.push_back(record.lhs_revcomp ? '-' : '+');
@@ -509,20 +510,20 @@ namespace io {
                 return edgePairOrErr.takeError();
 
             edgePtr->setOverlap(record.distance == std::numeric_limits<int64_t>::min() ? 0 : record.distance);
-            edgePtr->setOverlapType(JUMP);
+            edgePtr->setOverlapType(isLink ? EdgeOverlapType::EXTRA_LINK : EdgeOverlapType::JUMP);
             if (rcEdgePtr) {
                 rcEdgePtr->setOverlap(edgePtr->getOverlap());
                 rcEdgePtr->setOverlapType(edgePtr->getOverlapType());
             }
 
             if (!graph.hasCustomColour(edgePtr))
-                graph.setCustomColour(edgePtr, "red");
+                graph.setCustomColour(edgePtr, isLink ? "green" : "red");
             if (!graph.hasCustomColour(rcEdgePtr))
-                graph.setCustomColour(rcEdgePtr, "red");
+                graph.setCustomColour(rcEdgePtr, isLink ? "green" : "red");
             if (!graph.hasCustomStyle(edgePtr))
-                graph.setCustomStyle(edgePtr, Qt::DashLine);
+                graph.setCustomStyle(edgePtr, isLink ? Qt::DotLine : Qt::DashLine);
             if (!graph.hasCustomStyle(rcEdgePtr))
-                graph.setCustomStyle(rcEdgePtr, Qt::DashLine);
+                graph.setCustomStyle(rcEdgePtr, isLink ? Qt::DotLine :Qt::DashLine);
 
             return llvm::Error::success();
         }
@@ -598,7 +599,7 @@ namespace io {
             std::unique_ptr<std::remove_pointer<gzFile>::type, decltype(&gzclose)>
                     fp(gzopen(fileName_.toStdString().c_str(), "r"), gzclose);
             if (!fp)
-                return llvm::createStringError("failed tp open file: " + fileName_.toStdString());
+                return llvm::createStringError("failed to open file: " + fileName_.toStdString());
 
             size_t i = 0;
             char *line = nullptr;
@@ -624,7 +625,7 @@ namespace io {
                                    if (auto E = handleLink(record, graph))
                                        return E;
                                } else if constexpr (std::is_same_v<T, gfa::gaplink>) {
-                                   if (auto E = handleGapLink(record, graph))
+                                   if (auto E = handleGapLink(record, graph, jumpsAsLinks_))
                                        return E;
                                } else if constexpr (std::is_same_v<T, gfa::path>) {
                                    if (auto E = handlePath(record, graph))

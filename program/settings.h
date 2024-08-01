@@ -110,7 +110,9 @@ public:
     FloatSetting depthEffectOnWidth;
     FloatSetting depthPower;
 
+    bool jumpsAsLinks;
     FloatSetting edgeWidth;
+    FloatSetting linkWidth;
     FloatSetting outlineThickness;
     double selectionThickness;
     bool arrowheadsInSingleMode;

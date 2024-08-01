@@ -46,7 +46,7 @@ std::istringstream &operator>>(std::istringstream &in, QColor &val) {
     val.setNamedColor(s.c_str());
 #else
     val = QColor::fromString(s);
-#endif                
+#endif
 
     return in;
 }
@@ -64,7 +64,7 @@ struct QColorValidator : public Validator {
             if (!QColor::isValidColor(str.c_str()))
 #else
             if (!QColor::isValidColorName(str))
-#endif                
+#endif
                 return std::string("This is not a valid color name: " + str);
             return std::string{};
         };
@@ -264,6 +264,8 @@ static CLI::App *addGraphSizeSettings(CLI::App &app) {
     add_setting(*size, "--minnodlen", g_settings->minimumNodeLength, "Minimum node length");
     add_setting(*size, "--edgelen", g_settings->edgeLength, "Edge length");
     add_setting(*size, "--edgewidth", g_settings->edgeWidth, "Edge width");
+    add_setting(*size, "--linkwidth", g_settings->linkWidth, "Link edge width");
+    size->add_flag("--jumps-as-links", g_settings->jumpsAsLinks, "Treap GFA v1.2 jumps as links");
     add_setting(*size, "--doubsep", g_settings->doubleModeNodeSeparation, "Double mode node separation");
     size->callback([size]() {
         if (size->count("--nodelen"))

@@ -41,7 +41,9 @@ Settings::Settings()
     depthEffectOnWidth = FloatSetting(0.5, 0.0, 1.0);
     depthPower = FloatSetting(0.5, 0.0, 1.0);
 
+    jumpsAsLinks = false;
     edgeWidth = FloatSetting(1.5, 0.1, 100);
+    linkWidth = FloatSetting(0.5, 0.1, 100);
     outlineThickness = FloatSetting(0.0, 0.0, 100.0);
     selectionThickness = 1.0;
     arrowheadsInSingleMode = false;

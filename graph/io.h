@@ -36,6 +36,8 @@ namespace io {
         [[nodiscard]] bool hasCustomColours() const { return hasCustomColours_; }
         [[nodiscard]] bool hasComplexOverlaps() const { return hasComplexOverlaps_; }
 
+        void treatJumpsAsLinks(bool val = true) { jumpsAsLinks_ = val; }
+
     protected:
         explicit AssemblyGraphBuilder(QString fileName)
                 : fileName_(std::move(fileName)) {}
@@ -44,6 +46,7 @@ namespace io {
         bool hasCustomLabels_ = false;
         bool hasCustomColours_ = false;
         bool hasComplexOverlaps_ = false;
+        bool jumpsAsLinks_ = false;
     };
 
     bool loadGFAPaths(AssemblyGraph &graph, QString fileName);

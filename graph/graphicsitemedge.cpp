@@ -37,7 +37,11 @@ GraphicsItemEdge::GraphicsItemEdge(DeBruijnEdge *deBruijnEdge,
     m_edgeColor = graph.getCustomColour(deBruijnEdge);
     auto style = graph.getCustomStyle(deBruijnEdge);
     m_penStyle = style.lineStyle;
-    m_width = style.width;
+    if (style.width > 0)
+        m_width = style.width;
+    else
+        m_width = deBruijnEdge->getOverlapType() == EdgeOverlapType::EXTRA_LINK ?
+                  g_settings->linkWidth : g_settings->edgeWidth;
 
     remakePath();
 }

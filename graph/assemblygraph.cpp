@@ -506,6 +506,7 @@ bool AssemblyGraph::loadGraphFromFile(const QString& filename) {
     if (!builder)
         return false;
 
+    builder->treatJumpsAsLinks(g_settings->jumpsAsLinks);
     if (auto E = builder->build(*this))
         return false;
 
@@ -1303,7 +1304,7 @@ void AssemblyGraph::setCustomStyle(const DeBruijnEdge* edge, Qt::PenStyle lineSt
 }
 
 AssemblyGraph::EdgeStyle::EdgeStyle()
- : width(float(g_settings->edgeWidth)), lineStyle(Qt::SolidLine) {}
+ : width(0), lineStyle(Qt::SolidLine) {}
 
 void AssemblyGraph::setCustomStyle(const DeBruijnEdge* edge, float width) {
     // To simplify upstream code we ignore null edges

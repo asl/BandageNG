@@ -339,6 +339,7 @@ void MainWindow::loadGraph(QString fullFileName) {
                              "Cannot load file. The selected file's format was not recognised as any supported graph type.");
         return;
     }
+    builder->treatJumpsAsLinks(g_settings->jumpsAsLinks);
 
     resetScene();
     cleanUp();
