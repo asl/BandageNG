@@ -74,7 +74,7 @@ void WalkListDialog::refineByNode() {
     QString nodeName = ui->nodeEdit->text();
     std::vector<QString> nodesNotInGraph;
 
-    auto nodes = m_graph.getNodesFromString(nodeName, true, &nodesNotInGraph);
+    auto nodes = m_graph.getNodesFromStringList(nodeName, true, &nodesNotInGraph);
     if (!nodesNotInGraph.empty()) {
         QMessageBox::information(this, "Nodes not found",
                                  // FIXME: This is crazy!

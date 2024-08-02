@@ -1066,7 +1066,7 @@ void MainWindow::resetScene() {
 
 std::vector<DeBruijnNode *> MainWindow::getNodesFromLineEdit(QLineEdit * lineEdit, bool exactMatch, std::vector<QString> * nodesNotInGraph)
 {
-    return g_assemblyGraph->getNodesFromString(lineEdit->text(), exactMatch, nodesNotInGraph);
+    return g_assemblyGraph->getNodesFromStringList(lineEdit->text(), exactMatch, nodesNotInGraph);
 }
 
 

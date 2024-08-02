@@ -81,14 +81,12 @@ namespace io {
                 std::string toNodeName{link->rhs};
                 toNodeName.push_back(link->rhs_revcomp ? '-' : '+');
 
-                auto nodeIt = graph.m_deBruijnGraphNodes.find(fromNodeName);
-                if (nodeIt == graph.m_deBruijnGraphNodes.end())
+                auto [fromNode, fromNodeRc] = graph.getNodes(QString::fromStdString(fromNodeName));
+                if (!fromNode)
                     throw std::logic_error("Cannot find node: " + fromNodeName);
-                DeBruijnNode *fromNode = *nodeIt;
-                nodeIt = graph.m_deBruijnGraphNodes.find(toNodeName);
-                if (nodeIt == graph.m_deBruijnGraphNodes.end())
+                auto [toNode, toNodeRc] = graph.getNodes(QString::fromStdString(toNodeName));
+                if (!toNode)
                     throw std::logic_error("Cannot find node: " + toNodeName);
-                DeBruijnNode *toNode = *nodeIt;
 
                 DeBruijnEdge *edgePtr = nullptr, *rcEdgePtr = nullptr;
                 edgePtr = new DeBruijnEdge(fromNode, toNode);

@@ -41,13 +41,15 @@ namespace graph {
 
                 // Make sure the nodes the user typed in are actually in the graph.
                 std::vector<QString> nodesNotInGraph;
-                std::vector<DeBruijnNode *> nodesInGraph = graph.getNodesFromString(graphScope.nodeList(),
-                                                                                    g_settings->startingNodesExactMatch,
-                                                                                    &nodesNotInGraph);
+                std::vector<DeBruijnNode *> nodesInGraph =
+                        graph.getNodesFromStringList(graphScope.nodeList(),
+                                                     g_settings->startingNodesExactMatch,
+                                                     &nodesNotInGraph);
                 if (!nodesNotInGraph.empty()) {
                     *errorTitle = "Nodes not found";
-                    *errorMessage = AssemblyGraph::generateNodesNotFoundErrorMessage(nodesNotInGraph,
-                                                                                     g_settings->startingNodesExactMatch);
+                    *errorMessage =
+                            AssemblyGraph::generateNodesNotFoundErrorMessage(nodesNotInGraph,
+                                                                             g_settings->startingNodesExactMatch);
                 }
 
                 return nodesInGraph;
