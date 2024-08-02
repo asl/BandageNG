@@ -18,6 +18,7 @@
 #include "io.h"
 #include "assemblygraph.h"
 
+#include "io/cigar.h"
 #include "io/gfa.h"
 #include "io/gaf.h"
 
@@ -28,6 +29,62 @@
 #include <stdexcept>
 
 namespace io {
+namespace {
+    std::pair<DeBruijnEdge*, DeBruijnEdge*>
+    addLink(const std::string &fromNodeName, const std::string &toNodeName,
+            const std::vector<cigar::tag> &tags,
+            AssemblyGraph &graph) {
+        auto [fromNode, fromNodeRc] = graph.getNodes(QString::fromStdString(fromNodeName));
+        if (!fromNode)
+            throw std::logic_error("Cannot find node: " + fromNodeName);
+        auto [toNode, toNodeRc] = graph.getNodes(QString::fromStdString(toNodeName));
+        if (!toNode)
+            throw std::logic_error("Cannot find node: " + toNodeName);
+
+        DeBruijnEdge *edgePtr = nullptr, *rcEdgePtr = nullptr;
+        edgePtr = new DeBruijnEdge(fromNode, toNode);
+
+        bool isOwnPair = fromNode == toNode->getReverseComplement() &&
+                         toNode == fromNode->getReverseComplement();
+        graph.m_deBruijnGraphEdges.emplace(edgePtr);
+        fromNode->addEdge(edgePtr);
+        toNode->addEdge(edgePtr);
+
+        if (isOwnPair) {
+            edgePtr->setReverseComplement(edgePtr);
+        } else {
+            auto *rcFromNodePtr = fromNode->getReverseComplement();
+            auto *rcToNodePtr = toNode->getReverseComplement();
+            rcEdgePtr = new DeBruijnEdge(rcToNodePtr, rcFromNodePtr);
+            rcFromNodePtr->addEdge(rcEdgePtr);
+            rcToNodePtr->addEdge(rcEdgePtr);
+            edgePtr->setReverseComplement(rcEdgePtr);
+            rcEdgePtr->setReverseComplement(edgePtr);
+            graph.m_deBruijnGraphEdges.emplace(rcEdgePtr);
+        }
+
+        handleStandargGFAEdgeTags(edgePtr, rcEdgePtr, tags, graph);
+
+        edgePtr->setOverlap(0);
+        edgePtr->setOverlapType(EdgeOverlapType::EXTRA_LINK);
+        if (rcEdgePtr) {
+            rcEdgePtr->setOverlap(edgePtr->getOverlap());
+            rcEdgePtr->setOverlapType(edgePtr->getOverlapType());
+        }
+
+        if (!graph.hasCustomColour(edgePtr))
+            graph.setCustomColour(edgePtr, "green");
+        if (!graph.hasCustomColour(rcEdgePtr))
+            graph.setCustomColour(rcEdgePtr, "green");
+        if (!graph.hasCustomStyle(edgePtr))
+            graph.setCustomStyle(edgePtr, Qt::DotLine);
+        if (!graph.hasCustomStyle(rcEdgePtr))
+            graph.setCustomStyle(rcEdgePtr, Qt::DotLine);
+
+        return { edgePtr, rcEdgePtr };
+    }
+}
+
     bool loadGFAPaths(AssemblyGraph &graph,
                       QString fileName) {
         QFile inputFile(fileName);
@@ -81,52 +138,8 @@ namespace io {
                 std::string toNodeName{link->rhs};
                 toNodeName.push_back(link->rhs_revcomp ? '-' : '+');
 
-                auto [fromNode, fromNodeRc] = graph.getNodes(QString::fromStdString(fromNodeName));
-                if (!fromNode)
-                    throw std::logic_error("Cannot find node: " + fromNodeName);
-                auto [toNode, toNodeRc] = graph.getNodes(QString::fromStdString(toNodeName));
-                if (!toNode)
-                    throw std::logic_error("Cannot find node: " + toNodeName);
-
-                DeBruijnEdge *edgePtr = nullptr, *rcEdgePtr = nullptr;
-                edgePtr = new DeBruijnEdge(fromNode, toNode);
-
-                bool isOwnPair = fromNode == toNode->getReverseComplement() &&
-                                 toNode == fromNode->getReverseComplement();
-                graph.m_deBruijnGraphEdges.emplace(edgePtr);
-                fromNode->addEdge(edgePtr);
-                toNode->addEdge(edgePtr);
-
-                if (isOwnPair) {
-                    edgePtr->setReverseComplement(edgePtr);
-                } else {
-                    auto *rcFromNodePtr = fromNode->getReverseComplement();
-                    auto *rcToNodePtr = toNode->getReverseComplement();
-                    rcEdgePtr = new DeBruijnEdge(rcToNodePtr, rcFromNodePtr);
-                    rcFromNodePtr->addEdge(rcEdgePtr);
-                    rcToNodePtr->addEdge(rcEdgePtr);
-                    edgePtr->setReverseComplement(rcEdgePtr);
-                    rcEdgePtr->setReverseComplement(edgePtr);
-                    graph.m_deBruijnGraphEdges.emplace(rcEdgePtr);
-                }
-
-                handleStandargGFAEdgeTags(edgePtr, rcEdgePtr, link->tags, graph);
-
-                edgePtr->setOverlap(0);
-                edgePtr->setOverlapType(EdgeOverlapType::EXTRA_LINK);
-                if (rcEdgePtr) {
-                    rcEdgePtr->setOverlap(edgePtr->getOverlap());
-                    rcEdgePtr->setOverlapType(edgePtr->getOverlapType());
-                }
-
-                if (!graph.hasCustomColour(edgePtr))
-                    graph.setCustomColour(edgePtr, "green");
-                if (!graph.hasCustomColour(rcEdgePtr))
-                    graph.setCustomColour(rcEdgePtr, "green");
-                if (!graph.hasCustomStyle(edgePtr))
-                    graph.setCustomStyle(edgePtr, Qt::DotLine);
-                if (!graph.hasCustomStyle(rcEdgePtr))
-                    graph.setCustomStyle(rcEdgePtr, Qt::DotLine);
+                auto [edgePtr, rcEdgePtr] =
+                        addLink(fromNodeName, toNodeName, link->tags, graph);
 
                 if (newEdges) {
                     newEdges->push_back(edgePtr);
@@ -138,6 +151,49 @@ namespace io {
 
         return true;
     }
+
+    bool loadLinks(AssemblyGraph &graph,
+                   QString fileName,
+                   std::vector<DeBruijnEdge*> *newEdges) {
+        csv::CSVFormat format;
+        format.delimiter('\t')
+                .quote('"')
+                .no_header();  // Parse TSVs without a header row
+        format.column_names({ "s1", "s2", "weight" });
+        format.variable_columns(csv::VariableColumnPolicy::KEEP);
+
+        csv::CSVReader csvReader(fileName.toStdString(), format);
+
+        for (csv::CSVRow &row: csvReader) {
+            if (row.size() < 3)
+                throw std::logic_error("Mandatory columns were not found");
+
+            auto s1Sv = row["s1"].get<std::string>();
+            auto s2Sv = row["s2"].get<std::string>();
+            auto w = row["weight"].get<float>();
+
+            std::vector<cigar::tag> tags;
+            // Record link weight as 'WT' tag
+            tags.emplace_back("WT", "f", w);
+
+            for (size_t col = 3; col < row.size(); ++col) {
+                auto rowSv = row[col].get_sv();
+                auto optTag = cigar::parseTag(rowSv.data(), rowSv.length());
+                if (optTag)
+                    tags.push_back(*optTag);
+            }
+
+            auto [edgePtr, rcEdgePtr] = addLink(s1Sv, s2Sv, tags, graph);
+            if (newEdges) {
+                newEdges->push_back(edgePtr);
+                if (rcEdgePtr)
+                    newEdges->push_back(rcEdgePtr);
+            }
+        }
+
+        return true;
+    }
+
 
     bool loadGAFPaths(AssemblyGraph &graph,
                       QString fileName) {
@@ -205,7 +261,7 @@ namespace io {
             if (row.size() != 9)
                 throw std::logic_error("Mandatory columns were not found");
 
-            std::string name(row["name"].get_sv());
+            auto name = row["name"].get<std::string>();
             auto pathSv = row["path"].get_sv();
             auto pstartSv = row["pstart"].get_sv();
             auto pendSv = row["pend"].get_sv();

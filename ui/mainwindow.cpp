@@ -473,10 +473,10 @@ void MainWindow::loadGraphPaths(QString fullFileName) {
 }
 
 void MainWindow::loadGraphLinks(QString fullFileName) {
-    QString selectedFilter = "GFA links (*.gfa)";
+    QString selectedFilter = "Links in tab-separated format (*.tsv)";
     if (fullFileName.isEmpty())
         fullFileName = QFileDialog::getOpenFileName(this, "Load additional links", "",
-                                                    "GFA links (*.gfa)",
+                                                    "Links in tab-separated format (*.tsv);;GFA links (*.gfa)",
                                                     &selectedFilter);
 
     if (fullFileName.isEmpty())
@@ -484,6 +484,8 @@ void MainWindow::loadGraphLinks(QString fullFileName) {
 
     std::vector<DeBruijnEdge*> newEdges;
     try {
+        if (selectedFilter == "Links in tab-separated format (*.tsv)")
+            io::loadLinks(*g_assemblyGraph, fullFileName, &newEdges);
         if (selectedFilter == "GFA links (*.gfa)")
             io::loadGFALinks(*g_assemblyGraph, fullFileName, &newEdges);
     } catch (std::exception &e) {
