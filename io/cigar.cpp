@@ -15,12 +15,30 @@
 // You should have received a copy of the GNU General Public License
 // along with Bandage.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <lexy/action/parse.hpp> // lexy::parse
+#include <lexy/input/string_input.hpp>
+#include <lexy_ext/report_error.hpp>
+
 #include "cigar.h"
+
+#include "cigar.inl"
 
 namespace cigar {
 std::ostream &operator<<(std::ostream &s, const tag &t) {
     s << t.name[0] << t.name[1] << ':';
     return std::visit([&](const auto& value) -> std::ostream& { return s << value; }, t.val);
 }
+
+std::optional<tag> parseTag(const char* line, size_t len) {
+    lexy::visualization_options opts;
+    opts.max_lexeme_width = 35;
+
+    auto result = lexy::parse<grammar::tag>(lexy::string_input(line, len), lexy_ext::report_error.opts(opts));
+    if (result.has_value())
+        return std::make_optional(result.value());
+
+    return {};
+}
+
 
 }

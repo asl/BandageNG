@@ -103,4 +103,6 @@ namespace cigar {
 
         return std::get<T>(res->val);
     }
+
+    std::optional<tag> parseTag(const char* line, size_t len);
 }
