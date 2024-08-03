@@ -106,6 +106,7 @@ private slots:
     void loadGFA();
     void loadGAF();
     void loadSPAdesPaths();
+    void loadLinks();
     void loadTrinity();
     void pathFunctionsOnGFA();
     void pathFunctionsOnFastg();
@@ -254,6 +255,27 @@ void BandageTests::loadSPAdesPaths()
     QCOMPARE(p21.getLength(), 4000);
     const Path &p22 = g_assemblyGraph->m_deBruijnGraphPaths["NODE_SECOND_2"];
     QCOMPARE(p22.getLength(), 6000);
+}
+
+void BandageTests::loadLinks()
+{
+    // Check that the graph loaded properly.
+    QVERIFY(g_assemblyGraph->loadGraphFromFile(testFile("test.gfa")));
+
+    // Check that the appropriate number of nodes/edges are present.
+    QCOMPARE(g_assemblyGraph->m_deBruijnGraphNodes.size(), 34);
+    QCOMPARE(g_assemblyGraph->m_deBruijnGraphEdges.size(), 32);
+
+    // Check the length of a couple nodes.
+    DeBruijnNode * node1 = g_assemblyGraph->m_deBruijnGraphNodes["1+"];
+    DeBruijnNode * node14 = g_assemblyGraph->m_deBruijnGraphNodes["14-"];
+    QCOMPARE(node1->getLength(), 2060);
+    QCOMPARE(node14->getLength(), 120);
+
+    std::vector<DeBruijnEdge*> newEdges;
+    QVERIFY(io::loadLinks(*g_assemblyGraph, testFile("test.links.tsv"), &newEdges));
+    QCOMPARE(newEdges.size(), 4);
+    QCOMPARE(g_assemblyGraph->m_deBruijnGraphEdges.size(), 36);
 }
 
 
