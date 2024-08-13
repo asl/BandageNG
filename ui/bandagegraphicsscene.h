@@ -36,6 +36,7 @@ public:
     explicit BandageGraphicsScene(QObject *parent = nullptr);
     size_t addGraphicsItemsToScene(AssemblyGraph &graph,
                                    const GraphLayout &layout);
+    size_t addGraphicsItemsToScene(std::vector<DeBruijnEdge*> newEdges);
 
     std::vector<DeBruijnNode *> getSelectedNodes();
     std::vector<DeBruijnNode *> getSelectedPositiveNodes();

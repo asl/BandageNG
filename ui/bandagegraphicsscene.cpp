@@ -201,6 +201,32 @@ void BandageGraphicsScene::possiblyExpandSceneRectangle(std::vector<GraphicsItem
         setSceneRect(newSceneRect);
 }
 
+size_t BandageGraphicsScene::addGraphicsItemsToScene(std::vector<DeBruijnEdge*> newEdges) {
+    blockSignals(true);
+
+    size_t items = 0;
+    for (DeBruijnEdge *edge : newEdges) {
+        if (!edge->determineIfDrawn())
+            continue;
+
+        auto *graphicsItemEdge =
+                edge->getOverlapType() == EdgeOverlapType::EXTRA_LINK ?
+                new GraphicsItemLink(edge, *g_assemblyGraph) :
+                new GraphicsItemEdge(edge, *g_assemblyGraph);
+
+        // Links are always at the bottom
+        graphicsItemEdge->setZValue(-10.0);
+        edge->setGraphicsItemEdge(graphicsItemEdge);
+        graphicsItemEdge->setFlag(QGraphicsItem::ItemIsSelectable);
+        addItem(graphicsItemEdge);
+        items += 1;
+    }
+    blockSignals(false);
+
+    return items;
+}
+
+
 size_t BandageGraphicsScene::addGraphicsItemsToScene(AssemblyGraph &graph,
                                                      const GraphLayout &layout) {
     blockSignals(true);

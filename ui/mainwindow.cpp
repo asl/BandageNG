@@ -506,23 +506,7 @@ void MainWindow::loadGraphLinks(QString fullFileName) {
         return;
 
     // Now we need to iterate over new edges and add them to scene
-    m_scene->blockSignals(true);
-    for (DeBruijnEdge *edge : newEdges) {
-        if (!edge->determineIfDrawn())
-            continue;
-
-        auto *graphicsItemEdge =
-                edge->getOverlapType() == EdgeOverlapType::EXTRA_LINK ?
-                new GraphicsItemLink(edge, *g_assemblyGraph) :
-                new GraphicsItemEdge(edge, *g_assemblyGraph);
-
-        // Links are always at the bottom
-        graphicsItemEdge->setZValue(-10.0);
-        edge->setGraphicsItemEdge(graphicsItemEdge);
-        graphicsItemEdge->setFlag(QGraphicsItem::ItemIsSelectable);
-        m_scene->addItem(graphicsItemEdge);
-    }
-    m_scene->blockSignals(false);
+    m_scene->addGraphicsItemsToScene(newEdges);
 
     m_scene->setSceneRectangle();
     zoomToFitScene();
