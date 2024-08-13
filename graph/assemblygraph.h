@@ -121,7 +121,7 @@ public:
                             EdgeOverlapType overlapType = UNKNOWN_OVERLAP);
     void resetNodes();
     void resetEdges();
-    double getMeanDepth(bool drawnNodesOnly = false);
+    double getMeanDepth(bool drawnNodesOnly = false) const;
     static double getMeanDepth(const std::vector<DeBruijnNode *> &nodes);
 
     void determineGraphInfo();

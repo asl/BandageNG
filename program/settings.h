@@ -157,6 +157,7 @@ public:
     QColor selectionColour;
     QColor textColour;
     QColor textOutlineColour;
+    FloatSetting minimumLinkWeight;
 
     // FIXME: This does not belong here!
     void initializeColorer(NodeColorScheme scheme);

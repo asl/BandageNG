@@ -506,7 +506,7 @@ void MainWindow::loadGraphLinks(QString fullFileName) {
         return;
 
     // Now we need to iterate over new edges and add them to scene
-    m_scene->addGraphicsItemsToScene(newEdges);
+    m_scene->addGraphicsItemsToScene(*g_assemblyGraph, newEdges);
 
     m_scene->setSceneRectangle();
     zoomToFitScene();

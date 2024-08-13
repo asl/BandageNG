@@ -303,6 +303,7 @@ static CLI::App *addGraphAppearanceSettings(CLI::App &app) {
             ->capture_default_str();
     ga->add_flag("--singlearr", g_settings->arrowheadsInSingleMode, "Show node arrowheads in single mode")
             ->capture_default_str();
+    add_setting(*ga, "--minlinkweight", g_settings->minimumLinkWeight, "Minimum link weight to show");
 
     return ga;
 }

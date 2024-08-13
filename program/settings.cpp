@@ -19,6 +19,7 @@
 #include "settings.h"
 #include "graph/nodecolorer.h"
 #include <QDir>
+#include <limits>
 
 Settings::Settings()
 {
@@ -36,6 +37,7 @@ Settings::Settings()
     doubleModeNodeSeparation = FloatSetting(2.0, 0.0, 100.0);
     nodeSegmentLength = FloatSetting(20.0, 1.0, 1000.0);
     componentSeparation = FloatSetting(50.0, 0, 1000.0);
+    minimumLinkWeight = FloatSetting(2.0, 1.0, std::numeric_limits<float>::infinity());
 
     averageNodeWidth = FloatSetting(5.0, 0.5, 1000.0);
     depthEffectOnWidth = FloatSetting(0.5, 0.0, 1.0);

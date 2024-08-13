@@ -24,6 +24,7 @@
 #include "graph/graphicsitemedge.h"
 #include "graph/graphicsitemlink.h"
 #include "layout/graphlayout.h"
+#include "program/globals.h"
 #include "program/settings.h"
 
 #include <unordered_set>
@@ -201,12 +202,32 @@ void BandageGraphicsScene::possiblyExpandSceneRectangle(std::vector<GraphicsItem
         setSceneRect(newSceneRect);
 }
 
-size_t BandageGraphicsScene::addGraphicsItemsToScene(std::vector<DeBruijnEdge*> newEdges) {
+static bool weightFilter(const AssemblyGraph &graph,
+                         const DeBruijnEdge *edge) {
+    auto tags = graph.m_edgeTags.find(edge);
+    if (tags != graph.m_edgeTags.end()) {
+        if (auto wt = gfa::getTag<float>("WT", tags->second))
+            return wt >= g_settings->minimumLinkWeight;
+        if (auto wt = gfa::getTag<int64_t>("WT", tags->second))
+            return wt >= g_settings->minimumLinkWeight;
+    }
+
+    // No weight set, do not filter out
+    return true;
+}
+
+
+size_t BandageGraphicsScene::addGraphicsItemsToScene(const AssemblyGraph &graph,
+                                                     std::vector<DeBruijnEdge*> newEdges) {
     blockSignals(true);
 
     size_t items = 0;
     for (DeBruijnEdge *edge : newEdges) {
         if (!edge->isVisible())
+            continue;
+
+        // FIXME: Add generic way to specify filters
+        if (!weightFilter(graph, edge))
             continue;
 
         auto *graphicsItemEdge =
@@ -227,7 +248,7 @@ size_t BandageGraphicsScene::addGraphicsItemsToScene(std::vector<DeBruijnEdge*> 
 }
 
 
-size_t BandageGraphicsScene::addGraphicsItemsToScene(AssemblyGraph &graph,
+size_t BandageGraphicsScene::addGraphicsItemsToScene(const AssemblyGraph &graph,
                                                      const GraphLayout &layout) {
     blockSignals(true);
     clear();
@@ -272,6 +293,10 @@ size_t BandageGraphicsScene::addGraphicsItemsToScene(AssemblyGraph &graph,
     // so they are drawn underneath
     for (DeBruijnEdge *edge : graph.m_deBruijnGraphEdges) {
         if (!edge->isVisible())
+            continue;
+
+        // FIXME: Add generic way to specify filters
+        if (!weightFilter(graph, edge))
             continue;
 
         bool isLink = edge->getOverlapType() == EdgeOverlapType::EXTRA_LINK;

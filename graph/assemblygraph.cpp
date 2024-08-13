@@ -198,12 +198,11 @@ void AssemblyGraph::resetEdges()
 }
 
 
-double AssemblyGraph::getMeanDepth(bool drawnNodesOnly)
-{
+double AssemblyGraph::getMeanDepth(bool drawnNodesOnly) const {
     long double depthSum = 0.0;
     long long totalLength = 0;
 
-    for (auto &entry : m_deBruijnGraphNodes) {
+    for (const auto &entry : m_deBruijnGraphNodes) {
         DeBruijnNode * node = entry;
 
         if (drawnNodesOnly && node->isNotDrawn())
