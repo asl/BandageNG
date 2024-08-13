@@ -201,11 +201,13 @@ void BandageGraphicsScene::possiblyExpandSceneRectangle(std::vector<GraphicsItem
         setSceneRect(newSceneRect);
 }
 
-void BandageGraphicsScene::addGraphicsItemsToScene(AssemblyGraph &graph,
-                                                   const GraphLayout &layout) {
+size_t BandageGraphicsScene::addGraphicsItemsToScene(AssemblyGraph &graph,
+                                                     const GraphLayout &layout) {
+    blockSignals(true);
     clear();
 
     double meanDrawnDepth = graph.getMeanDepth(true);
+    size_t items = 0;
 
     // First make the GraphicsItemNode objects
     for (auto &entry : layout) {
@@ -246,13 +248,15 @@ void BandageGraphicsScene::addGraphicsItemsToScene(AssemblyGraph &graph,
         if (!edge->isDrawn())
             continue;
 
-        auto *graphicsItemEdge =
-                edge->getOverlapType() == EdgeOverlapType::EXTRA_LINK ?
-                new GraphicsItemLink(edge, graph) :
-                new GraphicsItemEdge(edge, graph);
+        bool isLink = edge->getOverlapType() == EdgeOverlapType::EXTRA_LINK;
+        auto *graphicsItemEdge = isLink ?
+                                 new GraphicsItemLink(edge, graph) :
+                                 new GraphicsItemEdge(edge, graph);
         edge->setGraphicsItemEdge(graphicsItemEdge);
+        graphicsItemEdge->setZValue(isLink ? -10.0 : -1.0);
         graphicsItemEdge->setFlag(QGraphicsItem::ItemIsSelectable);
         addItem(graphicsItemEdge);
+        items += 1;
     }
 
     // Now add the GraphicsItemNode objects to the scene, so they are drawn
@@ -262,7 +266,11 @@ void BandageGraphicsScene::addGraphicsItemsToScene(AssemblyGraph &graph,
             continue;
 
         addItem(node->getGraphicsItemNode());
+        items += 1;
     }
+
+    blockSignals(false);
+    return items;
 }
 
 void BandageGraphicsScene::removeAllGraphicsEdgesFromNode(DeBruijnNode *node, bool reverseComplement) {

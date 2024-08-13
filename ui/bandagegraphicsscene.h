@@ -34,8 +34,8 @@ class BandageGraphicsScene : public QGraphicsScene
     Q_OBJECT
 public:
     explicit BandageGraphicsScene(QObject *parent = nullptr);
-    void addGraphicsItemsToScene(AssemblyGraph &graph,
-                                 const GraphLayout &layout);
+    size_t addGraphicsItemsToScene(AssemblyGraph &graph,
+                                   const GraphLayout &layout);
 
     std::vector<DeBruijnNode *> getSelectedNodes();
     std::vector<DeBruijnNode *> getSelectedPositiveNodes();

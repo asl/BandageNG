@@ -508,8 +508,7 @@ void MainWindow::loadGraphLinks(QString fullFileName) {
     // Now we need to iterate over new edges and add them to scene
     m_scene->blockSignals(true);
     for (DeBruijnEdge *edge : newEdges) {
-        edge->determineIfDrawn();
-        if (!edge->isDrawn())
+        if (!edge->determineIfDrawn())
             continue;
 
         auto *graphicsItemEdge =
@@ -517,7 +516,8 @@ void MainWindow::loadGraphLinks(QString fullFileName) {
                 new GraphicsItemLink(edge, *g_assemblyGraph) :
                 new GraphicsItemEdge(edge, *g_assemblyGraph);
 
-        graphicsItemEdge->setZValue(-1.0);
+        // Links are always at the bottom
+        graphicsItemEdge->setZValue(-10.0);
         edge->setGraphicsItemEdge(graphicsItemEdge);
         graphicsItemEdge->setFlag(QGraphicsItem::ItemIsSelectable);
         m_scene->addItem(graphicsItemEdge);
@@ -1030,7 +1030,11 @@ void MainWindow::drawGraph() {
 
 
 void MainWindow::graphLayoutFinished(const GraphLayout &layout) {
-    m_scene->addGraphicsItemsToScene(*g_assemblyGraph, layout);
+    size_t items = m_scene->addGraphicsItemsToScene(*g_assemblyGraph, layout);
+    // Looks like Qt has problems where there are many overlapping items with default BSP
+    // height, so override it so something saner
+    if (items > 10000)
+        m_scene->setBspTreeDepth(10);
     m_scene->setSceneRectangle();
     zoomToFitScene();
 
