@@ -189,10 +189,12 @@ void DeBruijnNode::labelNeighbouringNodesAsDrawn(int nodeDistance) {
         for (auto *node : worklist) {
             auto *nodeToMark =
                         g_settings->doubleMode ? node : node->getCanonical();
-            nodeToMark->m_drawn = true;
+            nodeToMark->setAsDrawn();
 
-            for (auto *m_edge : node->m_edges) {
-                DeBruijnNode * otherNode = m_edge->getOtherNode(node);
+            for (auto *edge : node->m_edges) {
+                if (edge->getOverlapType() == EdgeOverlapType::EXTRA_LINK)
+                    continue;
+                DeBruijnNode *otherNode = edge->getOtherNode(node);
                 if (!otherNode->thisNodeOrReverseComplementIsDrawn())
                     seen.insert(otherNode);
             }
