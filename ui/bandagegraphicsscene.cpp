@@ -206,7 +206,7 @@ size_t BandageGraphicsScene::addGraphicsItemsToScene(std::vector<DeBruijnEdge*> 
 
     size_t items = 0;
     for (DeBruijnEdge *edge : newEdges) {
-        if (!edge->determineIfDrawn())
+        if (!edge->isVisible())
             continue;
 
         auto *graphicsItemEdge =
@@ -271,7 +271,7 @@ size_t BandageGraphicsScene::addGraphicsItemsToScene(AssemblyGraph &graph,
     // Then make the GraphicsItemEdge objects and add them to the scene first,
     // so they are drawn underneath
     for (DeBruijnEdge *edge : graph.m_deBruijnGraphEdges) {
-        if (!edge->isDrawn())
+        if (!edge->isVisible())
             continue;
 
         bool isLink = edge->getOverlapType() == EdgeOverlapType::EXTRA_LINK;

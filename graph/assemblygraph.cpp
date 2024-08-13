@@ -552,10 +552,6 @@ void AssemblyGraph::markNodesToDraw(const graph::Scope &scope,
             node->labelNeighbouringNodesAsDrawn(scope.distance());
         }
     }
-
-    // Then loop through each edge determining its drawn status
-    for (DeBruijnEdge *edge : m_deBruijnGraphEdges)
-        edge->determineIfDrawn();
 }
 
 static QStringList removeNullStringsFromList(const QStringList& in) {

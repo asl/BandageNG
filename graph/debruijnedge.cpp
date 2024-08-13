@@ -26,7 +26,7 @@
 
 DeBruijnEdge::DeBruijnEdge(DeBruijnNode *startingNode, DeBruijnNode *endingNode) :
     m_startingNode(startingNode), m_endingNode(endingNode), m_graphicsItemEdge(nullptr), m_reverseComplement(nullptr),
-    m_drawn(false), m_overlapType(UNKNOWN_OVERLAP), m_overlap(0)
+    m_overlapType(UNKNOWN_OVERLAP), m_overlap(0)
 {
 }
 
@@ -39,24 +39,21 @@ DeBruijnNode * DeBruijnEdge::getOtherNode(const DeBruijnNode * node) const
 
 
 //This function determines whether the edge should be drawn to the screen.
-bool DeBruijnEdge::edgeIsVisible() const
-{
-    //If the program is in double mode, then draw any edge where both of its
-    //nodes are drawn.
+bool DeBruijnEdge::isVisible() const {
+    // If the program is in double mode, then draw any edge where both of its
+    // nodes are drawn.
     if (g_settings->doubleMode)
         return m_startingNode->isDrawn() && m_endingNode->isDrawn();
 
-    //If the program is in single mode, then draw any edge where both of its
-    //nodes or their reverse complements are drawn.
-    else
-    {
-        bool drawEdge = (m_startingNode->isDrawn() || m_startingNode->getReverseComplement()->isDrawn())
-                && (m_endingNode->isDrawn() || m_endingNode->getReverseComplement()->isDrawn());
-        if (!drawEdge)
+    // If the program is in single mode, then draw any edge where both of its
+    // nodes or their reverse complements are drawn.
+    else {
+        if (!m_startingNode->thisNodeOrReverseComplementIsDrawn() ||
+            !m_endingNode->thisNodeOrReverseComplementIsDrawn())
             return false;
 
-        //But it is also necessary to avoid drawing both an edge and its
-        //reverse complement edge.
+        // But it is also necessary to avoid drawing both an edge and its
+        // reverse complement edge.
         return isPositiveEdge();
     }
 }

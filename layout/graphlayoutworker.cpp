@@ -309,7 +309,7 @@ static void buildGraph(ogdf::Graph &ogdfGraph,
 
     // Then loop through each edge determining its drawn status and adding it to OGDF if it is drawn.
     for (const DeBruijnEdge *edge : graph.m_deBruijnGraphEdges) {
-        if (!edge->isDrawn())
+        if (!edge->isVisible())
             continue;
 
         if (edge->getOverlapType() == JUMP || edge->getOverlapType() == EXTRA_LINK)

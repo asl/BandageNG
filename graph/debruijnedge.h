@@ -39,7 +39,6 @@ class DeBruijnEdge
     GraphicsItemEdge * m_graphicsItemEdge;
     DeBruijnEdge * m_reverseComplement;
 
-    bool m_drawn : 1;
     EdgeOverlapType m_overlapType : 3;
     int m_overlap : OVERLAP_BITS;
     // We are having 4 bytes here for now due to alignment requirements
@@ -52,7 +51,6 @@ public:
     DeBruijnNode * getEndingNode() const {return m_endingNode;}
     GraphicsItemEdge * getGraphicsItemEdge() const {return m_graphicsItemEdge;}
     DeBruijnEdge * getReverseComplement() const {return m_reverseComplement;}
-    bool isDrawn() const {return m_drawn;}
     int getOverlap() const {
         unsigned m = CHAR_BIT * sizeof(decltype(m_overlap)) - OVERLAP_BITS;
         return (m_overlap << m) >> m;
@@ -80,13 +78,12 @@ public:
     void setReverseComplement(DeBruijnEdge * rc) {m_reverseComplement = rc;}
     void setOverlap(int ol) {m_overlap = ol;}
     void setOverlapType(EdgeOverlapType olt) {m_overlapType = olt;}
-    void reset() {m_graphicsItemEdge = nullptr; m_drawn = false;}
-    bool determineIfDrawn() { return (m_drawn = edgeIsVisible());}
+    void reset() {m_graphicsItemEdge = nullptr; }
+    bool isVisible() const;
     void setExactOverlap(int overlap) {m_overlap = overlap; m_overlapType = EXACT_OVERLAP;}
     void autoDetermineExactOverlap();
 
 private:
-    bool edgeIsVisible() const;
     static unsigned timesNodeInPath(const DeBruijnNode * node, const std::vector<DeBruijnNode *> &path);
     static std::vector<DeBruijnEdge *> findNextEdgesInPath(DeBruijnNode * nextNode,
                                                            bool forward) ;

@@ -46,13 +46,9 @@ namespace layout {
     }
 
     void apply(AssemblyGraph &graph, const GraphLayout &layout) {
-        // First, determine the set of nodes to be drawn from the layout
+        // Determine the set of nodes to be drawn from the layout
         graph.resetNodes();
         for (auto& entry : layout)
             entry.first->setAsDrawn();
-
-        // Then loop through each edge determining its drawn status
-        for (auto &entry : graph.m_deBruijnGraphEdges)
-            entry->determineIfDrawn();
     }
 }
