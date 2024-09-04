@@ -86,11 +86,12 @@ namespace {
     }
 }
 
-    bool loadGFAPaths(AssemblyGraph &graph,
-                      QString fileName) {
+    llvm::Error loadGFAPaths(AssemblyGraph &graph,
+                             QString fileName) {
         QFile inputFile(fileName);
         if (!inputFile.open(QIODevice::ReadOnly))
-            return false;
+            return llvm::createFileError(fileName.toStdString(),
+                                         llvm::createStringError("cannot open file"));
 
         QTextStream in(&inputFile);
         while (!in.atEnd()) {
@@ -111,25 +112,26 @@ namespace {
 
                 auto pathOrErr = Path::makeFromOrderedNodes(pathNodes, false);
                 if (auto Err = pathOrErr.takeError()) {
-                    // FIXME: Switch to Error result
-                    throw std::runtime_error(std::string("malformed path string for path '")
-                                             + std::string(path->name) + "', cannot reconstruct path through the graph, " +
-                                             + "no path between nodes: " + toString(std::move(Err)));
+                    return llvm::createStringError(
+                        llvm::Twine("malformed path string for path '")
+                        + path->name + "', cannot reconstruct path through the graph, " +
+                        + "no path between nodes: " + toString(std::move(Err)));
                 }
 
                 graph.m_deBruijnGraphPaths.emplace(path->name, std::move(*pathOrErr));
             }
         }
 
-        return true;
+        return llvm::Error::success();
     }
 
-    bool loadGFALinks(AssemblyGraph &graph,
-                      QString fileName,
-                      std::vector<DeBruijnEdge*> *newEdges) {
+    llvm::Error loadGFALinks(AssemblyGraph &graph,
+                             QString fileName,
+                             std::vector<DeBruijnEdge*> *newEdges) {
         QFile inputFile(fileName);
         if (!inputFile.open(QIODevice::ReadOnly))
-            return false;
+            return llvm::createFileError(fileName.toStdString(),
+                                         llvm::createStringError("cannot open file"));
 
         QTextStream in(&inputFile);
         while (!in.atEnd()) {
@@ -158,10 +160,10 @@ namespace {
             }
         }
 
-        return true;
+        return llvm::Error::success();
     }
 
-    bool loadLinks(AssemblyGraph &graph,
+    llvm::Error loadLinks(AssemblyGraph &graph,
                    QString fileName,
                    std::vector<DeBruijnEdge*> *newEdges) {
         csv::CSVFormat format;
@@ -175,7 +177,7 @@ namespace {
 
         for (csv::CSVRow &row: csvReader) {
             if (row.size() < 3)
-                throw std::logic_error("Mandatory columns were not found");
+                return llvm::createStringError("Mandatory CSV columns were not found");
 
             auto s1Sv = row["s1"].get<std::string>();
             auto s2Sv = row["s2"].get<std::string>();
@@ -200,15 +202,16 @@ namespace {
             }
         }
 
-        return true;
+        return llvm::Error::success();
     }
 
 
-    bool loadGAFPaths(AssemblyGraph &graph,
-                      QString fileName) {
+    llvm::Error loadGAFPaths(AssemblyGraph &graph,
+                             QString fileName) {
         QFile inputFile(fileName);
         if (!inputFile.open(QIODevice::ReadOnly))
-            return false;
+            return llvm::createFileError(fileName.toStdString(),
+                                         llvm::createStringError("cannot open file"));
 
         QTextStream in(&inputFile);
         while (!in.atEnd()) {
@@ -241,12 +244,11 @@ namespace {
             }
 
             auto pathOrErr = Path::makeFromOrderedNodes(pathNodes, false);
-            if (auto Err = pathOrErr.takeError()) {
-                // FIXME: Switch to Error result
-                throw std::runtime_error(std::string("malformed path string for path '")
-                                         + std::string(path->name) + "', cannot reconstruct path through the graph, " +
-                                         + "no path between nodes: " + toString(std::move(Err)));
-            }
+            if (auto Err = pathOrErr.takeError())
+                return llvm::createStringError(
+                    llvm::Twine("malformed path string for path '")
+                    + path->name + "', cannot reconstruct path through the graph, " +
+                    + "no path between nodes: " + toString(std::move(Err)));
 
             // Start / end positions on path are zero-based, graph location is 1-based. So we'd just trim
             // the corresponding amounts
@@ -255,11 +257,11 @@ namespace {
             graph.m_deBruijnGraphPaths.emplace(path->name, std::move(p));
         }
 
-        return true;
+        return llvm::Error::success();
     }
 
-    bool loadSPAlignerPaths(AssemblyGraph &graph,
-                            QString fileName) {
+    llvm::Error loadSPAlignerPaths(AssemblyGraph &graph,
+                                   QString fileName) {
         csv::CSVFormat format;
         format.delimiter('\t')
                 .quote('"')
@@ -276,7 +278,7 @@ namespace {
 
         for (csv::CSVRow &row: csvReader) {
             if (row.size() != 9)
-                throw std::logic_error("Mandatory columns were not found");
+                return llvm::createStringError("Mandatory CSV columns were not found");
 
             auto name = row["name"].get<std::string>();
             auto pathSv = row["path"].get_sv();
@@ -288,22 +290,21 @@ namespace {
 
             if (pathParts.size() != startParts.size() ||
                 pathParts.size() != endParts.size())
-                throw std::logic_error("Invalid path start / end components");
+                return llvm::createStringError("Invalid path start / end components");
 
             auto addPath =
                     [&](const std::string &name,
-                        const QString &pathPart, const QString &start, const QString &end) {
+                        const QString &pathPart, const QString &start, const QString &end) -> llvm::Error {
                 std::vector<DeBruijnNode *> pathNodes;
                 for (const auto &nodeName: pathPart.split(","))
                     pathNodes.push_back(graph.m_deBruijnGraphNodes.at(nodeName.toStdString()));
 
                 auto pathOrErr = Path::makeFromOrderedNodes(pathNodes, false);
-                if (auto Err = pathOrErr.takeError()) {
-                    // FIXME: Switch to Error result
-                    throw std::runtime_error(std::string("malformed path string for path '")
-                                             + name + "', cannot reconstruct path through the graph, " +
-                                             + "no path between nodes: " + toString(std::move(Err)));
-                }
+                if (auto Err = pathOrErr.takeError())
+                    return llvm::createStringError(
+                        llvm::Twine("malformed path string for path '")
+                        + name + "', cannot reconstruct path through the graph, " +
+                        + "no path between nodes: " + toString(std::move(Err)));
 
                 Path &p = pathOrErr.get();
                 int sPos = start.toInt(); // if conversion fails, we'd end with zero, we're ok with it.
@@ -313,25 +314,29 @@ namespace {
                     ePos = pathNodes.back()->getLength() - 1;
                 p.trim(sPos, pathNodes.back()->getLength() - ePos - 1);
                 graph.m_deBruijnGraphPaths.emplace(name, std::move(p));
+
+                return llvm::Error::success();
             };
             if (pathParts.size() == 1) {
                 // Keep the name as-is
-                addPath(name,
-                        pathParts.front(), startParts.front(), endParts.front());
+                if (auto Err = addPath(name,
+                                       pathParts.front(), startParts.front(), endParts.front()))
+                    return Err;
             } else {
                 size_t pathIdx = 0;
                 for (size_t pathIdx = 0; pathIdx < pathParts.size(); ++pathIdx) {
-                    addPath(name + "_" + std::to_string(pathIdx),
-                            pathParts[pathIdx], startParts[pathIdx], endParts[pathIdx]);
+                    if (auto Err = addPath(name + "_" + std::to_string(pathIdx),
+                                           pathParts[pathIdx], startParts[pathIdx], endParts[pathIdx]))
+                        return Err;
                 }
             }
         }
 
-        return true;
+        return llvm::Error::success();
     }
 
-    bool loadSPAdesPaths(AssemblyGraph &graph,
-                         QString fileName) {
+    llvm::Error loadSPAdesPaths(AssemblyGraph &graph,
+                                QString fileName) {
         enum class State {
             PathName, // e.g. NODE_1_length_348461_cov_16.477994, we verify NODE_ prefix
             Segment,  // Ends with ";" or newline
@@ -339,7 +344,8 @@ namespace {
 
         QFile inputFile(fileName);
         if (!inputFile.open(QIODevice::ReadOnly))
-            return false;
+            return llvm::createFileError(fileName.toStdString(),
+                                         llvm::createStringError("cannot open file"));
 
         QTextStream in(&inputFile);
         State state = State::PathName;
@@ -354,7 +360,7 @@ namespace {
             switch (state) {
                 case State::PathName: {
                     if (!line.startsWith("NODE_"))
-                        throw std::logic_error("invalid path name: does not start with NODE");
+                        return llvm::createStringError("invalid path name: does not start with NODE");
                     pathName = line.toStdString(); pathIdx = 1;
                     state = State::Segment;
                     break;
@@ -367,39 +373,44 @@ namespace {
                         state = State::PathName;
 
                     auto addPath = [&](const std::string &name,
-                                       const QString &path) {
+                                       const QString &path) -> llvm::Error {
                         std::vector<DeBruijnNode *> pathNodes;
                         for (const auto &nodeName: path.split(","))
                             pathNodes.push_back(graph.m_deBruijnGraphNodes.at(nodeName.toStdString()));
 
                         auto pathOrErr = Path::makeFromOrderedNodes(pathNodes, false);
-                        if (auto Err = pathOrErr.takeError()) {
-                            // FIXME: Switch to Error result
-                            throw std::runtime_error(std::string("malformed path string for path '")
-                                                     + name + "', cannot reconstruct path through the graph, " +
-                                                     + "no path between nodes: " + toString(std::move(Err)));
-                        }
+                        if (auto Err = pathOrErr.takeError())
+                            return llvm::createStringError(
+                                llvm::Twine("malformed path string for path '")
+                                + name + "', cannot reconstruct path through the graph, " +
+                                + "no path between nodes: " + toString(std::move(Err)));
 
                         Path &p = pathOrErr.get();
                         graph.m_deBruijnGraphPaths.emplace(name, std::move(p));
+
+                        return llvm::Error::success();
                     };
 
                     // Parse but do not add reverse-complementary paths
                     if (pathName.at(pathName.size() - 1) == '\'')
                         continue;
 
-                    if (pathIdx == 1 && state == State::PathName)
+                    if (pathIdx == 1 && state == State::PathName) {
                         // Keep the name as-is in case of single-segment path
-                        addPath(pathName, line);
-                    else
-                        addPath(pathName + "_" + std::to_string(pathIdx++), line);
+                        if (auto Err = addPath(pathName, line))
+                            return Err;
+                    } else {
+                        if (auto Err =
+                            addPath(pathName + "_" + std::to_string(pathIdx++), line))
+                            return Err;
+                    }
 
                     break;
                 }
             }
         }
 
-        return true;
+        return llvm::Error::success();
     }
 
 }

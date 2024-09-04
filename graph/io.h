@@ -58,12 +58,12 @@ namespace io {
                                    const std::vector<cigar::tag> &tags,
                                    AssemblyGraph &graph);
 
-    bool loadGFAPaths(AssemblyGraph &graph, QString fileName);
-    bool loadGFALinks(AssemblyGraph &graph, QString fileName,
-                      std::vector<DeBruijnEdge*> *newEdges = nullptr);
-    bool loadLinks(AssemblyGraph &graph, QString fileName,
-                   std::vector<DeBruijnEdge*> *newEdges = nullptr);
-    bool loadGAFPaths(AssemblyGraph &graph, QString fileName);
-    bool loadSPAlignerPaths(AssemblyGraph &graph, QString fileName);
-    bool loadSPAdesPaths(AssemblyGraph &graph, QString fileName);
+    llvm::Error loadGFAPaths(AssemblyGraph &graph, QString fileName);
+    llvm::Error loadGFALinks(AssemblyGraph &graph, QString fileName,
+                             std::vector<DeBruijnEdge*> *newEdges = nullptr);
+    llvm::Error loadLinks(AssemblyGraph &graph, QString fileName,
+                          std::vector<DeBruijnEdge*> *newEdges = nullptr);
+    llvm::Error loadGAFPaths(AssemblyGraph &graph, QString fileName);
+    llvm::Error loadSPAlignerPaths(AssemblyGraph &graph, QString fileName);
+    llvm::Error loadSPAdesPaths(AssemblyGraph &graph, QString fileName);
 }

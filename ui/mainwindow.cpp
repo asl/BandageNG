@@ -446,23 +446,36 @@ void MainWindow::loadGraphPaths(QString fullFileName) {
     if (fullFileName.isEmpty())
         return; // user clicked on cancel
 
-    try {
-        if (selectedFilter == "GFA paths (*.gfa)")
-            io::loadGFAPaths(*g_assemblyGraph, fullFileName);
-        else if (selectedFilter == "SPAligner TSV paths (*.tsv)")
-            io::loadSPAlignerPaths(*g_assemblyGraph, fullFileName);
-        else if (selectedFilter == "GAF paths (*.gaf)")
-            io::loadGAFPaths(*g_assemblyGraph, fullFileName);
-        else
-            io::loadSPAdesPaths(*g_assemblyGraph, fullFileName);
-    } catch (std::exception &e) {
+    auto ErrorHandler = [&](llvm::Error Err) {
         QString errorTitle = "Error loading graph paths";
         QString errorMessage = "There was an error when attempting to load:\n"
                                + fullFileName + ":\n"
-                               + e.what() + "\n\n"
+                               + toString(std::move(Err)).c_str() + "\n\n"
                                + "Please verify that this file has the correct format.";
         QMessageBox::warning(this, errorTitle, errorMessage);
-        return;
+    };
+
+
+    if (selectedFilter == "GFA paths (*.gfa)") {
+        if (auto Err = io::loadGFAPaths(*g_assemblyGraph, fullFileName)) {
+            ErrorHandler(std::move(Err));
+            return;
+        }
+    } else if (selectedFilter == "SPAligner TSV paths (*.tsv)") {
+        if (auto Err = io::loadSPAlignerPaths(*g_assemblyGraph, fullFileName)) {
+            ErrorHandler(std::move(Err));
+            return;
+        }
+    } else if (selectedFilter == "GAF paths (*.gaf)") {
+        if (auto Err = io::loadGAFPaths(*g_assemblyGraph, fullFileName)) {
+            ErrorHandler(std::move(Err));
+            return;
+        }
+    } else {
+        if (auto Err = io::loadSPAdesPaths(*g_assemblyGraph, fullFileName)) {
+            ErrorHandler(std::move(Err));
+            return;
+        }
     }
 
     // FIXME: ugly!
@@ -482,20 +495,26 @@ void MainWindow::loadGraphLinks(QString fullFileName) {
     if (fullFileName.isEmpty())
         return; // user clicked on cancel
 
-    std::vector<DeBruijnEdge*> newEdges;
-    try {
-        if (selectedFilter == "Links in tab-separated format (*.tsv)")
-            io::loadLinks(*g_assemblyGraph, fullFileName, &newEdges);
-        if (selectedFilter == "GFA links (*.gfa)")
-            io::loadGFALinks(*g_assemblyGraph, fullFileName, &newEdges);
-    } catch (std::exception &e) {
+    auto ErrorHandler = [&](llvm::Error Err) {
         QString errorTitle = "Error loading graph links";
         QString errorMessage = "There was an error when attempting to load:\n"
                                + fullFileName + ":\n"
-                               + e.what() + "\n\n"
+                               + toString(std::move(Err)).c_str() + "\n\n"
                                + "Please verify that this file has the correct format.";
         QMessageBox::warning(this, errorTitle, errorMessage);
-        return;
+    };
+
+    std::vector<DeBruijnEdge*> newEdges;
+    if (selectedFilter == "Links in tab-separated format (*.tsv)") {
+        if (auto Err = io::loadLinks(*g_assemblyGraph, fullFileName, &newEdges)) {
+            ErrorHandler(std::move(Err));
+            return;
+        }
+    } else if (selectedFilter == "GFA links (*.gfa)") {
+        if (auto Err = io::loadGFALinks(*g_assemblyGraph, fullFileName, &newEdges)) {
+            ErrorHandler(std::move(Err));
+            return;
+        }
     }
 
     // FIXME: ugly!
