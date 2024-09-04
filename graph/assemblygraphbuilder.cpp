@@ -565,15 +565,16 @@ namespace io {
 
             for (const auto &node: record.segments)
                 pathNodes.push_back(graph.m_deBruijnGraphNodes.at(node));
-            Path p(Path::makeFromOrderedNodes(pathNodes, false));
-            if (p.nodes().size() != pathNodes.size()) {
+            auto PathOrErr = Path::makeFromOrderedNodes(pathNodes, false);
+            if (auto Err = PathOrErr.takeError()) {
                 // We were unable to build path through the graph, likely the input
                 // file is invalid
                 return llvm::createStringError(llvm::Twine("malformed path string for path '")
-                                               + record.name + "', cannot reconstruct path through the graph");
+                                               + record.name + "', cannot reconstruct path through the graph, " +
+                                               + "no path between nodes: " + toString(std::move(Err)));
             }
 
-            graph.m_deBruijnGraphPaths.emplace(record.name, std::move(p));
+            graph.m_deBruijnGraphPaths.emplace(record.name, std::move(PathOrErr.get()));
 
             return llvm::Error::success();
         }
@@ -598,13 +599,16 @@ namespace io {
                 walkNodes.push_back(graph.m_deBruijnGraphNodes.at(nodeName));
             }
 
-            Path p(Path::makeFromOrderedNodes(walkNodes, false));
-            if (p.nodes().size() != walkNodes.size()) {
+            auto WalkOrErr = Path::makeFromOrderedNodes(walkNodes, false);
+            if (auto Err = WalkOrErr.takeError()) {
                 // We were unable to build path through the graph, likely the input
                 // file is invalid
-                return llvm::createStringError(llvm::Twine("malformed walk string for walk '")
-                                               + record.SeqId + "', cannot reconstruct path through the graph");
+                return llvm::createStringError(llvm::Twine("malformed path string for walk '")
+                                               + record.SeqId + "', cannot reconstruct path through the graph, " +
+                                               + "no path between nodes: " + toString(std::move(Err)));
             }
+
+            Path &p = WalkOrErr.get();
 
             unsigned len = p.getLength();
             unsigned seqStart = record.SeqStart ? *record.SeqStart : 0;

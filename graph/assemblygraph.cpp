@@ -34,6 +34,7 @@
 
 #include "ui/dialogs/myprogressdialog.h"
 #include "ui/bandagegraphicsscene.h"
+#include "llvm/Support/Error.h"
 
 #include <QApplication>
 #include <QFile>
@@ -1031,14 +1032,24 @@ bool AssemblyGraph::mergeNodes(QList<DeBruijnNode *> nodes, BandageGraphicsScene
         return false;
 
     std::vector<DeBruijnNode*> orderedList(mergeList.begin(), mergeList.end());
-    Path posPath = Path::makeFromOrderedNodes(orderedList, false);
+    auto posPathOrErr = Path::makeFromOrderedNodes(orderedList, false);
+    if (auto Err = posPathOrErr.takeError()) {
+        llvm::consumeError(std::move(Err));
+        return false;
+    }
+    Path &posPath = posPathOrErr.get();
     Sequence mergedNodePosSequence{posPath.getPathSequence()};
 
     std::vector<DeBruijnNode*> revCompOrderedList;
     for (auto it = orderedList.rbegin(); it != orderedList.rend(); ++it)
         revCompOrderedList.push_back((*it)->getReverseComplement());
 
-    Path negPath = Path::makeFromOrderedNodes(revCompOrderedList, false);
+    auto negPathOrErr = Path::makeFromOrderedNodes(revCompOrderedList, false);
+    if (auto Err = negPathOrErr.takeError()) {
+        llvm::consumeError(std::move(Err));
+        return false;
+    }
+    Path &negPath = negPathOrErr.get();
     Sequence mergedNodeNegSequence{negPath.getPathSequence()};
 
     QString newNodeBaseName;

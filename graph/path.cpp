@@ -74,16 +74,25 @@ Path Path::makeFromUnorderedNodes(const std::vector<DeBruijnNode *>& nodes,
     return path;
 }
 
+void Path::NotConnectedError::log(llvm::raw_ostream &OS) const {
+    OS << from->getName().toStdString() << " and " << to->getName().toStdString();
+}
+
+char Path::NotConnectedError::ID;
+
 // This will build a Path from an ordered list of nodes.  If the nodes
 // form a valid path (i.e. there is an edge connecting each step along
 // the way), a Path is made, otherwise just an empty Path is made.
 // This function needs exact, strand-specific nodes.  If circular is
 // given, then it will also look for an edge connecting the last node
 // to the first.
-Path Path::makeFromOrderedNodes(const std::vector<DeBruijnNode *> &nodes, bool circular) {
+llvm::Expected<Path> Path::makeFromOrderedNodes(const std::vector<DeBruijnNode *> &nodes, bool circular) {
     Path path;
 
     path.m_nodes = nodes;
+
+    if (path.m_nodes.empty())
+        return path;
 
     int targetNumberOfEdges = path.m_nodes.size() - 1;
     if (circular)
@@ -111,7 +120,7 @@ Path Path::makeFromOrderedNodes(const std::vector<DeBruijnNode *> &nodes, bool c
         // If we failed to find an edge connecting the nodes, then
         // the path failed.
         if (!foundEdge)
-            return {};
+            return llvm::make_error<NotConnectedError>(node1, node2);
     }
 
     if (path.m_nodes.empty())
@@ -129,15 +138,13 @@ Path Path::makeFromOrderedNodes(const std::vector<DeBruijnNode *> &nodes, bool c
 Path Path::makeFromString(const QString& pathString, const AssemblyGraph &graph,
                           bool circular,
                           QString * pathStringFailure) {
-    Path path;
-
     QRegularExpression re(R"(^(?:\(([0-9]+)\) ?)*((?:[^,]+[-\+], ?)*[^,]+[-\+])(?: ?\(([0-9]+)\))*$)");
     QRegularExpressionMatch match = re.match(pathString);
 
     //If the string failed to match the regex, return an empty path.
     if (!match.hasMatch()) {
         *pathStringFailure = "the text is not formatted correctly";
-        return path;
+        return {};
     }
 
     QString startPosString = match.captured(1);
@@ -147,14 +154,14 @@ Path Path::makeFromString(const QString& pathString, const AssemblyGraph &graph,
     //Circular paths cannot have start and end positions.
     if (circular && (startPosString != "" || endPosString != "")) {
         *pathStringFailure = "circular paths cannot contain start or end positions";
-        return path;
+        return {};
     }
 
     //Make sure there is at least one proposed node name listed.
     QStringList nodeNameList = nodeListString.simplified().split(",", Qt::SkipEmptyParts);
     if (nodeNameList.empty()) {
         *pathStringFailure = "the text is not formatted correctly";
-        return path;
+        return {};
     }
 
     //Find which node names are and are not actually in the graph.
@@ -177,15 +184,22 @@ Path Path::makeFromString(const QString& pathString, const AssemblyGraph &graph,
             if (i != nodesNotInGraph.size() - 1)
                 *pathStringFailure += ", ";
         }
-        return path;
+        return {};
     }
 
     //If the code got here, then the list at least consists of valid nodes.
     //We now use it to create a Path object.
-    path = Path::makeFromOrderedNodes(nodesInGraph, circular);
+    auto pathOrErr = Path::makeFromOrderedNodes(nodesInGraph, circular);
+    if (auto Err = pathOrErr.takeError()) {
+        // FIXME: Switch to Error result
+        *pathStringFailure = std::string("malformed path string for path: cannot reconstruct path through the graph, "
+                                         "no path between nodes: " + toString(std::move(Err))).c_str();
+    }
 
-    //If the path is empty, then we don't have to worry about start/end
-    //positions, and we just return it.
+    Path &path = pathOrErr.get();
+
+    // If the path is empty, then we don't have to worry about start/end
+    // positions, and we just return it.
     if (path.isEmpty()) {
         if (circular)
             *pathStringFailure = "the nodes do not form a circular path";
@@ -512,7 +526,7 @@ bool Path::isCircular() const {
 //path.
 bool Path::canNodeFitOnEnd(DeBruijnNode * node, Path * extendedPath) const {
     if (isEmpty()) {
-        *extendedPath = Path::makeFromOrderedNodes({ node }, false);
+        *extendedPath = Path::makeFromOrderedNodes({ node }, false).get();
         return true;
     }
 
@@ -535,7 +549,7 @@ bool Path::canNodeFitOnEnd(DeBruijnNode * node, Path * extendedPath) const {
 
 bool Path::canNodeFitAtStart(DeBruijnNode * node, Path *extendedPath) const {
     if (isEmpty()) {
-        *extendedPath = Path::makeFromOrderedNodes({ node }, false);
+        *extendedPath = Path::makeFromOrderedNodes({ node }, false).get();
         return true;
     }
 

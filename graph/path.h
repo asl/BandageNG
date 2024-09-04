@@ -21,6 +21,8 @@
 
 #include "graphlocation.h"
 
+#include <llvm/Support/Error.h>
+
 #include <QByteArray>
 #include <QList>
 #include <QString>
@@ -45,16 +47,35 @@ public:
         Range mapped_range;
     };
 
+
+    // Class used to report error if path is not connected via pair of nodes
+    class NotConnectedError : public llvm::ErrorInfo<NotConnectedError> {
+      public:
+        NotConnectedError(const DeBruijnNode *from, const DeBruijnNode *to)
+                : from(from), to(to) {}
+
+        void log(llvm::raw_ostream &OS) const override;
+        std::error_code convertToErrorCode() const override {
+            llvm_unreachable("Not implemented");
+        }
+        static char ID;
+
+      private:
+        const DeBruijnNode *from = nullptr;
+        const DeBruijnNode *to = nullptr;
+    };
+
     using MappingPath = std::vector<std::pair<DeBruijnNode*, MappingRange>>;
-    
+
     //CREATORS
     Path() {}
     Path(GraphLocation location);
 
     static Path makeFromUnorderedNodes(const std::vector<DeBruijnNode *> &nodes,
                                        bool strandSpecific);
-    static Path makeFromOrderedNodes(const std::vector<DeBruijnNode *> &nodes,
-                                     bool circular);
+    static llvm::Expected<Path>
+    makeFromOrderedNodes(const std::vector<DeBruijnNode *> &nodes,
+                         bool circular);
     static Path makeFromString(const QString& pathString,
                                const AssemblyGraph &graph,
                                bool circular,

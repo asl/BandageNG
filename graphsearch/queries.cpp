@@ -25,6 +25,7 @@
 
 #include "program/globals.h"
 #include "program/settings.h"
+#include "llvm/Support/Error.h"
 
 #include <unordered_set>
 
@@ -243,8 +244,14 @@ void Queries::addPathHits(const PathHits &hits) {
             std::reverse(pathHits.begin(), pathHits.end());
         }
 
-        Path p(Path::makeFromOrderedNodes(pathNodes, false));
+        auto pathOrErr = Path::makeFromOrderedNodes(pathNodes, false);
         // Something went wrong, ignore
+        if (auto Err = pathOrErr.takeError()) {
+            llvm::consumeError(std::move(Err));
+            continue;
+        }
+
+        Path &p = pathOrErr.get();
         if (p.nodes().size() != pathNodes.size())
             continue;
         p.trim(pathHits.front()->m_nodeStart - 1, pathHits.back()->m_node->getLength() - pathHits.back()->m_nodeEnd);

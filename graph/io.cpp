@@ -21,6 +21,7 @@
 #include "io/cigar.h"
 #include "io/gfa.h"
 #include "io/gaf.h"
+#include "llvm/Support/Error.h"
 
 #include <csv/csv.hpp>
 
@@ -107,8 +108,16 @@ namespace {
 
                 for (const auto &node: path->segments)
                     pathNodes.push_back(graph.m_deBruijnGraphNodes.at(node));
-                graph.m_deBruijnGraphPaths.emplace(path->name,
-                                                   Path::makeFromOrderedNodes(pathNodes, false));
+
+                auto pathOrErr = Path::makeFromOrderedNodes(pathNodes, false);
+                if (auto Err = pathOrErr.takeError()) {
+                    // FIXME: Switch to Error result
+                    throw std::runtime_error(std::string("malformed path string for path '")
+                                             + std::string(path->name) + "', cannot reconstruct path through the graph, " +
+                                             + "no path between nodes: " + toString(std::move(Err)));
+                }
+
+                graph.m_deBruijnGraphPaths.emplace(path->name, std::move(*pathOrErr));
             }
         }
 
@@ -231,9 +240,17 @@ namespace {
                 pathNodes.push_back(graph.m_deBruijnGraphNodes.at(nodeName));
             }
 
-            Path p(Path::makeFromOrderedNodes(pathNodes, false));
+            auto pathOrErr = Path::makeFromOrderedNodes(pathNodes, false);
+            if (auto Err = pathOrErr.takeError()) {
+                // FIXME: Switch to Error result
+                throw std::runtime_error(std::string("malformed path string for path '")
+                                         + std::string(path->name) + "', cannot reconstruct path through the graph, " +
+                                         + "no path between nodes: " + toString(std::move(Err)));
+            }
+
             // Start / end positions on path are zero-based, graph location is 1-based. So we'd just trim
             // the corresponding amounts
+            Path &p = pathOrErr.get();
             p.trim(path->pstart, path->plen - path->pend - 1);
             graph.m_deBruijnGraphPaths.emplace(path->name, std::move(p));
         }
@@ -280,7 +297,15 @@ namespace {
                 for (const auto &nodeName: pathPart.split(","))
                     pathNodes.push_back(graph.m_deBruijnGraphNodes.at(nodeName.toStdString()));
 
-                Path p(Path::makeFromOrderedNodes(pathNodes, false));
+                auto pathOrErr = Path::makeFromOrderedNodes(pathNodes, false);
+                if (auto Err = pathOrErr.takeError()) {
+                    // FIXME: Switch to Error result
+                    throw std::runtime_error(std::string("malformed path string for path '")
+                                             + name + "', cannot reconstruct path through the graph, " +
+                                             + "no path between nodes: " + toString(std::move(Err)));
+                }
+
+                Path &p = pathOrErr.get();
                 int sPos = start.toInt(); // if conversion fails, we'd end with zero, we're ok with it.
                 bool ok = false;
                 int ePos = end.toInt(&ok); // if conversion fails, we'd need end of the node, not zero here.
@@ -347,8 +372,16 @@ namespace {
                         for (const auto &nodeName: path.split(","))
                             pathNodes.push_back(graph.m_deBruijnGraphNodes.at(nodeName.toStdString()));
 
-                        graph.m_deBruijnGraphPaths.emplace(name,
-                                                           Path::makeFromOrderedNodes(pathNodes, false));
+                        auto pathOrErr = Path::makeFromOrderedNodes(pathNodes, false);
+                        if (auto Err = pathOrErr.takeError()) {
+                            // FIXME: Switch to Error result
+                            throw std::runtime_error(std::string("malformed path string for path '")
+                                                     + name + "', cannot reconstruct path through the graph, " +
+                                                     + "no path between nodes: " + toString(std::move(Err)));
+                        }
+
+                        Path &p = pathOrErr.get();
+                        graph.m_deBruijnGraphPaths.emplace(name, std::move(p));
                     };
 
                     // Parse but do not add reverse-complementary paths
