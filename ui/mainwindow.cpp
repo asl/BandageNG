@@ -2025,7 +2025,7 @@ void MainWindow::setUiState(UiState uiState)
         ui->blastSearchWidget->setEnabled(true);
         ui->bedWidget->setEnabled(true);
         ui->annotationSelectorWidget->setEnabled(true);
-        ui->selectionScrollAreaWidgetContents->setEnabled(false);
+        ui->selectionScrollAreaWidgetContents->setEnabled(true);
         ui->actionLoad_CSV->setEnabled(true);
         ui->actionLoad_layout->setEnabled(true);
         ui->actionLoad_paths->setEnabled(true);
