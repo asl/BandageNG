@@ -343,8 +343,24 @@ namespace io {
             DeBruijnNode *oppositeNodePtr = nullptr;
             auto rcSeq = sequence.GetReverseComplement();
             if (!sequence.empty() && !sequence.missing() && sequence == rcSeq) {
+                // We might already have opposite node recorded (e.g. a placeholder).
+                // If yes, we'd need to transfer the edges
+                auto [oppositeNodeStorage, inserted] = graph.m_deBruijnGraphNodes.insert(oppositeNodeName, nodePtr);
+                if (!inserted) {
+                    oppositeNodePtr = *oppositeNodeStorage;
+
+                    for (auto *edge : oppositeNodePtr->edges()) {
+                        if (edge->getEndingNode() == oppositeNodePtr)
+                            edge->setEndingNode(nodePtr);
+                        if (edge->getStartingNode() == oppositeNodePtr)
+                            edge->setStartingNode(nodePtr);
+                        nodePtr->addEdge(edge);
+                    }
+
+                    *oppositeNodeStorage = nodePtr;
+                }
+
                 oppositeNodePtr = nodePtr;
-                graph.m_deBruijnGraphNodes[oppositeNodeName] = oppositeNodePtr;
             } else {
                 oppositeNodePtr =
                     maybeAddSegment(getOppositeNodeName(nodeName), nodeDepth, rcSeq, graph);

@@ -50,6 +50,9 @@ public:
 
     DeBruijnNode * getStartingNode() const {return m_startingNode;}
     DeBruijnNode * getEndingNode() const {return m_endingNode;}
+    void setStartingNode(DeBruijnNode *node) { m_startingNode = node;}
+    void setEndingNode(DeBruijnNode *node) { m_endingNode = node;}
+
     GraphicsItemEdge * getGraphicsItemEdge() const {return m_graphicsItemEdge;}
     DeBruijnEdge * getReverseComplement() const {return m_reverseComplement;}
     bool isDrawn() const {return m_drawn;}
