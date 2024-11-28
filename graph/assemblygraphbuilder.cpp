@@ -579,8 +579,14 @@ namespace io {
             std::vector<DeBruijnNode *> pathNodes;
             pathNodes.reserve(record.segments.size());
 
-            for (const auto &node: record.segments)
-                pathNodes.push_back(graph.m_deBruijnGraphNodes.at(node));
+            for (const auto &node: record.segments) {
+                auto nodeIt = graph.m_deBruijnGraphNodes.find(node);
+                if (nodeIt == graph.m_deBruijnGraphNodes.end())
+                    return llvm::createStringError(llvm::Twine("malformed path string for path '")
+                                               + record.name + "', invalid node in path: " + node);
+
+                pathNodes.push_back(nodeIt.value());
+            }
             Path p(Path::makeFromOrderedNodes(pathNodes, false));
             if (p.nodes().size() != pathNodes.size()) {
                 // We were unable to build path through the graph, likely the input
@@ -611,7 +617,12 @@ namespace io {
                 else
                     return llvm::createStringError(llvm::Twine("invalid walk string: ") + node);
 
-                walkNodes.push_back(graph.m_deBruijnGraphNodes.at(nodeName));
+                auto nodeIt = graph.m_deBruijnGraphNodes.find(nodeName);
+                if (nodeIt == graph.m_deBruijnGraphNodes.end())
+                    return llvm::createStringError(llvm::Twine("malformed path string for walk '")
+                                               + record.SeqId + "', invalid node in path: " + node);
+
+                walkNodes.push_back(nodeIt.value());
             }
 
             Path p(Path::makeFromOrderedNodes(walkNodes, false));
