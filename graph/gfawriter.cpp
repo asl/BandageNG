@@ -72,7 +72,7 @@ namespace gfa {
         if (depthTag == "DP" || depthTag == "dp")
             gfaSegmentLine += "\tDP:f:" + QString::number(node->getDepth()).toLatin1();
         else if (depthTag == "rd")
-            gfaSegmentLine += "\trd:i:" + QString::number(node->getDepth()).toLatin1();
+            gfaSegmentLine += "\trd:i:" + QString::number(node->getDepth()-1).toLatin1();
         else if (depthTag == "KC" || depthTag == "RC" || depthTag == "FC")
             gfaSegmentLine += "\t" + depthTag.toLatin1() + ":i:" +
                               QString::number(int(node->getDepth() * gfaSequence.length() + 0.5)).toLatin1();

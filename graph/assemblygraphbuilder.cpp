@@ -425,7 +425,7 @@ namespace io {
                 nodeDepth = *kaTag;
             } else if (auto rdTag = gfa::getTag<int64_t>("rd", record.tags)) {
                 graph.m_depthTag = "rd";
-                nodeDepth = *rdTag;
+                nodeDepth = *rdTag + 1;
             } else if (auto kcTag = gfa::getTag<int64_t>("KC", record.tags)) {
                 graph.m_depthTag = "KC";
                 nodeDepth = double(*kcTag) / double(length);
