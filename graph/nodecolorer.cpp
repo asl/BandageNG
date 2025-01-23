@@ -76,8 +76,13 @@ QColor DepthNodeColorer::get(const GraphicsItemNode *node) {
 
     double lowValue = g_settings->lowDepthValue, highValue = g_settings->highDepthValue;
     if (g_settings->autoDepthValue) {
-        lowValue = m_graph->m_firstQuartileDepth;
-        highValue = m_graph->m_thirdQuartileDepth;
+        if (m_graph->currentScope().graphScope() == DEPTH_RANGE) {
+            lowValue = m_graph->currentScope().minDepth();
+            highValue = m_graph->currentScope().maxDepth();
+        } else {
+            lowValue = m_graph->m_firstQuartileDepth;
+            highValue = m_graph->m_thirdQuartileDepth;
+        }
     }
 
     float fraction = (depth - lowValue) / (highValue - lowValue);

@@ -201,12 +201,14 @@ public:
     QString getNodeNameFromString(QString string) const;
 
     std::vector<DeBruijnNode *> getNodesInDepthRange(double min, double max) const;
+    const graph::Scope &currentScope() const;
 private:
     std::vector<DeBruijnNode *> getNodesFromListExact(const QStringList& nodesList, std::vector<QString> * nodesNotInGraph) const;
     std::vector<DeBruijnNode *> getNodesFromListPartial(const QStringList& nodesList, std::vector<QString> * nodesNotInGraph) const;
     std::vector<int> makeOverlapCountVector();
     void clearAllCsvData();
     QString getNewNodeName(QString oldNodeName) const;
+    graph::Scope m_currentScope;
 
 signals:
     void setMergeTotalCount(int totalCount);
