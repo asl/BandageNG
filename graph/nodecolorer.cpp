@@ -33,8 +33,24 @@
 
 #include <QApplication>
 
+double INodeColorer::lowValue = 0.0;
+double INodeColorer::highValue = 0.0;
+
 INodeColorer::INodeColorer(NodeColorScheme scheme)
     : m_graph(g_assemblyGraph), m_scheme(scheme) {
+}
+
+void INodeColorer::setGlobalScope(const graph::Scope &scope,
+                                  double firstQuartileDepth,
+                                  double thirdQuartileDepth)
+{
+    if (scope.graphScope() == DEPTH_RANGE) {
+        lowValue  = scope.minDepth();
+        highValue = scope.maxDepth();
+    } else {
+        lowValue  = firstQuartileDepth;
+        highValue = thirdQuartileDepth;
+    }
 }
 
 std::pair<QColor, QColor> INodeColorer::get(const GraphicsItemNode *node,
@@ -76,13 +92,7 @@ QColor DepthNodeColorer::get(const GraphicsItemNode *node) {
 
     double lowValue = g_settings->lowDepthValue, highValue = g_settings->highDepthValue;
     if (g_settings->autoDepthValue) {
-        if (m_graph->currentScope().graphScope() == DEPTH_RANGE) {
-            lowValue = m_graph->currentScope().minDepth();
-            highValue = m_graph->currentScope().maxDepth();
-        } else {
-            lowValue = m_graph->m_firstQuartileDepth;
-            highValue = m_graph->m_thirdQuartileDepth;
-        }
+        std::tie(lowValue, highValue) = INodeColorer::getDepthRange();
     }
 
     float fraction = (depth - lowValue) / (highValue - lowValue);
