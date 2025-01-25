@@ -1025,7 +1025,7 @@ void MainWindow::drawGraph() {
     resetScene();
     g_assemblyGraph->resetNodes();
     g_assemblyGraph->markNodesToDraw(scope, startingNodes);
-    g_settings->nodeColorer->setGlobalScope(scope,g_assemblyGraph->m_firstQuartileDepth, g_assemblyGraph->m_thirdQuartileDepth);
+    g_settings->nodeColorer->saveScopeReference(scope);
     layoutGraph();
 }
 

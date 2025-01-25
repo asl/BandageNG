@@ -31,6 +31,13 @@ public:
 
     QColor get(const GraphicsItemNode *node) override;
     [[nodiscard]] const char* name() const override { return "Color by depth"; };
+
+    [[nodiscard]] static graph::Scope &getScope() {
+        return m_Scope;
+    }
+
+private:
+    static graph::Scope m_Scope;
 };
 
 class UniformNodeColorer : public INodeColorer {

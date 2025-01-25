@@ -51,7 +51,6 @@
 
 AssemblyGraph::AssemblyGraph()
         : m_sequencesLoadedFromFasta(NOT_READY)
-        , m_currentScope(graph::Scope::wholeGraph())
 {
     clearGraphInfo();
 }
@@ -535,7 +534,6 @@ bool AssemblyGraph::loadGraphFromFile(const QString& filename) {
 //is not WHOLE_GRAPH.
 void AssemblyGraph::markNodesToDraw(const graph::Scope &scope,
                                     const std::vector<DeBruijnNode *>& startingNodes) {
-    m_currentScope = scope; // store the scope
     if (scope.graphScope() == WHOLE_GRAPH) {
         for (auto &entry : m_deBruijnGraphNodes) {
             //If double mode is off, only positive nodes are drawn.  If it's
@@ -558,10 +556,6 @@ void AssemblyGraph::markNodesToDraw(const graph::Scope &scope,
     // Then loop through each edge determining its drawn status
     for (DeBruijnEdge *edge : m_deBruijnGraphEdges)
         edge->determineIfDrawn();
-}
-
-const graph::Scope &AssemblyGraph::currentScope() const {
-    return m_currentScope;
 }
 
 static QStringList removeNullStringsFromList(const QStringList& in) {
