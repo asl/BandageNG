@@ -53,8 +53,6 @@ public:
     static std::unique_ptr<INodeColorer> create(NodeColorScheme scheme);
 
     [[nodiscard]] NodeColorScheme scheme() const { return m_scheme; }
-	
-    virtual void saveScopeReference(graph::Scope& scope);
 
 protected:
     NodeColorScheme m_scheme;

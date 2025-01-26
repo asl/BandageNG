@@ -33,14 +33,8 @@
 
 #include <QApplication>
 
-graph::Scope DepthNodeColorer::m_Scope = graph::Scope::wholeGraph();
-
 INodeColorer::INodeColorer(NodeColorScheme scheme)
     : m_graph(g_assemblyGraph), m_scheme(scheme) {
-}
-
-void INodeColorer::saveScopeReference(graph::Scope& scope) {
-    DepthNodeColorer::getScope() = scope;
 }
 
 std::pair<QColor, QColor> INodeColorer::get(const GraphicsItemNode *node,
@@ -81,11 +75,11 @@ QColor DepthNodeColorer::get(const GraphicsItemNode *node) {
     double depth = deBruijnNode->getDepth();
 
     double lowValue = g_settings->lowDepthValue, highValue = g_settings->highDepthValue;
-    auto &scope = getScope();
+
     if (g_settings->autoDepthValue) {
-        if (scope.graphScope() == DEPTH_RANGE) {
-            lowValue = scope.minDepth();
-            highValue = scope.maxDepth();
+        if (m_scope.graphScope() == DEPTH_RANGE) {
+            lowValue = m_scope.minDepth();
+            highValue = m_scope.maxDepth();
         } else {
             lowValue = m_graph->m_firstQuartileDepth;
             highValue = m_graph->m_thirdQuartileDepth;
@@ -94,6 +88,10 @@ QColor DepthNodeColorer::get(const GraphicsItemNode *node) {
 
     float fraction = (depth - lowValue) / (highValue - lowValue);
     return tinycolormap::GetColor(fraction, colorMap(g_settings->colorMap)).ConvertToQColor();
+}
+
+void DepthNodeColorer::saveScopeReference(graph::Scope& scope) {
+    m_scope = scope;
 }
 
 QColor UniformNodeColorer::get(const GraphicsItemNode *node) {

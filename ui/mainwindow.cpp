@@ -88,7 +88,8 @@ MainWindow::MainWindow(QString fileToLoadOnStartup, bool drawGraphAfterLoad) :
     QMainWindow(nullptr),
     ui(new Ui::MainWindow), m_imageFilter("PNG (*.png)"),
     m_fileToLoadOnStartup(fileToLoadOnStartup), m_drawGraphAfterLoad(drawGraphAfterLoad),
-    m_uiState(NO_GRAPH_LOADED), m_blastSearchDialog(nullptr), m_alreadyShown(false)
+    m_uiState(NO_GRAPH_LOADED), m_blastSearchDialog(nullptr), m_alreadyShown(false),
+    m_scope(graph::Scope::wholeGraph())
 {
     ui->setupUi(this);
 
@@ -1004,7 +1005,7 @@ void MainWindow::drawGraph() {
     QString errorMessage;
     g_settings->doubleMode = ui->doubleNodesRadioButton->isChecked();
 
-    auto scope =
+    m_scope =
             graph::scope(g_settings->graphScope,
                          ui->startingNodesLineEdit->text(),
                          ui->minDepthSpinBox->value(), ui->maxDepthSpinBox->value(),
@@ -1015,7 +1016,7 @@ void MainWindow::drawGraph() {
                          ui->nodeDistanceSpinBox->value());
 
     auto startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
-                                                 *g_assemblyGraph, scope);
+                                                 *g_assemblyGraph, m_scope);
 
     if (!errorMessage.isEmpty()) {
         QMessageBox::information(this, errorTitle, errorMessage);
@@ -1024,8 +1025,7 @@ void MainWindow::drawGraph() {
 
     resetScene();
     g_assemblyGraph->resetNodes();
-    g_assemblyGraph->markNodesToDraw(scope, startingNodes);
-    g_settings->nodeColorer->saveScopeReference(scope);
+    g_assemblyGraph->markNodesToDraw(m_scope, startingNodes);
     layoutGraph();
 }
 
@@ -1382,6 +1382,9 @@ void MainWindow::switchColourScheme(int idx) {
         if (!g_assemblyGraph->m_csvHeaders.empty())
             colorer->setColumnIdx(0);
         ui->tagsComboBox->setVisible(true);
+    } else if (scheme == DEPTH_COLOUR) {
+        dynamic_cast<DepthNodeColorer*>(&*g_settings->nodeColorer)->saveScopeReference(m_scope);
+        ui->tagsComboBox->setVisible(false);
     } else {
         ui->tagsComboBox->setVisible(false);
     }
