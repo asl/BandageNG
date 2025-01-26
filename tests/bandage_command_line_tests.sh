@@ -71,7 +71,7 @@ function test_image_height {
     image=$1
     height=$2
 
-    size=`magick $image -print "Size: %wx%h\n" /dev/null`
+    size=`convert $image -print "Size: %wx%h\n" /dev/null`
 
     if [[ $size == *"x$height"* ]]; then
         passes=$((passes + 1))
@@ -90,7 +90,7 @@ function test_image_width {
     image=$1
     width=$2
 
-    size=`magick $image -print "Size: %wx%h\n" /dev/null`
+    size=`convert $image -print "Size: %wx%h\n" /dev/null`
 
     if [[ $size == *"$width""x"* ]]; then
         passes=$((passes + 1))
@@ -110,7 +110,7 @@ function test_image_width_and_height {
     width=$2
     height=$3
     
-    size=`magick $image -print "Size: %wx%h\n" /dev/null`
+    size=`convert $image -print "Size: %wx%h\n" /dev/null`
     expected_size="Size: $width""x""$height"
 
     if [ "$size" == "$expected_size" ]; then
