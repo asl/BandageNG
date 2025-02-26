@@ -85,6 +85,7 @@ bool GraphSearch::findProgram(const QString &programName, QString * command)
                                                                    "$HOME/bin:"
                                                                    "$HOME/.local/bin:"
                                                                    "$HOME/miniconda3/bin:"
+                                                                   "$HOME/miniforge3/bin:"
                                                                    "/usr/local/ncbi/blast/bin:"
                                                                    "\\1");
     find.setEnvironment(envlist);
