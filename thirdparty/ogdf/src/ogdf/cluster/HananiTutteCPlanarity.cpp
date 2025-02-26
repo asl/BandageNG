@@ -37,6 +37,7 @@
 #include <ogdf/cluster/ClusterPlanarity.h>
 #include <ogdf/cluster/HananiTutteCPlanarity.h>
 
+#include <chrono>
 #include <map>
 #include <unordered_map>
 
