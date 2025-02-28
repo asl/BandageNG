@@ -40,7 +40,7 @@ Bandage-NG help tips are also built into the program. Throughout the UI, you wil
 
 ### Pre-built binaries
 
-Find pre-built binaries for the latest development version of Bandage-NG under the [Continuous Build release](https://github.com/asl/BandageNG/releases/tag/continuous).
+Find pre-built binaries for the latest development version of Bandage-NG under the [Continuous Build](https://github.com/asl/BandageNG/releases/tag/continuous) release page.
 
 ## Building from source
 
