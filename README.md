@@ -5,7 +5,12 @@
 
 # <img src="http://rrwick.github.io/Bandage/images/logo.png" alt="Bandage" width="115" height="115" align="middle">Bandage-NG
 
-## IMPORTANT: This is a fork of original Bandage repo. It may contain new features, new bugs and otherwise be not compatible with the Bandage by Ryan Wick. The documentation, instructions, etc. might be incomplete, missed and inaccurate as well
+<h2>
+DISCLAIMER: This is a fork of Ryan Wick's original "Bandage" project. <br>
+    
+Bandage-NG is under active development and contains new features, it may also contain new bugs and behaviour that diverges from the original project.
+
+</h2>
 
 ## Table of Contents
 * [Intro](https://github.com/asl/BandageNG#intro)
