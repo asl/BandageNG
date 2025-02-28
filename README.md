@@ -10,8 +10,9 @@
 ## Table of Contents
 * [Intro](https://github.com/asl/BandageNG#intro)
 * [Help](https://github.com/asl/BandageNG#help)
-* [Pre-built binaries](https://github.com/asl/BandageNG#pre-built-binaries)
-* [Building from source](https://github.com/asl/BandageNG#building-from-source)
+* [Installing](https://github.com/asl/BandageNG#installing)
+    * [Pre-built binaries](https://github.com/asl/BandageNG#pre-built-binaries)
+    * [Building from source](https://github.com/asl/BandageNG#building-from-source)
 * [Contributing](https://github.com/asl/BandageNG#contributing)
 * [Citation](https://github.com/asl/BandageNG#citation)
 * [Credits](https://github.com/asl/BandageNG#credits)
@@ -30,17 +31,19 @@ Bandage-NG documentation is available on the <a href="https://github.com/asl/Ban
 
 Bandage-NG help tips are also built into the program. Throughout the UI, you will find these icons next to controls and settings: <img src="http://rrwick.github.io/Bandage/images/helptext.png" alt="help text icon" width="16" height="16">. Click them to see a description of that element of Bandage.
 
-## Prerequisites (for building from the source code)
-  * Qt 6
-  * CMake
-  * C++17-compliant compiler
+## Installing
 
-## Pre-built binaries
+### Pre-built binaries
 
-Pre-built Linux and Mac binaries are available from [Releases](https://github.com/asl/BandageNG/releases) page.
+Find pre-built binaries for the latest development version of Bandage-NG under the [Continuous Build release](https://github.com/asl/BandageNG/releases/tag/continuous).
 
 ## Building from source
 
+### Prerequisites (for building from the source code)
+  * Qt 6
+  * CMake
+  * C++17-compliant compiler
+    
 ### CMake
 ```shell
 mkdir build
@@ -56,7 +59,13 @@ New contributors are welcome! If you're interested or have ideas, please use Iss
 
 ## Citation
 
-TBD
+If you use Bandage in your research, please cite the original Bandage publication:
+
+[Wick R.R., Schultz M.B., Zobel J. & Holt K.E. (2015). Bandage: interactive visualisation of de novo genome assemblies. Bioinformatics, 31(20), 3350-3352.](http://bioinformatics.oxfordjournals.org/content/31/20/3350)
+
+**as well as** this fork of Bandage as:
+
+Korobeynikov, A. Bandage-NG v[version number]. GitHub https://github.com/asl/BandageNG (Year).
 
 
 ## Credits
