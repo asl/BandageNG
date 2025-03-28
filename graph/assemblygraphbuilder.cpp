@@ -220,7 +220,7 @@ static bool isStandardGFATag(const char name[2]) {
         case makeGFATag("rd"):
         case makeGFATag("LB"):
         case makeGFATag("L2"):
-        case makeGFATag("CB"):
+        case makeGFATag("CL"):
         case makeGFATag("C2"):
             return true;
     }
@@ -264,7 +264,7 @@ namespace io {
                                    const std::vector<gfa::tag> &tags,
                                    AssemblyGraph &graph) {
         bool hasCustomColours = false;
-        hasCustomColours |= maybeAddCustomColor(edgePtr, tags, "CB", graph);
+        hasCustomColours |= maybeAddCustomColor(edgePtr, tags, "CL", graph);
         hasCustomColours |= maybeAddCustomColor(rcEdgePtr, tags, "C2", graph);
 
         if (auto wd = gfa::getTag<float>("WD", tags)) {
@@ -292,7 +292,7 @@ namespace io {
                                                     const std::vector<gfa::tag> &tags,
                                                     AssemblyGraph &graph) {
         bool hasCustomColours = false, hasCustomLabels = false;
-        hasCustomColours |= maybeAddCustomColor(nodePtr, tags, "CB", graph);
+        hasCustomColours |= maybeAddCustomColor(nodePtr, tags, "CL", graph);
         hasCustomColours |= maybeAddCustomColor(rcNodePtr, tags, "C2", graph);
 
         auto lb = gfa::getTag<std::string>("LB", tags);
