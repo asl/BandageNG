@@ -125,7 +125,7 @@ GraphSearchDialog::GraphSearchDialog(QWidget *parent, const QString& autoQuery)
     }
 
     // If a BLAST database already exists, move to step 2.
-    QFile databaseFile = m_graphSearch->temporaryDir().filePath("all_nodes.fasta");
+    QFile databaseFile(m_graphSearch->temporaryDir().filePath("all_nodes.fasta"));
     if (databaseFile.exists())
         setUiStep(GRAPH_DB_BUILT_BUT_NO_QUERIES);
     //If there isn't a BLAST database, clear the entire temporary directory

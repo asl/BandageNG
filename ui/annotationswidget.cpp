@@ -15,11 +15,20 @@ AnnotationSettingsDialog::AnnotationSettingsDialog(const AnnotationGroup &annota
     auto textCheckBox = new QCheckBox("Text");
     textCheckBox->setCheckState(annotationSettings.showText ? Qt::Checked : Qt::Unchecked);
 
+    // TODO: Remove these version checks to reduce code duplication
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 7, 0))
+    connect(textCheckBox, &QCheckBox::checkStateChanged,
+            [this](Qt::CheckState newState) {
+                g_settings->annotationsSettings[m_annotationGroupId].showText = newState == Qt::Checked;
+                g_graphicsView->viewport()->update();
+            });
+#else
     connect(textCheckBox, &QCheckBox::stateChanged,
             [this](int newState) {
                 g_settings->annotationsSettings[m_annotationGroupId].showText = newState == Qt::Checked;
                 g_graphicsView->viewport()->update();
             });
+#endif
 
     formLayout->addRow(textCheckBox);
     if (!annotationGroup.annotationMap.empty() && !annotationGroup.annotationMap.begin()->second.empty()) {
@@ -30,8 +39,13 @@ AnnotationSettingsDialog::AnnotationSettingsDialog(const AnnotationGroup &annota
             viewCheckBox->setCheckState(annotationSettings.viewsToShow.count(i) != 0 ? Qt::Checked : Qt::Unchecked);
             formLayout->addRow(viewCheckBox);
 
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 7, 0))
+            connect(viewCheckBox, &QCheckBox::checkStateChanged,
+                    [i, this](Qt::CheckState newState) {
+#else
             connect(viewCheckBox, &QCheckBox::stateChanged,
                     [i, this](int newState) {
+#endif
                         auto &viewsToShow = g_settings->annotationsSettings[m_annotationGroupId].viewsToShow;
                         switch (newState) {
                             case Qt::Checked:
