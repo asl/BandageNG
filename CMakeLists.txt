@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.28)
-project(BandageNG VERSION 2024.07 LANGUAGES CXX)
+project(BandageNG LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -94,8 +94,18 @@ set(CLI_SOURCES
 
 set(RESOURCES images/images.qrc images/application.icns images/application.rc)
 
+file(STRINGS "${CMAKE_SOURCE_DIR}/VERSION.txt" VERSION_STRING LIMIT_COUNT 1)
+string(REGEX MATCH "([0-9]+)\.([0-9]+)(.*)" ver "${VERSION_STRING}")
+if (ver STREQUAL "")
+  message(FATAL_ERROR "Error to parse version string from ${VERSION_STRING}")
+endif()
+set(PROJECT_VERSION_MAJOR "${CMAKE_MATCH_1}")
+set(PROJECT_VERSION_MINOR "${CMAKE_MATCH_2}")
+set(PROJECT_VERSION_TWEAK "${CMAKE_MATCH_3}")
+set(PROJECT_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}${PROJECT_VERSION_TWEAK}")
+
 message(STATUS "Building Bandage-NG version ${PROJECT_VERSION}")
-add_compile_definitions(APP_VERSION="${PROJECT_VERSION}-dev")
+add_compile_definitions(APP_VERSION="${PROJECT_VERSION}")
 include_directories(ui)
 
 add_subdirectory(thirdparty)
