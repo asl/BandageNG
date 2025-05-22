@@ -222,27 +222,71 @@ void GraphicsItemNode::paint(QPainter * painter, const QStyleOptionGraphicsItem 
     if (anyNodeDisplayText())
     {
         QStringList nodeText = getNodeText();
-        QPainterPath textPath;
+        if (!nodeText.isEmpty()) {
+            std::vector<QPointF> centres;
+            if (g_settings->positionTextNodeCentre) {
+                centres.push_back(getCentre(m_linePoints));
+            } else {
+                centres = getCentres();
+            }
 
-        QFontMetrics metrics(g_settings->labelFont);
-        double fontHeight = metrics.ascent();
+            for (const QPointF &centrePoint : centres) {
+                painter->save(); // Save current painter state
 
-        for (int i = 0; i < nodeText.size(); ++i)
-        {
-            const QString& text = nodeText.at(i);
-            int stepsUntilLast = nodeText.size() - 1 - i;
-            double shiftLeft = -metrics.boundingRect(text).width() / 2.0;
-            textPath.addText(shiftLeft, -stepsUntilLast * fontHeight, g_settings->labelFont, text);
+                // Apply transformations for text rendering
+                double zoom = g_absoluteZoom;
+                if (zoom == 0.0) zoom = 1.0; // Avoid division by zero or no effect
+                double zoomAdjustment = 1.0 / (1.0 + ((zoom - 1.0) * g_settings->textZoomScaleFactor));
+
+                painter->translate(centrePoint);
+                painter->rotate(-g_graphicsView->getRotation());
+                painter->scale(zoomAdjustment, zoomAdjustment);
+
+                // --- Text Rendering Logic ---
+                painter->setFont(g_settings->labelFont);
+                painter->setPen(g_settings->textColour);
+
+                QFontMetrics metrics(painter->font());
+
+                // Use lineSpacing for robust vertical positioning of multi-line text.
+                double singleLineSlotHeight = metrics.lineSpacing();
+                double totalTextBlockHeight = singleLineSlotHeight * nodeText.size();
+
+                // Vertical Centering Adjustment:
+                // Shifts the entire text block vertically. A positive value shifts the text UPWARDS.
+                // Empirically determined to improve visual centering in SVG.
+                const double verticalCenteringOffset = metrics.lineSpacing() * 0.2;
+                double currentLineSlotTopY = -(totalTextBlockHeight / 2.0) - verticalCenteringOffset;
+
+                // Horizontal Centering Adjustment:
+                // Compensates for differences in text width calculation between Qt's metrics
+                // and browser SVG rendering, improving visual horizontal centering.
+                const double horizontalCenteringOffset = metrics.averageCharWidth() * 1.35;
+
+                for (const QString &textLine : nodeText) {
+                    if (textLine.isEmpty()) {
+                        currentLineSlotTopY += singleLineSlotHeight; // Maintain spacing for empty lines
+                        continue;
+                    }
+
+                    // Define an alignment rectangle for the current line of text.
+                    // x-coordinate includes the horizontal offset.
+                    // width = 0.0 hints to Qt::AlignHCenter to center around rect.x().
+                    QRectF lineAlignmentRect(
+                        horizontalCenteringOffset,
+                        currentLineSlotTopY,
+                        0.0,
+                        singleLineSlotHeight
+                    );
+
+                    painter->drawText(lineAlignmentRect, Qt::AlignCenter | Qt::TextDontClip, textLine);
+                    currentLineSlotTopY += singleLineSlotHeight; // Move to the top of the slot for the next line
+                }
+                // --- End of Text Rendering Logic ---
+
+                painter->restore(); // Restore painter state
+            }
         }
-
-        std::vector<QPointF> centres;
-        if (g_settings->positionTextNodeCentre)
-            centres.push_back(getCentre(m_linePoints));
-        else
-            centres = getCentres();
-
-        for (auto &centre : centres)
-            drawTextPathAtLocation(painter, textPath, centre);
     }
 
     //Draw BLAST hit labels, if appropriate.
