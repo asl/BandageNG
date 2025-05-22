@@ -23,6 +23,7 @@
 Settings::Settings()
 {
     doubleMode = false;
+    renderTextAsSVGText = false;
 
     nodeLengthMode = AUTO_NODE_LENGTH;
     autoNodeLengthPerMegabase = 1000.0;

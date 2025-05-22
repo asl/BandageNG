@@ -221,71 +221,113 @@ void GraphicsItemNode::paint(QPainter * painter, const QStyleOptionGraphicsItem 
     //Draw node labels if there are any to display.
     if (anyNodeDisplayText())
     {
-        QStringList nodeText = getNodeText();
-        if (!nodeText.isEmpty()) {
-            std::vector<QPointF> centres;
-            if (g_settings->positionTextNodeCentre) {
-                centres.push_back(getCentre(m_linePoints));
-            } else {
-                centres = getCentres();
-            }
-
-            for (const QPointF &centrePoint : centres) {
-                painter->save(); // Save current painter state
-
-                // Apply transformations for text rendering
-                double zoom = g_absoluteZoom;
-                if (zoom == 0.0) zoom = 1.0; // Avoid division by zero or no effect
-                double zoomAdjustment = 1.0 / (1.0 + ((zoom - 1.0) * g_settings->textZoomScaleFactor));
-
-                painter->translate(centrePoint);
-                painter->rotate(-g_graphicsView->getRotation());
-                painter->scale(zoomAdjustment, zoomAdjustment);
-
-                // --- Text Rendering Logic ---
-                painter->setFont(g_settings->labelFont);
-                painter->setPen(g_settings->textColour);
-
-                QFontMetrics metrics(painter->font());
-
-                // Use lineSpacing for robust vertical positioning of multi-line text.
-                double singleLineSlotHeight = metrics.lineSpacing();
-                double totalTextBlockHeight = singleLineSlotHeight * nodeText.size();
-
-                // Vertical Centering Adjustment:
-                // Shifts the entire text block vertically. A positive value shifts the text UPWARDS.
-                // Empirically determined to improve visual centering in SVG.
-                const double verticalCenteringOffset = metrics.lineSpacing() * 0.2;
-                double currentLineSlotTopY = -(totalTextBlockHeight / 2.0) - verticalCenteringOffset;
-
-                // Horizontal Centering Adjustment:
-                // Compensates for differences in text width calculation between Qt's metrics
-                // and browser SVG rendering, improving visual horizontal centering.
-                const double horizontalCenteringOffset = metrics.averageCharWidth() * 1.35;
-
-                for (const QString &textLine : nodeText) {
-                    if (textLine.isEmpty()) {
-                        currentLineSlotTopY += singleLineSlotHeight; // Maintain spacing for empty lines
-                        continue;
-                    }
-
-                    // Define an alignment rectangle for the current line of text.
-                    // x-coordinate includes the horizontal offset.
-                    // width = 0.0 hints to Qt::AlignHCenter to center around rect.x().
-                    QRectF lineAlignmentRect(
-                        horizontalCenteringOffset,
-                        currentLineSlotTopY,
-                        0.0,
-                        singleLineSlotHeight
-                    );
-
-                    painter->drawText(lineAlignmentRect, Qt::AlignCenter | Qt::TextDontClip, textLine);
-                    currentLineSlotTopY += singleLineSlotHeight; // Move to the top of the slot for the next line
+        if (g_settings->renderTextAsSVGText)
+        {
+            QStringList nodeText = getNodeText();
+            if (!nodeText.isEmpty()) {
+                std::vector<QPointF> centres;
+                if (g_settings->positionTextNodeCentre) {
+                    centres.push_back(getCentre(m_linePoints));
+                } else {
+                    centres = getCentres();
                 }
-                // --- End of Text Rendering Logic ---
 
-                painter->restore(); // Restore painter state
+                for (const QPointF &centrePoint : centres) {
+                    painter->save(); // Save current painter state
+
+                    // Apply transformations for text rendering
+                    double zoom = g_absoluteZoom;
+                    if (zoom == 0.0) zoom = 1.0; // Avoid division by zero or no effect
+                    double zoomAdjustment = 1.0 / (1.0 + ((zoom - 1.0) * g_settings->textZoomScaleFactor));
+
+                    painter->translate(centrePoint);
+                    painter->rotate(-g_graphicsView->getRotation());
+                    painter->scale(zoomAdjustment, zoomAdjustment);
+
+                    // --- Text Rendering Logic ---
+                    painter->setFont(g_settings->labelFont);
+                    painter->setPen(g_settings->textColour);
+
+                    QFontMetrics metrics(painter->font());
+
+                    // Use lineSpacing for robust vertical positioning of multi-line text.
+                    double singleLineSlotHeight = metrics.lineSpacing();
+                    double totalTextBlockHeight = singleLineSlotHeight * nodeText.size();
+
+                    // Vertical Centering Adjustment:
+                    // Shifts the entire text block vertically. A positive value shifts the text UPWARDS.
+                    // Empirically determined to improve visual centering in SVG.
+                    const double verticalCenteringOffset = metrics.lineSpacing() * 0.2;
+                    double currentLineSlotTopY = -(totalTextBlockHeight / 2.0) - verticalCenteringOffset;
+
+                    // Horizontal Centering Adjustment:
+                    // Compensates for differences in text width calculation between Qt's metrics
+                    // and browser SVG rendering, improving visual horizontal centering.
+                    const double horizontalCenteringOffset = metrics.averageCharWidth() * 1.35;
+
+                    for (const QString &textLine : nodeText) {
+                        if (textLine.isEmpty()) {
+                            currentLineSlotTopY += singleLineSlotHeight; // Maintain spacing for empty lines
+                            continue;
+                        }
+
+                        // Define an alignment rectangle for the current line of text.
+                        // x-coordinate includes the horizontal offset.
+                        // width = 0.0 hints to Qt::AlignHCenter to center around rect.x().
+                        QRectF lineAlignmentRect(
+                            horizontalCenteringOffset,
+                            currentLineSlotTopY,
+                            0.0,
+                            singleLineSlotHeight
+                        );
+
+                        painter->drawText(lineAlignmentRect, Qt::AlignCenter | Qt::TextDontClip, textLine);
+                        currentLineSlotTopY += singleLineSlotHeight; // Move to the top of the slot for the next line
+                    }
+                    // --- End of Text Rendering Logic ---
+
+                    painter->restore();
+                }
             }
+        }
+        else
+        {
+            // --- OLD BEHAVIOR (Render as Paths) ---
+            QStringList nodeText = getNodeText();
+            if (!nodeText.isEmpty()) { // Added this check for consistency, though original didn't have it here
+                QPainterPath textPath;
+
+                QFontMetrics metrics(g_settings->labelFont);
+                // Original used metrics.ascent() for line spacing.
+                // For closer vertical match to old behavior if needed, you might use metrics.height() or metrics.ascent()
+                // but metrics.lineSpacing() is generally good for multi-line.
+                // Let's stick to the original's vertical spacing logic for the old path.
+                double fontLineHeight = metrics.ascent(); // Or metrics.height() if that was closer to old visual
+                if (fontLineHeight <= 0) fontLineHeight = metrics.height(); // Fallback if ascent is 0
+
+                for (int i = 0; i < nodeText.size(); ++i)
+                {
+                    const QString& text = nodeText.at(i);
+                    // Calculate vertical position for each line, stacking them upwards
+                    // The original code's -stepsUntilLast * fontHeight means the last line is at y=0,
+                    // and previous lines are at negative y values.
+                    double yPos = -( (nodeText.size() - 1 - i) * fontLineHeight );
+                    double shiftLeft = -metrics.boundingRect(text).width() / 2.0;
+                    textPath.addText(QPointF(shiftLeft, yPos), g_settings->labelFont, text);
+                }
+
+                std::vector<QPointF> centres;
+                if (g_settings->positionTextNodeCentre) {
+                    centres.push_back(getCentre(m_linePoints));
+                } else {
+                    centres = getCentres();
+                }
+
+                for (const QPointF &centre : centres) { // Use const QPointF& for consistency
+                    drawTextPathAtLocation(painter, textPath, centre);
+                }
+            }
+            // --- END OF OLD BEHAVIOR ---
         }
     }
 

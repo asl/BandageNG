@@ -316,6 +316,8 @@ static CLI::App *addTextAppearanceSettings(CLI::App &app) {
     add_setting(*ta, "--toutline", g_settings->textOutlineThickness, "Surround text with an outline with this thickness");
     ta->add_flag("--centre", g_settings->positionTextNodeCentre, "Node labels appear at the centre of the node")
             ->capture_default_str();
+    ta->add_flag("--render-text", g_settings->renderTextAsSVGText, "Render text as actual SVG text elements instead of paths")
+            ->capture_default_str();
     ta->callback([ta]() {
         g_settings->textOutline = (g_settings->textOutlineThickness == 0.0);
     });
