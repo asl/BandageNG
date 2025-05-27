@@ -329,7 +329,7 @@ static CLI::App *addNodeWidthsSettings(CLI::App &app) {
                                     "a*b*((c/d)^e-1)+1\n"
                                     "  a = average node width\n"
                                     "  b = depth effect on width\n"
-                                    "  c = node dept\n"
+                                    "  c = node depth\n"
                                     "  d = mean depth\n"
                                     "  e = power of depth effect on width\n"
                                     );

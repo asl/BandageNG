@@ -151,6 +151,10 @@ int handleImageCmd(QApplication *app,
 
         scene.addGraphicsItemsToScene(*g_assemblyGraph, layout);
         scene.setSceneRectangle();
+
+        g_assemblyGraph->recalculateAllNodeWidths(g_settings->averageNodeWidth,
+                                                  g_settings->depthPower, g_settings->depthEffectOnWidth);
+        g_graphicsView->viewport()->update();
     }
     double sceneRectAspectRatio = scene.sceneRect().width() / scene.sceneRect().height();
 
