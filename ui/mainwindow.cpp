@@ -270,6 +270,8 @@ void MainWindow::cleanUp() {
     g_assemblyGraph->cleanUp();
     setWindowTitle("Bandage-NG");
 
+    g_annotationsManager->cleanUp();
+
     g_memory->userSpecifiedPath = Path();
     g_memory->userSpecifiedPathString = "";
     g_memory->userSpecifiedPathCircular = false;

@@ -111,3 +111,9 @@ void AnnotationsManager::updateGroupFromHits(const QString &name, const std::vec
 
     emit annotationGroupsUpdated();
 }
+
+void AnnotationsManager::cleanUp() {
+    m_annotationGroups.clear();
+    nextFreeId = 0;
+    emit annotationGroupsUpdated();
+}
