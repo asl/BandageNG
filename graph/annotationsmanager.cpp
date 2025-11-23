@@ -51,6 +51,7 @@ void AnnotationsManager::removeGroupByName(const QString &name) {
                 return group->name == name;
             });
     m_annotationGroups.erase(newEnd, m_annotationGroups.end());
+    emit annotationGroupsUpdated();
 }
 
 
