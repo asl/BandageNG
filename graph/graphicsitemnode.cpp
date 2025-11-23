@@ -255,15 +255,13 @@ void GraphicsItemNode::paint(QPainter * painter, const QStyleOptionGraphicsItem 
                     double totalTextBlockHeight = singleLineSlotHeight * nodeText.size();
 
                     // Vertical Centering Adjustment:
-                    // Shifts the entire text block vertically. A positive value shifts the text UPWARDS.
-                    // Empirically determined to improve visual centering in SVG.
-                    const double verticalCenteringOffset = metrics.lineSpacing() * 0.2;
-                    double currentLineSlotTopY = -(totalTextBlockHeight / 2.0) - verticalCenteringOffset;
+                    // We want to center the text block around (0,0).
+                    // The top of the block should be at -totalHeight / 2.
+                    double currentLineSlotTopY = -(totalTextBlockHeight / 2.0);
 
                     // Horizontal Centering Adjustment:
-                    // Compensates for differences in text width calculation between Qt's metrics
-                    // and browser SVG rendering, improving visual horizontal centering.
-                    const double horizontalCenteringOffset = metrics.averageCharWidth() * 1.35;
+                    // We want to center horizontally around x=0.
+                    const double horizontalCenteringOffset = 0.0;
 
                     for (const QString &textLine : nodeText) {
                         if (textLine.isEmpty()) {
@@ -272,12 +270,23 @@ void GraphicsItemNode::paint(QPainter * painter, const QStyleOptionGraphicsItem 
                         }
 
                         // Define an alignment rectangle for the current line of text.
-                        // x-coordinate includes the horizontal offset.
-                        // width = 0.0 hints to Qt::AlignHCenter to center around rect.x().
+                        // We define a wide rectangle centered at 0 to ensure Qt::AlignCenter works reliably.
+                        // Using a 0-width rect can sometimes be ambiguous depending on the painter backend.
+                        // Let's use a reasonably wide rect centered on 0.
+                        double lineWidth = metrics.horizontalAdvance(textLine); // or width(textLine) for older Qt
+                        // Actually, if we use Qt::AlignCenter, we can just give it a rect that covers the line's potential area.
+                        // But sticking to the user's pattern with 0 width if that's what they intended for "center around point":
+                        // Qt docs say for drawText(rect, flags, text): "The text is drawn within the rectangle... aligned according to flags."
+                        // If width is 0, centering might not work as expected or might just draw at x.
+                        
+                        // Better approach: Draw text centered at (0, currentLineSlotCenterY).
+                        // But drawText(rect, ...) is convenient.
+                        // Let's try removing the offset first.
+                        
                         QRectF lineAlignmentRect(
-                            horizontalCenteringOffset,
+                            -10000.0, // Large negative X
                             currentLineSlotTopY,
-                            0.0,
+                            20000.0, // Large width
                             singleLineSlotHeight
                         );
 
