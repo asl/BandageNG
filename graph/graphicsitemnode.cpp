@@ -254,14 +254,8 @@ void GraphicsItemNode::paint(QPainter * painter, const QStyleOptionGraphicsItem 
                     double singleLineSlotHeight = metrics.lineSpacing();
                     double totalTextBlockHeight = singleLineSlotHeight * nodeText.size();
 
-                    // Vertical Centering Adjustment:
-                    // We want to center the text block around (0,0).
-                    // The top of the block should be at -totalHeight / 2.
+                    // Vertical Centering: center the text block around y=0.
                     double currentLineSlotTopY = -(totalTextBlockHeight / 2.0);
-
-                    // Horizontal Centering Adjustment:
-                    // We want to center horizontally around x=0.
-                    const double horizontalCenteringOffset = 0.0;
 
                     for (const QString &textLine : nodeText) {
                         if (textLine.isEmpty()) {
@@ -269,20 +263,8 @@ void GraphicsItemNode::paint(QPainter * painter, const QStyleOptionGraphicsItem 
                             continue;
                         }
 
-                        // Define an alignment rectangle for the current line of text.
-                        // We define a wide rectangle centered at 0 to ensure Qt::AlignCenter works reliably.
-                        // Using a 0-width rect can sometimes be ambiguous depending on the painter backend.
-                        // Let's use a reasonably wide rect centered on 0.
-                        double lineWidth = metrics.horizontalAdvance(textLine); // or width(textLine) for older Qt
-                        // Actually, if we use Qt::AlignCenter, we can just give it a rect that covers the line's potential area.
-                        // But sticking to the user's pattern with 0 width if that's what they intended for "center around point":
-                        // Qt docs say for drawText(rect, flags, text): "The text is drawn within the rectangle... aligned according to flags."
-                        // If width is 0, centering might not work as expected or might just draw at x.
-                        
-                        // Better approach: Draw text centered at (0, currentLineSlotCenterY).
-                        // But drawText(rect, ...) is convenient.
-                        // Let's try removing the offset first.
-                        
+                        // Horizontal Centering:
+                        // Define a wide rectangle centered at x=0 to ensure Qt::AlignCenter works reliably.
                         QRectF lineAlignmentRect(
                             -10000.0, // Large negative X
                             currentLineSlotTopY,
