@@ -360,7 +360,7 @@ namespace io {
 
         auto *nodePtr = maybeAddSegment(nodeName, nodeDepth, sequence, graph);
         if (!nodePtr)
-            return llvm::createStringError("Duplicate segment named: " + nodeName);
+            return llvm::createStringError("Duplicate segment named: " + std::string(nodeName));
 
         // Handle self-rc nodes. We record the same node under different names
         DeBruijnNode *oppositeNodePtr = nullptr;
@@ -1318,7 +1318,7 @@ namespace io {
 
             auto underscorePos = nodeName.find_first_of('_');
             if (underscorePos == std::string::npos)
-                return llvm::createStringError("Invalid sequence name: " + nodeName + ", no underscore");
+                return llvm::createStringError("Invalid sequence name: %s, no underscore", nodeName.c_str());
             nodeName = nodeName.substr(underscorePos + 1);
 
             Sequence sequence(seq.s);
@@ -1334,7 +1334,7 @@ namespace io {
                         nodeDepth = strtod(fields[2].data(), nullptr);
                     } else if (fields.front() == "L" && fields.size() == 4) {
                         if (fields[1].size() != 1 || fields[3].size() != 1)
-                            return llvm::createStringError("Invalid tag: " + tag);
+                            return llvm::createStringError("Invalid tag: " + std::string(tag));
                         fromNode.back() = fields[1].front();
 
                         toNode.assign(fields[2]);
@@ -1356,7 +1356,7 @@ namespace io {
                             rcEdgePtr->setOverlapType(edgePtr->getOverlapType());
                         }
                     } else
-                        return llvm::createStringError("Invalid tag: " + tag);
+                        return llvm::createStringError("Invalid tag: " + std::string(tag));
                 }
             }
 
