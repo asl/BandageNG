@@ -35,7 +35,10 @@
 #include <QRegularExpression>
 #include <memory>
 
+#include <kseq/kseq.h>
+#include <type_traits>
 #include <zlib.h>
+#include <zstd.h>
 
 #if defined(_MSC_VER)
 #include <BaseTsd.h>
@@ -74,6 +77,27 @@ static bool checkFileIsGfa(const QString& fullFileName) {
         return fullFileName.endsWith(".gfa") ||
                fullFileName.endsWith(".gfa.gz");
     }
+
+    return false;
+}
+
+// Cursory look to see if file might be Logan assembly
+static bool checkFileIsLoganCompressed(const QString& fullFileName) {
+    QFileInfo gfaFileInfo(fullFileName);
+    if (gfaFileInfo.isFile())
+        return fullFileName.endsWith(".unitigs.fa.zst") ||
+               fullFileName.endsWith(".contigs.fa.zst");
+
+    return false;
+}
+
+static bool checkFileIsLogan(const QString& fullFileName) {
+    QFileInfo gfaFileInfo(fullFileName);
+    if (gfaFileInfo.isFile())
+        return fullFileName.endsWith(".unitigs.fa.gz") ||
+               fullFileName.endsWith(".contigs.fa.gz") ||
+               fullFileName.endsWith(".unitigs.fa") ||
+               fullFileName.endsWith(".contigs.fa");
 
     return false;
 }
@@ -144,11 +168,10 @@ static ssize_t gzgetline(char **buf, size_t *bufsiz, gzFile fp) {
     return read;
 }
 
-
-static std::string getOppositeNodeName(std::string nodeName) {
-    return (nodeName.back() == '-' ?
-            nodeName.substr(0, nodeName.size() - 1) + '+' :
-            nodeName.substr(0, nodeName.size() - 1) + '-');
+static std::string getOppositeNodeName(std::string_view nodeName) {
+    std::string oppositeNodeName(nodeName);
+    oppositeNodeName.back() = oppositeNodeName.back() == '-' ? '+' : '-';
+    return oppositeNodeName;
 }
 
 //This function will look to see if there is a FASTA file (.fa or .fasta) with
@@ -307,82 +330,139 @@ namespace io {
         return { hasCustomColours, hasCustomLabels };
     }
 
-    class GFAAssemblyGraphBuilder : public AssemblyGraphBuilder {
-      private:
-        static DeBruijnNode *maybeAddSegment(const std::string &nodeName,
-                                             double nodeDepth, Sequence sequence,
-                                             AssemblyGraph &graph) {
-            auto nodeStorage = graph.m_deBruijnGraphNodes.find(nodeName);
-            // If node already exists it should be a placeholder of zero length
-            if (nodeStorage != graph.m_deBruijnGraphNodes.end()) {
-                DeBruijnNode *placeholder = nodeStorage.value();
-                if (!placeholder->getSequence().empty())
-                    return nullptr;
+    static DeBruijnNode *maybeAddSegment(std::string_view nodeName,
+                                         double nodeDepth, Sequence sequence,
+                                         AssemblyGraph &graph) {
+        auto nodeStorage = graph.m_deBruijnGraphNodes.find(nodeName);
+        // If node already exists it should be a placeholder of zero length
+        if (nodeStorage != graph.m_deBruijnGraphNodes.end()) {
+            DeBruijnNode *placeholder = nodeStorage.value();
+            if (!placeholder->getSequence().empty())
+                return nullptr;
 
-                // Takeover the placeholder
-                placeholder->setDepth(nodeDepth);
-                placeholder->setSequence(sequence);
+            // Takeover the placeholder
+            placeholder->setDepth(nodeDepth);
+            placeholder->setSequence(sequence);
 
-                return placeholder;
-            }
-
-            return (graph.m_deBruijnGraphNodes[nodeName] = new DeBruijnNode(nodeName.c_str(), nodeDepth, sequence));
+            return placeholder;
         }
 
-        using NodePair = std::pair<DeBruijnNode*, DeBruijnNode*>;
+        return (graph.m_deBruijnGraphNodes[nodeName]
+                = new DeBruijnNode(QByteArray(nodeName.data(), nodeName.size()), nodeDepth, sequence));
+    }
 
-        static llvm::Expected<NodePair>
-        addSegmentPair(const std::string &nodeName,
-                       double nodeDepth, Sequence sequence,
-                       AssemblyGraph &graph) {
-            std::string oppositeNodeName = getOppositeNodeName(nodeName);
+    using NodePair = std::pair<DeBruijnNode*, DeBruijnNode*>;
+    static llvm::Expected<NodePair>
+    addSegmentPair(std::string_view nodeName,
+                   double nodeDepth, Sequence sequence,
+                   AssemblyGraph &graph) {
+        std::string oppositeNodeName = getOppositeNodeName(nodeName);
 
-            auto *nodePtr = maybeAddSegment(nodeName, nodeDepth, sequence, graph);
-            if (!nodePtr)
-                return llvm::createStringError("Duplicate segment named: " + nodeName);
+        auto *nodePtr = maybeAddSegment(nodeName, nodeDepth, sequence, graph);
+        if (!nodePtr)
+            return llvm::createStringError("Duplicate segment named: " + nodeName);
 
-            // Handle self-rc nodes. We record the same node under different names
-            DeBruijnNode *oppositeNodePtr = nullptr;
-            auto rcSeq = sequence.GetReverseComplement();
-            if (!sequence.empty() && !sequence.missing() && sequence == rcSeq) {
-                // We might already have opposite node recorded (e.g. a placeholder).
-                // If yes, we'd need to transfer the edges
-                auto [oppositeNodeStorage, inserted] = graph.m_deBruijnGraphNodes.insert(oppositeNodeName, nodePtr);
-                if (!inserted) {
-                    oppositeNodePtr = *oppositeNodeStorage;
+        // Handle self-rc nodes. We record the same node under different names
+        DeBruijnNode *oppositeNodePtr = nullptr;
+        auto rcSeq = sequence.GetReverseComplement();
+        if (!sequence.empty() && !sequence.missing() && sequence == rcSeq) {
+            // We might already have opposite node recorded (e.g. a placeholder).
+            // If yes, we'd need to transfer the edges
+            auto [oppositeNodeStorage, inserted] = graph.m_deBruijnGraphNodes.insert(oppositeNodeName, nodePtr);
+            if (!inserted) {
+                oppositeNodePtr = *oppositeNodeStorage;
 
-                    for (auto *edge : oppositeNodePtr->edges()) {
-                        if (edge->getEndingNode() == oppositeNodePtr)
-                            edge->setEndingNode(nodePtr);
-                        if (edge->getStartingNode() == oppositeNodePtr)
-                            edge->setStartingNode(nodePtr);
-                        nodePtr->addEdge(edge);
-                    }
-
-                    *oppositeNodeStorage = nodePtr;
+                for (auto *edge : oppositeNodePtr->edges()) {
+                    if (edge->getEndingNode() == oppositeNodePtr)
+                        edge->setEndingNode(nodePtr);
+                    if (edge->getStartingNode() == oppositeNodePtr)
+                        edge->setStartingNode(nodePtr);
+                    nodePtr->addEdge(edge);
                 }
 
-                oppositeNodePtr = nodePtr;
-            } else {
-                oppositeNodePtr =
-                    maybeAddSegment(getOppositeNodeName(nodeName), nodeDepth, rcSeq, graph);
-                if (!oppositeNodePtr)
-                    return llvm::createStringError("Duplicate segment named: " + oppositeNodeName);
+                *oppositeNodeStorage = nodePtr;
             }
 
-            nodePtr->setReverseComplement(oppositeNodePtr);
-            oppositeNodePtr->setReverseComplement(nodePtr);
-
-            return std::pair{nodePtr, oppositeNodePtr};
+            oppositeNodePtr = nodePtr;
+        } else {
+            oppositeNodePtr =
+                    maybeAddSegment(getOppositeNodeName(nodeName), nodeDepth, rcSeq, graph);
+            if (!oppositeNodePtr)
+                return llvm::createStringError("Duplicate segment named: " + oppositeNodeName);
         }
+
+        nodePtr->setReverseComplement(oppositeNodePtr);
+        oppositeNodePtr->setReverseComplement(nodePtr);
+
+        return std::pair{nodePtr, oppositeNodePtr};
+    }
+
+    // Add placeholder
+    static auto
+    addSegmentPair(const std::string &nodeName,
+                   AssemblyGraph &graph) {
+        return addSegmentPair(nodeName, 0, Sequence(), graph);
+    }
+
+    static llvm::Expected<DeBruijnNode*> getNode(const std::string &name,
+                                                 AssemblyGraph &graph) {
+        auto nodeIt = graph.m_deBruijnGraphNodes.find(name);
+        if (nodeIt != graph.m_deBruijnGraphNodes.end())
+            return *nodeIt;
 
         // Add placeholder
-        static auto
-        addSegmentPair(const std::string &nodeName,
-                       AssemblyGraph &graph) {
-            return addSegmentPair(nodeName, 0, Sequence(), graph);
+        auto nodePairOrErr = addSegmentPair(name, graph);
+        if (!nodePairOrErr)
+            return nodePairOrErr.takeError();
+
+        return nodePairOrErr.get().first;
+    }
+
+    using EdgePair = std::pair<DeBruijnEdge*, DeBruijnEdge*>;
+
+    static llvm::Expected<EdgePair> addLink(const std::string &fromNode,
+                                            const std::string &toNode,
+                                            AssemblyGraph &graph) {
+        // Get source / dest nodes (or create placeholders to fill in)
+        DeBruijnNode *fromNodePtr, *toNodePtr;
+
+        if (auto nodeOrErr = getNode(fromNode, graph))
+            fromNodePtr = *nodeOrErr;
+        else
+            return nodeOrErr.takeError();
+
+        if (auto nodeOrErr = getNode(toNode, graph))
+            toNodePtr = *nodeOrErr;
+        else
+            return nodeOrErr.takeError();
+
+        DeBruijnEdge *edgePtr = nullptr, *rcEdgePtr = nullptr;
+        edgePtr = new DeBruijnEdge(fromNodePtr, toNodePtr);
+
+        bool isOwnPair = fromNodePtr == toNodePtr->getReverseComplement() &&
+                         toNodePtr == fromNodePtr->getReverseComplement();
+        graph.m_deBruijnGraphEdges.emplace(edgePtr);
+        fromNodePtr->addEdge(edgePtr);
+        toNodePtr->addEdge(edgePtr);
+
+        if (isOwnPair) {
+            edgePtr->setReverseComplement(edgePtr);
+        } else {
+            auto *rcFromNodePtr = fromNodePtr->getReverseComplement();
+            auto *rcToNodePtr = toNodePtr->getReverseComplement();
+            rcEdgePtr = new DeBruijnEdge(rcToNodePtr, rcFromNodePtr);
+            rcFromNodePtr->addEdge(rcEdgePtr);
+            rcToNodePtr->addEdge(rcEdgePtr);
+            edgePtr->setReverseComplement(rcEdgePtr);
+            rcEdgePtr->setReverseComplement(edgePtr);
+            graph.m_deBruijnGraphEdges.emplace(rcEdgePtr);
         }
 
+        return std::pair{edgePtr, rcEdgePtr};
+    }
+
+    class GFAAssemblyGraphBuilder : public AssemblyGraphBuilder {
+      private:
         llvm::Expected<bool> handleSegment(const gfa::segment &record,
                                            AssemblyGraph &graph) {
             bool sequencesAreMissing = false;
@@ -452,67 +532,6 @@ namespace io {
             return sequencesAreMissing;
         }
 
-        static llvm::Expected<DeBruijnNode*> getNode(const std::string &name,
-                                                     AssemblyGraph &graph) {
-            auto nodeIt = graph.m_deBruijnGraphNodes.find(name);
-            if (nodeIt != graph.m_deBruijnGraphNodes.end())
-                return *nodeIt;
-
-            // Add placeholder
-            auto nodePairOrErr = addSegmentPair(name, graph);
-            if (!nodePairOrErr)
-                return nodePairOrErr.takeError();
-
-            return nodePairOrErr.get().first;
-        }
-
-        using EdgePair = std::pair<DeBruijnEdge*, DeBruijnEdge*>;
-
-        llvm::Expected<EdgePair> addLink(const std::string &fromNode,
-                                         const std::string &toNode,
-                                         const std::vector<gfa::tag> &tags,
-                                         AssemblyGraph &graph) {
-            // Get source / dest nodes (or create placeholders to fill in)
-            DeBruijnNode *fromNodePtr, *toNodePtr;
-
-            if (auto nodeOrErr = getNode(fromNode, graph))
-                fromNodePtr = *nodeOrErr;
-            else
-                return nodeOrErr.takeError();
-
-            if (auto nodeOrErr = getNode(toNode, graph))
-                toNodePtr = *nodeOrErr;
-            else
-                return nodeOrErr.takeError();
-
-            DeBruijnEdge *edgePtr = nullptr, *rcEdgePtr = nullptr;
-            edgePtr = new DeBruijnEdge(fromNodePtr, toNodePtr);
-
-            bool isOwnPair = fromNodePtr == toNodePtr->getReverseComplement() &&
-                             toNodePtr == fromNodePtr->getReverseComplement();
-            graph.m_deBruijnGraphEdges.emplace(edgePtr);
-            fromNodePtr->addEdge(edgePtr);
-            toNodePtr->addEdge(edgePtr);
-
-            if (isOwnPair) {
-                edgePtr->setReverseComplement(edgePtr);
-            } else {
-                auto *rcFromNodePtr = fromNodePtr->getReverseComplement();
-                auto *rcToNodePtr = toNodePtr->getReverseComplement();
-                rcEdgePtr = new DeBruijnEdge(rcToNodePtr, rcFromNodePtr);
-                rcFromNodePtr->addEdge(rcEdgePtr);
-                rcToNodePtr->addEdge(rcEdgePtr);
-                edgePtr->setReverseComplement(rcEdgePtr);
-                rcEdgePtr->setReverseComplement(edgePtr);
-                graph.m_deBruijnGraphEdges.emplace(rcEdgePtr);
-            }
-
-            hasCustomColours_ |=
-                    handleStandardGFAEdgeTags(edgePtr, rcEdgePtr, tags, graph);
-
-            return std::pair{edgePtr, rcEdgePtr};
-        }
-
         llvm::Error handleLink(const gfa::link &record,
                                AssemblyGraph &graph) {
             std::string fromNode{record.lhs};
@@ -521,13 +540,16 @@ namespace io {
             toNode.push_back(record.rhs_revcomp ? '-' : '+');
 
             DeBruijnEdge *edgePtr, *rcEdgePtr;
-            if (auto edgePairOrErr = addLink(fromNode, toNode, record.tags, graph)) {
+            if (auto edgePairOrErr = addLink(fromNode, toNode, graph)) {
                 std::tie(edgePtr, rcEdgePtr) = *edgePairOrErr;
             } else
                 return edgePairOrErr.takeError();
 
             if (!edgePtr)
                 return llvm::Error::success();
+
+            hasCustomColours_ |=
+                    handleStandardGFAEdgeTags(edgePtr, rcEdgePtr, record.tags, graph);
 
             const auto &overlap = record.overlap;
             size_t overlapLength = 0;
@@ -558,10 +580,13 @@ namespace io {
             toNode.push_back(record.rhs_revcomp ? '-' : '+');
 
             DeBruijnEdge *edgePtr, *rcEdgePtr;
-            if (auto edgePairOrErr = addLink(fromNode, toNode, record.tags, graph)) {
+            if (auto edgePairOrErr = addLink(fromNode, toNode, graph)) {
                 std::tie(edgePtr, rcEdgePtr) = *edgePairOrErr;
             } else
                 return edgePairOrErr.takeError();
+
+            hasCustomColours_ |=
+                    handleStandardGFAEdgeTags(edgePtr, rcEdgePtr, record.tags, graph);
 
             edgePtr->setOverlap(record.distance == std::numeric_limits<int64_t>::min() ? 0 : record.distance);
             edgePtr->setOverlapType(isLink ? EdgeOverlapType::EXTRA_LINK : EdgeOverlapType::JUMP);
@@ -1251,12 +1276,248 @@ namespace io {
         }
     };
 
+    class LoganBaseAssemblyGraphBuilder : public AssemblyGraphBuilder {
+      protected:
+        template<typename Out>
+        static void split(const std::string_view s, const std::string_view delims, Out result,
+                   bool compress = false) {
+            size_t last_pos = 0;
+            for (size_t i = 0; i < s.size(); ++i) {
+                if (delims.find(s[i]) == delims.npos)
+                    continue;
+                auto item = s.substr(last_pos, i - last_pos);
+                if (!compress || item.size() > 0)
+                    *result++ = item;
+                last_pos = i + 1;
+            }
+
+            if (last_pos != s.size()) {
+                auto item = s.substr(last_pos);
+                if (!compress || item.size() > 0)
+                    *result++ = item;
+            }
+        }
+
+        static inline llvm::SmallVector<std::string_view, 4>
+        split(const std::string_view s, const std::string_view delim,
+              bool compress = false) {
+            llvm::SmallVector<std::string_view, 4> elems;
+            split(s, delim, std::back_inserter(elems), compress);
+            return elems;
+        }
+
+        llvm::Error handleEntry(const kstring_t &name,
+                                const kstring_t &seq,
+                                const kstring_t &comment,
+                                AssemblyGraph &graph) {
+            bool sequencesAreMissing = false;
+
+            std::string nodeName(name.s);
+            if (nodeName.back() != '+' && nodeName.back() != '-')
+                nodeName.push_back('+');
+
+            auto underscorePos = nodeName.find_first_of('_');
+            if (underscorePos == std::string::npos)
+                return llvm::createStringError("Invalid sequence name: " + nodeName + ", no underscore");
+            nodeName = nodeName.substr(underscorePos + 1);
+
+            Sequence sequence(seq.s);
+
+            double nodeDepth = 0;
+            std::string fromNode(nodeName), toNode;
+            if (comment.s) {
+                for (auto tag : split(comment.s, " ")) {
+                    auto fields = split(tag, ":");
+                    if (fields.empty())
+                        continue;
+                    if (fields.front() == "ka" && fields.size() == 3) {
+                        nodeDepth = strtod(fields[2].data(), nullptr);
+                    } else if (fields.front() == "L" && fields.size() == 4) {
+                        if (fields[1].size() != 1 || fields[3].size() != 1)
+                            return llvm::createStringError("Invalid tag: " + tag);
+                        fromNode.back() = fields[1].front();
+
+                        toNode.assign(fields[2]);
+                        toNode.push_back(fields[3].front());
+
+                        DeBruijnEdge *edgePtr, *rcEdgePtr;
+
+                        if (auto edgePairOrErr = addLink(fromNode, toNode, graph)) {
+                            std::tie(edgePtr, rcEdgePtr) = *edgePairOrErr;
+                        } else
+                            return edgePairOrErr.takeError();
+
+                        // Logan hard-coded
+                        size_t overlapLength = 31;
+                        edgePtr->setOverlap(static_cast<int>(overlapLength));
+                        edgePtr->setOverlapType(EXACT_OVERLAP);
+                        if (rcEdgePtr) {
+                            rcEdgePtr->setOverlap(edgePtr->getOverlap());
+                            rcEdgePtr->setOverlapType(edgePtr->getOverlapType());
+                        }
+                    } else
+                        return llvm::createStringError("Invalid tag: " + tag);
+                }
+            }
+
+            // FIXME: get rid of copies and QString's
+            auto nodePairOrErr = addSegmentPair(nodeName, nodeDepth, sequence, graph);
+            if (!nodePairOrErr)
+                return nodePairOrErr.takeError();
+
+            auto [nodePtr, oppositeNodePtr] = nodePairOrErr.get();
+
+            return llvm::Error::success();
+        }
+
+      public:
+        using AssemblyGraphBuilder::AssemblyGraphBuilder;
+    };
+
+    class LoganZSTAssemblyGraphBuilder : public LoganBaseAssemblyGraphBuilder {
+      private:
+        struct zstdFile_s {
+            FILE *fin;
+            ZSTD_DCtx *dctx;
+            void *bufIn;
+            size_t bufInSize;
+            void *bufOut;
+            size_t bufOutSize;
+
+            ZSTD_inBuffer input;
+            ZSTD_outBuffer output;
+            size_t readPos;
+
+            zstdFile_s() {
+                // Initialize zstd context and all buffers
+                bufInSize = ZSTD_DStreamInSize();
+                bufOutSize = ZSTD_DStreamOutSize();
+                bufIn = malloc(bufInSize);
+                bufOut = malloc(bufOutSize);
+                dctx = ZSTD_createDCtx();
+                readPos = 0;
+                output = { bufOut, 0, 0 }; // Nothing here
+                input = { bufIn, 0, 0 }; // Nothing here
+            }
+
+            ~zstdFile_s() {
+                ZSTD_freeDStream(dctx);
+                free(bufIn);
+                free(bufOut);
+            }
+        };
+
+        typedef struct zstdFile_s *zstdFile;
+
+        static size_t zstdread(zstdFile_s *state, void *buf, size_t len) {
+            // See if there is something in the output buffer that we can reuse
+            if (state->readPos >= state->output.pos) { // nope
+                size_t no_progress = 0;
+                do {
+                    // See if there is something in the input buffer
+                    if (state->input.pos >= state->input.size) { // nope
+                        // Read another input frame
+                        size_t read = fread(state->bufIn, 1, state->bufInSize, state->fin);
+                        if (read == 0)
+                            return 0; // Nothing left anywhere
+                        state->input = { state->bufIn, read, 0 };
+                    }
+
+                    // There is something in input buffer, go ahead and decompress it
+                    state->output = { state->bufOut, state->bufOutSize, 0 };
+                    state->readPos = 0;
+                    size_t ret = ZSTD_decompressStream(state->dctx, &state->output, &state->input);
+                    if (ZSTD_isError(ret)) {
+                        fprintf(stderr,
+                                "zstd decompression error, code: %zu, decription: %s", ret, ZSTD_getErrorName(ret));
+                        return -1;
+                    }
+                    if (no_progress++ > 16) {
+                        fprintf(stderr, "zlib decompression problem, no progress after %zu decompression calls", no_progress);
+                        return -1;
+                    }
+                } while (state->output.pos == 0);
+            }
+
+            len = std::min(len, state->output.pos - state->readPos);
+            memcpy(buf, (uint8_t*)state->output.dst + state->readPos, len);
+            state->readPos += len;
+            return len;
+        }
+
+        KSEQ_INIT(zstdFile, zstdread)
+
+    public:
+        using LoganBaseAssemblyGraphBuilder::LoganBaseAssemblyGraphBuilder;
+
+        llvm::Error build(AssemblyGraph &graph) override {
+            graph.m_filename = fileName_;
+            graph.m_depthTag = "ka";
+
+            bool sequencesAreMissing = false;
+
+            std::unique_ptr<FILE, decltype(&fclose)>
+                    fin(fopen(fileName_.toStdString().c_str(), "r"), fclose);
+            if (!fin)
+                return llvm::createStringError("failed to open file: " + fileName_.toStdString());
+
+            zstdFile_s fp;
+            fp.fin = fin.get();
+
+            std::unique_ptr<kseq_t, decltype(&kseq_destroy)>
+                    seq(kseq_init(&fp), kseq_destroy);
+            int l = - 1;
+            while ((l = kseq_read(seq.get())) >= 0) {
+                if (auto E = handleEntry(seq->name, seq->name, seq->comment, graph))
+                    return E;
+            }
+
+            graph.m_sequencesLoadedFromFasta = NOT_TRIED;
+            return llvm::Error::success();
+        }
+    };
+
+    class LoganGZAssemblyGraphBuilder : public LoganBaseAssemblyGraphBuilder {
+      private:
+        KSEQ_INIT(gzFile, gzread)
+
+    public:
+        using LoganBaseAssemblyGraphBuilder::LoganBaseAssemblyGraphBuilder;
+
+        llvm::Error build(AssemblyGraph &graph) override {
+            graph.m_filename = fileName_;
+            graph.m_depthTag = "ka";
+
+            bool sequencesAreMissing = false;
+
+            std::unique_ptr<std::remove_pointer_t<gzFile>, decltype(&gzclose)>
+                    fp(gzopen(fileName_.toStdString().c_str(), "r"), gzclose);
+            if (!fp)
+                return llvm::createStringError("failed to open file: " + fileName_.toStdString());
+
+            std::unique_ptr<kseq_t, decltype(&kseq_destroy)>
+                    seq(kseq_init(fp.get()), kseq_destroy);
+            int l = - 1;
+            while ((l = kseq_read(seq.get())) >= 0) {
+                if (auto E = handleEntry(seq->name, seq->name, seq->comment, graph))
+                    return E;
+            }
+
+            graph.m_sequencesLoadedFromFasta = NOT_TRIED;
+            return llvm::Error::success();
+        }
+    };
+
     std::unique_ptr<AssemblyGraphBuilder>
     AssemblyGraphBuilder::get(const QString &fullFileName) {
         std::unique_ptr<AssemblyGraphBuilder> res;
 
         if (checkFileIsGfa(fullFileName))
             res.reset(new GFAAssemblyGraphBuilder(fullFileName));
+        else if (checkFileIsLoganCompressed(fullFileName))
+            res.reset(new LoganZSTAssemblyGraphBuilder(fullFileName));
+        else if (checkFileIsLogan(fullFileName))
+            res.reset(new LoganGZAssemblyGraphBuilder(fullFileName));
         else if (checkFileIsFastG(fullFileName))
             res.reset(new FastgAssemblyGraphBuilder(fullFileName));
         else if (checkFileIsTrinityFasta(fullFileName))
