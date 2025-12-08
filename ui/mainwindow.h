@@ -112,6 +112,7 @@ private:
 private slots:
     void loadGraph(QString fullFileName = "");
     void loadCSV(QString fullFileName = "");
+    void loadLogan(QString accession = "");
     void loadGraphLayout(QString fullFileName = "");
     void loadGraphPaths(QString fullFileName = "");
     void loadGraphLinks(QString fullFileName = "");

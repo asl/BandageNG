@@ -10,7 +10,7 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Widgets Svg Test Concurrent)
+find_package(Qt6 REQUIRED COMPONENTS Widgets Svg Test Concurrent Network)
 
 set(LIB_SOURCES
     graphsearch/hit.cpp
@@ -59,6 +59,7 @@ set(LIB_SOURCES
     ui/dialogs/settingsdialog.cpp
     ui/widgets/verticallabel.cpp
     ui/widgets/verticalscrollarea.cpp
+    ui/dialogs/logandownloaddialog.cpp
     graph/nodecolorer.cpp
     graph/sequenceutils.cpp
     graph/annotation.cpp
@@ -80,7 +81,8 @@ set(FORMS
     ui/dialogs/myprogressdialog.ui
     ui/dialogs/pathspecifydialog.ui
     ui/dialogs/querypathsdialog.ui
-    ui/dialogs/settingsdialog.ui)
+    ui/dialogs/settingsdialog.ui
+    ui/dialogs/logandownloaddialog.ui)
 
 set(CLI_SOURCES
     command_line/commoncommandlinefunctions.cpp
@@ -137,12 +139,13 @@ add_library(BandageIo STATIC
         io/bedloader.cpp
         io/fileutils.cpp
         io/cigar.cpp
-        io/gaf.cpp)
-target_link_libraries(BandageIo PRIVATE Qt6::Gui Qt6::Widgets foonathan::lexy)
+        io/gaf.cpp
+        io/filedownloader.cpp)
+target_link_libraries(BandageIo PRIVATE Qt6::Gui Qt6::Widgets Qt6::Network foonathan::lexy)
 
 # FIXME: Untagle this
 add_library(BandageLib STATIC ${LIB_SOURCES} ${FORMS} graphsearch/graphsearchers.cpp)
-target_link_libraries(BandageLib PRIVATE BandageLayout BandageIo llvmSupport Qt6::Concurrent Qt6::Widgets Qt6::Svg ${bandage_zlib})
+target_link_libraries(BandageLib PRIVATE BandageLayout BandageIo llvmSupport Qt6::Concurrent Qt6::Widgets Qt6::Svg Qt6::Network ${bandage_zlib})
 target_include_directories(BandageLib INTERFACE ".")
 
 target_link_libraries(BandageLib PRIVATE libzstd_static)

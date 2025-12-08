@@ -101,6 +101,7 @@ private slots:
     }
 
     void loadFastg();
+    void loadLogan();
     void loadGFAWithPlaceholders();
     void loadGFA12();
     void loadGFA();
@@ -160,6 +161,24 @@ void BandageTests::loadFastg()
     DeBruijnNode * node28 = g_assemblyGraph->m_deBruijnGraphNodes["28-"];
     QCOMPARE(node1->getLength(), 6070);
     QCOMPARE(node28->getLength(), 79);
+}
+
+void BandageTests::loadLogan()
+{
+    bool fastgGraphLoaded = g_assemblyGraph->loadGraphFromFile(testFile("test.contigs.fa.zst"));
+
+    // Check that the graph loaded properly.
+    QVERIFY(fastgGraphLoaded);
+
+    // Check that the appropriate number of nodes/edges are present.
+    QCOMPARE(g_assemblyGraph->m_deBruijnGraphNodes.size(), 6562);
+    QCOMPARE(g_assemblyGraph->m_deBruijnGraphEdges.size(), 19168);
+
+    // Check the length of a couple nodes.
+    DeBruijnNode * node1 = g_assemblyGraph->m_deBruijnGraphNodes["1+"];
+    DeBruijnNode * node28 = g_assemblyGraph->m_deBruijnGraphNodes["28-"];
+    QCOMPARE(node1->getLength(), 11);
+    QCOMPARE(node28->getLength(), 12);
 }
 
 void BandageTests::loadGFAWithPlaceholders()

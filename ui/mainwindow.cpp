@@ -24,6 +24,7 @@
 #include "bandagegraphicsview.h"
 #include "graphicsviewzoom.h"
 #include "bandagegraphicsscene.h"
+#include "ui/dialogs/logandownloaddialog.h"
 #include "ui/dialogs/myprogressdialog.h"
 #include "ui/dialogs/pathspecifydialog.h"
 #include "ui/dialogs/changenodenamedialog.h"
@@ -138,6 +139,7 @@ MainWindow::MainWindow(QString fileToLoadOnStartup, bool drawGraphAfterLoad) :
     connect(ui->drawGraphButton, SIGNAL(clicked()), this, SLOT(drawGraph()));
     connect(ui->actionLoad_graph, SIGNAL(triggered()), this, SLOT(loadGraph()));
     connect(ui->actionLoad_CSV, SIGNAL(triggered(bool)), this, SLOT(loadCSV()));
+    connect(ui->actionLoad_loganGraph, SIGNAL(triggered()), this, SLOT(loadLogan()));
     connect(ui->actionLoad_layout, SIGNAL(triggered()), this, SLOT(loadGraphLayout()));
     connect(ui->actionLoad_paths, SIGNAL(triggered()), this, SLOT(loadGraphPaths()));
     connect(ui->actionLoad_links, SIGNAL(triggered()), this, SLOT(loadGraphLinks()));
@@ -283,6 +285,12 @@ void MainWindow::cleanUp() {
     switchColourScheme(RANDOM_COLOURS);
 }
 
+void MainWindow::loadLogan(QString accession) {
+    LoganDownloadDialog dialog(this);
+    connect(&dialog, SIGNAL(graphDownloaded(QString)), this, SLOT(loadGraph(QString)));
+    dialog.exec();
+}
+
 void MainWindow::loadCSV(QString fullFileName) {
     QString selectedFilter = "Comma separated value (*.csv)";
     if (fullFileName == "")
@@ -325,8 +333,10 @@ void MainWindow::loadGraph(QString fullFileName) {
         fullFileName =
                 QFileDialog::getOpenFileName(this, "Load graph", g_memory->rememberedPath,
                                              "Any supported graph (*);;"
-                                             "FASTG (*.fastg);;"
                                              "GFA (*.gfa);;"
+                                             "Logan contigs (*.contigs.zst);;"
+                                             "Logan unitigs (*.unitigs.zst);;"
+                                             "FASTG (*.fastg);;"
                                              "Trinity.fasta (*.fasta);;"
                                              "ASQG (*.asqg);;"
                                              "Plain FASTA (*.fasta)",

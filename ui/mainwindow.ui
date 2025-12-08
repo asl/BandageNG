@@ -2316,7 +2316,7 @@ then colour which other nodes in the graph are likely to be contiguous
           </property>
          </widget>
         </item>
-        
+
         <item>
          <widget class="QWidget" name="selectedNodesSpacerWidget" native="true">
           <layout class="QVBoxLayout" name="verticalLayout_5">
@@ -2612,6 +2612,7 @@ then colour which other nodes in the graph are likely to be contiguous
      <string>File</string>
     </property>
     <addaction name="actionLoad_graph"/>
+    <addaction name="actionLoad_loganGraph"/>
     <addaction name="actionLoad_CSV"/>
     <addaction name="actionLoad_layout"/>
     <addaction name="actionLoad_paths"/>
@@ -2724,6 +2725,15 @@ then colour which other nodes in the graph are likely to be contiguous
    </property>
    <property name="shortcut">
     <string>Ctrl+O</string>
+   </property>
+  </action>
+  <action name="actionLoad_loganGraph">
+   <property name="icon">
+    <iconset resource="../images/images.qrc">
+     <normaloff>:/icons/load-256.png</normaloff>:/icons/load-256.png</iconset>
+   </property>
+   <property name="text">
+    <string>Load graph from Logan</string>
    </property>
   </action>
   <action name="actionSave_image_current_view">
