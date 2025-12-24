@@ -98,7 +98,7 @@ public:
     void shiftPointsLeft();
     void shiftPointsRight();
     void fixEdgePaths(std::vector<GraphicsItemNode *> * nodes = nullptr) const;
-    double indexToFraction(int64_t pos) const;
+    double posToFraction(int64_t pos) const;
 
 private:
     void exactPathHighlightNode(QPainter * painter);

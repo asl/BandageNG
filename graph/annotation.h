@@ -131,6 +131,8 @@ public:
     }
 
 private:
+    // We use inclusive 1-based coordinates. E.g. first position on the segment is numbered 1
+    // and last position is equal to the length of the sequence.
     int64_t m_start;
     int64_t m_end;
     std::string m_text;

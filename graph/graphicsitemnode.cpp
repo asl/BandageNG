@@ -799,8 +799,9 @@ void GraphicsItemNode::shiftPointSideways(bool left)
 }
 
 
-double GraphicsItemNode::indexToFraction(int64_t pos) const {
-    return static_cast<double>(pos) / m_deBruijnNode->getLength();
+double GraphicsItemNode::posToFraction(int64_t pos) const {
+    // All positions are 1-based to be compatible with query hits results
+    return static_cast<double>(pos - 1) / m_deBruijnNode->getLength();
 }
 
 

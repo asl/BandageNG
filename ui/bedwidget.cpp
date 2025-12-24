@@ -40,8 +40,12 @@ BedWidget::BedWidget(QWidget *parent) : QWidget(parent) {
                     DeBruijnNode *node = it.value();
                     if (bedLine.strand == bed::Strand::REVERSE_COMPLEMENT)
                         node = node->getReverseComplement();
+                    // BED coordinates are zero-based and non-inclusive, e.g. the 1 bp segment located at the very
+                    // start will have coordinates [0, 1). Annotations use 1-based inclusive coordinates (to
+                    // be aligned with BLAST hits, etc.). Make a translation here. Since end is already 1-based,
+                    // we just need to tune start.
                     auto &annotation = annotationGroup.annotationMap[node].emplace_back(
-                        std::make_unique<Annotation>(bedLine.chromStart, bedLine.chromEnd, bedLine.name));
+                        std::make_unique<Annotation>(bedLine.chromStart + 1, bedLine.chromEnd, bedLine.name));
                     annotation->addView(std::make_unique<SolidView>(BED_MAIN_WIDTH, bedLine.itemRgb.toQColor()));
                     annotation->addView(std::make_unique<BedThickView>(BED_THICK_WIDTH, bedLine.itemRgb.toQColor(), bedLine.thickStart, bedLine.thickEnd));
                     annotation->addView(std::make_unique<BedBlockView>(BED_BLOCK_WIDTH, bedLine.itemRgb.toQColor(), bedLine.blocks));

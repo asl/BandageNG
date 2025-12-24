@@ -34,13 +34,14 @@ void SolidView::drawFigure(QPainter &painter, GraphicsItemNode &graphicsItemNode
     pen.setColor(m_color);
     painter.setPen(pen);
 
-    double fractionStart = graphicsItemNode.indexToFraction(start);
-    double fractionEnd = graphicsItemNode.indexToFraction(end + 1);
+    double fractionStart = graphicsItemNode.posToFraction(start);
+    double fractionEnd = graphicsItemNode.posToFraction(end + 1);
 
     if (reverseComplement) {
         fractionStart = 1 - fractionStart;
         fractionEnd = 1 - fractionEnd;
     }
+
     painter.drawPath(graphicsItemNode.makePartialPath(fractionStart, fractionEnd));
 }
 
@@ -48,8 +49,8 @@ void RainbowBlastHitView::drawFigure(QPainter &painter, GraphicsItemNode &graphi
                                      int64_t start, int64_t end) const {
 
     double scaledNodeLength = graphicsItemNode.getNodePathLength() * g_absoluteZoom;
-    double fractionStart = graphicsItemNode.indexToFraction(start);
-    double fractionEnd = graphicsItemNode.indexToFraction(end + 1);
+    double fractionStart = graphicsItemNode.posToFraction(start);
+    double fractionEnd = graphicsItemNode.posToFraction(end + 1);
     double scaledHitLength = (fractionEnd - fractionStart) * scaledNodeLength;
     int partCount = ceil(
             g_settings->blastRainbowPartsPerQuery * fabs(m_rainbowFractionStart - m_rainbowFractionEnd));
@@ -99,7 +100,7 @@ void Annotation::drawFigure(QPainter &painter, GraphicsItemNode &graphicsItemNod
 
 void Annotation::drawDescription(QPainter &painter, GraphicsItemNode &graphicsItemNode, bool reverseComplement) const {
     double annotationCenter =
-            (graphicsItemNode.indexToFraction(m_start) + graphicsItemNode.indexToFraction(m_end)) / 2;
+            (graphicsItemNode.posToFraction(m_start) + graphicsItemNode.posToFraction(m_end)) / 2;
     auto textPoint = graphicsItemNode.findLocationOnPath(
             reverseComplement ? 1 - annotationCenter : annotationCenter);
     auto qStringText = QString::fromStdString(m_text);
@@ -120,8 +121,8 @@ BedBlockView::BedBlockView(double widthMultiplier, const QColor &color, const st
     }
 }
 
-void BedBlockView::drawFigure(QPainter &painter, GraphicsItemNode &graphicsItemNode, bool reverseComplement, int64_t start,
-                              int64_t end) const {
+void BedBlockView::drawFigure(QPainter &painter, GraphicsItemNode &graphicsItemNode, bool reverseComplement,
+                              int64_t start, int64_t end) const {
     for (const auto &block: m_blocks) {
         block.drawFigure(painter, graphicsItemNode, reverseComplement, start, end);
     }
