@@ -549,8 +549,9 @@ void MainWindow::displayGraphDetails()
 {
     ui->nodeCountLabel->setText(formatIntForDisplay(g_assemblyGraph->m_nodeCount));
     ui->edgeCountLabel->setText(formatIntForDisplay(g_assemblyGraph->m_edgeCount));
-    ui->pathCountLabel->setText(formatIntForDisplay(g_assemblyGraph->pathCount()));
-    ui->walkCountLabel->setText(formatIntForDisplay(g_assemblyGraph->walkCount()));
+    ui->pathAndWalkCountLabel->setText(QString("%1 / %2")
+                                 .arg(formatIntForDisplay(g_assemblyGraph->pathCount()))
+                                 .arg(formatIntForDisplay(g_assemblyGraph->walkCount())));
     ui->totalLengthLabel->setText(formatIntForDisplay(g_assemblyGraph->m_totalLength));
 }
 
@@ -558,7 +559,7 @@ void MainWindow::clearGraphDetails()
 {
     ui->nodeCountLabel->setText("0");
     ui->edgeCountLabel->setText("0");
-    ui->pathCountLabel->setText("0");
+    ui->pathAndWalkCountLabel->setText("0 / 0");
     ui->totalLengthLabel->setText("0");
 }
 
