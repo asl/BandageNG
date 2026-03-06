@@ -45,7 +45,7 @@ CLI::App *addImageSubcommand(CLI::App &app, ImageCmd &cmd) {
     image->add_option("<output_file>", cmd.m_image, "The image file to be created (must end in '.jpg', '.png' or '.svg')")
             ->required();
     image->add_option("--height", cmd.m_height, "Image height")
-            ->default_val(cmd.m_height)->check(CLI::Range(1, 32767));
+            ->check(CLI::Range(1, 32767));
     image->add_option("--width", cmd.m_width, "Image width")
             ->check(CLI::Range(1, 32767));
     image->add_option("--color", cmd.m_color, "csv file with 2 columns: first the node name second the node color")
@@ -137,7 +137,7 @@ int handleImageCmd(QApplication *app,
             err << filename << " didn't contain color" << Qt::endl;
             return 1;
         }
-         g_settings->initializeColorer(CUSTOM_COLOURS);
+        g_settings->initializeColorer(CUSTOM_COLOURS);
     }
 
 
@@ -164,7 +164,7 @@ int handleImageCmd(QApplication *app,
     if (height == 0 && width == 0)
         height = 1000;
 
-    //If only height or width is set, scale the other to fit.
+    // If only height or width is set, scale the other to fit.
     if (height > 0 && width == 0)
         width = height * sceneRectAspectRatio;
     else if (height == 0 && width > 0)

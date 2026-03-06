@@ -27,7 +27,7 @@ namespace CLI {
 struct ImageCmd {
     std::filesystem::path m_graph;
     std::filesystem::path m_image;
-    unsigned m_height = 1000;
+    unsigned m_height = 0;
     unsigned m_width = 0;
     std::filesystem::path m_color;
 };
