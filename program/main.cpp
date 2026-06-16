@@ -127,9 +127,10 @@ static void chooseQtPlatform(const CLI::App &app, const SubCmd &cmd) {
     // platform. Frustratingly, Bandage image cannot render text properly with
     // the minimal platform, so we need to use the full platform if Bandage
     // image is run with text labels.
-    bool imageWithText = false; //std::holds_alternative<ImageCmd>(cmd) &&
-    //(app.count("--names") || app.count("--lengths") ||
-    //                      app.count("--depth") || app.count("--blasthits"));
+    bool imageWithText = std::holds_alternative<ImageCmd>(cmd) &&
+                         (app.count("--names") || app.count("--lengths") ||
+                          app.count("--depth") || app.count("--blasthits") ||
+                          app.count("--render-text"));
     bool guiNeeded = std::holds_alternative<std::monostate>(cmd) ||
                      std::holds_alternative<LoadCmd>(cmd) || imageWithText;
 
