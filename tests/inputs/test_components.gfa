@@ -1,0 +1,14 @@
+H	VN:Z:1.2
+S	a1	ACGTAAAA
+S	a2	TTTTGGGG
+S	a3	AAAACCCC
+S	b1	GGGGTTTT
+S	b2	CCCCAAAA
+S	c1	ATGATGCC
+L	a1	+	a2	+	0M
+L	a2	+	a3	+	0M
+L	b1	+	b2	+	0M
+P	PATH_A	a1+,a2+	*
+P	PATH_B	b1+,b2+	*
+W	sampleA	0	WALK_A	*	*	>a1>a2
+W	sampleB	0	WALK_B	*	*	>b1>b2

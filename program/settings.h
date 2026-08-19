@@ -124,6 +124,8 @@ public:
     IntSetting nodeDistance;
     bool startingNodesExactMatch;
     QString startingNodes;
+    QString startingPaths;
+    QString startingWalks;
     QString blastQueryFilename;
     QString csvFilename;
     QString unnamedQueryDefaultName;

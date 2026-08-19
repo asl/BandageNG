@@ -55,6 +55,8 @@ Settings::Settings()
     nodeDistance = IntSetting(0, 0, 100);
     startingNodesExactMatch = true;
     startingNodes = "";
+    startingPaths = "";
+    startingWalks = "";
     blastQueryFilename = "";
     unnamedQueryDefaultName = "unnamed";
 

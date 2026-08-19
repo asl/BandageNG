@@ -48,6 +48,7 @@
 #include <cmath>
 #include <utility>
 #include <deque>
+#include <unordered_set>
 
 AssemblyGraph::AssemblyGraph()
         : m_sequencesLoadedFromFasta(NOT_READY)
@@ -540,6 +541,47 @@ void AssemblyGraph::markNodesToDraw(const graph::Scope &scope,
             //on, all nodes are drawn.
             if (entry->isPositiveNode() || g_settings->doubleMode)
                 entry->setAsDrawn();
+        }
+    } else if (scope.graphScope() == AROUND_COMPONENT) {
+        auto nodeToDraw = [](DeBruijnNode *node) {
+            if (!g_settings->doubleMode && node->isNegativeNode())
+                return node->getReverseComplement();
+            return node;
+        };
+
+        std::unordered_set<DeBruijnNode *> seen;
+        std::vector<DeBruijnNode *> queue;
+        queue.reserve(startingNodes.size() * 2);
+
+        for (auto *node : startingNodes) {
+            DeBruijnNode *drawn = nodeToDraw(node);
+            drawn->setAsDrawn();
+            drawn->setAsSpecial();
+
+            auto enqueue = [&](DeBruijnNode *n) {
+                if (n && seen.insert(n).second)
+                    queue.push_back(n);
+            };
+            enqueue(node);
+            enqueue(node->getReverseComplement());
+        }
+
+        while (!queue.empty()) {
+            DeBruijnNode *node = queue.back();
+            queue.pop_back();
+            nodeToDraw(node)->setAsDrawn();
+
+            for (auto *edge : node->edges()) {
+                DeBruijnNode *other = edge->getOtherNode(node);
+                if (!other)
+                    continue;
+                if (seen.insert(other).second)
+                    queue.push_back(other);
+                if (DeBruijnNode *otherRc = other->getReverseComplement()) {
+                    if (seen.insert(otherRc).second)
+                        queue.push_back(otherRc);
+                }
+            }
         }
     } else {
         for (auto *node : startingNodes) {

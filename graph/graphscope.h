@@ -33,17 +33,25 @@ enum GraphScope {
     AROUND_PATHS,
     AROUND_WALKS,
     AROUND_BLAST_HITS,
-    DEPTH_RANGE
+    DEPTH_RANGE,
+    AROUND_COMPONENT
 };
 
 namespace graph {
+    struct ComponentSeed {
+        QString nodes;
+        QString paths;
+        QString walks;
+    };
+
     class Scope {
         GraphScope m_scope;
         std::variant<
                 std::nullptr_t, // whole graph
                 QString, // path or node
                 std::pair<const search::Queries*, QString>, // hits
-                std::pair<double, double> // depth
+                std::pair<double, double>, // depth
+                ComponentSeed // connected component seeds
         > m_opt;
         unsigned m_distance;
     public:
@@ -77,6 +85,18 @@ namespace graph {
 
         QString walk() const {
             return std::get<QString>(m_opt);
+        }
+
+        QString componentNodes() const {
+            return std::get<ComponentSeed>(m_opt).nodes;
+        }
+
+        QString componentPaths() const {
+            return std::get<ComponentSeed>(m_opt).paths;
+        }
+
+        QString componentWalks() const {
+            return std::get<ComponentSeed>(m_opt).walks;
         }
 
         static Scope wholeGraph() {
@@ -124,6 +144,8 @@ namespace graph {
         static Scope aroundHits(const search::Queries &queries, const QString& queryName,
                                 unsigned distance = 0);
 
+        static Scope aroundComponent(QString nodes, QString paths = {}, QString walks = {});
+
     private:
         Scope()
                 : m_scope(WHOLE_GRAPH), m_opt{nullptr}, m_distance(0) {}
@@ -134,7 +156,8 @@ namespace graph {
                 const QString &nodesList,
                 double minDepthRange, double maxDepthRange,
                 const search::Queries *queries, const QString& blastQueryName,
-                const QString &pathName, unsigned distance = 0);
+                const QString &pathName, unsigned distance = 0,
+                const QString &walkName = {});
 
     std::vector<DeBruijnNode *>
     getStartingNodes(QString *errorTitle, QString *errorMessage,
