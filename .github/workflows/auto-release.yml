@@ -12,7 +12,7 @@ jobs:
     if: ${{ github.repository == 'asl/BandageNG' && github.ref == 'refs/heads/dev' }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           # Fetch all history for all branches and tags
           fetch-depth: 0
