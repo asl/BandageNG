@@ -22,9 +22,33 @@
 #include "program/settings.h"
 
 #include "assemblygraph.h"
+#include "path.h"
+
+#include <unordered_set>
 #include <vector>
 
 namespace graph {
+    static QStringList splitCommaSeparated(QString text) {
+        text = text.simplified();
+        QStringList tokens = text.split(',');
+        QStringList out;
+        for (QString token : tokens) {
+            token = token.trimmed();
+            if (!token.isEmpty())
+                out.push_back(token);
+        }
+        return out;
+    }
+
+    static void appendUnique(std::vector<DeBruijnNode *> &nodes,
+                             std::unordered_set<DeBruijnNode *> &seen,
+                             const std::vector<DeBruijnNode *> &more) {
+        for (auto *node : more) {
+            if (seen.insert(node).second)
+                nodes.push_back(node);
+        }
+    }
+
     std::vector<DeBruijnNode *>
     getStartingNodes(QString *errorTitle, QString *errorMessage,
                      const AssemblyGraph &graph, const Scope &graphScope) {
@@ -74,6 +98,74 @@ namespace graph {
 
                 return pathIt->walk.nodes();
             }
+            case AROUND_COMPONENT: {
+                QStringList pathNames = splitCommaSeparated(graphScope.componentPaths());
+                QStringList walkNames = splitCommaSeparated(graphScope.componentWalks());
+                bool hasNodes = !AssemblyGraph::checkIfStringHasNodes(graphScope.componentNodes());
+
+                if (!hasNodes && pathNames.empty() && walkNames.empty()) {
+                    *errorTitle = "No starting nodes";
+                    *errorMessage = "Please enter at least one node, path or walk when drawing the graph using the "
+                                    "'Around connected component' scope. Separate multiple names with commas.";
+                    return {};
+                }
+
+                std::unordered_set<DeBruijnNode *> seen;
+                std::vector<DeBruijnNode *> nodesInGraph;
+
+                if (hasNodes) {
+                    std::vector<QString> nodesNotInGraph;
+                    auto fromNodes = graph.getNodesFromStringList(graphScope.componentNodes(),
+                                                                  g_settings->startingNodesExactMatch,
+                                                                  &nodesNotInGraph);
+                    if (!nodesNotInGraph.empty()) {
+                        *errorTitle = "Nodes not found";
+                        *errorMessage =
+                                AssemblyGraph::generateNodesNotFoundErrorMessage(nodesNotInGraph,
+                                                                                 g_settings->startingNodesExactMatch);
+                        return {};
+                    }
+                    appendUnique(nodesInGraph, seen, fromNodes);
+                }
+
+                QStringList missingPaths;
+                for (const QString &name : pathNames) {
+                    auto pathIt = graph.m_deBruijnGraphPaths.find(name.toStdString());
+                    if (pathIt == graph.m_deBruijnGraphPaths.end()) {
+                        missingPaths.push_back(name);
+                        continue;
+                    }
+                    appendUnique(nodesInGraph, seen, pathIt->nodes());
+                }
+                if (!missingPaths.empty()) {
+                    *errorTitle = "Invalid path";
+                    *errorMessage = "No path with such name is loaded: " + missingPaths.join(", ");
+                    return {};
+                }
+
+                QStringList missingWalks;
+                for (const QString &name : walkNames) {
+                    auto walkIt = graph.m_deBruijnGraphWalks.find(name.toStdString());
+                    if (walkIt == graph.m_deBruijnGraphWalks.end()) {
+                        missingWalks.push_back(name);
+                        continue;
+                    }
+                    appendUnique(nodesInGraph, seen, walkIt->walk.nodes());
+                }
+                if (!missingWalks.empty()) {
+                    *errorTitle = "Invalid walk";
+                    *errorMessage = "No walk with such sequence name is loaded: " + missingWalks.join(", ");
+                    return {};
+                }
+
+                if (nodesInGraph.empty()) {
+                    *errorTitle = "No starting nodes";
+                    *errorMessage = "The specified nodes, paths and walks did not match anything in the graph.";
+                    return {};
+                }
+
+                return nodesInGraph;
+            }
             case AROUND_BLAST_HITS: {
                 std::vector<DeBruijnNode *> startingNodes;
                 if (const auto *queries = graphScope.queries())
@@ -106,7 +198,8 @@ namespace graph {
     Scope scope(GraphScope graphScope, const QString &nodesList,
                 double minDepthRange, double maxDepthRange,
                 const search::Queries *blastQueries, const QString &blastQueryName,
-                const QString &pathName, unsigned distance) {
+                const QString &pathName, unsigned distance,
+                const QString &walkName) {
         switch (graphScope) {
             case WHOLE_GRAPH:
                 return Scope::wholeGraph();
@@ -115,11 +208,13 @@ namespace graph {
             case AROUND_PATHS:
                 return Scope::aroundPath(pathName, distance);
             case AROUND_WALKS:
-                return Scope::aroundWalk(pathName, distance);
+                return Scope::aroundWalk(walkName.isEmpty() ? pathName : walkName, distance);
             case AROUND_BLAST_HITS:
                 return Scope::aroundHits(blastQueries, blastQueryName, distance);
             case DEPTH_RANGE:
                 return Scope::depthRange(minDepthRange, maxDepthRange);
+            case AROUND_COMPONENT:
+                return Scope::aroundComponent(nodesList, pathName, walkName);
         }
 
         assert(0 && "Invalid scope!");
@@ -138,6 +233,13 @@ namespace graph {
         res.m_opt = std::make_pair(queries, queryName);
         res.m_distance = distance;
 
+        return res;
+    }
+
+    Scope Scope::aroundComponent(QString nodes, QString paths, QString walks) {
+        Scope res;
+        res.m_scope = AROUND_COMPONENT;
+        res.m_opt = ComponentSeed{std::move(nodes), std::move(paths), std::move(walks)};
         return res;
     }
 }

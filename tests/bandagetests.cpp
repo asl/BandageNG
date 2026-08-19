@@ -24,6 +24,7 @@
 #include "graph/annotationsmanager.h"
 #include "graph/gfawriter.h"
 #include "graph/io.h"
+#include "graph/graphscope.h"
 
 #include "layout/graphlayoutworker.h"
 #include "layout/io.h"
@@ -119,6 +120,7 @@ private slots:
     void blastSearch();
     void blastSearchFilters();
     void graphScope();
+    void graphScopeComponent();
     void graphLayout();
     void commandLineSettings();
     void sciNotComparisons();
@@ -894,6 +896,95 @@ void BandageTests::graphScope()
 }
 
 
+void BandageTests::graphScopeComponent() {
+    QVERIFY(g_assemblyGraph->loadGraphFromFile(testFile("test_components.gfa")));
+
+    QString errorTitle;
+    QString errorMessage;
+    int drawnNodes;
+
+    auto draw = [&](const graph::Scope &scope) {
+        errorTitle.clear();
+        errorMessage.clear();
+        auto startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
+                                                     *g_assemblyGraph, scope);
+        g_assemblyGraph->resetNodes();
+        g_assemblyGraph->markNodesToDraw(scope, startingNodes);
+        return g_assemblyGraph->getDrawnNodeCount();
+    };
+
+    {
+        g_settings->doubleMode = false;
+        QCOMPARE(draw(graph::Scope::wholeGraph()), 6);
+    }
+    {
+        g_settings->doubleMode = true;
+        QCOMPARE(draw(graph::Scope::wholeGraph()), 12);
+    }
+
+    {
+        g_settings->doubleMode = false;
+        QCOMPARE(draw(graph::Scope::aroundComponent("a1")), 3);
+        QVERIFY(errorMessage.isEmpty());
+    }
+    {
+        g_settings->doubleMode = true;
+        QCOMPARE(draw(graph::Scope::aroundComponent("a1")), 6);
+    }
+    {
+        g_settings->doubleMode = false;
+        QCOMPARE(draw(graph::Scope::aroundComponent("a1,b1")), 5);
+    }
+    {
+        g_settings->doubleMode = false;
+        QCOMPARE(draw(graph::Scope::aroundComponent("c1")), 1);
+    }
+    {
+        g_settings->doubleMode = true;
+        QCOMPARE(draw(graph::Scope::aroundComponent("c1")), 2);
+    }
+    {
+        g_settings->doubleMode = false;
+        QCOMPARE(draw(graph::Scope::aroundComponent({}, "PATH_A")), 3);
+    }
+    {
+        g_settings->doubleMode = false;
+        QCOMPARE(draw(graph::Scope::aroundComponent({}, "PATH_A,PATH_B")), 5);
+    }
+    {
+        g_settings->doubleMode = false;
+        QCOMPARE(draw(graph::Scope::aroundComponent({}, {}, "WALK_A")), 3);
+    }
+    {
+        g_settings->doubleMode = false;
+        QCOMPARE(draw(graph::Scope::aroundComponent({}, "PATH_A", "WALK_B")), 5);
+    }
+    {
+        g_settings->nodeDistance = 10;
+        g_settings->doubleMode = false;
+        QCOMPARE(draw(graph::Scope::aroundComponent("a1")), 3);
+    }
+    {
+        g_settings->doubleMode = false;
+        auto startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
+                                                     *g_assemblyGraph,
+                                                     graph::Scope::aroundComponent({}));
+        QVERIFY(!errorMessage.isEmpty());
+        QVERIFY(startingNodes.empty());
+    }
+    {
+        errorTitle.clear();
+        errorMessage.clear();
+        auto startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
+                                                     *g_assemblyGraph,
+                                                     graph::Scope::aroundComponent({}, "NO_SUCH_PATH"));
+        QVERIFY(!errorMessage.isEmpty());
+        QCOMPARE(errorTitle, QString("Invalid path"));
+        QVERIFY(startingNodes.empty());
+    }
+}
+
+
 void BandageTests::graphLayout() {
     QVERIFY(g_assemblyGraph->loadGraphFromFile(testFile("test.fastg")));
 
@@ -969,6 +1060,17 @@ void BandageTests::commandLineSettings() {
     commandLineSettings = QString("--scope aroundnodes --nodes 1,2,3").split(" ");
     parseSettings(commandLineSettings);
     QCOMPARE(g_settings->graphScope, AROUND_NODE);
+
+    commandLineSettings = QString("--scope aroundcomponent --nodes 1").split(" ");
+    parseSettings(commandLineSettings);
+    QCOMPARE(g_settings->graphScope, AROUND_COMPONENT);
+    QCOMPARE(g_settings->startingNodes, QString("1"));
+
+    commandLineSettings = QString("--scope aroundcomponent --path P1,P2 --walk W1").split(" ");
+    parseSettings(commandLineSettings);
+    QCOMPARE(g_settings->graphScope, AROUND_COMPONENT);
+    QCOMPARE(g_settings->startingPaths, QString("P1,P2"));
+    QCOMPARE(g_settings->startingWalks, QString("W1"));
 
     commandLineSettings = QString("--scope depthrange --mindepth 1 --maxdepth 10").split(" ");
     parseSettings(commandLineSettings);

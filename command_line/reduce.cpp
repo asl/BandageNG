@@ -79,7 +79,8 @@ int handleReduceCmd(QApplication *app,
                               g_settings->startingNodes,
                               g_settings->minDepthRange, g_settings->maxDepthRange,
                               &g_blastSearch->queries(), "all",
-                              "", g_settings->nodeDistance);
+                              g_settings->startingPaths, g_settings->nodeDistance,
+                              g_settings->startingWalks);
     auto startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
                                                  *g_assemblyGraph, scope);
     if (!errorMessage.isEmpty()) {

@@ -132,7 +132,7 @@ mkdir tmp
 # Bandage image tests
 test_all "$bandagepath image inputs/test.fastg tmp/test.png" 0 "" ""
 test_image_height tmp/test.png 1000; rm tmp/test.png
-test_all "$bandagepath image inputs/test.fastg tmp/test.jpg" 0 "" "";
+test_all "$bandagepath image inputs/test.fastg tmp/test.jpg" 0 "" ""
 test_image_height tmp/test.jpg 1000; rm tmp/test.jpg
 test_all "$bandagepath image inputs/test.fastg tmp/test.svg" 0 "" ""; rm tmp/test.svg
 test_all "$bandagepath image inputs/test.fastg tmp/test.png --height 500" 0 "" ""
@@ -147,15 +147,20 @@ test_all "$bandagepath image inputs/test.fastg tmp/test.png  --width 400 --heigh
 test_image_width_and_height tmp/test.png 400 500; rm tmp/test.png
 test_all "$bandagepath image inputs/test.fastg tmp/test.png  --width 500 --height 400" 0 "" ""
 test_image_width_and_height tmp/test.png 500 400; rm tmp/test.png
-test_all "$bandagepath image abc.fastg test.png" 105 "" "<graph>: File does not exist: abc.fastg Run with --help or --helpall for more information."
-test_all "$bandagepath image inputs/test.fastg test.abc" 1 "" "Bandage-NG error: the output filename must end in .png, .jpg or .svg"
+test_all "$bandagepath image abc.fastg tmp/test.png" 105 "" "<graph>: File does not exist: abc.fastg Run with --help or --helpall for more information."
+test_all "$bandagepath image inputs/test.fastg tmp/test.abc" 1 "" "Bandage-NG error: the output filename must end in .png, .jpg or .svg"
 test_all "$bandagepath image inputs/test.csv tmp/test.png" 1 "" "Bandage-NG error: could not load inputs/test.csv"
-test_all "$bandagepath image inputs/test.fastg test.png --query abc.fasta" 105 "" "--query: File does not exist: abc.fasta Run with --help or --helpall for more information."
-test_all "$bandagepath image inputs/test_rgfa.gfa test.png --colour gfa" 0 "" ""
-test_all "$bandagepath image inputs/test.gfa test.png --colour gc" 0 "" ""
+test_all "$bandagepath image inputs/test.fastg tmp/test.png --query abc.fasta" 105 "" "--query: File does not exist: abc.fasta Run with --help or --helpall for more information."
+test_all "$bandagepath image inputs/test_rgfa.gfa tmp/test.png --colour gfa" 0 "" ""; rm tmp/test.png
+test_all "$bandagepath image inputs/test.gfa tmp/test.png --colour gc" 0 "" ""; rm tmp/test.png
 
 # BandageNG info tests
 test_all "$bandagepath info inputs/test.gfa --tsv" 0 "inputs/test.gfa 17 16 60 60 30959 29939 10 29.4118% 1 30959 0 2060 119 2001 2060 2060 2060 532.042 25939" ""
+
+# BandageNG reduce tests
+test_all "$bandagepath reduce inputs/test_components.gfa tmp/component.gfa --scope aroundcomponent --nodes a1" 0 "" ""
+test_all "$bandagepath reduce inputs/test_components.gfa tmp/component.gfa --scope aroundcomponent --path PATH_A,PATH_B" 0 "" ""
+rm tmp/component.gfa
 
 # BandageNG load tests
 test_all "$bandagepath load abc.fastg" 105 "" "<graph>: File does not exist: abc.fastg Run with --help or --helpall for more information."
@@ -168,9 +173,10 @@ test_exit_code "$bandagepath --version" 0
 
 # BandageNG incorrect settings tests
 test_all "$bandagepath --abc" 109 "" "The following argument was not expected: --abc Run with --help or --helpall for more information."
-test_all "$bandagepath --scope" 114 "" "--scope: 1 required SCOPE:value in {entire->0,aroundnodes->1,aroundblast->4,depthrange->5} OR {0,1,4,5} missing Run with --help or --helpall for more information."
-test_all "$bandagepath --scope abc" 105 "" "--scope: Check abc value in {entire->0,aroundnodes->1,aroundblast->4,depthrange->5} OR {0,1,4,5} FAILED Run with --help or --helpall for more information."
+test_all "$bandagepath --scope" 114 "" "--scope: 1 required SCOPE:value in {entire->0,aroundnodes->1,aroundblast->4,depthrange->5,aroundcomponent->6} OR {0,1,4,5,6} missing Run with --help or --helpall for more information."
+test_all "$bandagepath --scope abc" 105 "" "--scope: Check abc value in {entire->0,aroundnodes->1,aroundblast->4,depthrange->5,aroundcomponent->6} OR {0,1,4,5,6} FAILED Run with --help or --helpall for more information."
 test_all "$bandagepath --nodes" 114 "" "--nodes: 1 required TEXT missing Run with --help or --helpall for more information."
+test_all "$bandagepath --scope aroundcomponent" 105 "" "Bandage-NG error: At least one of --nodes, --path or --walk must be given when the aroundcomponent scope is used. Run with --help or --helpall for more information."
 test_all "$bandagepath --distance" 114 "" "--distance: 1 required INT:INT in [0 - 100] missing Run with --help or --helpall for more information."
 test_all "$bandagepath --distance abc" 105 "" "--distance: Value abc not in range [0 - 100] Run with --help or --helpall for more information."
 test_all "$bandagepath --mindepth" 114 "" "--mindepth: 1 required FLOAT:FLOAT in [0 - 1e+06] missing Run with --help or --helpall for more information."

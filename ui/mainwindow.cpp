@@ -85,6 +85,30 @@
 #include <iostream>
 #include <filesystem>
 
+namespace {
+class CommaSeparatedCompleter : public QCompleter {
+public:
+    using QCompleter::QCompleter;
+
+    QStringList splitPath(const QString &path) const override {
+        int comma = path.lastIndexOf(',');
+        return {comma >= 0 ? path.mid(comma + 1).trimmed() : path};
+    }
+
+    QString pathFromIndex(const QModelIndex &index) const override {
+        QString completion = QCompleter::pathFromIndex(index);
+        auto *edit = qobject_cast<QLineEdit *>(widget());
+        if (!edit)
+            return completion;
+        QString text = edit->text();
+        int comma = text.lastIndexOf(',');
+        if (comma < 0)
+            return completion;
+        return text.left(comma + 1) + " " + completion;
+    }
+};
+}
+
 MainWindow::MainWindow(QString fileToLoadOnStartup, bool drawGraphAfterLoad) :
     QMainWindow(nullptr),
     ui(new Ui::MainWindow), m_imageFilter("PNG (*.png)"),
@@ -773,6 +797,11 @@ void MainWindow::graphScopeChanged()
                                               "A value of 0 will result in only the specified nodes being drawn. "
                                               "A large value will result in large sections of the graph around "
                                               "the specified nodes being drawn.</html>");
+        ui->startingNodesInfoText->setToolTip("<html>Enter a comma-delimited list of node names here. This will define "
+                                              "which regions of the graph will be drawn.<br><br>"
+                                              "When in double mode, you can include '+' or '-' at the end of the node "
+                                              "name to specify which strand to draw. If you do not include '+' or '-', "
+                                              "then nodes for both strands will be drawn.</html>");
 
         ui->graphDrawingGridLayout->addWidget(ui->startingNodesInfoText, 1, 0, 1, 1);
         ui->graphDrawingGridLayout->addWidget(ui->startingNodesLabel, 1, 1, 1, 1);
@@ -805,6 +834,7 @@ void MainWindow::graphScopeChanged()
                                               "A value of 0 will result in only the specified nodes being drawn. "
                                               "A large value will result in large sections of the graph around "
                                               "the specified nodes being drawn.</html>");
+        ui->pathSelectionLabel->setText("Name:");
 
         ui->graphDrawingGridLayout->addWidget(ui->pathSelectionInfoText, 1, 0, 1, 1);
         ui->graphDrawingGridLayout->addWidget(ui->pathSelectionLabel,    1, 1, 1, 1);
@@ -834,6 +864,7 @@ void MainWindow::graphScopeChanged()
                                               "A value of 0 will result in only the specified nodes being drawn. "
                                               "A large value will result in large sections of the graph around "
                                               "the specified nodes being drawn.</html>");
+        ui->walkSelectionLabel->setText("Sequence:");
 
         ui->graphDrawingGridLayout->addWidget(ui->walkSelectionInfoText, 1, 0, 1, 1);
         ui->graphDrawingGridLayout->addWidget(ui->walkSelectionLabel,    1, 1, 1, 1);
@@ -897,6 +928,51 @@ void MainWindow::graphScopeChanged()
         ui->graphDrawingGridLayout->addWidget(ui->drawGraphButton, 4, 1, 1, 2);
 
         break;
+
+    case 6:
+        g_settings->graphScope = AROUND_COMPONENT;
+
+        setStartingNodesWidgetVisibility(true);
+        setNodeDistanceWidgetVisibility(false);
+        setDepthRangeWidgetVisibility(false);
+        setPathSelectionWidgetVisibility(true);
+        setWalkSelectionWidgetVisibility(true);
+
+        ui->startingNodesInfoText->setToolTip("<html>Enter a comma-separated list of node names. The connected "
+                                              "component(s) containing these nodes will be drawn. Leave blank if you "
+                                              "are seeding from paths or walks instead.<br><br>"
+                                              "When in double mode, you can include '+' or '-' at the end of the node "
+                                              "name to specify which strand. If you do not include '+' or '-', then "
+                                              "nodes for both strands will be used as seeds.</html>");
+        ui->pathSelectionLabel->setText("Path(s):");
+        ui->pathSelectionInfoText->setToolTip("<html>Enter a comma-separated list of path names. Each path is expanded "
+                                              "to its nodes, and the connected component(s) containing those nodes "
+                                              "will be drawn. Leave blank if you are seeding from nodes or walks instead.</html>");
+        ui->walkSelectionLabel->setText("Walk(s):");
+        ui->walkSelectionInfoText->setToolTip("<html>Enter a comma-separated list of walk (sequence) names. Each walk "
+                                              "is expanded to its nodes, and the connected component(s) containing "
+                                              "those nodes will be drawn. Leave blank if you are seeding from nodes "
+                                              "or paths instead.</html>");
+
+        ui->graphDrawingGridLayout->addWidget(ui->startingNodesInfoText, 1, 0, 1, 1);
+        ui->graphDrawingGridLayout->addWidget(ui->startingNodesLabel, 1, 1, 1, 1);
+        ui->graphDrawingGridLayout->addWidget(ui->startingNodesLineEdit, 1, 2, 1, 1);
+        ui->graphDrawingGridLayout->addWidget(ui->startingNodesMatchTypeInfoText, 2, 0, 1, 1);
+        ui->graphDrawingGridLayout->addWidget(ui->startingNodesMatchTypeLabel, 2, 1, 1, 1);
+        ui->graphDrawingGridLayout->addWidget(ui->startingNodesMatchTypeWidget, 2, 2, 1, 1);
+        ui->graphDrawingGridLayout->addWidget(ui->pathSelectionInfoText, 3, 0, 1, 1);
+        ui->graphDrawingGridLayout->addWidget(ui->pathSelectionLabel, 3, 1, 1, 1);
+        ui->graphDrawingGridLayout->addWidget(ui->pathSelectionLineEdit, 3, 2, 1, 1);
+        ui->graphDrawingGridLayout->addWidget(ui->walkSelectionInfoText, 4, 0, 1, 1);
+        ui->graphDrawingGridLayout->addWidget(ui->walkSelectionLabel, 4, 1, 1, 1);
+        ui->graphDrawingGridLayout->addWidget(ui->walkSelectionLineEdit, 4, 2, 1, 1);
+        ui->graphDrawingGridLayout->addWidget(ui->nodeStyleInfoText, 5, 0, 1, 1);
+        ui->graphDrawingGridLayout->addWidget(ui->nodeStyleLabel, 5, 1, 1, 1);
+        ui->graphDrawingGridLayout->addWidget(ui->nodeStyleWidget, 5, 2, 1, 1);
+        ui->graphDrawingGridLayout->addWidget(ui->drawGraphInfoText, 6, 0, 1, 1);
+        ui->graphDrawingGridLayout->addWidget(ui->drawGraphButton, 6, 1, 1, 2);
+
+        break;
     }
 }
 
@@ -947,15 +1023,17 @@ void MainWindow::setupPathSelectionLineEdit(QLineEdit *lineEdit) {
         return;
 
     auto *matchedPaths = new QStringListModel(this);
-    auto *completer = new QCompleter(matchedPaths);
+    auto *completer = new CommaSeparatedCompleter(matchedPaths);
     completer->setCompletionMode(QCompleter::UnfilteredPopupCompletion);
     lineEdit->setCompleter(completer);
 
     connect(lineEdit, &QLineEdit::textEdited,
             [matchedPaths](const QString &text) {
                 QStringList res;
+                int comma = text.lastIndexOf(',');
+                QString prefix = comma >= 0 ? text.mid(comma + 1).trimmed() : text;
 
-                auto prefix_range = g_assemblyGraph->m_deBruijnGraphPaths.equal_prefix_range(text.toStdString());
+                auto prefix_range = g_assemblyGraph->m_deBruijnGraphPaths.equal_prefix_range(prefix.toStdString());
                 size_t sz = std::distance(prefix_range.first, prefix_range.second);
                 if (sz > 1000) {
                     res << "Too many paths to show";
@@ -983,15 +1061,17 @@ void MainWindow::setupWalkSelectionLineEdit(QLineEdit *lineEdit) {
         return;
 
     auto *matchedPaths = new QStringListModel(this);
-    auto *completer = new QCompleter(matchedPaths);
+    auto *completer = new CommaSeparatedCompleter(matchedPaths);
     completer->setCompletionMode(QCompleter::UnfilteredPopupCompletion);
     lineEdit->setCompleter(completer);
 
     connect(lineEdit, &QLineEdit::textEdited,
             [matchedPaths](const QString &text) {
                 QStringList res;
+                int comma = text.lastIndexOf(',');
+                QString prefix = comma >= 0 ? text.mid(comma + 1).trimmed() : text;
 
-                auto prefix_range = g_assemblyGraph->m_deBruijnGraphWalks.equal_prefix_range(text.toStdString());
+                auto prefix_range = g_assemblyGraph->m_deBruijnGraphWalks.equal_prefix_range(prefix.toStdString());
                 size_t sz = std::distance(prefix_range.first, prefix_range.second);
                 if (sz > 1000) {
                     res << "Too many walks to show";
@@ -1023,9 +1103,9 @@ void MainWindow::drawGraph() {
                          ui->minDepthSpinBox->value(), ui->maxDepthSpinBox->value(),
                          m_blastSearchDialog ? &m_blastSearchDialog->search()->queries() : nullptr,
                          ui->blastQueryComboBox->currentText(),
-                         g_settings->graphScope == GraphScope::AROUND_PATHS ?
-                         ui->pathSelectionLineEdit->displayText() : ui->walkSelectionLineEdit->displayText(),
-                         ui->nodeDistanceSpinBox->value());
+                         ui->pathSelectionLineEdit->displayText(),
+                         ui->nodeDistanceSpinBox->value(),
+                         ui->walkSelectionLineEdit->displayText());
 
     auto startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
                                                  *g_assemblyGraph, scope);

@@ -205,16 +205,18 @@ static CLI::App *addGraphScopeSettings(CLI::App &app) {
     auto *scope = app.add_option_group("Graph scope",
                                        "These settings control the graph scope. "
                                        "If the aroundnodes scope is used, then the --nodes option must also be used. "
-                                       "If the aroundblast scope is used, a BLAST query must be given with the --query option.");
+                                       "If the aroundblast scope is used, a BLAST query must be given with the --query option. "
+                                       "If the aroundcomponent scope is used, then at least one of --nodes, --path or --walk must be used.");
 
-    scope->add_option("--scope", g_settings->graphScope, "Graph scope, from one of the following options: entire, aroundnodes, aroundblast, depthrange")
+    scope->add_option("--scope", g_settings->graphScope, "Graph scope, from one of the following options: entire, aroundnodes, aroundblast, depthrange, aroundcomponent")
             ->transform(CLI::CheckedTransformer(
                 std::vector<std::pair<std::string, GraphScope>>{
                     {"entire", GraphScope::WHOLE_GRAPH},
                     {"aroundnodes", GraphScope::AROUND_NODE},
                     // FIXME: paths!
                     {"aroundblast", GraphScope::AROUND_BLAST_HITS},
-                    {"depthrange", GraphScope::DEPTH_RANGE}}))
+                    {"depthrange", GraphScope::DEPTH_RANGE},
+                    {"aroundcomponent", GraphScope::AROUND_COMPONENT}}))
             ->default_val("entire");
     scope->add_flag("--exact,!--partial", g_settings->startingNodesExactMatch, "Choose between exact or partial node name matching (default: exact)");
     add_setting(*scope, "--distance", g_settings->nodeDistance, "The number of node steps away to draw for the aroundnodes and aroundblast scopes");
@@ -222,7 +224,11 @@ static CLI::App *addGraphScopeSettings(CLI::App &app) {
     add_setting(*scope, "--maxdepth", g_settings->maxDepthRange, "The maximum allowed depth for the depthrange scope");
     scope->add_option("--query", g_settings->blastQueryFilename, "A FASTA file of either nucleotide or protein sequences to be used as BLAST queries")
             ->check(CLI::ExistingFile);
-    scope->add_option("--nodes", g_settings->startingNodes, "A comma-separated list of starting nodes for the aroundnodes scope (default: none)")
+    scope->add_option("--nodes", g_settings->startingNodes, "A comma-separated list of starting nodes for the aroundnodes and aroundcomponent scopes (default: none)")
+            ->capture_default_str();
+    scope->add_option("--path", g_settings->startingPaths, "A comma-separated list of path names used as seeds for the aroundcomponent scope (default: none)")
+            ->capture_default_str();
+    scope->add_option("--walk", g_settings->startingWalks, "A comma-separated list of walk names used as seeds for the aroundcomponent scope (default: none)")
             ->capture_default_str();
 
     scope->callback([scope]() {
@@ -233,6 +239,13 @@ static CLI::App *addGraphScopeSettings(CLI::App &app) {
                 if (g_settings->startingNodes.isEmpty())
                     throw CLI::ValidationError("Bandage-NG error",
                                                "A list of starting nodes must be given with the --nodes option\nwhen the aroundnodes scope is used.");
+                break;
+            case AROUND_COMPONENT:
+                if (g_settings->startingNodes.isEmpty() &&
+                    g_settings->startingPaths.isEmpty() &&
+                    g_settings->startingWalks.isEmpty())
+                    throw CLI::ValidationError("Bandage-NG error",
+                                               "At least one of --nodes, --path or --walk must be given\nwhen the aroundcomponent scope is used.");
                 break;
             case AROUND_BLAST_HITS:
                 if (g_settings->blastQueryFilename.isEmpty())
