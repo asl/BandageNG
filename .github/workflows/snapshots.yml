@@ -11,7 +11,7 @@ env:
   BUILD_TYPE: Release
   QT_QPA_PLATFORM: offscreen
   XDG_RUNTIME_DIR: '/tmp/runtime-runner'
-  QT_VERSION: 6.7.3
+  QT_VERSION: 6.9.2
 
 jobs:
   build-linux:
@@ -23,7 +23,7 @@ jobs:
         uses: pr-mpt/actions-commit-hash@v3
 
       - name: '🧰 Checkout'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           submodules: recursive
 
@@ -31,7 +31,7 @@ jobs:
         uses: lukka/get-cmake@latest
 
       - name: '⚙️ Install Qt'
-        uses: jurplel/install-qt-action@v3
+        uses: jurplel/install-qt-action@v4
         with:
           cache: true
           cache-key-prefix: ${{ runner.os }}-QtCache
@@ -88,7 +88,7 @@ jobs:
         uses: lukka/get-cmake@latest
 
       - name: '⚙️ Install Qt'
-        uses: jurplel/install-qt-action@v3
+        uses: jurplel/install-qt-action@v4
         with:
           cache: true
           cache-key-prefix: ${{ runner.os }}-QtCache
@@ -133,7 +133,7 @@ jobs:
           arch: x64
 
       - name: '⚙️ Install Qt'
-        uses: jurplel/install-qt-action@v3
+        uses: jurplel/install-qt-action@v4
         with:
           cache: true
           cache-key-prefix: ${{ runner.os }}-QtCache
