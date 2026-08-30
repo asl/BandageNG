@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "graphscope.h"
+
 #include <QColor>
 #include <QSharedPointer>
 
@@ -51,6 +53,7 @@ public:
     static std::unique_ptr<INodeColorer> create(NodeColorScheme scheme);
 
     [[nodiscard]] NodeColorScheme scheme() const { return m_scheme; }
+
 protected:
     NodeColorScheme m_scheme;
     QSharedPointer<AssemblyGraph> &m_graph;
