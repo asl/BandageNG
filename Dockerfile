@@ -38,6 +38,7 @@ RUN --mount=type=bind,source=.,target=/src \
 FROM base AS runtime
 
 RUN apt-get install -y --no-install-recommends \
+    libqt6network6 \
     libqt6svg6 \
     libqt6widgets6
 
