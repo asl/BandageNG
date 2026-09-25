@@ -71,6 +71,7 @@ private:
     bool m_drawGraphAfterLoad;
     UiState m_uiState;
     GraphSearchDialog * m_blastSearchDialog;
+    graph::Scope m_scope;
 
     bool m_alreadyShown;
 

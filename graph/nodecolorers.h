@@ -27,10 +27,18 @@
 
 class DepthNodeColorer : public INodeColorer {
 public:
-    using INodeColorer::INodeColorer;
-
+    explicit DepthNodeColorer(NodeColorScheme scheme)
+        : INodeColorer(scheme),
+          m_scope(graph::Scope::wholeGraph())
+    {
+    }
     QColor get(const GraphicsItemNode *node) override;
     [[nodiscard]] const char* name() const override { return "Color by depth"; };
+
+    void saveScopeReference(graph::Scope& scope);
+
+private:
+    graph::Scope m_scope;
 };
 
 class UniformNodeColorer : public INodeColorer {
