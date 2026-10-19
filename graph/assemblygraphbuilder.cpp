@@ -290,10 +290,7 @@ namespace io {
         hasCustomColours |= maybeAddCustomColor(edgePtr, tags, "CL", graph);
         hasCustomColours |= maybeAddCustomColor(rcEdgePtr, tags, "C2", graph);
 
-        if (auto wd = gfa::getTag<float>("WD", tags)) {
-            graph.setCustomStyle(edgePtr, *wd);
-            graph.setCustomStyle(rcEdgePtr, *wd);
-        } else if (auto wd = gfa::getTag<int64_t>("WD", tags)) {
+        if (auto wd = gfa::getNumericTag("WD", tags)) {
             graph.setCustomStyle(edgePtr, *wd);
             graph.setCustomStyle(rcEdgePtr, *wd);
         }
@@ -494,13 +491,13 @@ namespace io {
                 sequence = Sequence{seq};
 
             double nodeDepth = 0;
-            if (auto dpTag = gfa::getTag<float>("DP", record.tags)) {
+            if (auto dpTag = gfa::getNumericTag("DP", record.tags)) {
                 graph.m_depthTag = "DP";
                 nodeDepth = *dpTag;
-            } else if (auto dpTag = gfa::getTag<float>("dp", record.tags)) {
+            } else if (auto dpTag = gfa::getNumericTag("dp", record.tags)) {
                 graph.m_depthTag = "DP";
                 nodeDepth = *dpTag;
-            } else if (auto kaTag = gfa::getTag<float>("ka", record.tags)) {
+            } else if (auto kaTag = gfa::getNumericTag("ka", record.tags)) {
                 graph.m_depthTag = "ka";
                 nodeDepth = *kaTag;
             } else if (auto rdTag = gfa::getTag<int64_t>("rd", record.tags)) {

@@ -37,6 +37,7 @@ namespace gfa {
 using cigar::tag;
 using cigar::cigarop;
 using cigar::getTag;
+using cigar::getNumericTag;
 using cigar::cigar_string;
 
 struct header {

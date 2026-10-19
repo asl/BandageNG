@@ -106,6 +106,7 @@ private slots:
     void loadGFAWithPlaceholders();
     void loadGFA12();
     void loadGFA();
+    void loadGFAWithIntegerDp();
     void loadGAF();
     void loadSPAdesPaths();
     void loadLinks();
@@ -231,6 +232,21 @@ void BandageTests::loadGFA()
     DeBruijnNode * node14 = g_assemblyGraph->m_deBruijnGraphNodes["14-"];
     QCOMPARE(node1->getLength(), 2060);
     QCOMPARE(node14->getLength(), 120);
+}
+
+void BandageTests::loadGFAWithIntegerDp()
+{
+    QVERIFY(g_assemblyGraph->loadGraphFromFile(testFile("test_dp_int.gfa")));
+
+    QCOMPARE(g_assemblyGraph->m_depthTag, QString("DP"));
+
+    DeBruijnNode *node1 = g_assemblyGraph->m_deBruijnGraphNodes["1+"];
+    DeBruijnNode *node2 = g_assemblyGraph->m_deBruijnGraphNodes["2+"];
+    DeBruijnNode *node3 = g_assemblyGraph->m_deBruijnGraphNodes["3+"];
+    QCOMPARE(node1->getDepth(), 42.0);
+    QCOMPARE(node2->getDepth(), 3.5);
+    QCOMPARE(node3->getDepth(), 7.0);
+    QCOMPARE(node1->getReverseComplement()->getDepth(), 42.0);
 }
 
 void BandageTests::loadGAF()
