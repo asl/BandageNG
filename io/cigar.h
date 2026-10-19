@@ -104,5 +104,17 @@ namespace cigar {
         return std::get<T>(res->val);
     }
 
+    // Accept either float (f) or integer (i) tags as a numeric value.
+    // Used mostly to unify float / integer handling of coverage depths, etc. 
+    static inline std::optional<double>
+    getNumericTag(const char *name,
+                  const std::vector<tag> &tags) {
+        if (auto v = getTag<float>(name, tags))
+            return double(*v);
+        if (auto v = getTag<int64_t>(name, tags))
+            return double(*v);
+        return {};
+    }
+
     std::optional<tag> parseTag(const char* line, size_t len);
 }

@@ -719,9 +719,7 @@ QString MainWindow::getSelectedEdgeListText()
                 edgeText += " (link";
                 auto tags = g_assemblyGraph->m_edgeTags.find(edge);
                 if (tags != g_assemblyGraph->m_edgeTags.end()) {
-                    if (auto wt = gfa::getTag<float>("WT", tags->second))
-                        edgeText += QString(", weight: %1").arg(*wt);
-                    if (auto wt = gfa::getTag<int64_t>("WT", tags->second))
+                    if (auto wt = gfa::getNumericTag("WT", tags->second))
                         edgeText += QString(", weight: %1").arg(*wt);
                 }
 
