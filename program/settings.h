@@ -129,6 +129,8 @@ public:
     QString startingWalks;
     QString queryFilename;
     search::GraphSearchKind graphSearcher = search::BLAST;
+    // True when CLI --scope aroundblast was used (compat alias; requires BLAST).
+    bool aroundBlastScopeAlias = false;
     QString csvFilename;
     QString unnamedQueryDefaultName;
     QString blastAnnotationGroupName;

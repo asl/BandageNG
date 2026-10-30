@@ -205,24 +205,36 @@ static CLI::App *addGraphScopeSettings(CLI::App &app) {
     auto *scope = app.add_option_group("Graph scope",
                                        "These settings control the graph scope. "
                                        "If the aroundnodes scope is used, then the --nodes option must also be used. "
-                                       "If the aroundblast scope is used, a BLAST query must be given with the --query option. "
+                                       "If the aroundhits scope is used, a query file must be given with the --query option. "
                                        "If the aroundcomponent scope is used, then at least one of --nodes, --path or --walk must be used.");
 
-    scope->add_option("--scope", g_settings->graphScope, "Graph scope, from one of the following options: entire, aroundnodes, aroundblast, depthrange, aroundcomponent")
+    // CLI11 runs transforms in reverse registration order, so register the
+    // aroundblast→aroundhits normalizer after CheckedTransformer so it runs first.
+    scope->add_option("--scope", g_settings->graphScope,
+                      "Graph scope, from one of the following options: entire, aroundnodes, aroundhits, depthrange, aroundcomponent "
+                      "(aroundblast is a BLAST-only alias for aroundhits)")
             ->transform(CLI::CheckedTransformer(
                 std::vector<std::pair<std::string, GraphScope>>{
                     {"entire", GraphScope::WHOLE_GRAPH},
                     {"aroundnodes", GraphScope::AROUND_NODE},
                     // FIXME: paths!
+                    {"aroundhits", GraphScope::AROUND_QUERY_HITS},
                     {"aroundblast", GraphScope::AROUND_QUERY_HITS},
                     {"depthrange", GraphScope::DEPTH_RANGE},
                     {"aroundcomponent", GraphScope::AROUND_COMPONENT}}))
+            ->transform([](std::string s) {
+                if (s == "aroundblast") {
+                    g_settings->aroundBlastScopeAlias = true;
+                    return std::string("aroundhits");
+                }
+                return s;
+            })
             ->default_val("entire");
     scope->add_flag("--exact,!--partial", g_settings->startingNodesExactMatch, "Choose between exact or partial node name matching (default: exact)");
-    add_setting(*scope, "--distance", g_settings->nodeDistance, "The number of node steps away to draw for the aroundnodes and aroundblast scopes");
+    add_setting(*scope, "--distance", g_settings->nodeDistance, "The number of node steps away to draw for the aroundnodes and aroundhits scopes");
     add_setting(*scope, "--mindepth", g_settings->minDepthRange, "The minimum allowed depth for the depthrange scope");
     add_setting(*scope, "--maxdepth", g_settings->maxDepthRange, "The maximum allowed depth for the depthrange scope");
-    scope->add_option("--query", g_settings->queryFilename, "A FASTA file of either nucleotide or protein sequences to be used as BLAST queries")
+    scope->add_option("--query", g_settings->queryFilename, "A FASTA file of nucleotide or protein sequences to be used as graph search queries")
             ->check(CLI::ExistingFile);
     scope->add_option("--nodes", g_settings->startingNodes, "A comma-separated list of starting nodes for the aroundnodes and aroundcomponent scopes (default: none)")
             ->capture_default_str();
@@ -250,7 +262,7 @@ static CLI::App *addGraphScopeSettings(CLI::App &app) {
             case AROUND_QUERY_HITS:
                 if (g_settings->queryFilename.isEmpty())
                     throw CLI::ValidationError("Bandage-NG error",
-                                               "A BLAST query must be given with the --query option when the\naroundblast scope is used.");
+                                               "A query file must be given with the --query option when the\naroundhits scope is used.");
                 break;
             case DEPTH_RANGE:
                 if (!scope->count("--mindepth") || !scope->count("--maxdepth"))
@@ -360,9 +372,11 @@ static CLI::App *addNodeLabelsSettings(CLI::App &app) {
     nl->add_flag("--names", g_settings->displayNodeNames, "Label nodes with name");
     nl->add_flag("--lengths", g_settings->displayNodeLengths, "Label nodes with length");
     nl->add_flag("--depth", g_settings->displayNodeDepth, "Label nodes with depth");
-    // For backward compatibility we allow enabling blast annotation text by "--blasthits" option.
-    // To be removed when we can set up annotations from CLI.
-    nl->add_flag("--blasthits", g_settings->defaultQueryHitAnnotationSetting.showText, "Label BLAST hits");
+    // --blasthits: label BLAST hits (implies BLAST searcher). Kept for compatibility.
+    nl->add_flag("--blasthits", g_settings->defaultQueryHitAnnotationSetting.showText,
+                 "Label BLAST hits (implies --searcher blast)");
+    nl->add_flag("--labelhits", g_settings->defaultQueryHitAnnotationSetting.showText,
+                 "Label graph search hits for the active searcher");
     // Value here is dummy just to provide defaults and range
     static IntSetting fontSize(g_settings->labelFont.pointSize(), 1, 100);
     auto *fs = add_setting(*nl, "--fontsize", fontSize, "Font size for node labels");
@@ -464,21 +478,33 @@ static CLI::App *addDepthColorsSettings(CLI::App &app) {
 }
 
 static CLI::App *addBlastSearchSettings(CLI::App &app) {
-    auto *bs = app.add_option_group("BLAST search");
+    auto *bs = app.add_option_group("Graph search");
+    bs->add_option("--searcher", g_settings->graphSearcher,
+                   "Graph search backend: blast, minimap2, or hmmer (default: blast)")
+            ->transform(CLI::CheckedTransformer(
+                std::vector<std::pair<std::string, search::GraphSearchKind>>{
+                    {"blast", search::BLAST},
+                    {"minimap2", search::Minimap2},
+                    {"hmmer", search::NHMMER},
+                }))
+            ->default_val("blast");
+    bs->add_option("--searchp", g_settings->searchParameters,
+                   "Extra parameters for the active graph searcher.\n"
+                   "Format parameters exactly as they would be used on the command line, and enclose them in quotes.");
     bs->add_option("--blastp", g_settings->searchParameters,
-                   "Parameters to be used by blastn and tblastn when conducting a BLAST search in Bandage-NG.\n"
-                   "Format BLAST parameters exactly as they would be used for blastn/tblastn on the command line, and enclose them in quotes.");
+                   "Extra parameters for BLAST (implies --searcher blast).\n"
+                   "Format parameters exactly as they would be used for blastn/tblastn on the command line, and enclose them in quotes.");
 
     add_setting(*bs, "--alfilter", g_settings->alignmentLengthFilter,
-                "Alignment length filter for BLAST hits. Hits with shorter alignments will be excluded");
+                "Alignment length filter for query hits (BLAST, Minimap2, HMMER). Hits with shorter alignments will be excluded");
     add_setting(*bs, "--qcfilter", g_settings->queryCoverageFilter,
-                "Query coverage filter for BLAST hits. Hits with less coverage will be excluded");
+                "Query coverage filter for query hits (BLAST, Minimap2, HMMER). Hits with less coverage will be excluded");
     add_setting(*bs, "--ifilter", g_settings->identityFilter,
-                "Identity filter for BLAST hits. Hits with less identity will be excluded");
+                "Identity filter for query hits (BLAST only). Hits with less identity will be excluded");
     add_setting(*bs, "--evfilter", g_settings->evalueFilter,
-                "E-value filter for BLAST hits. Hits with larger e-values will be excluded");
+                "E-value filter for query hits (BLAST and HMMER). Hits with larger e-values will be excluded");
     add_setting(*bs, "--bsfilter", g_settings->bitScoreFilter,
-                "Bit score filter for BLAST hits. Hits with lower bit scores will be excluded");
+                "Bit score filter for query hits (BLAST and HMMER). Hits with lower bit scores will be excluded");
 
     return bs;
 }
@@ -534,19 +560,35 @@ static CLI::App *addQueryPathsSettings(CLI::App &app) {
 }
 
 CLI::App *addSettings(CLI::App &app) {
-    auto *scope = addGraphScopeSettings(app);
-    auto *size = addGraphSizeSettings(app);
-    auto *layout = addGraphLayoutSettings(app);
-    auto *ga = addGraphAppearanceSettings(app);
-    auto *ta = addTextAppearanceSettings(app);
-    auto *nw = addNodeWidthsSettings(app);
-    auto *nl = addNodeLabelsSettings(app);
-    auto *nc = addNodeColorsSettings(app);
-    auto *rc = addRandomColorsSettings(app);
-    auto *uc = addUniformColorsSettings(app);
-    auto *dc = addDepthColorsSettings(app);
-    auto *bs = addBlastSearchSettings(app);
-    auto *bqp = addQueryPathsSettings(app);
+    g_settings->aroundBlastScopeAlias = false;
+
+    addGraphScopeSettings(app);
+    addGraphSizeSettings(app);
+    addGraphLayoutSettings(app);
+    addGraphAppearanceSettings(app);
+    addTextAppearanceSettings(app);
+    addNodeWidthsSettings(app);
+    addNodeLabelsSettings(app);
+    addNodeColorsSettings(app);
+    addRandomColorsSettings(app);
+    addUniformColorsSettings(app);
+    addDepthColorsSettings(app);
+    addBlastSearchSettings(app);
+    addQueryPathsSettings(app);
+
+    app.callback([&app]() {
+        if (app.count("--blastp") && app.count("--searchp"))
+            throw CLI::ValidationError("Bandage-NG error",
+                                       "--blastp and --searchp cannot be used together.");
+
+        const bool requiresBlast = app.count("--blasthits") ||
+                                   app.count("--blastp") ||
+                                   g_settings->aroundBlastScopeAlias;
+        if (requiresBlast && g_settings->graphSearcher != search::BLAST)
+            throw CLI::ValidationError("Bandage-NG error",
+                                       "--blasthits, --blastp, and --scope aroundblast require the BLAST searcher "
+                                       "(use --searcher blast or omit --searcher).");
+    });
 
     return &app;
 }
