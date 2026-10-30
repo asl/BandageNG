@@ -214,7 +214,7 @@ static CLI::App *addGraphScopeSettings(CLI::App &app) {
                     {"entire", GraphScope::WHOLE_GRAPH},
                     {"aroundnodes", GraphScope::AROUND_NODE},
                     // FIXME: paths!
-                    {"aroundblast", GraphScope::AROUND_BLAST_HITS},
+                    {"aroundblast", GraphScope::AROUND_QUERY_HITS},
                     {"depthrange", GraphScope::DEPTH_RANGE},
                     {"aroundcomponent", GraphScope::AROUND_COMPONENT}}))
             ->default_val("entire");
@@ -222,7 +222,7 @@ static CLI::App *addGraphScopeSettings(CLI::App &app) {
     add_setting(*scope, "--distance", g_settings->nodeDistance, "The number of node steps away to draw for the aroundnodes and aroundblast scopes");
     add_setting(*scope, "--mindepth", g_settings->minDepthRange, "The minimum allowed depth for the depthrange scope");
     add_setting(*scope, "--maxdepth", g_settings->maxDepthRange, "The maximum allowed depth for the depthrange scope");
-    scope->add_option("--query", g_settings->blastQueryFilename, "A FASTA file of either nucleotide or protein sequences to be used as BLAST queries")
+    scope->add_option("--query", g_settings->queryFilename, "A FASTA file of either nucleotide or protein sequences to be used as BLAST queries")
             ->check(CLI::ExistingFile);
     scope->add_option("--nodes", g_settings->startingNodes, "A comma-separated list of starting nodes for the aroundnodes and aroundcomponent scopes (default: none)")
             ->capture_default_str();
@@ -247,8 +247,8 @@ static CLI::App *addGraphScopeSettings(CLI::App &app) {
                     throw CLI::ValidationError("Bandage-NG error",
                                                "At least one of --nodes, --path or --walk must be given\nwhen the aroundcomponent scope is used.");
                 break;
-            case AROUND_BLAST_HITS:
-                if (g_settings->blastQueryFilename.isEmpty())
+            case AROUND_QUERY_HITS:
+                if (g_settings->queryFilename.isEmpty())
                     throw CLI::ValidationError("Bandage-NG error",
                                                "A BLAST query must be given with the --query option when the\naroundblast scope is used.");
                 break;
@@ -362,7 +362,7 @@ static CLI::App *addNodeLabelsSettings(CLI::App &app) {
     nl->add_flag("--depth", g_settings->displayNodeDepth, "Label nodes with depth");
     // For backward compatibility we allow enabling blast annotation text by "--blasthits" option.
     // To be removed when we can set up annotations from CLI.
-    nl->add_flag("--blasthits", g_settings->defaultBlastAnnotationSetting.showText, "Label BLAST hits");
+    nl->add_flag("--blasthits", g_settings->defaultQueryHitAnnotationSetting.showText, "Label BLAST hits");
     // Value here is dummy just to provide defaults and range
     static IntSetting fontSize(g_settings->labelFont.pointSize(), 1, 100);
     auto *fs = add_setting(*nl, "--fontsize", fontSize, "Font size for node labels");
@@ -465,19 +465,19 @@ static CLI::App *addDepthColorsSettings(CLI::App &app) {
 
 static CLI::App *addBlastSearchSettings(CLI::App &app) {
     auto *bs = app.add_option_group("BLAST search");
-    bs->add_option("--blastp", g_settings->blastSearchParameters,
+    bs->add_option("--blastp", g_settings->searchParameters,
                    "Parameters to be used by blastn and tblastn when conducting a BLAST search in Bandage-NG.\n"
                    "Format BLAST parameters exactly as they would be used for blastn/tblastn on the command line, and enclose them in quotes.");
 
-    add_setting(*bs, "--alfilter", g_settings->blastAlignmentLengthFilter,
+    add_setting(*bs, "--alfilter", g_settings->alignmentLengthFilter,
                 "Alignment length filter for BLAST hits. Hits with shorter alignments will be excluded");
-    add_setting(*bs, "--qcfilter", g_settings->blastQueryCoverageFilter,
+    add_setting(*bs, "--qcfilter", g_settings->queryCoverageFilter,
                 "Query coverage filter for BLAST hits. Hits with less coverage will be excluded");
-    add_setting(*bs, "--ifilter", g_settings->blastIdentityFilter,
+    add_setting(*bs, "--ifilter", g_settings->identityFilter,
                 "Identity filter for BLAST hits. Hits with less identity will be excluded");
-    add_setting(*bs, "--evfilter", g_settings->blastEValueFilter,
+    add_setting(*bs, "--evfilter", g_settings->evalueFilter,
                 "E-value filter for BLAST hits. Hits with larger e-values will be excluded");
-    add_setting(*bs, "--bsfilter", g_settings->blastBitScoreFilter,
+    add_setting(*bs, "--bsfilter", g_settings->bitScoreFilter,
                 "Bit score filter for BLAST hits. Hits with lower bit scores will be excluded");
 
     return bs;

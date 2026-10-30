@@ -47,7 +47,7 @@ std::vector<DeBruijnNode *> AnnotationGroup::getNodesWithAnnotations(bool double
 AnnotationGroup &AnnotationsManager::createAnnotationGroup(QString name) {
     if (name == g_settings->blastAnnotationGroupName) {
         // To be removed when we can set up annotations from CLI properly.
-        return createAnnotationGroup(name, g_settings->defaultBlastAnnotationSetting);
+        return createAnnotationGroup(name, g_settings->defaultQueryHitAnnotationSetting);
     }
     return createAnnotationGroup(name, AnnotationSetting());
 }

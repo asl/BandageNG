@@ -1417,7 +1417,7 @@ then colour which other nodes in the graph are likely to be contiguous
          </spacer>
         </item>
         <item>
-         <widget class="QWidget" name="blastSearchWidget" native="true">
+         <widget class="QWidget" name="graphSearchWidget" native="true">
           <property name="enabled">
            <bool>true</bool>
           </property>
@@ -1435,7 +1435,7 @@ then colour which other nodes in the graph are likely to be contiguous
             <number>0</number>
            </property>
            <item>
-            <widget class="CollapseButton" name="blastDetailsButton">
+            <widget class="CollapseButton" name="graphSearchDetailsButton">
              <property name="styleSheet">
               <string notr="true">QToolButton {border: none; font: 13pt; font-weight: bold;}</string>
              </property>
@@ -1464,7 +1464,7 @@ then colour which other nodes in the graph are likely to be contiguous
             </widget>
            </item>
            <item>
-            <widget class="QWidget" name="blastDetailsWidget" native="true">
+            <widget class="QWidget" name="graphSearchDetailsWidget" native="true">
              <layout class="QGridLayout" name="gridLayout_5">
               <property name="leftMargin">
                <number>0</number>
@@ -1476,7 +1476,7 @@ then colour which other nodes in the graph are likely to be contiguous
                <number>0</number>
               </property>
               <item row="1" column="0">
-               <widget class="InfoTextWidget" name="blastQueryInfoText" native="true">
+               <widget class="InfoTextWidget" name="queryInfoText" native="true">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                   <horstretch>0</horstretch>
@@ -1505,7 +1505,7 @@ then colour which other nodes in the graph are likely to be contiguous
                </widget>
               </item>
               <item row="0" column="0">
-               <widget class="InfoTextWidget" name="blastSearchInfoText" native="true">
+               <widget class="InfoTextWidget" name="graphSearchInfoText" native="true">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                   <horstretch>0</horstretch>
@@ -1524,7 +1524,7 @@ then colour which other nodes in the graph are likely to be contiguous
                </widget>
               </item>
               <item row="1" column="2">
-               <widget class="QComboBox" name="blastQueryComboBox">
+               <widget class="QComboBox" name="queryComboBox">
                 <property name="enabled">
                  <bool>false</bool>
                 </property>
@@ -1545,7 +1545,7 @@ then colour which other nodes in the graph are likely to be contiguous
                </widget>
               </item>
               <item row="0" column="1" colspan="2">
-               <widget class="QPushButton" name="blastSearchButton">
+               <widget class="QPushButton" name="graphSearchButton">
                 <property name="focusPolicy">
                  <enum>Qt::StrongFocus</enum>
                 </property>
@@ -2650,7 +2650,7 @@ then colour which other nodes in the graph are likely to be contiguous
     <addaction name="actionBring_selected_nodes_to_front"/>
     <addaction name="actionZoom_to_selection"/>
     <addaction name="separator"/>
-    <addaction name="actionSelect_nodes_with_BLAST_hits"/>
+    <addaction name="actionSelect_nodes_with_query_hits"/>
     <addaction name="menuSelect_nodes_based_on_contiguity"/>
     <addaction name="actionSelect_nodes_with_dead_ends"/>
    </widget>
@@ -2809,7 +2809,7 @@ then colour which other nodes in the graph are likely to be contiguous
     <string>Bring selected nodes to front</string>
    </property>
   </action>
-  <action name="actionSelect_nodes_with_BLAST_hits">
+  <action name="actionSelect_nodes_with_query_hits">
    <property name="icon">
     <iconset resource="../images/images.qrc">
      <normaloff>:/icons/BLAST.png</normaloff>:/icons/BLAST.png</iconset>
@@ -3172,8 +3172,8 @@ then colour which other nodes in the graph are likely to be contiguous
   <tabstop>csvComboBox</tabstop>
   <tabstop>fontButton</tabstop>
   <tabstop>textOutlineCheckBox</tabstop>
-  <tabstop>blastSearchButton</tabstop>
-  <tabstop>blastQueryComboBox</tabstop>
+  <tabstop>graphSearchButton</tabstop>
+  <tabstop>queryComboBox</tabstop>
   <tabstop>selectionScrollArea</tabstop>
   <tabstop>selectionSearchNodesLineEdit</tabstop>
   <tabstop>selectionSearchNodesExactMatchRadioButton</tabstop>

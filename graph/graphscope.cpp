@@ -166,7 +166,7 @@ namespace graph {
 
                 return nodesInGraph;
             }
-            case AROUND_BLAST_HITS: {
+            case AROUND_QUERY_HITS: {
                 std::vector<DeBruijnNode *> startingNodes;
                 if (const auto *queries = graphScope.queries())
                     startingNodes = queries->getNodesFromHits(graphScope.queryName());
@@ -209,7 +209,7 @@ namespace graph {
                 return Scope::aroundPath(pathName, distance);
             case AROUND_WALKS:
                 return Scope::aroundWalk(walkName.isEmpty() ? pathName : walkName, distance);
-            case AROUND_BLAST_HITS:
+            case AROUND_QUERY_HITS:
                 return Scope::aroundHits(blastQueries, blastQueryName, distance);
             case DEPTH_RANGE:
                 return Scope::depthRange(minDepthRange, maxDepthRange);
@@ -229,7 +229,7 @@ namespace graph {
     Scope Scope::aroundHits(const search::Queries *queries, const QString& queryName,
                             unsigned distance) {
         Scope res;
-        res.m_scope = AROUND_BLAST_HITS;
+        res.m_scope = AROUND_QUERY_HITS;
         res.m_opt = std::make_pair(queries, queryName);
         res.m_distance = distance;
 
