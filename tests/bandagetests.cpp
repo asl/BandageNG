@@ -36,6 +36,9 @@
 #include "command_line/settings.h"
 
 #include "graphsearch/graphsearch.h"
+#include "graphsearch/query.h"
+#include "graphsearch/hit.h"
+#include "program/scinot.h"
 
 #include <CLI/CLI.hpp>
 
@@ -1067,6 +1070,20 @@ static void parseSettings(const QStringList &commandLineSettings) {
 #endif
 }
 
+static void parseSettingsExpectError(const QStringList &commandLineSettings) {
+    std::vector<std::string> strings;
+    std::vector<const char*> argv;
+    argv.push_back("BandateTests");
+    for (const auto &s : commandLineSettings)
+        strings.emplace_back(s.toStdString());
+    for (const auto &s : strings)
+        argv.push_back(s.c_str());
+
+    CLI::App app;
+    addSettings(app);
+    QVERIFY_THROWS_EXCEPTION(CLI::ParseError, app.parse(argv.size(), argv.data()));
+}
+
 
 void BandageTests::commandLineSettings() {
     QStringList commandLineSettings;
@@ -1390,6 +1407,105 @@ void BandageTests::commandLineSettings() {
     commandLineSettings = QString("--maxevprod off").split(" ");
     parseSettings(commandLineSettings);
     QCOMPARE(g_settings->maxEValueProduct.on, false);
+
+    // --- Legacy option regression (old names only; no --searcher/--searchp/--labelhits/--aroundhits) ---
+    init();
+    QCOMPARE(g_settings->graphSearcher, search::BLAST);
+    QCOMPARE(g_settings->defaultQueryHitAnnotationSetting.showText, false);
+    QCOMPARE(g_settings->searchParameters, QString());
+    QCOMPARE(g_settings->aroundBlastScopeAlias, false);
+
+    commandLineSettings = QString("--blasthits").split(" ");
+    parseSettings(commandLineSettings);
+    QCOMPARE(g_settings->defaultQueryHitAnnotationSetting.showText, true);
+    QCOMPARE(g_settings->graphSearcher, search::BLAST);
+
+    init();
+    commandLineSettings = QString("--blastp --abc").split(" ");
+    parseSettings(commandLineSettings);
+    QCOMPARE(g_settings->searchParameters, QString("--abc"));
+    QCOMPARE(g_settings->graphSearcher, search::BLAST);
+
+    init();
+    commandLineSettings = QStringList{"--scope", "aroundblast", "--query", testFile("test_queries1.fasta")};
+    parseSettings(commandLineSettings);
+    QCOMPARE(g_settings->graphScope, AROUND_QUERY_HITS);
+    QCOMPARE(g_settings->aroundBlastScopeAlias, true);
+    QCOMPARE(g_settings->graphSearcher, search::BLAST);
+
+    init();
+    // --blastp takes one TEXT token (use --evalue=1 so CLI11 does not treat -e as a flag)
+    commandLineSettings = QStringList{
+            "--scope", "aroundblast",
+            "--query", testFile("test_queries1.fasta"),
+            "--blasthits",
+            "--blastp", "--evalue=1"};
+    parseSettings(commandLineSettings);
+    QCOMPARE(g_settings->graphScope, AROUND_QUERY_HITS);
+    QCOMPARE(g_settings->aroundBlastScopeAlias, true);
+    QCOMPARE(g_settings->defaultQueryHitAnnotationSetting.showText, true);
+    QCOMPARE(g_settings->searchParameters, QString("--evalue=1"));
+    QCOMPARE(g_settings->graphSearcher, search::BLAST);
+
+    // Graph searcher / label-hits CLI
+    init();
+    QCOMPARE(g_settings->graphSearcher, search::BLAST);
+    commandLineSettings = QString("--searcher minimap2").split(" ");
+    parseSettings(commandLineSettings);
+    QCOMPARE(g_settings->graphSearcher, search::Minimap2);
+
+    commandLineSettings = QString("--searcher blast").split(" ");
+    parseSettings(commandLineSettings);
+    QCOMPARE(g_settings->graphSearcher, search::BLAST);
+
+    g_settings->defaultQueryHitAnnotationSetting.showText = false;
+    commandLineSettings = QString("--labelhits").split(" ");
+    parseSettings(commandLineSettings);
+    QCOMPARE(g_settings->defaultQueryHitAnnotationSetting.showText, true);
+
+    commandLineSettings = QString("--searchp --xyz").split(" ");
+    parseSettings(commandLineSettings);
+    QCOMPARE(g_settings->searchParameters, QString("--xyz"));
+
+    commandLineSettings = QStringList{"--scope", "aroundhits", "--query", testFile("test_queries1.fasta")};
+    parseSettings(commandLineSettings);
+    QCOMPARE(g_settings->graphScope, AROUND_QUERY_HITS);
+    QCOMPARE(g_settings->aroundBlastScopeAlias, false);
+
+    commandLineSettings = QStringList{"--scope", "aroundblast", "--query", testFile("test_queries1.fasta")};
+    parseSettings(commandLineSettings);
+    QCOMPARE(g_settings->graphScope, AROUND_QUERY_HITS);
+    QCOMPARE(g_settings->aroundBlastScopeAlias, true);
+
+    commandLineSettings = QString("--searcher blast --blasthits").split(" ");
+    parseSettings(commandLineSettings);
+    QCOMPARE(g_settings->graphSearcher, search::BLAST);
+    QCOMPARE(g_settings->defaultQueryHitAnnotationSetting.showText, true);
+
+    parseSettingsExpectError(QString("--searcher minimap2 --blasthits").split(" "));
+    parseSettingsExpectError(QString("--searcher minimap2 --blastp --abc").split(" "));
+    parseSettingsExpectError(QStringList{"--searcher", "minimap2", "--scope", "aroundblast",
+                                         "--query", testFile("test_queries1.fasta")});
+    parseSettingsExpectError(QString("--blastp --abc --searchp --xyz").split(" "));
+
+    // --labelhits with Minimap2: updateGroupFromHits applies showText to that group
+    init();
+    QVERIFY(g_assemblyGraph->loadGraphFromFile(testFile("test.gfa")));
+    parseSettings(QString("--searcher minimap2 --labelhits").split(" "));
+    QCOMPARE(g_settings->graphSearcher, search::Minimap2);
+    QCOMPARE(g_settings->defaultQueryHitAnnotationSetting.showText, true);
+    {
+        DeBruijnNode *node = g_assemblyGraph->m_deBruijnGraphNodes["1+"];
+        QVERIFY(node != nullptr);
+        auto *query = new search::Query("q1", "ACGT");
+        query->addHit(new search::Hit(query, node, 100.0, 4, 0, 0, 1, 4, 1, 4,
+                                      SciNot(1.0, -10), 10.0));
+        g_annotationsManager->updateGroupFromHits("Minimap2 hits", {query});
+        const auto *group = g_annotationsManager->findGroupByName("Minimap2 hits");
+        QVERIFY(group != nullptr);
+        QCOMPARE(g_settings->annotationsSettings[group->id].showText, true);
+        delete query;
+    }
 }
 
 

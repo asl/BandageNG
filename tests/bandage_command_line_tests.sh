@@ -173,8 +173,8 @@ test_exit_code "$bandagepath --version" 0
 
 # BandageNG incorrect settings tests
 test_all "$bandagepath --abc" 109 "" "The following argument was not expected: --abc Run with --help or --helpall for more information."
-test_all "$bandagepath --scope" 114 "" "--scope: 1 required SCOPE:value in {entire->0,aroundnodes->1,aroundblast->4,depthrange->5,aroundcomponent->6} OR {0,1,4,5,6} missing Run with --help or --helpall for more information."
-test_all "$bandagepath --scope abc" 105 "" "--scope: Check abc value in {entire->0,aroundnodes->1,aroundblast->4,depthrange->5,aroundcomponent->6} OR {0,1,4,5,6} FAILED Run with --help or --helpall for more information."
+test_all "$bandagepath --scope" 114 "" "--scope: 1 required SCOPE:value in {entire->0,aroundnodes->1,aroundhits->4,aroundblast->4,depthrange->5,aroundcomponent->6} OR {0,1,4,4,5,6} missing Run with --help or --helpall for more information."
+test_all "$bandagepath --scope abc" 105 "" "--scope: Check abc value in {entire->0,aroundnodes->1,aroundhits->4,aroundblast->4,depthrange->5,aroundcomponent->6} OR {0,1,4,4,5,6} FAILED Run with --help or --helpall for more information."
 test_all "$bandagepath --nodes" 114 "" "--nodes: 1 required TEXT missing Run with --help or --helpall for more information."
 test_all "$bandagepath --scope aroundcomponent" 105 "" "Bandage-NG error: At least one of --nodes, --path or --walk must be given when the aroundcomponent scope is used. Run with --help or --helpall for more information."
 test_all "$bandagepath --distance" 114 "" "--distance: 1 required INT:INT in [0 - 100] missing Run with --help or --helpall for more information."
@@ -218,6 +218,18 @@ test_all "$bandagepath --depvallow" 114 "" "--depvallow: 1 required FLOAT:FLOAT 
 test_all "$bandagepath --depvalhi" 114 "" "--depvalhi: 1 required FLOAT:FLOAT in [0 - 1e+06] missing Run with --help or --helpall for more information."
 test_all "$bandagepath --query"    114 "" "--query: 1 required TEXT:FILE missing Run with --help or --helpall for more information."
 test_all "$bandagepath --blastp"   114 "" "--blastp: 1 required TEXT missing Run with --help or --helpall for more information."
+
+# Legacy graph-search option regression (old flag names must keep working)
+info_tsv_out="inputs/test.gfa 17 16 60 60 30959 29939 10 29.4118% 1 30959 0 2060 119 2001 2060 2060 2060 532.042 25939"
+test_all "$bandagepath info inputs/test.gfa --tsv --blasthits --blastp x" 0 "$info_tsv_out" ""
+test_all "$bandagepath info inputs/test.gfa --tsv --scope aroundblast --query inputs/test_queries1.fasta" 0 "$info_tsv_out" ""
+test_all "$bandagepath info inputs/test.gfa --tsv --scope aroundblast --query inputs/test_queries1.fasta --blasthits --blastp x" 0 "$info_tsv_out" ""
+test_all "$bandagepath --scope aroundblast" 105 "" "Bandage-NG error: A query file must be given with the --query option when the aroundhits scope is used. Run with --help or --helpall for more information."
+test_all "$bandagepath --searcher minimap2 --blasthits" 105 "" "Bandage-NG error: --blasthits, --blastp, and --scope aroundblast require the BLAST searcher (use --searcher blast or omit --searcher). Run with --help or --helpall for more information."
+test_all "$bandagepath --searcher minimap2 --blastp x" 105 "" "Bandage-NG error: --blasthits, --blastp, and --scope aroundblast require the BLAST searcher (use --searcher blast or omit --searcher). Run with --help or --helpall for more information."
+test_all "$bandagepath --searcher minimap2 --scope aroundblast --query inputs/test_queries1.fasta" 105 "" "Bandage-NG error: --blasthits, --blastp, and --scope aroundblast require the BLAST searcher (use --searcher blast or omit --searcher). Run with --help or --helpall for more information."
+test_all "$bandagepath --blastp x --searchp y" 105 "" "Bandage-NG error: --blastp and --searchp cannot be used together. Run with --help or --helpall for more information."
+
 test_all "$bandagepath --alfilter" 114 "" "--alfilter: 1 required INT:INT in [1 - 1000000] missing Run with --help or --helpall for more information."
 test_all "$bandagepath --qcfilter" 114 "" "--qcfilter: 1 required FLOAT:FLOAT in [0 - 100] missing Run with --help or --helpall for more information."
 test_all "$bandagepath --ifilter"  114 "" "--ifilter: 1 required FLOAT:FLOAT in [0 - 100] missing Run with --help or --helpall for more information."
