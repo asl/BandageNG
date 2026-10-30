@@ -35,7 +35,7 @@
 #include "command_line/commoncommandlinefunctions.h"
 #include "command_line/settings.h"
 
-#include "graphsearch/blast/blastsearch.h"
+#include "graphsearch/graphsearch.h"
 
 #include <CLI/CLI.hpp>
 
@@ -94,7 +94,7 @@ private slots:
     void init() {
         g_settings.reset(new Settings());
         g_memory.reset(new Memory());
-        g_blastSearch.reset(new search::BlastSearch(QDir(".")));
+        g_graphSearch = search::GraphSearch::get(search::BLAST, QDir("."));
         g_assemblyGraph.reset(new AssemblyGraph());
         g_annotationsManager = std::make_shared<AnnotationsManager>();
     }
@@ -623,15 +623,15 @@ void BandageTests::blastSearch()
 {
     QVERIFY(g_assemblyGraph->loadGraphFromFile(testFile("test.fastg")));
 
-    auto errorString = g_blastSearch->doAutoGraphSearch(*g_assemblyGraph,
+    auto errorString = g_graphSearch->doAutoGraphSearch(*g_assemblyGraph,
                                                         testFile("test_queries1.fasta"));
 
     QCOMPARE(errorString, "");
 
-    search::Query * exact = g_blastSearch->getQueryFromName("test_query_exact");
-    search::Query * one_mismatch = g_blastSearch->getQueryFromName("test_query_one_mismatch");
-    search::Query * one_insertion = g_blastSearch->getQueryFromName("test_query_one_insertion");
-    search::Query * one_deletion = g_blastSearch->getQueryFromName("test_query_one_deletion");
+    search::Query * exact = g_graphSearch->getQueryFromName("test_query_exact");
+    search::Query * one_mismatch = g_graphSearch->getQueryFromName("test_query_one_mismatch");
+    search::Query * one_insertion = g_graphSearch->getQueryFromName("test_query_one_insertion");
+    search::Query * one_deletion = g_graphSearch->getQueryFromName("test_query_one_deletion");
 
     QVERIFY(exact != nullptr);
     QVERIFY(one_mismatch != nullptr);
@@ -669,62 +669,62 @@ void BandageTests::blastSearchFilters()
     QVERIFY(g_assemblyGraph->loadGraphFromFile(testFile("test.fastg")));
 
     //First do the search with no filters
-    auto errorString = g_blastSearch->doAutoGraphSearch(*g_assemblyGraph,
+    auto errorString = g_graphSearch->doAutoGraphSearch(*g_assemblyGraph,
                                                         testFile("test_queries2.fasta"));
 
     QCOMPARE(errorString, "");
-    auto allHits = g_blastSearch->queries().allHits();
+    auto allHits = g_graphSearch->queries().allHits();
     int unfilteredHitCount = allHits.size();
 
     //Now filter by e-value.
     g_settings->evalueFilter.on = true;
     g_settings->evalueFilter = SciNot(1.0, -5);
-    errorString = g_blastSearch->doAutoGraphSearch(*g_assemblyGraph,
+    errorString = g_graphSearch->doAutoGraphSearch(*g_assemblyGraph,
                                                    testFile("test_queries2.fasta"));
 
     QCOMPARE(errorString, "");
-    allHits = g_blastSearch->queries().allHits();
+    allHits = g_graphSearch->queries().allHits();
     QCOMPARE(allHits.size(), 14);
     QCOMPARE(allHits.size() < unfilteredHitCount, true);
 
     //Now add a bit score filter.
     g_settings->bitScoreFilter.on = true;
     g_settings->bitScoreFilter = 100.0;
-    errorString = g_blastSearch->doAutoGraphSearch(*g_assemblyGraph,
+    errorString = g_graphSearch->doAutoGraphSearch(*g_assemblyGraph,
                                                    testFile("test_queries2.fasta"));
 
     QCOMPARE(errorString, "");
-    allHits = g_blastSearch->queries().allHits();
+    allHits = g_graphSearch->queries().allHits();
     QCOMPARE(allHits.size(), 9);
 
     //Now add an alignment length filter.
     g_settings->alignmentLengthFilter.on = true;
     g_settings->alignmentLengthFilter = 100;
-    errorString = g_blastSearch->doAutoGraphSearch(*g_assemblyGraph,
+    errorString = g_graphSearch->doAutoGraphSearch(*g_assemblyGraph,
                                                    testFile("test_queries2.fasta"));
 
     QCOMPARE(errorString, "");
-    allHits = g_blastSearch->queries().allHits();
+    allHits = g_graphSearch->queries().allHits();
     QCOMPARE(allHits.size(), 8);
 
     //Now add an identity filter.
     g_settings->identityFilter.on = true;
     g_settings->identityFilter = 50.0;
-    errorString = g_blastSearch->doAutoGraphSearch(*g_assemblyGraph,
+    errorString = g_graphSearch->doAutoGraphSearch(*g_assemblyGraph,
                                                    testFile("test_queries2.fasta"));
 
     QCOMPARE(errorString, "");
-    allHits = g_blastSearch->queries().allHits();
+    allHits = g_graphSearch->queries().allHits();
     QCOMPARE(allHits.size(), 7);
 
     //Now add a query coverage filter.
     g_settings->queryCoverageFilter.on = true;
     g_settings->queryCoverageFilter = 90.0;
-    errorString = g_blastSearch->doAutoGraphSearch(*g_assemblyGraph,
+    errorString = g_graphSearch->doAutoGraphSearch(*g_assemblyGraph,
                                                    testFile("test_queries2.fasta"));
 
     QCOMPARE(errorString, "");
-    allHits = g_blastSearch->queries().allHits();
+    allHits = g_graphSearch->queries().allHits();
     QCOMPARE(allHits.size(), 5);
 }
 
@@ -865,13 +865,13 @@ void BandageTests::graphScope()
     }
 
     {
-        auto errorString = g_blastSearch->doAutoGraphSearch(*g_assemblyGraph,
+        auto errorString = g_graphSearch->doAutoGraphSearch(*g_assemblyGraph,
                                                             testFile("test_queries1.fasta"));
 
         QCOMPARE(errorString, "");
 
         g_settings->doubleMode = false;
-        auto scope = graph::Scope::aroundHits(g_blastSearch->queries(), "all");
+        auto scope = graph::Scope::aroundHits(g_graphSearch->queries(), "all");
         auto startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
                                                      *g_assemblyGraph,
                                                      scope);
@@ -883,7 +883,7 @@ void BandageTests::graphScope()
 
     {
         g_settings->doubleMode = false;
-        auto scope = graph::Scope::aroundHits(g_blastSearch->queries(), "all", 1);
+        auto scope = graph::Scope::aroundHits(g_graphSearch->queries(), "all", 1);
         auto startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
                                                      *g_assemblyGraph,
                                                      scope);
@@ -895,7 +895,7 @@ void BandageTests::graphScope()
 
     {
         g_settings->doubleMode = false;
-        auto scope = graph::Scope::aroundHits(g_blastSearch->queries(), "all", 2);
+        auto scope = graph::Scope::aroundHits(g_graphSearch->queries(), "all", 2);
         auto startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
                                                      *g_assemblyGraph,
                                                      scope);
@@ -1650,16 +1650,16 @@ void BandageTests::blastQueryPaths() {
 
     //With the default settings, queries 1 to 5 should each have one path and
     //queries 6 and 7 should have 0 (because of their large inserts).
-    auto errorString = g_blastSearch->doAutoGraphSearch(*g_assemblyGraph,
+    auto errorString = g_graphSearch->doAutoGraphSearch(*g_assemblyGraph,
                                                         testFile("test_query_paths.fasta"));
     QCOMPARE(errorString, "");
-    auto query1Paths = g_blastSearch->query(0)->getPaths();
-    auto query2Paths = g_blastSearch->query(1)->getPaths();
-    auto query3Paths = g_blastSearch->query(2)->getPaths();
-    auto query4Paths = g_blastSearch->query(3)->getPaths();
-    auto query5Paths = g_blastSearch->query(4)->getPaths();
-    auto query6Paths = g_blastSearch->query(5)->getPaths();
-    auto query7Paths = g_blastSearch->query(6)->getPaths();
+    auto query1Paths = g_graphSearch->query(0)->getPaths();
+    auto query2Paths = g_graphSearch->query(1)->getPaths();
+    auto query3Paths = g_graphSearch->query(2)->getPaths();
+    auto query4Paths = g_graphSearch->query(3)->getPaths();
+    auto query5Paths = g_graphSearch->query(4)->getPaths();
+    auto query6Paths = g_graphSearch->query(5)->getPaths();
+    auto query7Paths = g_graphSearch->query(6)->getPaths();
     QCOMPARE(query1Paths.size(), 1);
     QCOMPARE(query2Paths.size(), 1);
     QCOMPARE(query3Paths.size(), 1);
@@ -1671,87 +1671,87 @@ void BandageTests::blastQueryPaths() {
     //query2 has a mean hit identity of 0.98.
     g_settings->minMeanHitIdentity.on = true;
     g_settings->minMeanHitIdentity = 0.979;
-    errorString = g_blastSearch->doAutoGraphSearch(*g_assemblyGraph,
+    errorString = g_graphSearch->doAutoGraphSearch(*g_assemblyGraph,
                                                    testFile("test_query_paths.fasta"));
     QCOMPARE(errorString, "");
-    query2Paths = g_blastSearch->query(1)->getPaths();
+    query2Paths = g_graphSearch->query(1)->getPaths();
     QCOMPARE(query2Paths.size(), 1);
     g_settings->minMeanHitIdentity = 0.981;
-    errorString = g_blastSearch->doAutoGraphSearch(*g_assemblyGraph,
+    errorString = g_graphSearch->doAutoGraphSearch(*g_assemblyGraph,
                                                    testFile("test_query_paths.fasta"));
     QCOMPARE(errorString, "");
-    query2Paths = g_blastSearch->query(1)->getPaths();
+    query2Paths = g_graphSearch->query(1)->getPaths();
     QCOMPARE(query2Paths.size(), 0);
 
     //Turning the filter off should make the path return.
     g_settings->minMeanHitIdentity.on = false;
-    errorString = g_blastSearch->doAutoGraphSearch(*g_assemblyGraph,
+    errorString = g_graphSearch->doAutoGraphSearch(*g_assemblyGraph,
                                                    testFile("test_query_paths.fasta"));
     QCOMPARE(errorString, "");
-    query2Paths = g_blastSearch->query(1)->getPaths();
+    query2Paths = g_graphSearch->query(1)->getPaths();
     QCOMPARE(query2Paths.size(), 1);
     *g_settings = defaultSettings;
 
     //query3 has a length discrepancy of -20.
     g_settings->minLengthBaseDiscrepancy.on = true;
     g_settings->minLengthBaseDiscrepancy = -20;
-    errorString = g_blastSearch->doAutoGraphSearch(*g_assemblyGraph,
+    errorString = g_graphSearch->doAutoGraphSearch(*g_assemblyGraph,
                                                    testFile("test_query_paths.fasta"));
     QCOMPARE(errorString, "");
-    query3Paths = g_blastSearch->query(2)->getPaths();
+    query3Paths = g_graphSearch->query(2)->getPaths();
     QCOMPARE(query3Paths.size(), 1);
     g_settings->minLengthBaseDiscrepancy = -19;
-    errorString = g_blastSearch->doAutoGraphSearch(*g_assemblyGraph,
+    errorString = g_graphSearch->doAutoGraphSearch(*g_assemblyGraph,
                                                    testFile("test_query_paths.fasta"));
     QCOMPARE(errorString, "");
-    query3Paths = g_blastSearch->query(2)->getPaths();
+    query3Paths = g_graphSearch->query(2)->getPaths();
     QCOMPARE(query3Paths.size(), 0);
 
     //Turning the filter off should make the path return.
     g_settings->minLengthBaseDiscrepancy.on = false;
-    errorString = g_blastSearch->doAutoGraphSearch(*g_assemblyGraph,
+    errorString = g_graphSearch->doAutoGraphSearch(*g_assemblyGraph,
                                                    testFile("test_query_paths.fasta"));
     QCOMPARE(errorString, "");
-    query3Paths = g_blastSearch->query(2)->getPaths();
+    query3Paths = g_graphSearch->query(2)->getPaths();
     QCOMPARE(query3Paths.size(), 1);
     *g_settings = defaultSettings;
 
     //query4 has a length discrepancy of +20.
     g_settings->maxLengthBaseDiscrepancy.on = true;
     g_settings->maxLengthBaseDiscrepancy = 20;
-    errorString = g_blastSearch->doAutoGraphSearch(*g_assemblyGraph,
+    errorString = g_graphSearch->doAutoGraphSearch(*g_assemblyGraph,
                                                    testFile("test_query_paths.fasta"));
     QCOMPARE(errorString, "");
-    query4Paths = g_blastSearch->query(3)->getPaths();
+    query4Paths = g_graphSearch->query(3)->getPaths();
     QCOMPARE(query4Paths.size(), 1);
     g_settings->maxLengthBaseDiscrepancy = 19;
-    errorString = g_blastSearch->doAutoGraphSearch(*g_assemblyGraph,
+    errorString = g_graphSearch->doAutoGraphSearch(*g_assemblyGraph,
                                                    testFile("test_query_paths.fasta"));
     QCOMPARE(errorString, "");
-    query4Paths = g_blastSearch->query(3)->getPaths();
+    query4Paths = g_graphSearch->query(3)->getPaths();
     QCOMPARE(query4Paths.size(), 0);
 
     //Turning the filter off should make the path return.
     g_settings->maxLengthBaseDiscrepancy.on = false;
-    errorString = g_blastSearch->doAutoGraphSearch(*g_assemblyGraph,
+    errorString = g_graphSearch->doAutoGraphSearch(*g_assemblyGraph,
                                                    testFile("test_query_paths.fasta"));
     QCOMPARE(errorString, "");
-    query4Paths = g_blastSearch->query(3)->getPaths();
+    query4Paths = g_graphSearch->query(3)->getPaths();
     QCOMPARE(query4Paths.size(), 1);
     *g_settings = defaultSettings;
 
     //query5 has a path through 4 nodes.
     g_settings->maxQueryPathNodes = 4;
-    errorString = g_blastSearch->doAutoGraphSearch(*g_assemblyGraph,
+    errorString = g_graphSearch->doAutoGraphSearch(*g_assemblyGraph,
                                                    testFile("test_query_paths.fasta"));
     QCOMPARE(errorString, "");
-    query5Paths = g_blastSearch->query(4)->getPaths();
+    query5Paths = g_graphSearch->query(4)->getPaths();
     QCOMPARE(query5Paths.size(), 1);
     g_settings->maxQueryPathNodes = 3;
-    errorString = g_blastSearch->doAutoGraphSearch(*g_assemblyGraph,
+    errorString = g_graphSearch->doAutoGraphSearch(*g_assemblyGraph,
                                                    testFile("test_query_paths.fasta"));
     QCOMPARE(errorString, "");
-    query5Paths = g_blastSearch->query(4)->getPaths();
+    query5Paths = g_graphSearch->query(4)->getPaths();
     QCOMPARE(query5Paths.size(), 0);
     *g_settings = defaultSettings;
 
@@ -1761,11 +1761,11 @@ void BandageTests::blastQueryPaths() {
     g_settings->maxLengthPercentage.on = false;
     g_settings->minLengthBaseDiscrepancy.on = false;
     g_settings->maxLengthBaseDiscrepancy.on = false;
-    errorString = g_blastSearch->doAutoGraphSearch(*g_assemblyGraph,
+    errorString = g_graphSearch->doAutoGraphSearch(*g_assemblyGraph,
                                                    testFile("test_query_paths.fasta"));
     QCOMPARE(errorString, "");
-    query6Paths = g_blastSearch->query(5)->getPaths();
-    query7Paths = g_blastSearch->query(6)->getPaths();
+    query6Paths = g_graphSearch->query(5)->getPaths();
+    query7Paths = g_graphSearch->query(6)->getPaths();
     QCOMPARE(query6Paths.size(), 1);
     QCOMPARE(query7Paths.size(), 1);
 
@@ -1773,19 +1773,19 @@ void BandageTests::blastQueryPaths() {
     //and then query 7.
     g_settings->maxLengthBaseDiscrepancy.on = true;
     g_settings->maxLengthBaseDiscrepancy = 1999;
-    errorString = g_blastSearch->doAutoGraphSearch(*g_assemblyGraph,
+    errorString = g_graphSearch->doAutoGraphSearch(*g_assemblyGraph,
                                                    testFile("test_query_paths.fasta"));
     QCOMPARE(errorString, "");
-    query6Paths = g_blastSearch->query(5)->getPaths();
-    query7Paths = g_blastSearch->query(6)->getPaths();
+    query6Paths = g_graphSearch->query(5)->getPaths();
+    query7Paths = g_graphSearch->query(6)->getPaths();
     QCOMPARE(query6Paths.size(), 1);
     QCOMPARE(query7Paths.size(), 0);
     g_settings->maxLengthBaseDiscrepancy = 2000;
-    errorString = g_blastSearch->doAutoGraphSearch(*g_assemblyGraph,
+    errorString = g_graphSearch->doAutoGraphSearch(*g_assemblyGraph,
                                                    testFile("test_query_paths.fasta"));
     QCOMPARE(errorString, "");
-    query6Paths = g_blastSearch->query(5)->getPaths();
-    query7Paths = g_blastSearch->query(6)->getPaths();
+    query6Paths = g_graphSearch->query(5)->getPaths();
+    query7Paths = g_graphSearch->query(6)->getPaths();
     QCOMPARE(query6Paths.size(), 1);
     QCOMPARE(query7Paths.size(), 1);
 }

@@ -45,10 +45,6 @@ std::vector<DeBruijnNode *> AnnotationGroup::getNodesWithAnnotations(bool double
 }
 
 AnnotationGroup &AnnotationsManager::createAnnotationGroup(QString name) {
-    if (name == g_settings->blastAnnotationGroupName) {
-        // To be removed when we can set up annotations from CLI properly.
-        return createAnnotationGroup(name, g_settings->defaultQueryHitAnnotationSetting);
-    }
     return createAnnotationGroup(name, AnnotationSetting());
 }
 
@@ -107,8 +103,9 @@ const AnnotationGroup *AnnotationsManager::findGroupById(AnnotationGroupId id) c
 }
 
 void AnnotationsManager::updateGroupFromHits(const QString &name, const std::vector<search::Query *> &queries) {
-    // Preserve annotation settings, if they existed
-    AnnotationSetting groupSettings;
+    // Prefer existing group settings; otherwise use query-hit defaults
+    // (e.g. --blasthits) for whatever searcher created this group.
+    AnnotationSetting groupSettings = g_settings->defaultQueryHitAnnotationSetting;
     if (const auto *group = findGroupByName(name))
         groupSettings = g_settings->annotationsSettings[group->id];
 
@@ -117,7 +114,7 @@ void AnnotationsManager::updateGroupFromHits(const QString &name, const std::vec
     if (queries.empty())
         return;
 
-    auto &group = createAnnotationGroup(name);
+    auto &group = createAnnotationGroup(name, groupSettings);
     for (auto *query: queries) {
         for (const auto &hit: query->getHits()) {
             auto &annotation = group.annotationMap[hit->m_node].emplace_back(
@@ -130,8 +127,6 @@ void AnnotationsManager::updateGroupFromHits(const QString &name, const std::vec
                                                                       hit->queryEndFraction()));
         }
     }
-
-    g_settings->annotationsSettings[group.id] = groupSettings;
 
     emit annotationGroupsUpdated();
 }

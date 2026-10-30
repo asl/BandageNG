@@ -23,6 +23,7 @@
 #include "scinot.h"
 #include "colormap.h"
 #include "graph/graphscope.h"
+#include "graphsearch/graphsearch.h"
 
 // FIXME: This needs to be properly factored out
 #include "graph/nodecolorer.h"
@@ -127,6 +128,7 @@ public:
     QString startingPaths;
     QString startingWalks;
     QString queryFilename;
+    search::GraphSearchKind graphSearcher = search::BLAST;
     QString csvFilename;
     QString unnamedQueryDefaultName;
     QString blastAnnotationGroupName;

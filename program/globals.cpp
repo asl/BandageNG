@@ -17,6 +17,9 @@
 
 
 #include "globals.h"
+
+#include "graphsearch/graphsearch.h"
+
 #include <QLocale>
 #include <cmath>
 
@@ -24,7 +27,7 @@ QSharedPointer<Settings> g_settings;
 QSharedPointer<Memory> g_memory;
 BandageGraphicsView * g_graphicsView;
 double g_absoluteZoom;
-QSharedPointer<search::BlastSearch> g_blastSearch;
+std::unique_ptr<search::GraphSearch> g_graphSearch;
 QSharedPointer<AssemblyGraph> g_assemblyGraph;
 std::shared_ptr<AnnotationsManager> g_annotationsManager;
 
