@@ -43,6 +43,7 @@
 #include <QDebug>
 #include <QTemporaryDir>
 
+#include <algorithm>
 #include <iostream>
 
 class BandageTests : public QObject
@@ -137,6 +138,7 @@ private slots:
     void sequenceAccess();
     void sequenceSubstring();
     void sequenceDoubleReverseComplement();
+    void annotationGroupNodesWithAnnotations();
 
 
 private:
@@ -2007,6 +2009,47 @@ bool BandageTests::doCircularSequencesMatch(QByteArray s1, QByteArray s2) const
     }
 
     return false;
+}
+
+void BandageTests::annotationGroupNodesWithAnnotations()
+{
+    QVERIFY(g_assemblyGraph->loadGraphFromFile(testFile("test.gfa")));
+
+    DeBruijnNode *node1Plus = g_assemblyGraph->m_deBruijnGraphNodes["1+"];
+    DeBruijnNode *node1Minus = node1Plus->getReverseComplement();
+    QVERIFY(node1Plus != nullptr);
+    QVERIFY(node1Minus != nullptr);
+    QVERIFY(node1Plus->isPositiveNode());
+
+    auto &group = g_annotationsManager->createAnnotationGroup("Minimap2 hits");
+    QCOMPARE(group.getNodesWithAnnotations(true).size(), size_t(0));
+    QCOMPARE(group.getNodesWithAnnotations(false).size(), size_t(0));
+
+    // Annotate only the reverse-complement strand under a non-BLAST group name.
+    group.annotationMap[node1Minus].emplace_back(
+            std::make_unique<Annotation>(1, 10, "query"));
+
+    auto doubleModeNodes = group.getNodesWithAnnotations(/*doubleMode=*/true);
+    QCOMPARE(doubleModeNodes.size(), size_t(1));
+    QCOMPARE(doubleModeNodes.front(), node1Minus);
+
+    auto singleModeNodes = group.getNodesWithAnnotations(/*doubleMode=*/false);
+    QCOMPARE(singleModeNodes.size(), size_t(1));
+    QCOMPARE(singleModeNodes.front(), node1Plus); // canonical representative
+
+    // Annotating the positive strand as well still yields one pair in single mode
+    // and both strands in double mode.
+    group.annotationMap[node1Plus].emplace_back(
+            std::make_unique<Annotation>(1, 5, "query"));
+
+    doubleModeNodes = group.getNodesWithAnnotations(/*doubleMode=*/true);
+    QCOMPARE(doubleModeNodes.size(), size_t(2));
+    QVERIFY(std::find(doubleModeNodes.begin(), doubleModeNodes.end(), node1Plus) != doubleModeNodes.end());
+    QVERIFY(std::find(doubleModeNodes.begin(), doubleModeNodes.end(), node1Minus) != doubleModeNodes.end());
+
+    singleModeNodes = group.getNodesWithAnnotations(/*doubleMode=*/false);
+    QCOMPARE(singleModeNodes.size(), size_t(1));
+    QCOMPARE(singleModeNodes.front(), node1Plus);
 }
 
 QTEST_MAIN(BandageTests)

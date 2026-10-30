@@ -55,7 +55,7 @@ public:
 
     char getBaseAt(int i) const {if (i >= 0 && i < m_sequence.size()) return m_sequence[i]; else return '\0';} // NOTE
     DeBruijnNode * getReverseComplement() const {return m_reverseComplement;}
-    DeBruijnNode *getCanonical() { return isPositiveNode() ? this : m_reverseComplement; }
+    DeBruijnNode *getCanonical() const { return isPositiveNode() ? const_cast<DeBruijnNode *>(this) : m_reverseComplement; }
 
     GraphicsItemNode * getGraphicsItemNode() const {return m_graphicsItemNode;}
     bool hasGraphicsItem() const {return m_graphicsItemNode != nullptr;}

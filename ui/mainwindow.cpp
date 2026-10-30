@@ -204,7 +204,7 @@ MainWindow::MainWindow(QString fileToLoadOnStartup, bool drawGraphAfterLoad) :
     connect(ui->actionSelection_panel, SIGNAL(toggled(bool)), this, SLOT(showHidePanels()));
     connect(ui->contiguityButton, SIGNAL(clicked()), this, SLOT(determineContiguityFromSelectedNode()));
     connect(ui->actionBring_selected_nodes_to_front, SIGNAL(triggered()), this, SLOT(bringSelectedNodesToFront()));
-    connect(ui->actionSelect_nodes_with_BLAST_hits, SIGNAL(triggered()), this, SLOT(selectNodesWithBlastHits()));
+    connect(ui->actionSelect_nodes_with_BLAST_hits, SIGNAL(triggered()), this, SLOT(selectNodesWithQueryHits()));
     connect(ui->actionSelect_nodes_with_dead_ends, SIGNAL(triggered()), this, SLOT(selectNodesWithDeadEnds()));
     connect(ui->actionSelect_all, SIGNAL(triggered()), this, SLOT(selectAll()));
     connect(ui->actionSelect_none, SIGNAL(triggered()), this, SLOT(selectNone()));
@@ -887,11 +887,11 @@ void MainWindow::graphScopeChanged()
         setPathSelectionWidgetVisibility(false);
         setWalkSelectionWidgetVisibility(false);
 
-        ui->nodeDistanceInfoText->setToolTip("<html>Nodes will be drawn if they contain a BLAST hit or are within this "
-                                              "many steps of nodes with a BLAST hit.<br><br>"
-                                              "A value of 0 will result in only nodes with BLAST hits being drawn. "
+        ui->nodeDistanceInfoText->setToolTip("<html>Nodes will be drawn if they contain a query hit or are within this "
+                                              "many steps of nodes with a query hit.<br><br>"
+                                              "A value of 0 will result in only nodes with query hits being drawn. "
                                               "A large value will result in large sections of the graph around "
-                                              "nodes with BLAST hits being drawn.</html>");
+                                              "nodes with query hits being drawn.</html>");
 
         ui->graphDrawingGridLayout->addWidget(ui->nodeDistanceInfoText, 1, 0, 1, 1);
         ui->graphDrawingGridLayout->addWidget(ui->nodeDistanceLabel, 1, 1, 1, 1);
@@ -1174,7 +1174,7 @@ void MainWindow::layoutGraph()
                                           "Layout can take a long time for very large graphs.  There are "
                                           "three strategies to reduce the amount of time required:<ul>"
                                           "<li>Change the scope of the graph from 'Entire graph' to either "
-                                          "'Around nodes' or 'Around BLAST hits'.  This will reduce the "
+                                          "'Around nodes' or 'Around query hits'.  This will reduce the "
                                           "number of nodes that are drawn to the screen.</li>"
                                           "<li>Increase the 'Base pairs per segment' setting.  This will "
                                           "result in shorter contigs which take less time to lay out.</li>"
@@ -2174,60 +2174,47 @@ void MainWindow::bringSelectedNodesToFront() {
 }
 
 
-// TODO: rewrite to selectNodesWithAnnotation
-void MainWindow::selectNodesWithBlastHits() {
-    const auto *blastHitsGroup = g_annotationsManager->findGroupByName(g_settings->blastAnnotationGroupName);
-    if (!blastHitsGroup) {
-        QMessageBox::information(this, "No BLAST hits",
-                                       "To select nodes with BLAST hits, you must first conduct a BLAST search.");
+void MainWindow::selectNodesWithQueryHits() {
+    QString searchName = "graph search";
+    const AnnotationGroup *hitsGroup = nullptr;
+
+    if (m_blastSearchDialog) {
+        const auto *search = m_blastSearchDialog->search();
+        searchName = search->name();
+        hitsGroup = g_annotationsManager->findGroupByName(search->annotationGroupName());
+    }
+
+    auto nodesWithHits = hitsGroup
+            ? hitsGroup->getNodesWithAnnotations(g_settings->doubleMode)
+            : std::vector<DeBruijnNode *>{};
+
+    if (nodesWithHits.empty()) {
+        QMessageBox::information(this, "No query hits",
+                                 QString("To select nodes with query hits, you must first conduct a %1.")
+                                         .arg(searchName));
         return;
     }
 
     m_scene->blockSignals(true);
     m_scene->clearSelection();
 
-    bool atLeastOneNodeHasBlastHits = false;
     bool atLeastOneNodeSelected = false;
-
-    for (auto &[node, annotations] : blastHitsGroup->annotationMap) {
-
-        bool nodeHasBlastHits;
-
-        //If we're in double mode, only select a node if it has a BLAST hit itself.
-        nodeHasBlastHits = !annotations.empty();
-        if (!g_settings->doubleMode)
-            //In single mode, select a node if it or its reverse complement has a BLAST hit.
-            nodeHasBlastHits = nodeHasBlastHits || !blastHitsGroup->getAnnotations(node->getReverseComplement()).empty();
-
-        if (nodeHasBlastHits)
-            atLeastOneNodeHasBlastHits = true;
-
-        GraphicsItemNode * graphicsItemNode = node->getGraphicsItemNode();
-
+    for (DeBruijnNode *node : nodesWithHits) {
+        GraphicsItemNode *graphicsItemNode = node->getGraphicsItemNode();
         if (graphicsItemNode == nullptr)
             continue;
-
-        if (nodeHasBlastHits)
-        {
-            graphicsItemNode->setSelected(true);
-            atLeastOneNodeSelected = true;
-        }
+        graphicsItemNode->setSelected(true);
+        atLeastOneNodeSelected = true;
     }
+
     m_scene->blockSignals(false);
     g_graphicsView->viewport()->update();
     selectionChanged();
 
-    if (!atLeastOneNodeHasBlastHits)
-    {
-        QMessageBox::information(this, "No BLAST hits",
-                                       "To select nodes with BLAST hits, you must first conduct a BLAST search.");
-        return;
-    }
-
     if (!atLeastOneNodeSelected)
-        QMessageBox::information(this, "No BLAST hits in visible nodes",
-                                       "No nodes with BLAST hits are currently visible, so there is nothing to select. "
-                                       "Adjust the graph scope to make the nodes with BLAST hits visible.");
+        QMessageBox::information(this, "No query hits in visible nodes",
+                                 "No nodes with query hits are currently visible, so there is nothing to select. "
+                                 "Adjust the graph scope to make the nodes with query hits visible.");
     else
         zoomToSelection();
 }

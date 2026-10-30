@@ -62,6 +62,10 @@ struct AnnotationGroup {
             static const AnnotationVector defaultConstructed{};
             return defaultConstructed;
     }
+
+    // Nodes with non-empty annotations. In single mode, one canonical representative
+    // per +/- pair (a hit on either strand qualifies the pair).
+    [[nodiscard]] std::vector<DeBruijnNode *> getNodesWithAnnotations(bool doubleMode) const;
 };
 
 class AnnotationsManager : public QObject {
