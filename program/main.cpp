@@ -22,7 +22,7 @@
 #include "program/settings.h"
 #include "program/memory.h"
 #include "program/globals.h"
-#include "graphsearch/blast/blastsearch.h"
+#include "graphsearch/graphsearch.h"
 
 #include "ui/mainwindow.h"
 #include "graph/annotationsmanager.h"
@@ -158,7 +158,7 @@ int main(int argc, char *argv[]) {
     QScopedPointer<QApplication> app(new QApplication(argc, argv));
 
     // Create the important global objects.
-    g_blastSearch.reset(new search::BlastSearch());
+    g_graphSearch = search::GraphSearch::get(g_settings->graphSearcher);
     g_assemblyGraph.reset(new AssemblyGraph());
     g_graphicsView = new BandageGraphicsView();
     g_annotationsManager = std::make_shared<AnnotationsManager>();

@@ -20,7 +20,7 @@
 
 #include "graph/assemblygraph.h"
 #include "graph/sequenceutils.h"
-#include "graphsearch/blast/blastsearch.h"
+#include "graphsearch/graphsearch.h"
 #include "program/settings.h"
 
 #include <CLI/CLI.hpp>
@@ -98,14 +98,19 @@ int handleQueryPathsCmd(QApplication *app,
         return 1;
     }
 
-    if (!g_blastSearch->ready()) {
-        err << g_blastSearch->lastError() << Qt::endl;
+    if (g_settings->graphSearcher != search::BLAST) {
+        err << "Bandage-NG error: querypaths requires the BLAST searcher." << Qt::endl;
+        return 1;
+    }
+
+    if (!g_graphSearch->ready()) {
+        err << g_graphSearch->lastError() << Qt::endl;
         return 1;
     }
     out << "done" << Qt::endl;
 
     log("Running BLAST search... ");
-    QString searchError = g_blastSearch->doAutoGraphSearch(*g_assemblyGraph,
+    QString searchError = g_graphSearch->doAutoGraphSearch(*g_assemblyGraph,
                                                           g_settings->queryFilename,
                                                           cmd.m_gfaPaths,
                                                           g_settings->searchParameters);
@@ -172,7 +177,7 @@ int handleQueryPathsCmd(QApplication *app,
         return "N/A";
     };
 
-    for (const auto *query : g_blastSearch->queries()) {
+    for (const auto *query : g_graphSearch->queries()) {
         unsigned num = 0;
         for (const auto & queryPath : query->getPaths()) {
             Path path = queryPath.getPath();
@@ -248,10 +253,10 @@ int handleQueryPathsCmd(QApplication *app,
     if (cmd.m_hitsFasta)
         out << "              " + hitsFastaFilename << Qt::endl;
 
-    out << Qt::endl << "Summary: Total BLAST queries:           " << g_blastSearch->getQueryCount() << Qt::endl;
-    out << "         Total hits:                    " << g_blastSearch->getNumHits() << Qt::endl;
-    out << "         Queries with found paths:      " << g_blastSearch->getQueryCountWithAtLeastOnePath() << Qt::endl;
-    out << "         Total query paths:             " << g_blastSearch->getQueryPathCount() << Qt::endl;
+    out << Qt::endl << "Summary: Total BLAST queries:           " << g_graphSearch->getQueryCount() << Qt::endl;
+    out << "         Total hits:                    " << g_graphSearch->getNumHits() << Qt::endl;
+    out << "         Queries with found paths:      " << g_graphSearch->getQueryCountWithAtLeastOnePath() << Qt::endl;
+    out << "         Total query paths:             " << g_graphSearch->getQueryPathCount() << Qt::endl;
 
     out << Qt::endl << "Elapsed time: " << getElapsedTime(startTime, QDateTime::currentDateTime()) << Qt::endl;
 

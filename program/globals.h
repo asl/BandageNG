@@ -22,6 +22,7 @@
 #include <QString>
 #include <QSharedPointer>
 
+#include <memory>
 #include <utility>
 
 class Settings;
@@ -31,7 +32,7 @@ class AssemblyGraph;
 class AnnotationsManager;
 
 namespace search {
-class BlastSearch;
+class GraphSearch;
 };
 
 // Some of the program's common components are made global, so they don't have
@@ -41,7 +42,7 @@ extern QSharedPointer<Settings> g_settings;
 extern QSharedPointer<Memory> g_memory;
 extern BandageGraphicsView * g_graphicsView;
 extern double g_absoluteZoom;
-extern QSharedPointer<search::BlastSearch> g_blastSearch;
+extern std::unique_ptr<search::GraphSearch> g_graphSearch;
 extern QSharedPointer<AssemblyGraph> g_assemblyGraph;
 extern std::shared_ptr<AnnotationsManager> g_annotationsManager;
 
