@@ -155,7 +155,7 @@ private slots:
     void blastQueryChanged();
     void showHidePanels();
     void bringSelectedNodesToFront();
-    void selectNodesWithBlastHits();
+    void selectNodesWithQueryHits();
     void selectNodesWithDeadEnds();
     void selectAll();
     void selectNone();

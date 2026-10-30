@@ -18,8 +18,31 @@
 
 #include "annotationsmanager.h"
 
+#include "graph/debruijnnode.h"
 #include "graphsearch/query.h"
 #include "program/settings.h"
+
+std::vector<DeBruijnNode *> AnnotationGroup::getNodesWithAnnotations(bool doubleMode) const {
+    std::vector<DeBruijnNode *> result;
+
+    for (const auto &[node, annotations] : annotationMap) {
+        if (annotations.empty())
+            continue;
+
+        if (doubleMode) {
+            result.push_back(const_cast<DeBruijnNode *>(node));
+            continue;
+        }
+
+        // Prefer the canonical map entry when both strands are annotated.
+        DeBruijnNode *canonical = node->getCanonical();
+        if (node != canonical && !getAnnotations(canonical).empty())
+            continue;
+        result.push_back(canonical);
+    }
+
+    return result;
+}
 
 AnnotationGroup &AnnotationsManager::createAnnotationGroup(QString name) {
     if (name == g_settings->blastAnnotationGroupName) {
