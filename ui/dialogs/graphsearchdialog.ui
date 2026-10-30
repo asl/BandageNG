@@ -78,7 +78,7 @@
     </widget>
    </item>
    <item row="3" column="2">
-    <widget class="QWidget" name="blastQueriesWidget1" native="true">
+    <widget class="QWidget" name="queriesWidget1" native="true">
      <layout class="QHBoxLayout" name="horizontalLayout_4">
       <property name="leftMargin">
        <number>0</number>
@@ -334,7 +334,7 @@
     </widget>
    </item>
    <item row="8" column="2" rowspan="2">
-    <widget class="QWidget" name="blastSearchWidget" native="true">
+    <widget class="QWidget" name="graphSearchWidget" native="true">
      <layout class="QGridLayout" name="gridLayout">
       <property name="leftMargin">
        <number>0</number>
@@ -349,7 +349,7 @@
        <number>0</number>
       </property>
       <item row="1" column="0">
-       <widget class="InfoTextWidget" name="blastHitFiltersInfoText" native="true">
+       <widget class="InfoTextWidget" name="hitFiltersInfoText" native="true">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -387,14 +387,14 @@
        </widget>
       </item>
       <item row="1" column="1">
-       <widget class="QPushButton" name="blastFiltersButton">
+       <widget class="QPushButton" name="filtersButton">
         <property name="text">
          <string>Set BLAST hit filters</string>
         </property>
        </widget>
       </item>
       <item row="1" column="2">
-       <widget class="QLabel" name="blastHitFiltersLabel">
+       <widget class="QLabel" name="hitFiltersLabel">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
           <horstretch>0</horstretch>
@@ -571,7 +571,7 @@
     </widget>
    </item>
    <item row="4" column="2">
-    <widget class="QWidget" name="blastQueriesWidget2" native="true">
+    <widget class="QWidget" name="queriesWidget2" native="true">
      <layout class="QHBoxLayout" name="horizontalLayout_2">
       <property name="leftMargin">
        <number>0</number>
@@ -586,7 +586,7 @@
        <number>0</number>
       </property>
       <item>
-       <widget class="InfoTextWidget" name="blastQueriesTableInfoText" native="true">
+       <widget class="InfoTextWidget" name="queriesTableInfoText" native="true">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -605,7 +605,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QTableView" name="blastQueriesTable"/>
+       <widget class="QTableView" name="queriesTable"/>
       </item>
      </layout>
     </widget>
@@ -658,7 +658,7 @@
     </widget>
    </item>
    <item row="12" column="2" rowspan="2">
-    <widget class="QWidget" name="blastHitsWidget" native="true">
+    <widget class="QWidget" name="hitsWidget" native="true">
      <layout class="QHBoxLayout" name="horizontalLayout_7">
       <property name="leftMargin">
        <number>0</number>
@@ -673,7 +673,7 @@
        <number>0</number>
       </property>
       <item>
-       <widget class="InfoTextWidget" name="blastHitsTableInfoText" native="true">
+       <widget class="InfoTextWidget" name="hitsTableInfoText" native="true">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -692,7 +692,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QTableView" name="blastHitsTable"/>
+       <widget class="QTableView" name="hitsTable"/>
       </item>
      </layout>
     </widget>
@@ -726,11 +726,11 @@
   <tabstop>enterQueryManuallyButton</tabstop>
   <tabstop>clearSelectedQueriesButton</tabstop>
   <tabstop>clearAllQueriesButton</tabstop>
-  <tabstop>blastQueriesTable</tabstop>
+  <tabstop>queriesTable</tabstop>
   <tabstop>parametersLineEdit</tabstop>
-  <tabstop>blastFiltersButton</tabstop>
+  <tabstop>filtersButton</tabstop>
   <tabstop>runBlastSearchButton</tabstop>
-  <tabstop>blastHitsTable</tabstop>
+  <tabstop>hitsTable</tabstop>
  </tabstops>
  <resources/>
  <connections>

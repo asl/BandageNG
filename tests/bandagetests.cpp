@@ -677,8 +677,8 @@ void BandageTests::blastSearchFilters()
     int unfilteredHitCount = allHits.size();
 
     //Now filter by e-value.
-    g_settings->blastEValueFilter.on = true;
-    g_settings->blastEValueFilter = SciNot(1.0, -5);
+    g_settings->evalueFilter.on = true;
+    g_settings->evalueFilter = SciNot(1.0, -5);
     errorString = g_blastSearch->doAutoGraphSearch(*g_assemblyGraph,
                                                    testFile("test_queries2.fasta"));
 
@@ -688,8 +688,8 @@ void BandageTests::blastSearchFilters()
     QCOMPARE(allHits.size() < unfilteredHitCount, true);
 
     //Now add a bit score filter.
-    g_settings->blastBitScoreFilter.on = true;
-    g_settings->blastBitScoreFilter = 100.0;
+    g_settings->bitScoreFilter.on = true;
+    g_settings->bitScoreFilter = 100.0;
     errorString = g_blastSearch->doAutoGraphSearch(*g_assemblyGraph,
                                                    testFile("test_queries2.fasta"));
 
@@ -698,8 +698,8 @@ void BandageTests::blastSearchFilters()
     QCOMPARE(allHits.size(), 9);
 
     //Now add an alignment length filter.
-    g_settings->blastAlignmentLengthFilter.on = true;
-    g_settings->blastAlignmentLengthFilter = 100;
+    g_settings->alignmentLengthFilter.on = true;
+    g_settings->alignmentLengthFilter = 100;
     errorString = g_blastSearch->doAutoGraphSearch(*g_assemblyGraph,
                                                    testFile("test_queries2.fasta"));
 
@@ -708,8 +708,8 @@ void BandageTests::blastSearchFilters()
     QCOMPARE(allHits.size(), 8);
 
     //Now add an identity filter.
-    g_settings->blastIdentityFilter.on = true;
-    g_settings->blastIdentityFilter = 50.0;
+    g_settings->identityFilter.on = true;
+    g_settings->identityFilter = 50.0;
     errorString = g_blastSearch->doAutoGraphSearch(*g_assemblyGraph,
                                                    testFile("test_queries2.fasta"));
 
@@ -718,8 +718,8 @@ void BandageTests::blastSearchFilters()
     QCOMPARE(allHits.size(), 7);
 
     //Now add a query coverage filter.
-    g_settings->blastQueryCoverageFilter.on = true;
-    g_settings->blastQueryCoverageFilter = 90.0;
+    g_settings->queryCoverageFilter.on = true;
+    g_settings->queryCoverageFilter = 90.0;
     errorString = g_blastSearch->doAutoGraphSearch(*g_assemblyGraph,
                                                    testFile("test_queries2.fasta"));
 
@@ -1161,10 +1161,10 @@ void BandageTests::commandLineSettings() {
     parseSettings(commandLineSettings);
     QCOMPARE(g_settings->displayNodeDepth, true);
 
-    QCOMPARE(g_settings->defaultBlastAnnotationSetting.showText, false);
+    QCOMPARE(g_settings->defaultQueryHitAnnotationSetting.showText, false);
     commandLineSettings = QString("--blasthits").split(" ");
     parseSettings(commandLineSettings);
-    QCOMPARE(g_settings->defaultBlastAnnotationSetting.showText, true);
+    QCOMPARE(g_settings->defaultQueryHitAnnotationSetting.showText, true);
 
     commandLineSettings = QString("--fontsize 5").split(" ");
     parseSettings(commandLineSettings);
@@ -1285,39 +1285,39 @@ void BandageTests::commandLineSettings() {
 
     commandLineSettings = QString("--blastp --abc").split(" ");
     parseSettings(commandLineSettings);
-    QCOMPARE(g_settings->blastSearchParameters, QString("--abc"));
+    QCOMPARE(g_settings->searchParameters, QString("--abc"));
 
-    QCOMPARE(g_settings->blastAlignmentLengthFilter.on, false);
+    QCOMPARE(g_settings->alignmentLengthFilter.on, false);
     commandLineSettings = QString("--alfilter 543").split(" ");
     parseSettings(commandLineSettings);
-    QCOMPARE(g_settings->blastAlignmentLengthFilter.on, true);
-    QCOMPARE(g_settings->blastAlignmentLengthFilter.val, 543);
+    QCOMPARE(g_settings->alignmentLengthFilter.on, true);
+    QCOMPARE(g_settings->alignmentLengthFilter.val, 543);
 
-    QCOMPARE(g_settings->blastQueryCoverageFilter.on, false);
+    QCOMPARE(g_settings->queryCoverageFilter.on, false);
     commandLineSettings = QString("--qcfilter 67.8").split(" ");
     parseSettings(commandLineSettings);
-    QCOMPARE(g_settings->blastQueryCoverageFilter.on, true);
-    QCOMPARE(g_settings->blastQueryCoverageFilter.val, 67.8);
+    QCOMPARE(g_settings->queryCoverageFilter.on, true);
+    QCOMPARE(g_settings->queryCoverageFilter.val, 67.8);
 
-    QCOMPARE(g_settings->blastIdentityFilter.on, false);
+    QCOMPARE(g_settings->identityFilter.on, false);
     commandLineSettings = QString("--ifilter 12.3").split(" ");
     parseSettings(commandLineSettings);
-    QCOMPARE(g_settings->blastIdentityFilter.on, true);
-    QCOMPARE(g_settings->blastIdentityFilter.val, 12.3);
+    QCOMPARE(g_settings->identityFilter.on, true);
+    QCOMPARE(g_settings->identityFilter.val, 12.3);
 
-    QCOMPARE(g_settings->blastEValueFilter.on, false);
+    QCOMPARE(g_settings->evalueFilter.on, false);
     commandLineSettings = QString("--evfilter 8.5e-14").split(" ");
     parseSettings(commandLineSettings);
-    QCOMPARE(g_settings->blastEValueFilter.on, true);
-    QCOMPARE(g_settings->blastEValueFilter.val, SciNot(8.5, -14));
-    QCOMPARE(g_settings->blastEValueFilter.val.getCoefficient(), 8.5);
-    QCOMPARE(g_settings->blastEValueFilter.val.getExponent(), -14);
+    QCOMPARE(g_settings->evalueFilter.on, true);
+    QCOMPARE(g_settings->evalueFilter.val, SciNot(8.5, -14));
+    QCOMPARE(g_settings->evalueFilter.val.getCoefficient(), 8.5);
+    QCOMPARE(g_settings->evalueFilter.val.getExponent(), -14);
 
-    QCOMPARE(g_settings->blastBitScoreFilter.on, false);
+    QCOMPARE(g_settings->bitScoreFilter.on, false);
     commandLineSettings = QString("--bsfilter 1234.5").split(" ");
     parseSettings(commandLineSettings);
-    QCOMPARE(g_settings->blastBitScoreFilter.on, true);
-    QCOMPARE(g_settings->blastBitScoreFilter.val, 1234.5);
+    QCOMPARE(g_settings->bitScoreFilter.on, true);
+    QCOMPARE(g_settings->bitScoreFilter.val, 1234.5);
 
     commandLineSettings = QString("--pathnodes 3").split(" ");
     parseSettings(commandLineSettings);
@@ -1641,12 +1641,12 @@ void BandageTests::blastQueryPaths() {
     QVERIFY(g_assemblyGraph->loadGraphFromFile(testFile("test_query_paths.gfa")));
 
     Settings defaultSettings;
-    g_settings->blastQueryFilename = testFile("test_query_paths.fasta");
-    defaultSettings.blastQueryFilename = testFile("test_query_paths.fasta");
+    g_settings->queryFilename = testFile("test_query_paths.fasta");
+    defaultSettings.queryFilename = testFile("test_query_paths.fasta");
 
     //Now filter by e-value to get only strong hits and do the BLAST search.
-    g_settings->blastEValueFilter.on = true;
-    g_settings->blastEValueFilter = SciNot(1.0, -5);
+    g_settings->evalueFilter.on = true;
+    g_settings->evalueFilter = SciNot(1.0, -5);
 
     //With the default settings, queries 1 to 5 should each have one path and
     //queries 6 and 7 should have 0 (because of their large inserts).

@@ -126,7 +126,7 @@ public:
     QString startingNodes;
     QString startingPaths;
     QString startingWalks;
-    QString blastQueryFilename;
+    QString queryFilename;
     QString csvFilename;
     QString unnamedQueryDefaultName;
     QString blastAnnotationGroupName;
@@ -212,17 +212,17 @@ public:
     IntSetting minLengthBaseDiscrepancy;
     IntSetting maxLengthBaseDiscrepancy;
 
-    //This holds the BLAST search parameters that a user can change before
-    //running a BLAST search.
-    QString blastSearchParameters;
+    // Extra parameters passed to the active graph searcher.
+    QString searchParameters;
 
-    //These are the optional BLAST hit filters: whether they are used and
-    //what their values are.
-    IntSetting blastAlignmentLengthFilter;
-    FloatSetting blastQueryCoverageFilter;
-    FloatSetting blastIdentityFilter;
-    SciNotSetting blastEValueFilter;
-    FloatSetting blastBitScoreFilter;
+    // Optional query-hit filters. Not all apply to every searcher:
+    // alignment length / query coverage are used by BLAST, Minimap2, and
+    // HMMER; identity is BLAST-only; e-value and bit score are used by BLAST and HMMER.
+    IntSetting alignmentLengthFilter;
+    FloatSetting queryCoverageFilter;
+    FloatSetting identityFilter;
+    SciNotSetting evalueFilter;
+    FloatSetting bitScoreFilter;
 
     //These are used for the 'Depth range' graph scope.
     FloatSetting minDepthRange;
@@ -231,9 +231,9 @@ public:
     //This controls annotations drawing.
     AnnotationSettings annotationsSettings;
 
-    // This is needed for backward compatibility to support selecting blast colors from CLI.
-    // To be removed when general approach will be implemented.
-    AnnotationSetting defaultBlastAnnotationSetting;
+    // Backward compatibility for selecting query-hit annotation defaults from CLI (--blasthits).
+    // To be removed when a general approach is implemented.
+    AnnotationSetting defaultQueryHitAnnotationSetting;
 };
 
 #endif // SETTINGS_H

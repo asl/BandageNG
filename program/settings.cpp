@@ -57,7 +57,7 @@ Settings::Settings()
     startingNodes = "";
     startingPaths = "";
     startingWalks = "";
-    blastQueryFilename = "";
+    queryFilename = "";
     unnamedQueryDefaultName = "unnamed";
 
     minZoom = 0.001;
@@ -133,13 +133,13 @@ Settings::Settings()
     minLengthBaseDiscrepancy = IntSetting(-100, -1000000, 1000000, false);
     maxLengthBaseDiscrepancy = IntSetting(100, -1000000, 1000000, false);
 
-    blastSearchParameters = "";
+    searchParameters = "";
 
-    blastAlignmentLengthFilter = IntSetting(100, 1, 1000000, false);
-    blastQueryCoverageFilter = FloatSetting(50.0, 0.0, 100.0, false);
-    blastIdentityFilter = FloatSetting(90.0, 0.0, 100.0, false);
-    blastEValueFilter = SciNotSetting(SciNot(1.0, -10), SciNot(1.0, -999), SciNot(9.9, 1), false);
-    blastBitScoreFilter = FloatSetting(1000.0, 0.0, 1000000.0, false);
+    alignmentLengthFilter = IntSetting(100, 1, 1000000, false);
+    queryCoverageFilter = FloatSetting(50.0, 0.0, 100.0, false);
+    identityFilter = FloatSetting(90.0, 0.0, 100.0, false);
+    evalueFilter = SciNotSetting(SciNot(1.0, -10), SciNot(1.0, -999), SciNot(9.9, 1), false);
+    bitScoreFilter = FloatSetting(1000.0, 0.0, 1000000.0, false);
     blastAnnotationGroupName = "Blast Hits";
     bedAnnotationGroupName = "BED";
 

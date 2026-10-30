@@ -361,26 +361,26 @@ buildHitsFromBlastOutput(QString blastOutput,
             continue;
 
         // Check the user-defined filters.
-        if (g_settings->blastIdentityFilter.on &&
-            percentIdentity < g_settings->blastIdentityFilter)
+        if (g_settings->identityFilter.on &&
+            percentIdentity < g_settings->identityFilter)
             continue;
 
-        if (g_settings->blastEValueFilter.on &&
-            eValue > g_settings->blastEValueFilter)
+        if (g_settings->evalueFilter.on &&
+            eValue > g_settings->evalueFilter)
             continue;
 
-        if (g_settings->blastBitScoreFilter.on &&
-            bitScore < g_settings->blastBitScoreFilter)
+        if (g_settings->bitScoreFilter.on &&
+            bitScore < g_settings->bitScoreFilter)
             continue;
 
-        if (g_settings->blastAlignmentLengthFilter.on &&
-            alignmentLength < g_settings->blastAlignmentLengthFilter)
+        if (g_settings->alignmentLengthFilter.on &&
+            alignmentLength < g_settings->alignmentLengthFilter)
             continue;
 
-        if (g_settings->blastQueryCoverageFilter.on) {
+        if (g_settings->queryCoverageFilter.on) {
             double hitCoveragePercentage = 100.0 * Hit::getQueryCoverageFraction(query,
                                                                                  queryStart, queryEnd);
-            if (hitCoveragePercentage < g_settings->blastQueryCoverageFilter)
+            if (hitCoveragePercentage < g_settings->queryCoverageFilter)
                 continue;
         }
 

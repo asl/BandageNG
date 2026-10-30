@@ -245,7 +245,7 @@ void GraphicsItemNode::paint(QPainter * painter, const QStyleOptionGraphicsItem 
             drawTextPathAtLocation(painter, textPath, centre);
     }
 
-    //Draw BLAST hit labels, if appropriate.
+    // Draw query-hit annotation labels, if appropriate.
     for (const auto &annotationGroup : g_annotationsManager->getGroups()) {
         if (!g_settings->annotationsSettings[annotationGroup->id].showText)
             continue;

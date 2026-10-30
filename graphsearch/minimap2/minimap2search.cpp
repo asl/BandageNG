@@ -157,14 +157,14 @@ buildHitsFromPAF(const QString &PAF,
         if (query == nullptr)
             continue;
 
-        if (g_settings->blastAlignmentLengthFilter.on &&
-            alignmentLength < g_settings->blastAlignmentLengthFilter)
+        if (g_settings->alignmentLengthFilter.on &&
+            alignmentLength < g_settings->alignmentLengthFilter)
             continue;
 
-        if (g_settings->blastQueryCoverageFilter.on) {
+        if (g_settings->queryCoverageFilter.on) {
             double hitCoveragePercentage = 100.0 * Hit::getQueryCoverageFraction(query,
                                                                                  queryStart, queryEnd);
-            if (hitCoveragePercentage < g_settings->blastQueryCoverageFilter)
+            if (hitCoveragePercentage < g_settings->queryCoverageFilter)
                 continue;
         }
 

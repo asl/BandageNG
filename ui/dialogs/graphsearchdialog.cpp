@@ -88,29 +88,29 @@ GraphSearchDialog::GraphSearchDialog(QWidget *parent, const QString& autoQuery)
     setWindowFlags(windowFlags() | Qt::Tool);
 
     m_queriesListModel = new QueriesListModel(m_graphSearch->queries(),
-                                              ui->blastQueriesTable);
-    auto *proxyQModel = new QSortFilterProxyModel(ui->blastQueriesTable);
+                                              ui->queriesTable);
+    auto *proxyQModel = new QSortFilterProxyModel(ui->queriesTable);
     proxyQModel->setSourceModel(m_queriesListModel);
-    ui->blastQueriesTable->setModel(proxyQModel);
-    ui->blastQueriesTable->setSortingEnabled(true);
+    ui->queriesTable->setModel(proxyQModel);
+    ui->queriesTable->setSortingEnabled(true);
 
-    auto *queryPathsDelegate = new PathButtonDelegate(ui->blastQueriesTable);
-    ui->blastQueriesTable->setItemDelegateForColumn(int(QueriesHitColumns::Paths),
+    auto *queryPathsDelegate = new PathButtonDelegate(ui->queriesTable);
+    ui->queriesTable->setItemDelegateForColumn(int(QueriesHitColumns::Paths),
                                                     queryPathsDelegate);
     connect(queryPathsDelegate, &PathButtonDelegate::queryPathSelectionChanged,
             [this] { emit queryPathSelectionChanged(); });
 
-    m_hitsListModel = new HitsListModel(m_graphSearch->queries(), ui->blastHitsTable);
-    auto *proxyHModel = new QSortFilterProxyModel(ui->blastHitsTable);
+    m_hitsListModel = new HitsListModel(m_graphSearch->queries(), ui->hitsTable);
+    auto *proxyHModel = new QSortFilterProxyModel(ui->hitsTable);
     proxyHModel->setSourceModel(m_hitsListModel);
-    ui->blastHitsTable->setModel(proxyHModel);
-    ui->blastHitsTable->setSortingEnabled(true);
+    ui->hitsTable->setModel(proxyHModel);
+    ui->hitsTable->setSortingEnabled(true);
 
     setFilterText();
     setUiCaptions();
 
     // Load any previous parameters the user might have entered when previously using this dialog.
-    ui->parametersLineEdit->setText(g_settings->blastSearchParameters);
+    ui->parametersLineEdit->setText(g_settings->searchParameters);
 
     // If the dialog is given an autoQuery parameter, then it will
     // carry out the entire process on its own.
@@ -154,14 +154,14 @@ GraphSearchDialog::GraphSearchDialog(QWidget *parent, const QString& autoQuery)
     connect(ui->clearSelectedQueriesButton, SIGNAL(clicked(bool)), this, SLOT(clearSelectedQueries()));
     connect(ui->runBlastSearchButton, SIGNAL(clicked()), this, SLOT(runGraphSearchesInThread()));
 
-    connect(ui->blastQueriesTable->selectionModel(),
+    connect(ui->queriesTable->selectionModel(),
         &QItemSelectionModel::selectionChanged,
         [this]() {
-            auto *select = ui->blastQueriesTable->selectionModel();
+            auto *select = ui->queriesTable->selectionModel();
             ui->clearSelectedQueriesButton->setEnabled(select->hasSelection());
         });
 
-    connect(ui->blastQueriesTable,
+    connect(ui->queriesTable,
             &QTableView::clicked,
             m_queriesListModel,
             [this](const QModelIndex &index) {
@@ -197,7 +197,7 @@ GraphSearchDialog::GraphSearchDialog(QWidget *parent, const QString& autoQuery)
                 emit proxyHModel->dataChanged(QModelIndex(), QModelIndex());
             });
 
-    connect(ui->blastFiltersButton, SIGNAL(clicked(bool)), this, SLOT(openFiltersDialog()));
+    connect(ui->filtersButton, SIGNAL(clicked(bool)), this, SLOT(openFiltersDialog()));
     connect(ui->searcherComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(searcherChanged()));
 }
 
@@ -225,8 +225,8 @@ void GraphSearchDialog::fillTablesAfterGraphSearch() {
 void GraphSearchDialog::updateTables() {
     m_queriesListModel->update();
     m_hitsListModel->update(m_graphSearch->queries());
-    ui->blastQueriesTable->resizeColumnsToContents();
-    ui->blastHitsTable->resizeColumnsToContents();
+    ui->queriesTable->resizeColumnsToContents();
+    ui->hitsTable->resizeColumnsToContents();
 }
 
 void GraphSearchDialog::buildGraphDatabaseInThread() {
@@ -327,7 +327,7 @@ void GraphSearchDialog::clearAllQueries() {
 
 void GraphSearchDialog::clearSelectedQueries() {
     // Use the table selection to figure out which queries are to be removed.
-    QItemSelectionModel *select = ui->blastQueriesTable->selectionModel();
+    QItemSelectionModel *select = ui->queriesTable->selectionModel();
     QModelIndexList selection = select->selectedIndexes();
 
     if (selection.size() == m_queriesListModel->m_queries.get().getQueryCount()) {
@@ -381,7 +381,7 @@ void GraphSearchDialog::graphSearchFinished(const QString& error) {
         setUiStep(READY_FOR_GRAPH_SEARCH);
     } else {
         fillTablesAfterGraphSearch();
-        g_settings->blastSearchParameters = ui->parametersLineEdit->text().simplified();
+        g_settings->searchParameters = ui->parametersLineEdit->text().simplified();
         setUiStep(GRAPH_SEARCH_COMPLETE);
     }
 
@@ -399,8 +399,8 @@ void GraphSearchDialog::setUiStep(SearchUiState uiState) {
         ui->step2Label->setEnabled(false);
         ui->loadQueriesFromFastaButton->setEnabled(false);
         ui->enterQueryManuallyButton->setEnabled(false);
-        ui->blastQueriesTable->setEnabled(false);
-        ui->blastQueriesTableInfoText->setEnabled(false);
+        ui->queriesTable->setEnabled(false);
+        ui->queriesTableInfoText->setEnabled(false);
         ui->step3Label->setEnabled(false);
         ui->parametersLabel->setEnabled(false);
         ui->parametersLineEdit->setEnabled(false);
@@ -416,9 +416,9 @@ void GraphSearchDialog::setUiStep(SearchUiState uiState) {
         ui->enterQueryManuallyInfoText->setEnabled(false);
         ui->clearAllQueriesInfoText->setEnabled(false);
         ui->clearSelectedQueriesInfoText->setEnabled(false);
-        ui->blastHitsTable->setEnabled(false);
-        ui->blastSearchWidget->setEnabled(false);
-        ui->blastHitsTableInfoText->setEnabled(false);
+        ui->hitsTable->setEnabled(false);
+        ui->graphSearchWidget->setEnabled(false);
+        ui->hitsTableInfoText->setEnabled(false);
         ui->includeGFAPaths->setEnabled(true);
         ui->includeGFAPathsInfoText->setEnabled(true);
         break;
@@ -429,8 +429,8 @@ void GraphSearchDialog::setUiStep(SearchUiState uiState) {
         ui->step2Label->setEnabled(false);
         ui->loadQueriesFromFastaButton->setEnabled(false);
         ui->enterQueryManuallyButton->setEnabled(false);
-        ui->blastQueriesTable->setEnabled(false);
-        ui->blastQueriesTableInfoText->setEnabled(false);
+        ui->queriesTable->setEnabled(false);
+        ui->queriesTableInfoText->setEnabled(false);
         ui->step3Label->setEnabled(false);
         ui->parametersLabel->setEnabled(false);
         ui->parametersLineEdit->setEnabled(false);
@@ -446,9 +446,9 @@ void GraphSearchDialog::setUiStep(SearchUiState uiState) {
         ui->enterQueryManuallyInfoText->setEnabled(false);
         ui->clearAllQueriesInfoText->setEnabled(false);
         ui->clearSelectedQueriesInfoText->setEnabled(false);
-        ui->blastHitsTable->setEnabled(false);
-        ui->blastSearchWidget->setEnabled(false);
-        ui->blastHitsTableInfoText->setEnabled(false);
+        ui->hitsTable->setEnabled(false);
+        ui->graphSearchWidget->setEnabled(false);
+        ui->hitsTableInfoText->setEnabled(false);
         ui->includeGFAPaths->setEnabled(true);
         ui->includeGFAPathsInfoText->setEnabled(true);
         break;
@@ -459,8 +459,8 @@ void GraphSearchDialog::setUiStep(SearchUiState uiState) {
         ui->step2Label->setEnabled(true);
         ui->loadQueriesFromFastaButton->setEnabled(true);
         ui->enterQueryManuallyButton->setEnabled(m_graphSearch->allowManualQueries());
-        ui->blastQueriesTable->setEnabled(true);
-        ui->blastQueriesTableInfoText->setEnabled(true);
+        ui->queriesTable->setEnabled(true);
+        ui->queriesTableInfoText->setEnabled(true);
         ui->step3Label->setEnabled(false);
         ui->parametersLabel->setEnabled(false);
         ui->parametersLineEdit->setEnabled(false);
@@ -476,9 +476,9 @@ void GraphSearchDialog::setUiStep(SearchUiState uiState) {
         ui->enterQueryManuallyInfoText->setEnabled(true);
         ui->clearSelectedQueriesInfoText->setEnabled(false);
         ui->clearSelectedQueriesInfoText->setEnabled(false);
-        ui->blastHitsTable->setEnabled(false);
-        ui->blastSearchWidget->setEnabled(false);
-        ui->blastHitsTableInfoText->setEnabled(false);
+        ui->hitsTable->setEnabled(false);
+        ui->graphSearchWidget->setEnabled(false);
+        ui->hitsTableInfoText->setEnabled(false);
         ui->includeGFAPaths->setEnabled(false);
         ui->includeGFAPathsInfoText->setEnabled(false);
         break;
@@ -489,8 +489,8 @@ void GraphSearchDialog::setUiStep(SearchUiState uiState) {
         ui->step2Label->setEnabled(true);
         ui->loadQueriesFromFastaButton->setEnabled(true);
         ui->enterQueryManuallyButton->setEnabled(m_graphSearch->allowManualQueries());
-        ui->blastQueriesTable->setEnabled(true);
-        ui->blastQueriesTableInfoText->setEnabled(true);
+        ui->queriesTable->setEnabled(true);
+        ui->queriesTableInfoText->setEnabled(true);
         ui->step3Label->setEnabled(true);
         ui->parametersLabel->setEnabled(true);
         ui->parametersLineEdit->setEnabled(true);
@@ -505,9 +505,9 @@ void GraphSearchDialog::setUiStep(SearchUiState uiState) {
         ui->enterQueryManuallyInfoText->setEnabled(true);
         ui->clearAllQueriesInfoText->setEnabled(true);
         ui->clearSelectedQueriesInfoText->setEnabled(true);
-        ui->blastHitsTable->setEnabled(false);
-        ui->blastSearchWidget->setEnabled(true);
-        ui->blastHitsTableInfoText->setEnabled(false);
+        ui->hitsTable->setEnabled(false);
+        ui->graphSearchWidget->setEnabled(true);
+        ui->hitsTableInfoText->setEnabled(false);
         ui->includeGFAPaths->setEnabled(false);
         ui->includeGFAPathsInfoText->setEnabled(false);
         break;
@@ -518,8 +518,8 @@ void GraphSearchDialog::setUiStep(SearchUiState uiState) {
         ui->step2Label->setEnabled(true);
         ui->loadQueriesFromFastaButton->setEnabled(true);
         ui->enterQueryManuallyButton->setEnabled(m_graphSearch->allowManualQueries());
-        ui->blastQueriesTable->setEnabled(true);
-        ui->blastQueriesTableInfoText->setEnabled(true);
+        ui->queriesTable->setEnabled(true);
+        ui->queriesTableInfoText->setEnabled(true);
         ui->step3Label->setEnabled(true);
         ui->parametersLabel->setEnabled(true);
         ui->parametersLineEdit->setEnabled(true);
@@ -534,9 +534,9 @@ void GraphSearchDialog::setUiStep(SearchUiState uiState) {
         ui->enterQueryManuallyInfoText->setEnabled(true);
         ui->clearAllQueriesInfoText->setEnabled(true);
         ui->clearSelectedQueriesInfoText->setEnabled(true);
-        ui->blastHitsTable->setEnabled(false);
-        ui->blastSearchWidget->setEnabled(true);
-        ui->blastHitsTableInfoText->setEnabled(false);
+        ui->hitsTable->setEnabled(false);
+        ui->graphSearchWidget->setEnabled(true);
+        ui->hitsTableInfoText->setEnabled(false);
         ui->includeGFAPaths->setEnabled(false);
         ui->includeGFAPathsInfoText->setEnabled(false);
         break;
@@ -547,8 +547,8 @@ void GraphSearchDialog::setUiStep(SearchUiState uiState) {
         ui->step2Label->setEnabled(true);
         ui->loadQueriesFromFastaButton->setEnabled(true);
         ui->enterQueryManuallyButton->setEnabled(m_graphSearch->allowManualQueries());
-        ui->blastQueriesTable->setEnabled(true);
-        ui->blastQueriesTableInfoText->setEnabled(true);
+        ui->queriesTable->setEnabled(true);
+        ui->queriesTableInfoText->setEnabled(true);
         ui->step3Label->setEnabled(true);
         ui->parametersLabel->setEnabled(true);
         ui->parametersLineEdit->setEnabled(true);
@@ -563,9 +563,9 @@ void GraphSearchDialog::setUiStep(SearchUiState uiState) {
         ui->enterQueryManuallyInfoText->setEnabled(true);
         ui->clearAllQueriesInfoText->setEnabled(true);
         ui->clearSelectedQueriesInfoText->setEnabled(true);
-        ui->blastHitsTable->setEnabled(true);
-        ui->blastSearchWidget->setEnabled(true);
-        ui->blastHitsTableInfoText->setEnabled(true);
+        ui->hitsTable->setEnabled(true);
+        ui->graphSearchWidget->setEnabled(true);
+        ui->hitsTableInfoText->setEnabled(true);
         ui->includeGFAPaths->setEnabled(false);
         ui->includeGFAPathsInfoText->setEnabled(false);
         break;
@@ -584,7 +584,7 @@ void GraphSearchDialog::openFiltersDialog() {
 }
 
 void GraphSearchDialog::setFilterText() {
-    ui->blastHitFiltersLabel->setText("Current filters: " + HitFiltersDialog::getFilterText());
+    ui->hitFiltersLabel->setText("Current filters: " + HitFiltersDialog::getFilterText());
 }
 
 void GraphSearchDialog::setUiCaptions() {
@@ -593,7 +593,7 @@ void GraphSearchDialog::setUiCaptions() {
     ui->step3Label->setText(QString("<b>Step 3:</b> run %1 search").arg(m_graphSearch->name()));
     ui->loadQueriesFromFastaButton->setText(QString("Load from %1 file").arg(m_graphSearch->queryFormat()));
     ui->buildBlastDatabaseButton->setText(QString("Build %1 database").arg(m_graphSearch->name()));
-    ui->blastFiltersButton->setText(QString("Set %1 hit filters").arg(m_graphSearch->name()));
+    ui->filtersButton->setText(QString("Set %1 hit filters").arg(m_graphSearch->name()));
     ui->runBlastSearchButton->setText(QString("Run %1 search").arg(m_graphSearch->name()));
 }
 

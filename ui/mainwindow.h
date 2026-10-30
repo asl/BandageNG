@@ -70,7 +70,7 @@ private:
     QString m_fileToLoadOnStartup;
     bool m_drawGraphAfterLoad;
     UiState m_uiState;
-    GraphSearchDialog * m_blastSearchDialog;
+    GraphSearchDialog * m_graphSearchDialog;
 
     bool m_alreadyShown;
 
@@ -92,7 +92,7 @@ private:
     void setWidgetsFromSettings();
     QString getDefaultImageFileName();
     void setGraphScopeComboBox(GraphScope graphScope);
-    void setupBlastQueryComboBox();
+    void setupQueryComboBox();
     void setupPathSelectionLineEdit(QLineEdit *lineEdit);
     void setupWalkSelectionLineEdit(QLineEdit *lineEdit);
     bool checkForImageSave();
@@ -150,9 +150,9 @@ private slots:
     void showWalkListDialog();
     void selectUserSpecifiedNodes();
     void graphLayoutFinished(const GraphLayout &layout);
-    void openBlastSearchDialog();
-    void blastChanged();
-    void blastQueryChanged();
+    void openGraphSearchDialog();
+    void graphSearchChanged();
+    void queryChanged();
     void showHidePanels();
     void bringSelectedNodesToFront();
     void selectNodesWithQueryHits();

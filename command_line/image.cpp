@@ -98,12 +98,12 @@ int handleImageCmd(QApplication *app,
             return 1;
         }
 
-        QString blastError = g_blastSearch->doAutoGraphSearch(*g_assemblyGraph,
-                                                              g_settings->blastQueryFilename,
+        QString searchError = g_blastSearch->doAutoGraphSearch(*g_assemblyGraph,
+                                                              g_settings->queryFilename,
                                                               false, /* include paths */
-                                                              g_settings->blastSearchParameters);
-        if (!blastError.isEmpty()) {
-            err << blastError << Qt::endl;
+                                                              g_settings->searchParameters);
+        if (!searchError.isEmpty()) {
+            err << searchError << Qt::endl;
             return 1;
         }
     }

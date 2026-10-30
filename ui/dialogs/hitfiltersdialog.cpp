@@ -71,19 +71,19 @@ void setSpinBoxValMinAndMax(QDoubleSpinBox * spinBox, FloatSetting setting)
 
 void HitFiltersDialog::setWidgetsFromSettings()
 {
-    ui->alignmentLengthCheckBox->setChecked(g_settings->blastAlignmentLengthFilter.on);
-    ui->queryCoverageCheckBox->setChecked(g_settings->blastQueryCoverageFilter.on);
-    ui->identityCheckBox->setChecked(g_settings->blastIdentityFilter.on);
-    ui->eValueCheckBox->setChecked(g_settings->blastEValueFilter.on);
-    ui->bitScoreCheckBox->setChecked(g_settings->blastBitScoreFilter.on);
+    ui->alignmentLengthCheckBox->setChecked(g_settings->alignmentLengthFilter.on);
+    ui->queryCoverageCheckBox->setChecked(g_settings->queryCoverageFilter.on);
+    ui->identityCheckBox->setChecked(g_settings->identityFilter.on);
+    ui->eValueCheckBox->setChecked(g_settings->evalueFilter.on);
+    ui->bitScoreCheckBox->setChecked(g_settings->bitScoreFilter.on);
 
-    setSpinBoxValMinAndMax(ui->alignmentLengthSpinBox, g_settings->blastAlignmentLengthFilter);
-    setSpinBoxValMinAndMax(ui->queryCoverageSpinBox, g_settings->blastQueryCoverageFilter);
-    setSpinBoxValMinAndMax(ui->identitySpinBox, g_settings->blastIdentityFilter);
-    setSpinBoxValMinAndMax(ui->bitScoreSpinBox, g_settings->blastBitScoreFilter);
+    setSpinBoxValMinAndMax(ui->alignmentLengthSpinBox, g_settings->alignmentLengthFilter);
+    setSpinBoxValMinAndMax(ui->queryCoverageSpinBox, g_settings->queryCoverageFilter);
+    setSpinBoxValMinAndMax(ui->identitySpinBox, g_settings->identityFilter);
+    setSpinBoxValMinAndMax(ui->bitScoreSpinBox, g_settings->bitScoreFilter);
 
-    ui->eValueCoefficientSpinBox->setValue(g_settings->blastEValueFilter.val.getCoefficient());
-    ui->eValueExponentSpinBox->setValue(g_settings->blastEValueFilter.val.getExponent());
+    ui->eValueCoefficientSpinBox->setValue(g_settings->evalueFilter.val.getCoefficient());
+    ui->eValueExponentSpinBox->setValue(g_settings->evalueFilter.val.getExponent());
 
     checkBoxesChanged();
 }
@@ -91,52 +91,52 @@ void HitFiltersDialog::setWidgetsFromSettings()
 
 void HitFiltersDialog::setSettingsFromWidgets()
 {
-    g_settings->blastAlignmentLengthFilter.on = ui->alignmentLengthCheckBox->isChecked();
-    g_settings->blastQueryCoverageFilter.on = ui->queryCoverageCheckBox->isChecked();
-    g_settings->blastIdentityFilter.on = ui->identityCheckBox->isChecked();
-    g_settings->blastEValueFilter.on = ui->eValueCheckBox->isChecked();
-    g_settings->blastBitScoreFilter.on = ui->bitScoreCheckBox->isChecked();
+    g_settings->alignmentLengthFilter.on = ui->alignmentLengthCheckBox->isChecked();
+    g_settings->queryCoverageFilter.on = ui->queryCoverageCheckBox->isChecked();
+    g_settings->identityFilter.on = ui->identityCheckBox->isChecked();
+    g_settings->evalueFilter.on = ui->eValueCheckBox->isChecked();
+    g_settings->bitScoreFilter.on = ui->bitScoreCheckBox->isChecked();
 
-    g_settings->blastAlignmentLengthFilter.val = ui->alignmentLengthSpinBox->value();
-    g_settings->blastQueryCoverageFilter.val = ui->queryCoverageSpinBox->value();
-    g_settings->blastIdentityFilter.val = ui->identitySpinBox->value();
-    g_settings->blastEValueFilter.val = SciNot(ui->eValueCoefficientSpinBox->value(), ui->eValueExponentSpinBox->value());
-    g_settings->blastBitScoreFilter.val = ui->bitScoreSpinBox->value();
+    g_settings->alignmentLengthFilter.val = ui->alignmentLengthSpinBox->value();
+    g_settings->queryCoverageFilter.val = ui->queryCoverageSpinBox->value();
+    g_settings->identityFilter.val = ui->identitySpinBox->value();
+    g_settings->evalueFilter.val = SciNot(ui->eValueCoefficientSpinBox->value(), ui->eValueExponentSpinBox->value());
+    g_settings->bitScoreFilter.val = ui->bitScoreSpinBox->value();
 }
 
 
 QString HitFiltersDialog::getFilterText()
 {
     QString filterText;
-    if (g_settings->blastAlignmentLengthFilter.on)
+    if (g_settings->alignmentLengthFilter.on)
     {
         if (filterText.length() > 0)
             filterText += ", ";
-        filterText += "alignment length: " + QString::number(g_settings->blastAlignmentLengthFilter);
+        filterText += "alignment length: " + QString::number(g_settings->alignmentLengthFilter);
     }
-    if (g_settings->blastQueryCoverageFilter.on)
+    if (g_settings->queryCoverageFilter.on)
     {
         if (filterText.length() > 0)
             filterText += ", ";
-        filterText += "query coverage: " + QString::number(g_settings->blastQueryCoverageFilter) + "%";
+        filterText += "query coverage: " + QString::number(g_settings->queryCoverageFilter) + "%";
     }
-    if (g_settings->blastIdentityFilter.on)
+    if (g_settings->identityFilter.on)
     {
         if (filterText.length() > 0)
             filterText += ", ";
-        filterText += "identity: " + QString::number(g_settings->blastIdentityFilter) + "%";
+        filterText += "identity: " + QString::number(g_settings->identityFilter) + "%";
     }
-    if (g_settings->blastEValueFilter.on)
+    if (g_settings->evalueFilter.on)
     {
         if (filterText.length() > 0)
             filterText += ", ";
-        filterText += "e-value: " + g_settings->blastEValueFilter.val.asString(true);
+        filterText += "e-value: " + g_settings->evalueFilter.val.asString(true);
     }
-    if (g_settings->blastBitScoreFilter.on)
+    if (g_settings->bitScoreFilter.on)
     {
         if (filterText.length() > 0)
             filterText += ", ";
-        filterText += "bit score: " + QString::number(g_settings->blastBitScoreFilter);
+        filterText += "bit score: " + QString::number(g_settings->bitScoreFilter);
     }
 
     if (filterText == "")

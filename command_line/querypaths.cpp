@@ -53,7 +53,7 @@ int handleQueryPathsCmd(QApplication *app,
     QTextStream out(stdout);
     QTextStream err(stderr);
 
-    g_settings->blastQueryFilename = QString::fromStdString(cmd.m_queries.generic_string());
+    g_settings->queryFilename = QString::fromStdString(cmd.m_queries.generic_string());
 
     // Ensure that the --query option isn't used, as that would overwrite the
     // queries file that is a positional argument.
@@ -105,12 +105,12 @@ int handleQueryPathsCmd(QApplication *app,
     out << "done" << Qt::endl;
 
     log("Running BLAST search... ");
-    QString blastError = g_blastSearch->doAutoGraphSearch(*g_assemblyGraph,
-                                                          g_settings->blastQueryFilename,
+    QString searchError = g_blastSearch->doAutoGraphSearch(*g_assemblyGraph,
+                                                          g_settings->queryFilename,
                                                           cmd.m_gfaPaths,
-                                                          g_settings->blastSearchParameters);
-    if (!blastError.isEmpty()) {
-        err << Qt::endl << blastError << Qt::endl;
+                                                          g_settings->searchParameters);
+    if (!searchError.isEmpty()) {
+        err << Qt::endl << searchError << Qt::endl;
         return 1;
     }
     out << "done" << Qt::endl;
