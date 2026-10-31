@@ -152,6 +152,8 @@ GraphSearchDialog::GraphSearchDialog(QWidget *parent, const QString& autoQuery)
     connect(ui->enterQueryManuallyButton, SIGNAL(clicked()), this, SLOT(enterQueryManually()));
     connect(ui->clearAllQueriesButton, SIGNAL(clicked()), this, SLOT(clearAllQueries()));
     connect(ui->clearSelectedQueriesButton, SIGNAL(clicked(bool)), this, SLOT(clearSelectedQueries()));
+    connect(ui->deselectAllShownButton, SIGNAL(clicked()), this, SLOT(deselectAllShownQueries()));
+    connect(ui->selectAllShownButton, SIGNAL(clicked()), this, SLOT(selectAllShownQueries()));
     connect(ui->runSearchButton, SIGNAL(clicked()), this, SLOT(runGraphSearchesInThread()));
 
     connect(ui->queriesTable->selectionModel(),
@@ -187,14 +189,9 @@ GraphSearchDialog::GraphSearchDialog(QWidget *parent, const QString& autoQuery)
 
     connect(m_queriesListModel, &QueriesListModel::dataChanged,
             [this]() {
+                // Hit row colours / grey-out depend on Query show state and colour.
+                m_hitsListModel->refresh();
                 emit changed();
-            });
-
-    // This is weird: we need to propagate data changes to proxies
-    connect(m_queriesListModel, &QueriesListModel::dataChanged,
-            [proxyHModel, proxyQModel](const QModelIndex &topLeft, const QModelIndex &bottomRight) {
-                emit proxyQModel->dataChanged(proxyQModel->mapFromSource(topLeft), proxyQModel->mapFromSource(bottomRight));
-                emit proxyHModel->dataChanged(QModelIndex(), QModelIndex());
             });
 
     connect(ui->filtersButton, SIGNAL(clicked(bool)), this, SLOT(openFiltersDialog()));
@@ -345,6 +342,14 @@ void GraphSearchDialog::clearSelectedQueries() {
     emit changed();
 }
 
+void GraphSearchDialog::deselectAllShownQueries() {
+    m_queriesListModel->setAllShown(false);
+}
+
+void GraphSearchDialog::selectAllShownQueries() {
+    m_queriesListModel->setAllShown(true);
+}
+
 void GraphSearchDialog::runGraphSearchesInThread() {
     runGraphSearches(true);
 }
@@ -407,6 +412,8 @@ void GraphSearchDialog::setUiStep(SearchUiState uiState) {
         ui->runSearchButton->setEnabled(false);
         ui->clearAllQueriesButton->setEnabled(false);
         ui->clearSelectedQueriesButton->setEnabled(false);
+        ui->deselectAllShownButton->setEnabled(false);
+        ui->selectAllShownButton->setEnabled(false);
         ui->hitsLabel->setEnabled(false);
         ui->step1TickLabel->setPixmap(QPixmap());
         ui->step2TickLabel->setPixmap(QPixmap());
@@ -416,6 +423,8 @@ void GraphSearchDialog::setUiStep(SearchUiState uiState) {
         ui->enterQueryManuallyInfoText->setEnabled(false);
         ui->clearAllQueriesInfoText->setEnabled(false);
         ui->clearSelectedQueriesInfoText->setEnabled(false);
+        ui->deselectAllShownInfoText->setEnabled(false);
+        ui->selectAllShownInfoText->setEnabled(false);
         ui->hitsTable->setEnabled(false);
         ui->graphSearchWidget->setEnabled(false);
         ui->hitsTableInfoText->setEnabled(false);
@@ -437,6 +446,8 @@ void GraphSearchDialog::setUiStep(SearchUiState uiState) {
         ui->runSearchButton->setEnabled(false);
         ui->clearAllQueriesButton->setEnabled(false);
         ui->clearSelectedQueriesButton->setEnabled(false);
+        ui->deselectAllShownButton->setEnabled(false);
+        ui->selectAllShownButton->setEnabled(false);
         ui->hitsLabel->setEnabled(false);
         ui->step1TickLabel->setPixmap(QPixmap());
         ui->step2TickLabel->setPixmap(QPixmap());
@@ -446,6 +457,8 @@ void GraphSearchDialog::setUiStep(SearchUiState uiState) {
         ui->enterQueryManuallyInfoText->setEnabled(false);
         ui->clearAllQueriesInfoText->setEnabled(false);
         ui->clearSelectedQueriesInfoText->setEnabled(false);
+        ui->deselectAllShownInfoText->setEnabled(false);
+        ui->selectAllShownInfoText->setEnabled(false);
         ui->hitsTable->setEnabled(false);
         ui->graphSearchWidget->setEnabled(false);
         ui->hitsTableInfoText->setEnabled(false);
@@ -467,6 +480,8 @@ void GraphSearchDialog::setUiStep(SearchUiState uiState) {
         ui->runSearchButton->setEnabled(false);
         ui->clearAllQueriesButton->setEnabled(false);
         ui->clearAllQueriesButton->setEnabled(false);
+        ui->deselectAllShownButton->setEnabled(false);
+        ui->selectAllShownButton->setEnabled(false);
         ui->hitsLabel->setEnabled(false);
         ui->step1TickLabel->setPixmap(tick);
         ui->step2TickLabel->setPixmap(QPixmap());
@@ -476,6 +491,8 @@ void GraphSearchDialog::setUiStep(SearchUiState uiState) {
         ui->enterQueryManuallyInfoText->setEnabled(true);
         ui->clearSelectedQueriesInfoText->setEnabled(false);
         ui->clearSelectedQueriesInfoText->setEnabled(false);
+        ui->deselectAllShownInfoText->setEnabled(false);
+        ui->selectAllShownInfoText->setEnabled(false);
         ui->hitsTable->setEnabled(false);
         ui->graphSearchWidget->setEnabled(false);
         ui->hitsTableInfoText->setEnabled(false);
@@ -496,6 +513,8 @@ void GraphSearchDialog::setUiStep(SearchUiState uiState) {
         ui->parametersLineEdit->setEnabled(true);
         ui->runSearchButton->setEnabled(true);
         ui->clearAllQueriesButton->setEnabled(true);
+        ui->deselectAllShownButton->setEnabled(true);
+        ui->selectAllShownButton->setEnabled(true);
         ui->hitsLabel->setEnabled(false);
         ui->step1TickLabel->setPixmap(tick);
         ui->step2TickLabel->setPixmap(tick);
@@ -505,6 +524,8 @@ void GraphSearchDialog::setUiStep(SearchUiState uiState) {
         ui->enterQueryManuallyInfoText->setEnabled(true);
         ui->clearAllQueriesInfoText->setEnabled(true);
         ui->clearSelectedQueriesInfoText->setEnabled(true);
+        ui->deselectAllShownInfoText->setEnabled(true);
+        ui->selectAllShownInfoText->setEnabled(true);
         ui->hitsTable->setEnabled(false);
         ui->graphSearchWidget->setEnabled(true);
         ui->hitsTableInfoText->setEnabled(false);
@@ -525,6 +546,8 @@ void GraphSearchDialog::setUiStep(SearchUiState uiState) {
         ui->parametersLineEdit->setEnabled(true);
         ui->runSearchButton->setEnabled(false);
         ui->clearAllQueriesButton->setEnabled(true);
+        ui->deselectAllShownButton->setEnabled(true);
+        ui->selectAllShownButton->setEnabled(true);
         ui->hitsLabel->setEnabled(false);
         ui->step1TickLabel->setPixmap(tick);
         ui->step2TickLabel->setPixmap(tick);
@@ -534,6 +557,8 @@ void GraphSearchDialog::setUiStep(SearchUiState uiState) {
         ui->enterQueryManuallyInfoText->setEnabled(true);
         ui->clearAllQueriesInfoText->setEnabled(true);
         ui->clearSelectedQueriesInfoText->setEnabled(true);
+        ui->deselectAllShownInfoText->setEnabled(true);
+        ui->selectAllShownInfoText->setEnabled(true);
         ui->hitsTable->setEnabled(false);
         ui->graphSearchWidget->setEnabled(true);
         ui->hitsTableInfoText->setEnabled(false);
@@ -554,6 +579,8 @@ void GraphSearchDialog::setUiStep(SearchUiState uiState) {
         ui->parametersLineEdit->setEnabled(true);
         ui->runSearchButton->setEnabled(true);
         ui->clearAllQueriesButton->setEnabled(true);
+        ui->deselectAllShownButton->setEnabled(true);
+        ui->selectAllShownButton->setEnabled(true);
         ui->hitsLabel->setEnabled(true);
         ui->step1TickLabel->setPixmap(tick);
         ui->step2TickLabel->setPixmap(tick);
@@ -563,6 +590,8 @@ void GraphSearchDialog::setUiStep(SearchUiState uiState) {
         ui->enterQueryManuallyInfoText->setEnabled(true);
         ui->clearAllQueriesInfoText->setEnabled(true);
         ui->clearSelectedQueriesInfoText->setEnabled(true);
+        ui->deselectAllShownInfoText->setEnabled(true);
+        ui->selectAllShownInfoText->setEnabled(true);
         ui->hitsTable->setEnabled(true);
         ui->graphSearchWidget->setEnabled(true);
         ui->hitsTableInfoText->setEnabled(true);
@@ -737,7 +766,9 @@ bool QueriesListModel::setData(const QModelIndex &index, const QVariant &value, 
     auto column = QueriesHitColumns(index.column());
     if (role == Qt::CheckStateRole && column == QueriesHitColumns::Show) { // Implement query shown checkbox
         query->setShown(value.toBool());
-        emit dataChanged(index, QModelIndex()); // Here we need to refresh the whole row
+        // Refresh the whole row (checkbox + grey background on other columns).
+        emit dataChanged(index.sibling(index.row(), 0),
+                         index.sibling(index.row(), columnCount(QModelIndex()) - 1));
         return true;
     } else if (role == Qt::EditRole && column == QueriesHitColumns::QueryName) { // Change query name
         QString newName = value.toString();
@@ -756,6 +787,20 @@ Query *QueriesListModel::query(const QModelIndex &index) const {
         return nullptr;
 
     return m_queries.get().query(index.row());
+}
+
+void QueriesListModel::setAllShown(bool shown) {
+    auto &queries = m_queries.get();
+    int count = int(queries.getQueryCount());
+    if (count == 0)
+        return;
+
+    for (auto *query : queries)
+        query->setShown(shown);
+
+    // Refresh Show checkboxes and grey backgrounds for every row.
+    emit dataChanged(index(0, 0),
+                     index(count - 1, columnCount(QModelIndex()) - 1));
 }
 
 void QueriesListModel::setColor(const QModelIndex &index, QColor color) {
@@ -929,6 +974,14 @@ QVariant HitsListModel::headerData(int section, Qt::Orientation orientation, int
         case HitsColumns::BitScore:
             return "Bit\nscore";
     }
+}
+
+void HitsListModel::refresh() {
+    if (m_hits.empty())
+        return;
+
+    emit dataChanged(index(0, 0),
+                     index(rowCount(QModelIndex()) - 1, columnCount(QModelIndex()) - 1));
 }
 
 void HitsListModel::update(Queries &queries) {

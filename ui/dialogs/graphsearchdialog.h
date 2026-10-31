@@ -73,6 +73,7 @@ public:
     bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole) override;
 
     void setColor(const QModelIndex &index, QColor color);
+    void setAllShown(bool shown);
     void update() { startUpdate(); endUpdate(); }
     void setQueries(search::Queries &queries) { m_queries = queries; }
     void startUpdate() { beginResetModel(); }
@@ -95,6 +96,7 @@ public:
     QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
 
     void update(search::Queries &queries);
+    void refresh();
     void clear() { m_hits.clear(); }
     void startUpdate() { beginResetModel(); }
     void endUpdate() { endResetModel(); }
@@ -134,6 +136,8 @@ private slots:
     void enterQueryManually();
     void clearAllQueries();
     void clearSelectedQueries();
+    void deselectAllShownQueries();
+    void selectAllShownQueries();
     void runGraphSearchesInThread();
     void fillTablesAfterGraphSearch();
     void updateTables();
