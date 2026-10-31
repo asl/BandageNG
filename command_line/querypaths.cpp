@@ -30,18 +30,20 @@
 
 CLI::App *addQueryPathsSubcommand(CLI::App &app,
                                   QueryPathsCmd &cmd) {
-    auto *qp = app.add_subcommand("querypaths", "Output graph paths for BLAST queries");
+    auto *qp = app.add_subcommand("querypaths", "Output graph paths for queries from the active searcher");
     qp->add_option("<graph>", cmd.m_graph, "A graph file of any type supported by Bandage")
             ->required()->check(CLI::ExistingFile);
-    qp->add_option("<queries>", cmd.m_queries, "A FASTA file of one or more BLAST queries")
+    qp->add_option("<queries>", cmd.m_queries,
+                   "A query file for the active searcher (FASTA for BLAST/minimap2, HMM for hmmer)")
             ->required()->check(CLI::ExistingFile);
     qp->add_option("<output_prefix>", cmd.m_prefix, "The output file prefix (used to create the '.tsv' output file, and possibly FASTA files as well, depending on options)")
             ->required();
     qp->add_flag("--pathfasta", cmd.m_pathFasta, "Put all query path sequences in a multi-FASTA file, not in the TSV file");
-    qp->add_flag("--hitsfasta", cmd.m_hitsFasta, "Produce a multi-FASTA file of all BLAST hits in the query paths");
+    qp->add_flag("--hitsfasta", cmd.m_hitsFasta, "Produce a multi-FASTA file of all hits in the query paths");
     qp->add_flag("--gfapaths", cmd.m_gfaPaths, "Align to GFA path sequences in addition to nodes");
 
-    qp->footer("Bandage querypaths searches for queries in the graph using BLAST and outputs the results to a tab-delimited file.");
+    qp->footer("Bandage querypaths searches for queries in the graph using the active searcher "
+               "(--searcher; default: blast) and outputs the results to a tab-delimited file.");
 
     return qp;
 
@@ -86,8 +88,8 @@ int handleQueryPathsCmd(QApplication *app,
 
     QDateTime startTime = QDateTime::currentDateTime();
 
-    auto log = [&out](const char * msg) {
-        out << "(" << QDateTime::currentDateTime().toString("dd MMM yyyy hh:mm:ss") << ") " << msg  << Qt::flush;
+    auto log = [&out](const QString &msg) {
+        out << "(" << QDateTime::currentDateTime().toString("dd MMM yyyy hh:mm:ss") << ") " << msg << Qt::flush;
     };
 
     log("Loading graph...        ");
@@ -98,18 +100,13 @@ int handleQueryPathsCmd(QApplication *app,
         return 1;
     }
 
-    if (g_settings->graphSearcher != search::BLAST) {
-        err << "Bandage-NG error: querypaths requires the BLAST searcher." << Qt::endl;
-        return 1;
-    }
-
     if (!g_graphSearch->ready()) {
         err << g_graphSearch->lastError() << Qt::endl;
         return 1;
     }
     out << "done" << Qt::endl;
 
-    log("Running BLAST search... ");
+    log(QString("Running %1 search... ").arg(g_graphSearch->name()).leftJustified(25));
     QString searchError = g_graphSearch->doAutoGraphSearch(*g_assemblyGraph,
                                                           g_settings->queryFilename,
                                                           cmd.m_gfaPaths,
@@ -253,7 +250,7 @@ int handleQueryPathsCmd(QApplication *app,
     if (cmd.m_hitsFasta)
         out << "              " + hitsFastaFilename << Qt::endl;
 
-    out << Qt::endl << "Summary: Total BLAST queries:           " << g_graphSearch->getQueryCount() << Qt::endl;
+    out << Qt::endl << "Summary: Total queries:                 " << g_graphSearch->getQueryCount() << Qt::endl;
     out << "         Total hits:                    " << g_graphSearch->getNumHits() << Qt::endl;
     out << "         Queries with found paths:      " << g_graphSearch->getQueryCountWithAtLeastOnePath() << Qt::endl;
     out << "         Total query paths:             " << g_graphSearch->getQueryPathCount() << Qt::endl;

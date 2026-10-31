@@ -32,7 +32,7 @@ GraphSearch::GraphSearch(const QDir &workDir, QObject *parent)
     : QObject(parent),
       m_queries(), m_tempDirectory(workDir.filePath("bandage_temp_XXXXXX")) {
     if (!m_tempDirectory.isValid())
-        m_lastError = "A temporary directory could not be created.  BLAST search functionality will not be available. Error: " + m_tempDirectory.errorString();
+        m_lastError = "A temporary directory could not be created.  Graph search functionality will not be available. Error: " + m_tempDirectory.errorString();
 }
 
 GraphSearch::~GraphSearch() {
@@ -117,10 +117,10 @@ QString GraphSearch::cleanQueryName(QString queryName) {
     //Replace whitespace with underscores
     queryName = queryName.replace(QRegularExpression("\\s"), "_");
 
-    //Remove any dots from the end of the query name.  BLAST doesn't
+    //Remove any dots from the end of the query name.  Some searchers don't
     //include them in its results, so if we don't remove them, then
     //we won't be able to find a match between the query name and
-    //the BLAST hit.
+    //the hit.
     while (queryName.length() > 0 && queryName[queryName.size() - 1] == '.')
         queryName = queryName.left(queryName.size() - 1);
 

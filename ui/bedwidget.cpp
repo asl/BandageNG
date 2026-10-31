@@ -42,7 +42,7 @@ BedWidget::BedWidget(QWidget *parent) : QWidget(parent) {
                         node = node->getReverseComplement();
                     // BED coordinates are zero-based and non-inclusive, e.g. the 1 bp segment located at the very
                     // start will have coordinates [0, 1). Annotations use 1-based inclusive coordinates (to
-                    // be aligned with BLAST hits, etc.). Make a translation here. Since end is already 1-based,
+                    // be aligned with query hits, etc.). Make a translation here. Since end is already 1-based,
                     // we just need to tune start.
                     auto &annotation = annotationGroup.annotationMap[node].emplace_back(
                         std::make_unique<Annotation>(bedLine.chromStart + 1, bedLine.chromEnd, bedLine.name));

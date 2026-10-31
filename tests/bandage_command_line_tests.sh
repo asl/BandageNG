@@ -249,6 +249,9 @@ test_all "$bandagepath --minlendis" 114 "" "--minlendis: 1 required INT:INT in [
 test_all "$bandagepath --maxlendis" 114 "" "--maxlendis: 1 required INT:INT in [-1000000 - 1000000], or \"off\" missing Run with --help or --helpall for more information."
 test_all "$bandagepath --maxevprod" 114 "" "--maxevprod: 1 required SCINOT:FLOAT in [1e-999 - 99], or \"off\" missing Run with --help or --helpall for more information."
 
+# querypaths uses the active --searcher (no longer BLAST-gated at CLI parse)
+test_all "$bandagepath querypaths --searcher minimap2" 106 "" "<graph> is required Run with --help or --helpall for more information."
+
 
 rmdir tmp
 

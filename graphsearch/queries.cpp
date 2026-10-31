@@ -70,7 +70,7 @@ QString Queries::renameQuery(Query * newQuery, QString newName) {
 //conflict with viewing all queries at once or no queries.
 QString Queries::getUniqueName(QString name) {
     //If the query name ends in a semicolon, remove it.  Ending semicolons
-    //mess with BLAST.
+    //mess with the searcher.
     if (name.endsWith(';'))
         name.chop(1);
 
@@ -147,7 +147,7 @@ bool Queries::isQueryPresent(const Query * query) const {
     return std::find(m_queries.begin(), m_queries.end(), query) != m_queries.end();
 }
 
-// This function looks at each BLAST query and tries to find a path through
+// This function looks at each query and tries to find a path through
 // the graph which covers the maximal amount of the query.
 void Queries::findQueryPaths() {
     for (auto *query : m_queries)

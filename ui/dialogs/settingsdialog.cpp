@@ -50,7 +50,7 @@ SettingsDialog::SettingsDialog(QWidget *parent) :
     ui->uniformPositiveNodeColourButton->m_name = "Uniform positive node colour";
     ui->uniformNegativeNodeColourButton->m_name = "Uniform negative node colour";
     ui->uniformNodeSpecialColourButton->m_name = "Uniform special node colour";
-    ui->noBlastHitsColourButton->m_name = "No BLAST hits colour";
+    ui->noHitsColourButton->m_name = "No query hits colour";
     ui->contiguousStrandSpecificColourButton->m_name = "Contiguous (strand-specific) colour";
     ui->contiguousEitherStrandColourButton->m_name = "Contiguous (either strand) colour";
     ui->maybeContiguousColourButton->m_name = "Maybe contiguous colour";
@@ -198,7 +198,7 @@ void SettingsDialog::loadOrSaveSettingsToOrFromWidgets(bool setWidgets, Settings
     colourFunctionPointer(&settings->uniformNodeSpecialColour, ui->uniformNodeSpecialColourButton);
     doubleFunctionPointer(&settings->lowDepthValue, ui->lowDepthValueSpinBox, false);
     doubleFunctionPointer(&settings->highDepthValue, ui->highDepthValueSpinBox, false);
-    colourFunctionPointer(&settings->grayColor, ui->noBlastHitsColourButton);
+    colourFunctionPointer(&settings->grayColor, ui->noHitsColourButton);
     intFunctionPointer(&settings->contiguitySearchSteps, ui->contiguitySearchDepthSpinBox);
     colourFunctionPointer(&settings->contiguousStrandSpecificColour, ui->contiguousStrandSpecificColourButton);
     colourFunctionPointer(&settings->contiguousEitherStrandColour, ui->contiguousEitherStrandColourButton);
@@ -294,16 +294,16 @@ void SettingsDialog::accept()
     else if (ui->minLengthPercentageCheckBox->isChecked() &&
              ui->maxLengthPercentageCheckBox->isChecked() &&
              ui->minLengthPercentageSpinBox->value() > ui->maxLengthPercentageSpinBox->value())
-        QMessageBox::warning(this, "BLAST query path length value error", "In the 'BLAST query paths' section, the minimum "
-                                                                          "path length value cannot be larger than "
-                                                                           "the maximum path length value.");
+        QMessageBox::warning(this, "Query path length value error", "In the 'Query paths' section, the minimum "
+                                                                    "path length value cannot be larger than "
+                                                                    "the maximum path length value.");
 
     else if (ui->minLengthBaseDiscrepancyCheckBox->isChecked() &&
              ui->maxLengthBaseDiscrepancyCheckBox->isChecked() &&
              ui->minLengthBaseDiscrepancySpinBox->value() > ui->maxLengthBaseDiscrepancySpinBox->value())
-        QMessageBox::warning(this, "BLAST query length discrepancy value error", "In the 'BLAST query paths' section, the minimum "
-                                                                                 "length discrepancy value cannot be larger than "
-                                                                                 "the maximum length discrepancy value.");
+        QMessageBox::warning(this, "Query length discrepancy value error", "In the 'Query paths' section, the minimum "
+                                                                           "length discrepancy value cannot be larger than "
+                                                                           "the maximum length discrepancy value.");
 
     else
         QDialog::accept();

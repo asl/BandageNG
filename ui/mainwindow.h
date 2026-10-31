@@ -180,7 +180,7 @@ private slots:
     void duplicateSelectedNodes();
     void mergeSelectedNodes();
     void mergeAllPossible();
-    void cleanUpAllBlast();
+    void cleanUpGraphSearch();
     void changeNodeName();
     void changeNodeDepth();
     void openGraphInfoDialog();

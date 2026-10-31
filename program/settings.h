@@ -119,7 +119,7 @@ public:
     bool arrowheadsInSingleMode;
     FloatSetting textOutlineThickness;
 
-    int blastRainbowPartsPerQuery;
+    int rainbowPartsPerQuery;
 
     GraphScope graphScope;
     IntSetting nodeDistance;
@@ -203,8 +203,8 @@ public:
     int maxAutoFindEdgeOverlap;
 
     //These control how Bandage finds the best path in the graph to represent
-    //each BLAST query.  Some of these settings can be turned on and off and
-    //therefore have a corresponding bool value.
+    //each query after a graph search.  Some of these settings can be turned on
+    //and off and therefore have a corresponding bool value.
     IntSetting maxHitsForQueryPath;
     IntSetting maxQueryPathNodes;
     FloatSetting minQueryCoveredByPath;

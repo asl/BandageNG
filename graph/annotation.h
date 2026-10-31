@@ -57,9 +57,9 @@ private:
     const QColor m_color;
 };
 
-class RainbowBlastHitView : public IAnnotationView {
+class RainbowHitView : public IAnnotationView {
 public:
-    RainbowBlastHitView(double rainbowFractionStart, double rainbowFractionEnd)
+    RainbowHitView(double rainbowFractionStart, double rainbowFractionEnd)
             : m_rainbowFractionStart(rainbowFractionStart), m_rainbowFractionEnd(rainbowFractionEnd) {}
 
     void drawFigure(QPainter &painter, GraphicsItemNode &graphicsItemNode, bool reverseComplement, int64_t start,

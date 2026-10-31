@@ -33,9 +33,6 @@
 #include "ui/dialogs/pathlistdialog.h"
 #include "ui/dialogs/walklistdialog.h"
 
-#include "graphsearch/blast/blastsearch.h"
-#include "graphsearch/minimap2/minimap2search.h"
-
 #include "graph/assemblygraph.h"
 #include "graph/debruijnnode.h"
 #include "graph/debruijnedge.h"
@@ -242,8 +239,8 @@ MainWindow::MainWindow(QString fileToLoadOnStartup, bool drawGraphAfterLoad) :
 
 
 // This function runs after the MainWindow has been shown.  This code is not
-// included in the constructor because it can perform a BLAST search, which
-// will fill the BLAST query combo box and screw up widget sizes.
+// included in the constructor because it can perform a graph search, which
+// will fill the query combo box and screw up widget sizes.
 void MainWindow::afterMainWindowShow() {
     if (m_alreadyShown)
         return;
@@ -257,7 +254,7 @@ void MainWindow::afterMainWindowShow() {
                   << ", " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << std::endl;
     }
 
-    // If a BLAST query filename is present, do the BLAST search now automatically.
+    // If a query filename is present, do the graph search now automatically.
     if (!g_settings->queryFilename.isEmpty()) {
         GraphSearchDialog graphSearchDialog(this, g_settings->queryFilename);
         setupQueryComboBox();
@@ -1990,7 +1987,7 @@ void MainWindow::openAboutDialog()
 
 
 void MainWindow::openGraphSearchDialog() {
-    // If a BLAST search dialog does not currently exist, make it.
+    // If a graph search dialog does not currently exist, make it.
     if (!m_graphSearchDialog) {
         m_graphSearchDialog = new GraphSearchDialog(this);
         connect(m_graphSearchDialog, SIGNAL(changed()), this, SLOT(graphSearchChanged()));
@@ -2071,7 +2068,7 @@ void MainWindow::queryChanged() {
     const auto *search = m_graphSearchDialog->search();
 
     std::vector<search::Query *> shownQueries;
-    // If "all" is selected, then we'll display each of the BLAST queries
+    // If "all" is selected, then we'll display each of the queries
     if (queryName == "all") {
         for (auto *query : search->queries()) {
             if (query->isShown())
@@ -2611,9 +2608,9 @@ void MainWindow::removeSelection()
     g_assemblyGraph->determineGraphInfo();
     displayGraphDetails();
 
-    // Now that the graph has changed, we have to reset BLAST and contiguity
+    // Now that the graph has changed, we have to reset graph search and contiguity
     // stuff, as they may no longer apply.
-    cleanUpAllBlast();
+    cleanUpGraphSearch();
 
     resetNodeContiguityStatus();
     resetAllNodeColours();
@@ -2647,9 +2644,9 @@ void MainWindow::duplicateSelectedNodes()
     g_assemblyGraph->determineGraphInfo();
     displayGraphDetails();
 
-    // Now that the graph has changed, we have to reset BLAST and contiguity
+    // Now that the graph has changed, we have to reset graph search and contiguity
     // stuff, as they may no longer apply.
-    cleanUpAllBlast();
+    cleanUpGraphSearch();
     resetNodeContiguityStatus();
     resetAllNodeColours();
 }
@@ -2685,9 +2682,9 @@ void MainWindow::mergeSelectedNodes() {
     g_assemblyGraph->determineGraphInfo();
     displayGraphDetails();
 
-    // Now that the graph has changed, we have to reset BLAST and contiguity
+    // Now that the graph has changed, we have to reset graph search and contiguity
     // stuff, as they may no longer apply.
-    cleanUpAllBlast();
+    cleanUpGraphSearch();
     resetNodeContiguityStatus();
     resetAllNodeColours();
 }
@@ -2718,9 +2715,9 @@ void MainWindow::mergeAllPossible()
         g_assemblyGraph->determineGraphInfo();
         displayGraphDetails();
 
-        //Now that the graph has changed, we have to reset BLAST and contiguity
+        //Now that the graph has changed, we have to reset graph search and contiguity
         //stuff, as they may no longer apply.
-        cleanUpAllBlast();
+        cleanUpGraphSearch();
         resetNodeContiguityStatus();
         resetAllNodeColours();
     }
@@ -2729,7 +2726,7 @@ void MainWindow::mergeAllPossible()
 }
 
 
-void MainWindow::cleanUpAllBlast() {
+void MainWindow::cleanUpGraphSearch() {
     if (m_graphSearchDialog) {
         auto *search = m_graphSearchDialog->search();
         search->cleanUp();
@@ -2760,7 +2757,7 @@ void MainWindow::changeNodeName()
     {
         g_assemblyGraph->changeNodeName(oldName, changeNodeNameDialog.getNewName());
         selectionChanged();
-        cleanUpAllBlast();
+        cleanUpGraphSearch();
     }
 }
 

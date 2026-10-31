@@ -45,15 +45,15 @@ void SolidView::drawFigure(QPainter &painter, GraphicsItemNode &graphicsItemNode
     painter.drawPath(graphicsItemNode.makePartialPath(fractionStart, fractionEnd));
 }
 
-void RainbowBlastHitView::drawFigure(QPainter &painter, GraphicsItemNode &graphicsItemNode, bool reverseComplement,
-                                     int64_t start, int64_t end) const {
+void RainbowHitView::drawFigure(QPainter &painter, GraphicsItemNode &graphicsItemNode, bool reverseComplement,
+                                int64_t start, int64_t end) const {
 
     double scaledNodeLength = graphicsItemNode.getNodePathLength() * g_absoluteZoom;
     double fractionStart = graphicsItemNode.posToFraction(start);
     double fractionEnd = graphicsItemNode.posToFraction(end + 1);
     double scaledHitLength = (fractionEnd - fractionStart) * scaledNodeLength;
     int partCount = ceil(
-            g_settings->blastRainbowPartsPerQuery * fabs(m_rainbowFractionStart - m_rainbowFractionEnd));
+            g_settings->rainbowPartsPerQuery * fabs(m_rainbowFractionStart - m_rainbowFractionEnd));
 
     //If there are way more parts than the scaled hit length, that means
     //that a single part will be much less than a pixel in length.  This

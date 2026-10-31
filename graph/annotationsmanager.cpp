@@ -123,8 +123,8 @@ void AnnotationsManager::updateGroupFromHits(const QString &name, const std::vec
                             hit->m_nodeEnd,
                             query->getName().toStdString()));
             annotation->addView(std::make_unique<SolidView>(1.0, query->getColour()));
-            annotation->addView(std::make_unique<RainbowBlastHitView>(hit->queryStartFraction(),
-                                                                      hit->queryEndFraction()));
+            annotation->addView(std::make_unique<RainbowHitView>(hit->queryStartFraction(),
+                                                                hit->queryEndFraction()));
         }
     }
 

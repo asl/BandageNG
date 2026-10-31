@@ -274,7 +274,7 @@
    <item row="3" column="1">
     <widget class="QLabel" name="step2Label">
      <property name="text">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Step 2: &lt;/span&gt;enter BLAST queries&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Step 2: &lt;/span&gt;enter queries&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
     </widget>
    </item>
@@ -301,7 +301,7 @@
    <item row="8" column="1">
     <widget class="QLabel" name="step3Label">
      <property name="text">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Step 3:&lt;/span&gt; run BLAST search&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Step 3:&lt;/span&gt; run search&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
     </widget>
    </item>
@@ -389,7 +389,7 @@
       <item row="1" column="1">
        <widget class="QPushButton" name="filtersButton">
         <property name="text">
-         <string>Set BLAST hit filters</string>
+         <string>Set hit filters</string>
         </property>
        </widget>
       </item>
@@ -417,7 +417,7 @@
        <widget class="QLineEdit" name="parametersLineEdit"/>
       </item>
       <item row="2" column="0">
-       <widget class="InfoTextWidget" name="startBlastSearchInfoText" native="true">
+       <widget class="InfoTextWidget" name="startSearchInfoText" native="true">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -436,7 +436,7 @@
        </widget>
       </item>
       <item row="2" column="1" colspan="3">
-       <widget class="QPushButton" name="runBlastSearchButton">
+       <widget class="QPushButton" name="runSearchButton">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -444,7 +444,7 @@
          </sizepolicy>
         </property>
         <property name="text">
-         <string>Run BLAST search</string>
+         <string>Run search</string>
         </property>
        </widget>
       </item>
@@ -455,7 +455,7 @@
     <widget class="QComboBox" name="searcherComboBox">
      <item>
       <property name="text">
-       <string>BLAST</string>
+       <string>Search</string>
       </property>
      </item>
      <item>
@@ -471,7 +471,7 @@
     </widget>
    </item>
    <item row="0" column="2">
-    <widget class="QWidget" name="buildBlastDatabaseWidget" native="true">
+    <widget class="QWidget" name="buildDatabaseWidget" native="true">
      <layout class="QHBoxLayout" name="horizontalLayout">
       <property name="leftMargin">
        <number>0</number>
@@ -486,7 +486,7 @@
        <number>0</number>
       </property>
       <item>
-       <widget class="InfoTextWidget" name="buildBlastDatabaseInfoText" native="true">
+       <widget class="InfoTextWidget" name="buildDatabaseInfoText" native="true">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -505,7 +505,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="buildBlastDatabaseButton">
+       <widget class="QPushButton" name="buildDatabaseButton">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -513,7 +513,7 @@
          </sizepolicy>
         </property>
         <property name="text">
-         <string>Build BLAST database</string>
+         <string>Build database</string>
         </property>
        </widget>
       </item>
@@ -600,7 +600,7 @@
          </size>
         </property>
         <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The queries are displayed in this table. Before a graph search is run, some information about the queries is not yet available and will show a dash.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Colour&lt;/span&gt;: Each query is automatically assigned a colour which is used for the 'Blast hits (solid)' graph colour scheme. This colour can be changed by clicking in the table cell. &lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Show&lt;/span&gt;: if this box is ticked, the query's hits will be able to be viewed on the graph. If this box is not ticked, the query's hits will be hidden on the graph.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Query name&lt;/span&gt;: If a query is loaded from a FASTA file, its name is the sequence ID (the text between the '&amp;gt;' and the first space in the description line). Query names are editable by double clicking in their table cell.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Type&lt;/span&gt;: This is either 'nucl' for nucleotide sequences or 'prot' for protein sequences. Nucleotide sequences will be searched for using blastn, while protein sequences will be search for with tblastn. Both types can be used simultaneously.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Length&lt;/span&gt;: This is the length of the query, in bases (for nucleotide queries) or amino acids (for protein queries).&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Hits&lt;/span&gt;: This is the number of hits acquired for the query.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Query cover&lt;/span&gt;: This is the total fraction of the query captured by all of the hits. However, the hits may not be proximal to each other. For example, if the first half a query was found in one part of the graph and the second half in a different part, this value would be 100%. This value is equivalent to the 'qcovs' output option in BLAST.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Paths&lt;/span&gt;: These are the number of possible paths through the graph which represent the entire query. If there is at least one path, you can click on this button to view a table of the paths' properties.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The queries are displayed in this table. Before a graph search is run, some information about the queries is not yet available and will show a dash.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Colour&lt;/span&gt;: Each query is automatically assigned a colour which is used for the solid hit annotations on the graph. This colour can be changed by clicking in the table cell. &lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Show&lt;/span&gt;: if this box is ticked, the query's hits will be able to be viewed on the graph. If this box is not ticked, the query's hits will be hidden on the graph.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Query name&lt;/span&gt;: If a query is loaded from a FASTA file, its name is the sequence ID (the text between the '&amp;gt;' and the first space in the description line). Query names are editable by double clicking in their table cell.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Type&lt;/span&gt;: This is either 'nucl' for nucleotide sequences or 'prot' for protein sequences. Nucleotide sequences will be searched for using blastn, while protein sequences will be search for with tblastn. Both types can be used simultaneously.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Length&lt;/span&gt;: This is the length of the query, in bases (for nucleotide queries) or amino acids (for protein queries).&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Hits&lt;/span&gt;: This is the number of hits acquired for the query.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Query cover&lt;/span&gt;: This is the total fraction of the query captured by all of the hits. However, the hits may not be proximal to each other. For example, if the first half a query was found in one part of the graph and the second half in a different part, this value would be 100%. This value is equivalent to the 'qcovs' output option in BLAST.&lt;br/&gt;&lt;br/&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Paths&lt;/span&gt;: These are the number of possible paths through the graph which represent the entire query. If there is at least one path, you can click on this button to view a table of the paths' properties.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
        </widget>
       </item>
@@ -646,7 +646,7 @@
       </font>
      </property>
      <property name="text">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Step 1: &lt;/span&gt;build BLAST database&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Step 1: &lt;/span&gt;build database&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
     </widget>
    </item>
@@ -721,7 +721,7 @@
   </customwidget>
  </customwidgets>
  <tabstops>
-  <tabstop>buildBlastDatabaseButton</tabstop>
+  <tabstop>buildDatabaseButton</tabstop>
   <tabstop>loadQueriesFromFastaButton</tabstop>
   <tabstop>enterQueryManuallyButton</tabstop>
   <tabstop>clearSelectedQueriesButton</tabstop>
@@ -729,7 +729,7 @@
   <tabstop>queriesTable</tabstop>
   <tabstop>parametersLineEdit</tabstop>
   <tabstop>filtersButton</tabstop>
-  <tabstop>runBlastSearchButton</tabstop>
+  <tabstop>runSearchButton</tabstop>
   <tabstop>hitsTable</tabstop>
  </tabstops>
  <resources/>
