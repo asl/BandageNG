@@ -2740,7 +2740,7 @@ single node style:</string>
             <property name="toolTip">
              <string>When Bandage is set to the 'Uniform colour' option, this colour is used for limited graph scopes:&lt;ul&gt;
                                                       &lt;li&gt;When the graph scope is set to 'Around node(s)', this colour is used for the user-specified nodes.&lt;/li&gt;
-                                                      &lt;li&gt;When the graph scope is set to 'Around BLAST hit(s)', this colour is used for nodes that contain at least one BLAST hit.&lt;/li&gt;&lt;/ul&gt;</string>
+                                                      &lt;li&gt;When the graph scope is set to 'Around query hits', this colour is used for nodes that contain at least one query hit.&lt;/li&gt;&lt;/ul&gt;</string>
             </property>
            </widget>
           </item>
@@ -3388,14 +3388,14 @@ single node style:</string>
         </spacer>
        </item>
        <item>
-        <widget class="QLabel" name="blastColourSchemeHeadingLabel">
+        <widget class="QLabel" name="annotationColourHeadingLabel">
          <property name="font">
           <font>
            <bold>true</bold>
           </font>
          </property>
          <property name="text">
-          <string>BLAST colour scheme</string>
+          <string>Annotation colours</string>
          </property>
         </widget>
        </item>
@@ -3407,9 +3407,9 @@ single node style:</string>
         </widget>
        </item>
        <item>
-        <widget class="QLabel" name="blastColourSchemeDescriptionLabel">
+        <widget class="QLabel" name="annotationColourDescriptionLabel">
          <property name="text">
-          <string>These settings control the node colours when either of the 'BLAST hits' colour schemes are used.</string>
+          <string>These settings control colours used for regions without query-hit annotations.</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignJustify|Qt::AlignVCenter</set>
@@ -3435,7 +3435,7 @@ single node style:</string>
            <number>0</number>
           </property>
           <item row="0" column="1">
-           <widget class="InfoTextWidget" name="noBlastHitsColourInfoText" native="true">
+           <widget class="InfoTextWidget" name="noHitsColourInfoText" native="true">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
               <horstretch>0</horstretch>
@@ -3449,12 +3449,12 @@ single node style:</string>
              </size>
             </property>
             <property name="toolTip">
-             <string>When Bandage is set to the 'Colour using BLAST hits' option, this colour is used for nodes that do not have any BLAST hits. It is also used for any region of a node without BLAST hits, even if there are BLAST hits in other regions of that node.</string>
+             <string>This colour is used for nodes (and regions of nodes) that do not have any query-hit annotations.</string>
             </property>
            </widget>
           </item>
           <item row="0" column="3">
-           <widget class="ColourButton" name="noBlastHitsColourButton">
+           <widget class="ColourButton" name="noHitsColourButton">
             <property name="minimumSize">
              <size>
               <width>100</width>
@@ -3494,7 +3494,7 @@ single node style:</string>
              </sizepolicy>
             </property>
             <property name="text">
-             <string>No BLAST hits:</string>
+             <string>No query hits:</string>
             </property>
            </widget>
           </item>
@@ -3899,14 +3899,14 @@ single node style:</string>
         </spacer>
        </item>
        <item>
-        <widget class="QLabel" name="blastQueryPathsHeadingLabel">
+        <widget class="QLabel" name="queryPathsHeadingLabel">
          <property name="font">
           <font>
            <bold>true</bold>
           </font>
          </property>
          <property name="text">
-          <string>BLAST query paths</string>
+          <string>Query paths</string>
          </property>
         </widget>
        </item>
@@ -3918,9 +3918,9 @@ single node style:</string>
         </widget>
        </item>
        <item>
-        <widget class="QLabel" name="blastQueryPathsDescriptionLabel">
+        <widget class="QLabel" name="queryPathsDescriptionLabel">
          <property name="text">
-          <string>These settings control how Bandage searches for query paths after conducting a BLAST search. Query paths that fail to meet these criteria will be excluded. It is necessary to rerun a BLAST search to see the effect of changing these settings.</string>
+          <string>These settings control how Bandage searches for query paths after a graph search. Query paths that fail to meet these criteria will be excluded. It is necessary to rerun a graph search to see the effect of changing these settings.</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignJustify|Qt::AlignVCenter</set>
@@ -3979,8 +3979,8 @@ single node style:</string>
              </size>
             </property>
             <property name="toolTip">
-             <string>This is a minimum value for the fraction of a BLAST query which is covered by the hits in a BLAST query path. Paths with hits that cover less of the query than this setting will not be included in the query's paths.&lt;br&gt;&lt;br&gt;
-                                                   Set to a higher value to make BLAST query paths more stringent.</string>
+             <string>This is a minimum value for the fraction of a query which is covered by the hits in a query path. Paths with hits that cover less of the query than this setting will not be included in the query's paths.&lt;br&gt;&lt;br&gt;
+                                                   Set to a higher value to make query paths more stringent.</string>
             </property>
            </widget>
           </item>
@@ -4195,8 +4195,8 @@ discrepancy (bases):</string>
              </size>
             </property>
             <property name="toolTip">
-             <string>This is a minimum value for the relative length between a BLAST query and its path in the graph. Paths with a relative length less than this setting will not be included in the query's paths.&lt;br&gt;&lt;br&gt;
-                                                 Set to a value closer to 100% to make BLAST query paths more stringent.</string>
+             <string>This is a minimum value for the relative length between a query and its path in the graph. Paths with a relative length less than this setting will not be included in the query's paths.&lt;br&gt;&lt;br&gt;
+                                                 Set to a value closer to 100% to make query paths more stringent.</string>
             </property>
            </widget>
           </item>
@@ -4215,8 +4215,8 @@ discrepancy (bases):</string>
              </size>
             </property>
             <property name="toolTip">
-             <string>This is a maximum value for the relative length between a BLAST query and its path in the graph. Paths with a relative length greater than this setting will not be included in the query's paths.&lt;br&gt;&lt;br&gt;
-                                                 Set to a value closer to 100% to make BLAST query paths more stringent.</string>
+             <string>This is a maximum value for the relative length between a query and its path in the graph. Paths with a relative length greater than this setting will not be included in the query's paths.&lt;br&gt;&lt;br&gt;
+                                                 Set to a value closer to 100% to make query paths more stringent.</string>
             </property>
            </widget>
           </item>
@@ -4235,8 +4235,8 @@ discrepancy (bases):</string>
              </size>
             </property>
             <property name="toolTip">
-             <string>This is the minimum length difference (in bases) between a BLAST query and its path in the graph.  Paths with a length difference less than this setting will not be included in the query's paths.&lt;br&gt;&lt;br&gt;
-                                                      Set to a value closer to 0 to make BLAST query paths more stringent.</string>
+             <string>This is the minimum length difference (in bases) between a query and its path in the graph.  Paths with a length difference less than this setting will not be included in the query's paths.&lt;br&gt;&lt;br&gt;
+                                                      Set to a value closer to 0 to make query paths more stringent.</string>
             </property>
            </widget>
           </item>
@@ -4271,8 +4271,8 @@ discrepancy (bases):</string>
              </size>
             </property>
             <property name="toolTip">
-             <string>This is a minimum value for the mean of the percent identity for the hits in a BLAST query path, weighted by the hits' lengths. Paths with a mean hit percent identity less than this setting will not be included in the query's paths.&lt;br&gt;&lt;br&gt;
-                                                Set to a higher value to make BLAST query paths more stringent.</string>
+             <string>This is a minimum value for the mean of the percent identity for the hits in a query path, weighted by the hits' lengths. Paths with a mean hit percent identity less than this setting will not be included in the query's paths. Applies to BLAST only (other searchers do not report identity).&lt;br&gt;&lt;br&gt;
+                                                Set to a higher value to make query paths more stringent.</string>
             </property>
            </widget>
           </item>
@@ -4291,7 +4291,7 @@ discrepancy (bases):</string>
              </size>
             </property>
             <property name="toolTip">
-             <string>This controls the maximum number of nodes in BLAST query paths.&lt;br&gt;&lt;br&gt;
+             <string>This controls the maximum number of nodes in query paths.&lt;br&gt;&lt;br&gt;
                                           A higher value will allow for paths containing more nodes, at a performance cost.</string>
             </property>
            </widget>
@@ -4311,8 +4311,8 @@ discrepancy (bases):</string>
              </size>
             </property>
             <property name="toolTip">
-             <string>This is a maximum value for the product of the e-values of all the hits in a BLAST query path. Paths with an e-value product greater than this setting will not be included in the query's paths.&lt;br&gt;&lt;br&gt;
-                                              Set to a lower value to make BLAST query paths more stringent.</string>
+             <string>This is a maximum value for the product of the e-values of all the hits in a query path. Paths with an e-value product greater than this setting will not be included in the query's paths. Applies to BLAST and HMMER.&lt;br&gt;&lt;br&gt;
+                                              Set to a lower value to make query paths more stringent.</string>
             </property>
            </widget>
           </item>
@@ -4331,8 +4331,8 @@ discrepancy (bases):</string>
              </size>
             </property>
             <property name="toolTip">
-             <string>This is a minimum value for the fraction of a BLAST query which is covered by a BLAST query path. Paths that cover less of the query than this setting will not be included in the query's paths.&lt;br&gt;&lt;br&gt;
-                                                   Set to a higher value to make BLAST query paths more stringent.</string>
+             <string>This is a minimum value for the fraction of a query which is covered by a query path. Paths that cover less of the query than this setting will not be included in the query's paths.&lt;br&gt;&lt;br&gt;
+                                                   Set to a higher value to make query paths more stringent.</string>
             </property>
            </widget>
           </item>
@@ -4479,9 +4479,9 @@ discrepancy (bases):</string>
              </size>
             </property>
             <property name="toolTip">
-             <string>Bandage will not attempt to find query paths for BLAST queries with more hits than this setting. BLAST query path searches can be very slow when there are too many hits, so this setting prevents performance problems.&lt;br&gt;&lt;br&gt;
-                                                 Set to 0 to turn off all BLAST query path finding.&lt;br&gt;&lt;br&gt;
-                                                 Set to a larger value to enable query path searches for BLAST queries with many hits (can be slow).</string>
+             <string>Bandage will not attempt to find query paths for queries with more hits than this setting. query path searches can be very slow when there are too many hits, so this setting prevents performance problems.&lt;br&gt;&lt;br&gt;
+                                                 Set to 0 to turn off all query path finding.&lt;br&gt;&lt;br&gt;
+                                                 Set to a larger value to enable query path searches for queries with many hits (can be slow).</string>
             </property>
            </widget>
           </item>
@@ -4623,7 +4623,7 @@ discrepancy (bases):</string>
   <tabstop>depthValueManualRadioButton</tabstop>
   <tabstop>lowDepthValueSpinBox</tabstop>
   <tabstop>highDepthValueSpinBox</tabstop>
-  <tabstop>noBlastHitsColourButton</tabstop>
+  <tabstop>noHitsColourButton</tabstop>
   <tabstop>contiguitySearchDepthSpinBox</tabstop>
   <tabstop>contiguousStrandSpecificColourButton</tabstop>
   <tabstop>contiguousEitherStrandColourButton</tabstop>

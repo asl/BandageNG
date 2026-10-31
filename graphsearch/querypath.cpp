@@ -31,7 +31,7 @@ using namespace search;
 
 QueryPath::QueryPath(Path path, Query *query)
         : m_path(std::move(path)), m_query(query) {
-    //This function follows the path, returning the BLAST hits it finds for the
+    //This function follows the path, returning the hits it finds for the
     //query.  It requires that the hits occur in order, i.e. that each hit in
     //the path begins later in the query than the previous hit.
 

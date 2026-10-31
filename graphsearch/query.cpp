@@ -156,34 +156,34 @@ void Query::findQueryPaths() {
     }
 
     //Now we use the Path objects to make QueryPath objects.  These contain
-    //BLAST-specific information that the Path class doesn't.
-    QList<QueryPath> blastQueryPaths;
+    //hit-specific information that the Path class doesn't.
+    QList<QueryPath> queryPaths;
     for (auto &possiblePath : possiblePaths)
-        blastQueryPaths.push_back(QueryPath(possiblePath, this));
+        queryPaths.push_back(QueryPath(possiblePath, this));
 
     //We now want to throw out any paths for which the hits fail to meet the
     //thresholds in settings.
     QList<QueryPath> sufficientCoveragePaths;
-    for (auto & blastQueryPath : blastQueryPaths) {
-        if (blastQueryPath.getPathQueryCoverage() < g_settings->minQueryCoveredByPath)
+    for (auto & queryPath : queryPaths) {
+        if (queryPath.getPathQueryCoverage() < g_settings->minQueryCoveredByPath)
             continue;
-        if (g_settings->minQueryCoveredByHits.on && blastQueryPath.getHitsQueryCoverage() < g_settings->minQueryCoveredByHits)
+        if (g_settings->minQueryCoveredByHits.on && queryPath.getHitsQueryCoverage() < g_settings->minQueryCoveredByHits)
             continue;
-        if (g_settings->maxEValueProduct.on && blastQueryPath.getEvalueProduct() > g_settings->maxEValueProduct)
+        if (g_settings->maxEValueProduct.on && queryPath.getEvalueProduct() > g_settings->maxEValueProduct)
             continue;
-        double idy = blastQueryPath.getMeanHitPercIdentity();
+        double idy = queryPath.getMeanHitPercIdentity();
         if (g_settings->minMeanHitIdentity.on && idy >= 0 && idy < 100.0 * g_settings->minMeanHitIdentity)
             continue;
-        if (g_settings->minLengthPercentage.on && blastQueryPath.getRelativePathLength() < g_settings->minLengthPercentage)
+        if (g_settings->minLengthPercentage.on && queryPath.getRelativePathLength() < g_settings->minLengthPercentage)
             continue;
-        if (g_settings->maxLengthPercentage.on && blastQueryPath.getRelativePathLength() > g_settings->maxLengthPercentage)
+        if (g_settings->maxLengthPercentage.on && queryPath.getRelativePathLength() > g_settings->maxLengthPercentage)
             continue;
-        if (g_settings->minLengthBaseDiscrepancy.on && blastQueryPath.getAbsolutePathLengthDifference() < g_settings->minLengthBaseDiscrepancy)
+        if (g_settings->minLengthBaseDiscrepancy.on && queryPath.getAbsolutePathLengthDifference() < g_settings->minLengthBaseDiscrepancy)
             continue;
-        if (g_settings->maxLengthBaseDiscrepancy.on && blastQueryPath.getAbsolutePathLengthDifference() > g_settings->maxLengthBaseDiscrepancy)
+        if (g_settings->maxLengthBaseDiscrepancy.on && queryPath.getAbsolutePathLengthDifference() > g_settings->maxLengthBaseDiscrepancy)
             continue;
 
-        sufficientCoveragePaths.push_back(blastQueryPath);
+        sufficientCoveragePaths.push_back(queryPath);
     }
 
     //We now want to throw out any paths which are sub-paths of other, larger
@@ -209,8 +209,8 @@ void Query::findQueryPaths() {
 }
 
 
-//This function returns the fraction of the query that is covered by BLAST hits.
-//If a list of BLAST hits is passed to the function, it only looks in those
+//This function returns the fraction of the query that is covered by hits.
+//If a list of hits is passed to the function, it only looks in those
 //hits.  If no such list is passed, it looks in all hits for this query.
 // http://stackoverflow.com/questions/5276686/merging-ranges-in-c
 double Query::fractionCoveredByHits(const Hits &hitsToCheck) const {

@@ -88,7 +88,7 @@ int handleImageCmd(QApplication *app,
     // is no viewport.
     g_settings->positionTextNodeCentre = true;
 
-    // The zoom level needs to be set so rainbow-style BLAST hits are rendered
+    // The zoom level needs to be set so rainbow-style query hits are rendered
     // properly.
     g_absoluteZoom = 10.0;
 

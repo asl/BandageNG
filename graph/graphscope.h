@@ -155,7 +155,7 @@ namespace graph {
     Scope scope(GraphScope graphScope,
                 const QString &nodesList,
                 double minDepthRange, double maxDepthRange,
-                const search::Queries *queries, const QString& blastQueryName,
+                const search::Queries *queries, const QString& queryName,
                 const QString &pathName, unsigned distance = 0,
                 const QString &walkName = {});
 

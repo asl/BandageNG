@@ -49,7 +49,7 @@ Settings::Settings()
     arrowheadsInSingleMode = false;
     textOutlineThickness = FloatSetting(1.5, 0.0, 10.0);
 
-    blastRainbowPartsPerQuery = 100;
+    rainbowPartsPerQuery = 100;
 
     graphScope = WHOLE_GRAPH;
     nodeDistance = IntSetting(0, 0, 100);

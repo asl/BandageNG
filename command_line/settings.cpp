@@ -477,7 +477,7 @@ static CLI::App *addDepthColorsSettings(CLI::App &app) {
     return dc;
 }
 
-static CLI::App *addBlastSearchSettings(CLI::App &app) {
+static CLI::App *addGraphSearchSettings(CLI::App &app) {
     auto *bs = app.add_option_group("Graph search");
     bs->add_option("--searcher", g_settings->graphSearcher,
                    "Graph search backend: blast, minimap2, or hmmer (default: blast)")
@@ -510,27 +510,27 @@ static CLI::App *addBlastSearchSettings(CLI::App &app) {
 }
 
 static CLI::App *addQueryPathsSettings(CLI::App &app) {
-    auto *bqp = app.add_option_group("BLAST query paths",
-                                     "These settings control how Bandage-NG searches for query paths after conducting a BLAST search");
+    auto *bqp = app.add_option_group("Query paths",
+                                     "These settings control how Bandage-NG searches for query paths after a graph search");
 
     add_setting(*bqp, "--pathnodes", g_settings->maxQueryPathNodes,
-                "The number of allowed nodes in a BLAST query path");
+                "The number of allowed nodes in a query path");
     add_setting(*bqp, "--minpatcov", g_settings->minQueryCoveredByPath,
-                "Minimum fraction of a BLAST query which must be covered by a query path");
+                "Minimum fraction of a query which must be covered by a query path");
     add_setting(*bqp, "--minhitcov", g_settings->minQueryCoveredByHits,
-                "Minimum fraction of a BLAST query which must be covered by BLAST hits in a query path", /* allow off */ true);
+                "Minimum fraction of a query which must be covered by hits in a query path", /* allow off */ true);
     add_setting(*bqp, "--minmeanid", g_settings->minMeanHitIdentity,
-                "Minimum mean identity of BLAST hits in a query path", /* allow off */ true);
+                "Minimum mean identity of hits in a query path (BLAST only)", /* allow off */ true);
     add_setting(*bqp, "--maxevprod", g_settings->maxEValueProduct,
-                "Maximum e-value product for all BLAST hits in a query path", /* allow off */ true);
+                "Maximum e-value product for all hits in a query path (BLAST and HMMER)", /* allow off */ true);
     add_setting(*bqp, "--minpatlen", g_settings->minLengthPercentage,
                 "Minimum allowed relative path length as compared to the query", /* allow off */ true);
     add_setting(*bqp, "--maxpatlen", g_settings->maxLengthPercentage,
                 "Maximum allowed relative path length as compared to the query", /* allow off */ true);
     add_setting(*bqp, "--minlendis", g_settings->minLengthBaseDiscrepancy,
-                "Minimum allowed length discrepancy (in bases) between a BLAST query and its path in the graph", /* allow off */ true);
+                "Minimum allowed length discrepancy (in bases) between a query and its path in the graph", /* allow off */ true);
     add_setting(*bqp, "--maxlendis", g_settings->maxLengthBaseDiscrepancy,
-                "Maximum allowed length discrepancy (in bases) between a BLAST query and its path in the graph", /* allow off */ true);
+                "Maximum allowed length discrepancy (in bases) between a query and its path in the graph", /* allow off */ true);
 
     bqp->callback([bqp]() {
         // Make sure that the min path length is less than or equal to the max path
@@ -542,7 +542,7 @@ static CLI::App *addQueryPathsSettings(CLI::App &app) {
         if (minLengthPercentageOn && maxLengthPercentageOn &&
             minLengthPercentage > maxLengthPercentage)
             throw CLI::ValidationError("Bandage-NG error",
-                                       "the maximum BLAST query path length percent discrepancy must be greater than or equal to the minimum length discrepancy.");
+                                       "the maximum query path length percent discrepancy must be greater than or equal to the minimum length discrepancy.");
 
         // Make sure that the min length discrepancy is less than or equal to the max
         // length discrepancy.
@@ -553,7 +553,7 @@ static CLI::App *addQueryPathsSettings(CLI::App &app) {
         if (minLengthBaseDiscrepancyOn && maxLengthBaseDiscrepancyOn &&
             minLengthBaseDiscrepancy > maxLengthBaseDiscrepancy)
             throw CLI::ValidationError("Bandage-NG error",
-                                       "the maximum BLAST query path length base discrepancy must be greater than or equal to the minimum length discrepancy.");
+                                       "the maximum query path length base discrepancy must be greater than or equal to the minimum length discrepancy.");
     });
 
     return bqp;
@@ -573,7 +573,7 @@ CLI::App *addSettings(CLI::App &app) {
     addRandomColorsSettings(app);
     addUniformColorsSettings(app);
     addDepthColorsSettings(app);
-    addBlastSearchSettings(app);
+    addGraphSearchSettings(app);
     addQueryPathsSettings(app);
 
     app.callback([&app]() {
