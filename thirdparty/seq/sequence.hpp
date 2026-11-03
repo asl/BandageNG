@@ -12,12 +12,12 @@
 #include "utils/sfinae_checks.hpp"
 
 #include <llvm/ADT/IntrusiveRefCntPtr.h>
+#include <llvm/ADT/PointerIntPair.h>
 #include <llvm/ADT/SparseBitVector.h>
 #include <llvm/Support/TrailingObjects.h>
 
 #include <vector>
 #include <string>
-#include <memory>
 #include <sstream>
 #include <cstring>
 
@@ -37,6 +37,78 @@ class Sequence {
     // Number of bits in STN (for faster div and mod)
     const static size_t STNBits = log_<STN, 2>::value;
 
+    // Owns the optional SparseBitVector. The all-N flag shares that pointer
+    // via PointerIntPair: null+0 is no N's, a heap pointer is sparse N's,
+    // null+1 is every base N. PointerIntPair does not own the pointer.
+    class EmptyNucls {
+        llvm::PointerIntPair<llvm::SparseBitVector<> *, 1, bool> pair_;
+
+      public:
+        EmptyNucls() = default;
+        ~EmptyNucls() { delete pair_.getPointer(); }
+
+        EmptyNucls(const EmptyNucls &) = delete;
+        EmptyNucls &operator=(const EmptyNucls &) = delete;
+
+        EmptyNucls(EmptyNucls &&other) noexcept : pair_(other.pair_) {
+            other.pair_.setPointerAndInt(nullptr, false);
+        }
+
+        EmptyNucls &operator=(EmptyNucls &&other) noexcept {
+            if (this != &other) {
+                delete pair_.getPointer();
+                pair_ = other.pair_;
+                other.pair_.setPointerAndInt(nullptr, false);
+            }
+            return *this;
+        }
+
+        bool allNs() const { return pair_.getInt(); }
+
+        // No recorded N's. This is the common case.
+        bool none() const { return pair_.getPointer() == nullptr && !pair_.getInt(); }
+
+        llvm::SparseBitVector<> *bits() const { return pair_.getPointer(); }
+
+        // Safe when there is no bitvector: all-N is true, no N's is false.
+        bool test(size_t idx) const {
+            if (llvm::SparseBitVector<> *bits = pair_.getPointer())
+                return bits->test(idx);
+            return pair_.getInt();
+        }
+
+        // Every base of a sequence of this length is N.
+        bool covers(size_t size) const {
+            if (pair_.getInt())
+                return true;
+            llvm::SparseBitVector<> *bits = pair_.getPointer();
+            return bits != nullptr && bits->count() == size;
+        }
+
+        bool equals(const EmptyNucls &that) const {
+            if (allNs() || that.allNs())
+                return allNs() && that.allNs();
+            llvm::SparseBitVector<> *aBits = pair_.getPointer();
+            llvm::SparseBitVector<> *bBits = that.pair_.getPointer();
+            return aBits == bBits || (aBits != nullptr && bBits != nullptr && *aBits == *bBits);
+        }
+
+        void setAllNs() {
+            delete pair_.getPointer();
+            pair_.setPointerAndInt(nullptr, true);
+        }
+
+        void set(size_t idx) {
+            VERIFY(!pair_.getInt());
+            if (pair_.getPointer() == nullptr)
+                pair_.setPointerAndInt(new llvm::SparseBitVector<>(), false);
+            pair_.getPointer()->set(idx);
+        }
+    };
+
+    static_assert(sizeof(EmptyNucls) == sizeof(void *),
+                  "all-N flag must share the bitvector pointer");
+
     class ManagedNuclBuffer final : public llvm::ThreadSafeRefCountedBase<ManagedNuclBuffer>,
                                     protected llvm::TrailingObjects<ManagedNuclBuffer, ST> {
         friend TrailingObjects;
@@ -55,6 +127,13 @@ class Sequence {
             return new (mem) ManagedNuclBuffer();
         }
 
+        static ManagedNuclBuffer *createAllNs() {
+            void *mem = ::operator new(totalSizeToAlloc<ST>(0));
+            auto *buf = new (mem) ManagedNuclBuffer();
+            buf->empty_nucls_.setAllNs();
+            return buf;
+        }
+
         static ManagedNuclBuffer *create(size_t nucls, ST *data) {
             void *mem = ::operator new(totalSizeToAlloc<ST>(Sequence::DataSize(nucls)));
             return new (mem) ManagedNuclBuffer(nucls, data);
@@ -63,7 +142,7 @@ class Sequence {
         const ST *data() const { return getTrailingObjects<ST>(); }
         ST *data() { return getTrailingObjects<ST>(); }
 
-        std::unique_ptr<llvm::SparseBitVector<>> empty_nucls_ = nullptr;
+        EmptyNucls empty_nucls_;
     };
 
     size_t size_ : 32;
@@ -84,12 +163,8 @@ class Sequence {
         int cur_index = 0;
 
         for (int i = start; i != end; i += step) {
-            if (LLVM_UNLIKELY(is_N(s[i]))) {
-                if (LLVM_UNLIKELY(data_->empty_nucls_ == nullptr)) {
-                    data_->empty_nucls_ = std::make_unique<llvm::SparseBitVector<>>();
-                }
-                data_->empty_nucls_->set(cur_index);
-            }
+            if (LLVM_UNLIKELY(is_N(s[i])))
+                data_->empty_nucls_.set(cur_index);
             cur_index++;
         }
     }
@@ -150,10 +225,9 @@ class Sequence {
     }
 
     bool isEmptySymbol(size_t idx) const {
-        if (LLVM_LIKELY(data_->empty_nucls_ == nullptr)) {
+        if (LLVM_LIKELY(data_->empty_nucls_.none()))
             return false;
-        }
-        return data_->empty_nucls_->test(idx);
+        return data_->empty_nucls_.test(idx);
     }
 
     char getNuclFromBuffer(size_t idx) const {
@@ -162,10 +236,7 @@ class Sequence {
     }
 
     bool emptyNuclsEqual(const Sequence &that) const {
-        return data_->empty_nucls_ == that.data_->empty_nucls_
-            || (data_->empty_nucls_ != nullptr
-                && that.data_->empty_nucls_ != nullptr
-                && *data_->empty_nucls_ == *that.data_->empty_nucls_);
+        return data_->empty_nucls_.equals(that.data_->empty_nucls_);
     }
 
     //Low level constructor. Handle with care.
@@ -174,13 +245,8 @@ class Sequence {
 
 public:
     explicit Sequence(size_t size, bool allNs = false)
-            : size_(size), from_(0), rtl_(false), data_(ManagedNuclBuffer::create(size_)) {
-        if (allNs) {
-            data_->empty_nucls_ = std::make_unique<llvm::SparseBitVector<>>();
-            for (size_t i = from_; i < size_; ++i)
-                data_->empty_nucls_->set(i);
-        }
-    }
+            : size_(size), from_(0), rtl_(false),
+              data_(allNs ? ManagedNuclBuffer::createAllNs() : ManagedNuclBuffer::create(size_)) {}
 
     /**
      * Sequence initialization (arbitrary size string)
@@ -250,6 +316,9 @@ public:
         if (size_ != that.size_)
             return false;
 
+        if (data_->empty_nucls_.allNs() && that.data_->empty_nucls_.allNs())
+            return true;
+
         if (data_ == that.data_ && from_ == that.from_ && rtl_ == that.rtl_ && emptyNuclsEqual(that))
             return true;
 
@@ -315,7 +384,9 @@ public:
     }
 
     size_t capacity() const {
-        return DataSize(size_) * sizeof(ST);
+        if (LLVM_LIKELY(!data_->empty_nucls_.allNs()))
+            return DataSize(size_) * sizeof(ST);
+        return 0;
     }
 
     bool empty() const {
@@ -323,12 +394,9 @@ public:
     }
 
     bool missing() const {
-        // No N's - nothing is missed
-        if (!data_->empty_nucls_)
+        if (LLVM_LIKELY(data_->empty_nucls_.none()))
             return false;
-
-        // All N's are set
-        return size_ == data_->empty_nucls_->count();
+        return data_->empty_nucls_.covers(size_);
     }
 
     template<class Seq>
@@ -425,7 +493,8 @@ std::string Sequence::err() const {
             ", from_=" << from_ <<
             ", size_=" << size_ <<
             ", rtl_=" << int(rtl_) <<
-            ", empty_nucls_=" << data_->empty_nucls_.get() << " }";
+            ", empty_nucls_=" << data_->empty_nucls_.bits() <<
+            ", allNs=" << int(data_->empty_nucls_.allNs()) << " }";
     return oss.str();
 }
 
