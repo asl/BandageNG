@@ -138,6 +138,7 @@ private slots:
     void bandageInfo();
     void sequenceInit();
     void sequenceInitN();
+    void sequenceAllNs();
     void sequenceAccess();
     void sequenceSubstring();
     void sequenceDoubleReverseComplement();
@@ -1962,6 +1963,41 @@ void BandageTests::sequenceInit() {
     QCOMPARE(sequenceFromString, sequenceRevComp);
     QCOMPARE(sequenceRevComp, sequenceFromStringLower);
     QCOMPARE(sequenceFromStringLower, sequenceFromQByteArray);
+}
+
+void BandageTests::sequenceAllNs() {
+    Sequence allNs(1000, /* allNs */ true);
+
+    QVERIFY(allNs.missing());
+    QCOMPARE(allNs.size(), 1000u);
+    QCOMPARE(allNs.capacity(), 0u);
+    QCOMPARE(allNs[0], 'N');
+    QCOMPARE(allNs[999], 'N');
+
+    Sequence another(1000, /* allNs */ true);
+    QCOMPARE(allNs, another);
+    QCOMPARE(allNs, allNs.GetReverseComplement());
+
+    Sequence sub = allNs.Subseq(10, 14);
+    QCOMPARE(sub.size(), 4u);
+    QVERIFY(sub.missing());
+    QCOMPARE(sub.capacity(), 0u);
+    QCOMPARE(sub[0], 'N');
+    QCOMPARE(sub[3], 'N');
+    QCOMPARE(sub, sub.GetReverseComplement());
+
+    Sequence mixed{"ACNGT"};
+    QVERIFY(!mixed.missing());
+    QVERIFY(mixed.capacity() > 0);
+    QCOMPARE(mixed[0], 'A');
+    QCOMPARE(mixed[2], 'N');
+    QCOMPARE(mixed[4], 'T');
+
+    // Large enough that the old all-N constructor would allocate a dense bitvector.
+    Sequence large(1u << 20, /* allNs */ true);
+    QVERIFY(large.missing());
+    QCOMPARE(large.capacity(), 0u);
+    QCOMPARE(large, large.GetReverseComplement());
 }
 
 void BandageTests::sequenceInitN() {
