@@ -44,6 +44,7 @@
 #include <QSet>
 
 #include <algorithm>
+#include <cassert>
 #include <iterator>
 #include <limits>
 #include <cmath>
@@ -839,6 +840,9 @@ std::string AssemblyGraph::getUniqueNodeName(std::string_view baseName) const {
         if (!m_deBruijnGraphNodes.count(potentialUniqueName + "+"))
             return potentialUniqueName;
     }
+
+    assert(false && "unreachable");
+    return {};
 }
 
 
