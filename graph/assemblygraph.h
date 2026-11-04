@@ -48,8 +48,8 @@ class AssemblyGraphError : public std::runtime_error {
 
 class AssemblyGraphBuilder;
 
-enum NodeNameStatus {NODE_NAME_OKAY, NODE_NAME_TAKEN, NODE_NAME_CONTAINS_TAB,
-    NODE_NAME_CONTAINS_NEWLINE, NODE_NAME_CONTAINS_COMMA,
+enum NodeNameStatus {NODE_NAME_OKAY, NODE_NAME_TAKEN, NODE_NAME_EMPTY,
+    NODE_NAME_CONTAINS_TAB, NODE_NAME_CONTAINS_NEWLINE, NODE_NAME_CONTAINS_COMMA,
     NODE_NAME_CONTAINS_SPACE};
 enum SequencesLoadedFromFasta {NOT_READY, NOT_TRIED, TRIED};
 
@@ -116,7 +116,7 @@ public:
     SequencesLoadedFromFasta m_sequencesLoadedFromFasta;
 
     void cleanUp();
-    void createDeBruijnEdge(const QString& node1Name, const QString& node2Name,
+    void createDeBruijnEdge(std::string_view node1Name, std::string_view node2Name,
                             int overlap = 0,
                             EdgeOverlapType overlapType = UNKNOWN_OVERLAP);
     void resetNodes();
@@ -197,7 +197,7 @@ public:
     QColor getCustomColourForDisplay(const DeBruijnNode *node) const;
     QStringList getCustomLabelForDisplay(const DeBruijnNode *node) const;
 
-    QString getUniqueNodeName(QString baseName) const;
+    std::string getUniqueNodeName(std::string_view baseName) const;
     QString getNodeNameFromString(QString string) const;
 
     std::vector<DeBruijnNode *> getNodesInDepthRange(double min, double max) const;
@@ -206,7 +206,7 @@ private:
     std::vector<DeBruijnNode *> getNodesFromListPartial(const QStringList& nodesList, std::vector<QString> * nodesNotInGraph) const;
     std::vector<int> makeOverlapCountVector();
     void clearAllCsvData();
-    QString getNewNodeName(QString oldNodeName) const;
+    std::string getNewNodeName(std::string_view oldNodeName) const;
 
 signals:
     void setMergeTotalCount(int totalCount);

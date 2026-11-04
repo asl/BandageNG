@@ -685,7 +685,10 @@ QStringList GraphicsItemNode::getNodeText() const
         nodeText << g_assemblyGraph->getCustomLabelForDisplay(m_deBruijnNode);
     if (g_settings->displayNodeNames)
     {
-        QString nodeName = m_deBruijnNode->getName();
+        // Temporary label text. Not stored on the item: names are usually hidden,
+        // and a drawn graph can have one item per segment.
+        const std::string signedName = m_deBruijnNode->getName();
+        QString nodeName = QString::fromLatin1(signedName.data(), int(signedName.size()));
         if (!g_settings->doubleMode)
             nodeName.chop(1);
         nodeText << nodeName;

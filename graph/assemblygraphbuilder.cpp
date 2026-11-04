@@ -168,6 +168,19 @@ static ssize_t gzgetline(char **buf, size_t *bufsiz, gzFile fp) {
     return read;
 }
 
+static DeBruijnNode *createStrandNode(std::string_view signedName, double depth,
+                                      const Sequence &sequence, unsigned length = 0) {
+    SignedNodeName strand = splitSignedNodeName(signedName);
+    return new DeBruijnNode(strand.base, strand.positive, float(depth), sequence, length);
+}
+
+static DeBruijnNode *createStrandNode(const QString &signedName, double depth,
+                                      const Sequence &sequence, unsigned length = 0) {
+    const QByteArray bytes = signedName.toLatin1();
+    return createStrandNode(std::string_view(bytes.constData(), size_t(bytes.size())),
+                            depth, sequence, length);
+}
+
 static std::string getOppositeNodeName(std::string_view nodeName) {
     std::string oppositeNodeName(nodeName);
     oppositeNodeName.back() = oppositeNodeName.back() == '-' ? '+' : '-';
@@ -345,7 +358,7 @@ namespace io {
         }
 
         return (graph.m_deBruijnGraphNodes[nodeName]
-                = new DeBruijnNode(QByteArray(nodeName.data(), nodeName.size()), nodeDepth, sequence));
+                = createStrandNode(nodeName, nodeDepth, sequence));
     }
 
     using NodePair = std::pair<DeBruijnNode*, DeBruijnNode*>;
@@ -743,20 +756,23 @@ namespace io {
                 continue;
 
             if (DeBruijnNode *negativeNode =
-                    graph.m_deBruijnGraphNodes[getOppositeNodeName(positiveNode->getName().toStdString())]) {
+                    graph.m_deBruijnGraphNodes[getOppositeNodeName(positiveNode->getName())]) {
                 positiveNode->setReverseComplement(negativeNode);
                 negativeNode->setReverseComplement(positiveNode);
             }
         }
     }
 
-    static void makeReverseComplementNodeIfNecessary(AssemblyGraph &graph, DeBruijnNode *node) {
-        auto reverseComplementName = getOppositeNodeName(node->getName().toStdString());
+    // `signedName` is the map key. A negative node's stored name is empty until
+    // its reverse complement is linked, so getName() cannot rebuild that key.
+    static void makeReverseComplementNodeIfNecessary(AssemblyGraph &graph, DeBruijnNode *node,
+                                                    std::string_view signedName) {
+        auto reverseComplementName = getOppositeNodeName(signedName);
         if (!graph.m_deBruijnGraphNodes.count(reverseComplementName)) {
             Sequence nodeSequence{};
             if (!node->sequenceIsMissing())
                 nodeSequence = node->getSequence();
-            auto newNode = new DeBruijnNode(reverseComplementName.c_str(), node->getDepth(),
+            auto newNode = createStrandNode(reverseComplementName, node->getDepth(),
                                             nodeSequence.GetReverseComplement(),
                                             node->getLength());
             graph.m_deBruijnGraphNodes.emplace(reverseComplementName, newNode);
@@ -824,7 +840,7 @@ namespace io {
                 }
 
                 name = cleanNodeName(name);
-                name = graph.getUniqueNodeName(name) + "+";
+                name = QString::fromStdString(graph.getUniqueNodeName(name.toStdString()) + "+");
 
                 //  Look for "depth=" and "circular=" in the full header and use them if possible.
                 if (lowerName.contains("depth=")) {
@@ -848,15 +864,15 @@ namespace io {
                 if (name.length() < 1)
                     return llvm::createStringError("load error");
 
-                auto node = new DeBruijnNode(name, depth, sequence);
+                auto node = createStrandNode(name, depth, sequence);
                 graph.m_deBruijnGraphNodes.emplace(name.toStdString(), node);
-                makeReverseComplementNodeIfNecessary(graph, node);
+                makeReverseComplementNodeIfNecessary(graph, node, name.toStdString());
             }
             pointEachNodeToItsReverseComplement(graph);
 
             // For any circular nodes, make an edge connecting them to themselves.
             for (const auto &circularNodeName: circularNodeNames) {
-                graph.createDeBruijnEdge(circularNodeName, circularNodeName, 0, EXACT_OVERLAP);
+                graph.createDeBruijnEdge(circularNodeName.toStdString(), circularNodeName.toStdString(), 0, EXACT_OVERLAP);
             }
 
             return llvm::Error::success();
@@ -921,7 +937,7 @@ namespace io {
                         nodeDepth = nodeDepthString.toDouble();
 
                         //Make the node
-                        node = new DeBruijnNode(nodeName, nodeDepth,
+                        node = createStrandNode(nodeName, nodeDepth,
                                                 {}); //Sequence string is currently empty - will be added to on subsequent lines of the fastg file
                         graph.m_deBruijnGraphNodes.emplace(nodeName.toStdString(), node);
 
@@ -969,15 +985,16 @@ namespace io {
 
                 // Add fake reverse-complementary nodes for all self-reverse-complement ones
                 {
-                    std::vector<DeBruijnNode *> nodes;
-                    for (const auto &entry: graph.m_deBruijnGraphNodes) {
-                        DeBruijnNode *node = entry;
-                        if (!graph.m_deBruijnGraphNodes.count(getOppositeNodeName(node->getName().toStdString())))
-                            nodes.emplace_back(node);
+                    std::vector<std::pair<DeBruijnNode *, std::string>> nodes;
+                    for (auto it = graph.m_deBruijnGraphNodes.begin();
+                         it != graph.m_deBruijnGraphNodes.end(); ++it) {
+                        std::string signedName = it.key();
+                        if (!graph.m_deBruijnGraphNodes.count(getOppositeNodeName(signedName)))
+                            nodes.emplace_back(*it, std::move(signedName));
                     }
 
                     for (auto &entry: nodes)
-                        makeReverseComplementNodeIfNecessary(graph, entry);
+                        makeReverseComplementNodeIfNecessary(graph, entry.first, entry.second);
                 }
                 pointEachNodeToItsReverseComplement(graph);
 
@@ -986,7 +1003,7 @@ namespace io {
                 for (size_t i = 0; i < edgeStartingNodeNames.size(); ++i) {
                     QString node1Name = edgeStartingNodeNames[i];
                     QString node2Name = edgeEndingNodeNames[i];
-                    graph.createDeBruijnEdge(node1Name, node2Name);
+                    graph.createDeBruijnEdge(node1Name.toStdString(), node2Name.toStdString());
                 }
             }
 
@@ -1044,7 +1061,7 @@ namespace io {
                         // ASQG files don't seem to include depth, so just set this to one for every node.
                         double nodeDepth = 1.0;
 
-                        auto node = new DeBruijnNode(nodeName, nodeDepth, sequence, length);
+                        auto node = createStrandNode(nodeName, nodeDepth, sequence, length);
                         graph.m_deBruijnGraphNodes.emplace(nodeName.toStdString(), node);
                     }
                         // Lines beginning with "ED" are edge lines
@@ -1108,15 +1125,16 @@ namespace io {
 
                 //Pair up reverse complements, creating them if necessary.
                 {
-                    std::vector<DeBruijnNode *> nodes;
-                    for (const auto &entry: graph.m_deBruijnGraphNodes) {
-                        DeBruijnNode *node = entry;
-                        if (!graph.m_deBruijnGraphNodes.count(getOppositeNodeName(node->getName().toStdString())))
-                            nodes.emplace_back(node);
+                    std::vector<std::pair<DeBruijnNode *, std::string>> nodes;
+                    for (auto it = graph.m_deBruijnGraphNodes.begin();
+                         it != graph.m_deBruijnGraphNodes.end(); ++it) {
+                        std::string signedName = it.key();
+                        if (!graph.m_deBruijnGraphNodes.count(getOppositeNodeName(signedName)))
+                            nodes.emplace_back(*it, std::move(signedName));
                     }
 
                     for (auto &entry: nodes)
-                        makeReverseComplementNodeIfNecessary(graph, entry);
+                        makeReverseComplementNodeIfNecessary(graph, entry.first, entry.second);
                 }
                 pointEachNodeToItsReverseComplement(graph);
 
@@ -1125,7 +1143,7 @@ namespace io {
                     QString node1Name = edgeStartingNodeNames[i];
                     QString node2Name = edgeEndingNodeNames[i];
                     int overlap = edgeOverlaps[i];
-                    graph.createDeBruijnEdge(node1Name, node2Name, overlap, EXACT_OVERLAP);
+                    graph.createDeBruijnEdge(node1Name.toStdString(), node2Name.toStdString(), overlap, EXACT_OVERLAP);
                 }
             }
 
@@ -1228,7 +1246,7 @@ namespace io {
 
                         Sequence nodeSequence = sequence.Subseq(nodeRangeStart, nodeRangeEnd + 1);
 
-                        auto node = new DeBruijnNode(nodeName, 1.0, nodeSequence);
+                        auto node = createStrandNode(nodeName, 1.0, nodeSequence);
                         graph.m_deBruijnGraphNodes.emplace(nodeName.toStdString(), node);
                     }
 
@@ -1244,15 +1262,16 @@ namespace io {
             //Even though the Trinity.fasta file only contains positive nodes, Bandage
             //expects negative reverse complements nodes, so make them now.
             {
-                std::vector<DeBruijnNode *> nodes;
-                for (const auto &entry: graph.m_deBruijnGraphNodes) {
-                    DeBruijnNode *node = entry;
-                    if (!graph.m_deBruijnGraphNodes.count(getOppositeNodeName(node->getName().toStdString())))
-                        nodes.emplace_back(node);
+                std::vector<std::pair<DeBruijnNode *, std::string>> nodes;
+                for (auto it = graph.m_deBruijnGraphNodes.begin();
+                     it != graph.m_deBruijnGraphNodes.end(); ++it) {
+                    std::string signedName = it.key();
+                    if (!graph.m_deBruijnGraphNodes.count(getOppositeNodeName(signedName)))
+                        nodes.emplace_back(*it, std::move(signedName));
                 }
 
                 for (auto &entry: nodes)
-                    makeReverseComplementNodeIfNecessary(graph, entry);
+                    makeReverseComplementNodeIfNecessary(graph, entry.first, entry.second);
             }
             pointEachNodeToItsReverseComplement(graph);
 
@@ -1261,7 +1280,7 @@ namespace io {
             for (size_t i = 0; i < edgeStartingNodeNames.size(); ++i) {
                 QString node1Name = edgeStartingNodeNames[i];
                 QString node2Name = edgeEndingNodeNames[i];
-                graph.createDeBruijnEdge(node1Name, node2Name);
+                graph.createDeBruijnEdge(node1Name.toStdString(), node2Name.toStdString());
             }
 
             graph.setAllEdgesExactOverlap(0);

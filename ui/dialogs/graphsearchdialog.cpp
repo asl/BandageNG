@@ -22,6 +22,7 @@
 #include "enteronequerydialog.h"
 
 #include "graphsearch/hit.h"
+#include "graph/nodedisplayname.h"
 #include "graphsearch/query.h"
 #include "graphsearch/graphsearch.h"
 
@@ -896,7 +897,7 @@ QVariant HitsListModel::data(const QModelIndex &index, int role) const {
         case HitsColumns::QueryName:
             return hitQuery.getName();
         case HitsColumns::NodeName:
-            return hit->m_node->getName();
+            return nodeDisplayName(hit->m_node);
         case HitsColumns::PercentIdentity:
             if (hit->m_percentIdentity > 0)
                 return formatDoubleForDisplay(hit->m_percentIdentity, 2) + "%";

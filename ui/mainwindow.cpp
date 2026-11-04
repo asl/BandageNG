@@ -35,6 +35,7 @@
 
 #include "graph/assemblygraph.h"
 #include "graph/debruijnnode.h"
+#include "graph/nodedisplayname.h"
 #include "graph/debruijnedge.h"
 #include "graph/graphicsitemnode.h"
 #include "graph/graphicsitemedge.h"
@@ -664,11 +665,8 @@ void MainWindow::getSelectedNodeInfo(int & selectedNodeCount, QString & selected
 
     for (int i = 0; i < selectedNodeCount; ++i)
     {
-        QString nodeName = selectedNodes[i]->getName();
-
-        //If we are in single mode, don't include +/i in the node name
-        if (!g_settings->doubleMode)
-            nodeName.chop(1);
+        QString nodeName = g_settings->doubleMode ? nodeDisplayName(selectedNodes[i])
+                                                 : nodeDisplayNameWithoutSign(selectedNodes[i]);
 
         selectedNodeListText += nodeName;
         if (i != int(selectedNodes.size()) - 1)
@@ -706,9 +704,9 @@ QString MainWindow::getSelectedEdgeListText()
     QString edgeText;
     for (size_t i = 0; i < selectedEdges.size(); ++i) {
         const auto *edge = selectedEdges[i];
-        edgeText += edge->getStartingNode()->getName();
+        edgeText += nodeDisplayName(edge->getStartingNode());
         edgeText += " to ";
-        edgeText += edge->getEndingNode()->getName();
+        edgeText += nodeDisplayName(edge->getEndingNode());
         int overlap = edge->getOverlap();
 
         switch (edge->getOverlapType()) {
@@ -1831,7 +1829,7 @@ void MainWindow::doSelectNodes(const std::vector<DeBruijnNode *> &nodesToSelect,
             graphicsItemNode->setSelected(true);
             ++foundNodes;
         } else
-            nodesNotFound.push_back(nodesToSelect[i]->getName());
+            nodesNotFound.push_back(nodeDisplayName(nodesToSelect[i]));
     }
 
     if (foundNodes > 0)
@@ -2750,7 +2748,7 @@ void MainWindow::changeNodeName()
         return;
     }
 
-    QString oldName = selectedNode->getNameWithoutSign();
+    QString oldName = nodeDisplayNameWithoutSign(selectedNode);
     ChangeNodeNameDialog changeNodeNameDialog(this, oldName);
 
     if (changeNodeNameDialog.exec()) //The user clicked OK

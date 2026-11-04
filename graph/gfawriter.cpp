@@ -62,7 +62,8 @@ namespace gfa {
         QByteArray gfaSequence = getSequenceForGfa(node);
 
         QByteArray gfaSegmentLine = "S";
-        gfaSegmentLine += "\t" + node->getNameWithoutSign().toLatin1();
+        const std::string_view segmentName = node->getNameWithoutSign();
+        gfaSegmentLine += "\t" + QByteArray(segmentName.data(), int(segmentName.size()));
         gfaSegmentLine += "\t" + gfaSequence;
         gfaSegmentLine += "\tLN:i:" + QString::number(gfaSequence.length()).toLatin1();
 
@@ -103,13 +104,15 @@ namespace gfa {
         bool isJump = edge->getOverlapType() == JUMP;
 
         QByteArray gfaLinkLine = isJump ? "J\t" : "L\t";
-        gfaLinkLine += qPrintable(startingNode->getNameWithoutSign());
+        const std::string_view startingName = startingNode->getNameWithoutSign();
+        const std::string_view endingName = endingNode->getNameWithoutSign();
+        gfaLinkLine += QByteArray(startingName.data(), int(startingName.size()));
         gfaLinkLine += '\t';
-        gfaLinkLine += qPrintable(startingNode->getSign());
+        gfaLinkLine += startingNode->getSign();
         gfaLinkLine += '\t';
-        gfaLinkLine += qPrintable(endingNode->getNameWithoutSign());
+        gfaLinkLine += QByteArray(endingName.data(), int(endingName.size()));
         gfaLinkLine += '\t';
-        gfaLinkLine += qPrintable(endingNode->getSign());
+        gfaLinkLine += endingNode->getSign();
         gfaLinkLine += '\t';
         // Emit overlap for normal links and distance for jump links
         if (isJump) {
@@ -148,14 +151,17 @@ namespace gfa {
         // same length for circular paths
         for (size_t i = 0; i < edges.size(); ++i) {
             const auto *edge = edges[i];
-            gfaPathLine += qPrintable(nodes[i]->getName());
+            const std::string stepName = nodes[i]->getName();
+            gfaPathLine += QByteArray(stepName.data(), int(stepName.size()));
             gfaPathLine += edge->getOverlapType() == JUMP ? ';' : ',';
         }
         // Handle last node: for circular paths we're adding extra node here
         if (nodes.size() == edges.size()) { // circular path
-            gfaPathLine += qPrintable(nodes.front()->getName());
+            const std::string stepName = nodes.front()->getName();
+            gfaPathLine += QByteArray(stepName.data(), int(stepName.size()));
         } else {
-            gfaPathLine += qPrintable(nodes.back()->getName());
+            const std::string stepName = nodes.back()->getName();
+            gfaPathLine += QByteArray(stepName.data(), int(stepName.size()));
         }
 
         return gfaPathLine;

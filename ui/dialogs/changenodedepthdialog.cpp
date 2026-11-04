@@ -4,6 +4,7 @@
 
 #include "program/globals.h"
 #include "graph/debruijnnode.h"
+#include "graph/nodedisplayname.h"
 
 ChangeNodeDepthDialog::ChangeNodeDepthDialog(QWidget * parent,
                                                      std::vector<DeBruijnNode *> * nodes,
@@ -24,7 +25,7 @@ ChangeNodeDepthDialog::ChangeNodeDepthDialog(QWidget * parent,
         numNodeNames = 10;
     for (int i = 0; i < numNodeNames; ++i)
     {
-        nodeNames += (*nodes)[i]->getNameWithoutSign();
+        nodeNames += nodeDisplayNameWithoutSign((*nodes)[i]);
         if (i < numNodeNames - 1)
             nodeNames += ", ";
     }
