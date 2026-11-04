@@ -16,6 +16,7 @@
 // along with Bandage.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "walklistdialog.h"
+#include "graph/nodedisplayname.h"
 #include "ui_walklistdialog.h"
 
 #include "graph/assemblygraph.h"
@@ -49,8 +50,8 @@ WalkListDialog::WalkListDialog(const AssemblyGraph &graph,
     QString nodes;
     for (size_t i = 0; i < startNodes.size(); ++i)
         nodes = (i == 0 ?
-                 startNodes[i]->getName() :
-                 nodes % ", " % startNodes[i]->getName());
+                 nodeDisplayName(startNodes[i]) :
+                 nodes % ", " % nodeDisplayName(startNodes[i]));
     ui->nodeEdit->setText(nodes);
 
     // Ensure our "Close" is not default

@@ -21,6 +21,7 @@
 
 #include "program/settings.h"
 
+#include <charconv>
 #include <cmath>
 #include <QApplication>
 
@@ -324,29 +325,25 @@ bool DeBruijnEdge::testExactOverlap(int overlap) const
 }
 
 
+static bool parseWholeNumber(std::string_view text, long long &value) {
+    if (text.empty())
+        return false;
+    const char *end = text.data() + text.size();
+    auto [parsed, error] = std::from_chars(text.data(), end, value);
+    return error == std::errc() && parsed == end;
+}
+
 bool DeBruijnEdge::compareEdgePointers(const DeBruijnEdge * a, const DeBruijnEdge * b) {
-    QString aStart = a->getStartingNode()->getName();
-    QString bStart = b->getStartingNode()->getName();
-    QString aStartNoSign = aStart;
-    aStartNoSign.chop(1);
-    QString bStartNoSign = bStart;
-    bStartNoSign.chop(1);
-    bool ok1;
-    long long aStartNumber = aStartNoSign.toLongLong(&ok1);
-    bool ok2;
-    long long bStartNumber = bStartNoSign.toLongLong(&ok2);
-
-    QString aEnd = a->getEndingNode()->getName();
-    QString bEnd = b->getEndingNode()->getName();
-    QString aEndNoSign = aEnd;
-    aEndNoSign.chop(1);
-    QString bEndNoSign = bEnd;
-    bEndNoSign.chop(1);
-    bool ok3;
-    long long aEndNumber = aEndNoSign.toLongLong(&ok3);
-    bool ok4;
-    long long bEndNumber = bEndNoSign.toLongLong(&ok4);
-
+    const std::string aStart = a->getStartingNode()->getName();
+    const std::string bStart = b->getStartingNode()->getName();
+    long long aStartNumber = 0;
+    long long bStartNumber = 0;
+    long long aEndNumber = 0;
+    long long bEndNumber = 0;
+    const bool ok1 = parseWholeNumber(a->getStartingNode()->getNameWithoutSign(), aStartNumber);
+    const bool ok2 = parseWholeNumber(b->getStartingNode()->getNameWithoutSign(), bStartNumber);
+    const bool ok3 = parseWholeNumber(a->getEndingNode()->getNameWithoutSign(), aEndNumber);
+    const bool ok4 = parseWholeNumber(b->getEndingNode()->getNameWithoutSign(), bEndNumber);
 
     //If the node names are essentially numbers, then sort them as numbers.
     if (ok1 && ok2 && ok3 && ok4)
@@ -354,8 +351,7 @@ bool DeBruijnEdge::compareEdgePointers(const DeBruijnEdge * a, const DeBruijnEdg
         if (aStartNumber != bStartNumber)
             return aStartNumber < bStartNumber;
 
-        if (aStartNumber == bStartNumber)
-            return aEndNumber < bEndNumber;
+        return aEndNumber < bEndNumber;
     }
 
     //If the node names are strings, then just sort them as strings.

@@ -35,7 +35,8 @@ namespace layout::io {
             for (QPointF point: entry.second)
                 segments.append(QJsonArray{point.x(), point.y()});
 
-            jsonLayout[entry.first->getName()] = segments;
+            const std::string nodeName = entry.first->getName();
+            jsonLayout[QString::fromLatin1(nodeName.data(), int(nodeName.size()))] = segments;
         }
 
         QFile saveFile(filename);
@@ -57,7 +58,9 @@ namespace layout::io {
         for (const auto &entry: layout) {
             const DeBruijnNode *node = entry.first;
             QPointF pos = entry.second.front();
-            out << entry.first->getName() << '\t' << pos.x() << '\t' << pos.y() << '\n';
+            const std::string nodeName = node->getName();
+            out << QString::fromLatin1(nodeName.data(), int(nodeName.size()))
+                << '\t' << pos.x() << '\t' << pos.y() << '\n';
         }
 
         return true;

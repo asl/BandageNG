@@ -25,6 +25,7 @@
 
 #include <thirdparty/seq/aa.hpp>
 
+#include <cassert>
 #include <cmath>
 
 #include <set>
@@ -35,15 +36,44 @@
 
 //The length parameter is optional.  If it is set, then the node will use that
 //for its length.  If not set, it will just use the sequence length.
-DeBruijnNode::DeBruijnNode(QString name, float depth, const Sequence& sequence, unsigned length)
-        : m_name(std::move(name)),
+DeBruijnNode::DeBruijnNode(std::string_view name, bool positive, float depth, const Sequence& sequence, unsigned length)
+        : m_name(positive ? std::string(name) : std::string()),
           m_depth(depth),
           m_sequence(sequence),
           m_reverseComplement(nullptr),
           m_graphicsItemNode(nullptr),
           m_specialNode(false),
           m_drawn(false) {
+    if (positive)
+        assert(!name.empty());
     m_length = length > 0 ? length : sequence.size();
+}
+
+std::string DeBruijnNode::getName() const {
+    std::string name(getNameWithoutSign());
+    name.push_back(getSign());
+    return name;
+}
+
+std::string_view DeBruijnNode::getNameWithoutSign() const {
+    if (isPositiveNode())
+        return m_name;
+    if (m_reverseComplement != nullptr)
+        return m_reverseComplement->m_name;
+    return {};
+}
+
+void DeBruijnNode::setName(std::string_view newName) {
+    if (newName.empty())
+        return;
+
+    DeBruijnNode *positive = isPositiveNode() ? this : m_reverseComplement;
+    if (positive == nullptr)
+        return;
+
+    positive->m_name.assign(newName.data(), newName.size());
+    if (positive->m_reverseComplement != nullptr && positive->m_reverseComplement != positive)
+        positive->m_reverseComplement->m_name.clear();
 }
 
 
@@ -167,7 +197,8 @@ QByteArray DeBruijnNode::getNodeNameForFasta(bool sign) const
     QByteArray nodeNameForFasta;
 
     nodeNameForFasta += "NODE_";
-    nodeNameForFasta += sign ? qPrintable(getName()) : qPrintable(getNameWithoutSign());
+    const auto nodeName = sign ? getName() : std::string(getNameWithoutSign());
+    nodeNameForFasta += QByteArray(nodeName.data(), int(nodeName.size()));
 
     nodeNameForFasta += "_length_";
     nodeNameForFasta += QByteArray::number(getLength());
@@ -204,20 +235,6 @@ void DeBruijnNode::labelNeighbouringNodesAsDrawn(int nodeDistance) {
         worklist.swap(seen);
     }
 }
-
-bool DeBruijnNode::isPositiveNode() const
-{
-    QChar lastChar = m_name.at(m_name.length() - 1);
-    return lastChar == '+';
-}
-
-
-bool DeBruijnNode::isNegativeNode() const
-{
-    QChar lastChar = m_name.at(m_name.length() - 1);
-    return lastChar == '-';
-}
-
 
 //This function checks to see if the passed node leads into
 //this node.  If so, it returns the connecting edge.  If not,

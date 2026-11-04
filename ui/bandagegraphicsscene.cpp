@@ -17,6 +17,7 @@
 
 
 #include "bandagegraphicsscene.h"
+#include "graph/nodedisplayname.h"
 #include "graph/assemblygraph.h"
 #include "graph/debruijnnode.h"
 #include "graph/debruijnedge.h"
@@ -34,8 +35,8 @@ BandageGraphicsScene::BandageGraphicsScene(QObject *parent) :
 
 
 static bool compareNodePointers(const DeBruijnNode * a, const DeBruijnNode * b) {
-    QString aName = a->getName();
-    QString bName = b->getName();
+    QString aName = nodeDisplayName(a);
+    QString bName = nodeDisplayName(b);
 
     QString aName2 = aName;
     aName2.chop(1);

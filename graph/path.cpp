@@ -468,7 +468,8 @@ QString Path::getString(bool spaces) const {
                 output += " ";
         }
 
-        output += m_nodes[i]->getName();
+        const std::string nodeName = m_nodes[i]->getName();
+        output += QString::fromLatin1(nodeName.data(), int(nodeName.size()));
         if (i < m_nodes.size() - 1) {
             output += ",";
             if (spaces)

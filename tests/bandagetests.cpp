@@ -511,7 +511,7 @@ void BandageTests::graphLocationFunctions()
     QCOMPARE(location2.getPosition(), 5868);
 
     location2.moveLocation(2);
-    QCOMPARE(location2.getNode()->getName(), QString("38-"));
+    QCOMPARE(location2.getNode()->getName(), std::string("38-"));
     QCOMPARE(location2.getPosition(), 1);
 
     GraphLocation location3;
@@ -1697,7 +1697,7 @@ void BandageTests::mergeNodesOnGfa()
 
     //If we make a circular path with this node, its length should be equal to
     //the length of the path made before.
-    Path testPath2 = Path::makeFromString(lastNode->getName(), *g_assemblyGraph, true, &pathStringFailure);
+    Path testPath2 = Path::makeFromString(QString::fromStdString(lastNode->getName()), *g_assemblyGraph, true, &pathStringFailure);
     QVERIFY2(pathStringFailure.isEmpty(), qPrintable(pathStringFailure));
     QCOMPARE(path1Length, testPath2.getLength());
 
@@ -1726,6 +1726,15 @@ void BandageTests::changeNodeNames()
     QCOMPARE(node6Plus, node12345Plus);
     QCOMPARE(node6Minus, node12345Minus);
     QCOMPARE(nodeCountBefore, nodeCountAfter);
+    QCOMPARE(node12345Plus->getNameWithoutSign(), std::string_view("12345"));
+    QVERIFY(node12345Plus->isPositiveNode());
+    QVERIFY(node12345Minus->isNegativeNode());
+
+    QCOMPARE(g_assemblyGraph->checkNodeNameValidity(""), NODE_NAME_EMPTY);
+    g_assemblyGraph->changeNodeName("12345", "");
+    QCOMPARE(node12345Plus->getNameWithoutSign(), std::string_view("12345"));
+    QVERIFY(node12345Plus->isPositiveNode());
+    QCOMPARE(g_assemblyGraph->m_deBruijnGraphNodes.count("12345+"), 1u);
 }
 
 void BandageTests::changeNodeDepths()

@@ -28,6 +28,9 @@
 #include "ogdf/energybased/FMMMLayout.h"
 #include "ogdf/energybased/fmmm/MAARPacking.h"
 #include "ogdf/energybased/FastMultipoleEmbedder.h"
+
+#include <cctype>
+#include <charconv>
 #include "ogdf/energybased/fmmm/FMMMOptions.h"
 
 #include <QFutureSynchronizer>
@@ -227,9 +230,14 @@ void determineLinearNodePositions(ogdf::Graph &ogdfGraph,
         if (!node->isDrawn())
             continue;
 
-        int nodeInt = node->getNameWithoutSign().toInt(&successfulIntConversion);
-        if (!successfulIntConversion)
+        const std::string_view nodeName = node->getNameWithoutSign();
+        int nodeInt = 0;
+        const char *nameEnd = nodeName.data() + nodeName.size();
+        auto [parsedEnd, parseError] = std::from_chars(nodeName.data(), nameEnd, nodeInt);
+        if (parseError != std::errc() || parsedEnd != nameEnd) {
+            successfulIntConversion = false;
             break;
+        }
         numericallySortedDrawnNodes.emplace_back(nodeInt, node);
     }
 
@@ -248,7 +256,17 @@ void determineLinearNodePositions(ogdf::Graph &ogdfGraph,
         }
         std::sort(sortedDrawnNodes.begin(), sortedDrawnNodes.end(),
                   [](const DeBruijnNode *a, const DeBruijnNode *b) {
-            return QString::localeAwareCompare(a->getNameWithoutSign().toUpper(), b->getNameWithoutSign().toUpper()) < 0;});
+            const std::string_view aName = a->getNameWithoutSign();
+            const std::string_view bName = b->getNameWithoutSign();
+            const size_t n = std::min(aName.size(), bName.size());
+            for (size_t i = 0; i < n; ++i) {
+                const unsigned char aChar = static_cast<unsigned char>(std::toupper(static_cast<unsigned char>(aName[i])));
+                const unsigned char bChar = static_cast<unsigned char>(std::toupper(static_cast<unsigned char>(bName[i])));
+                if (aChar != bChar)
+                    return aChar < bChar;
+            }
+            return aName.size() < bName.size();
+        });
     }
 
     // Now we add the drawn nodes to the OGDF graph, given them initial positions based on their sort order.

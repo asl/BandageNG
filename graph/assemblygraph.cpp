@@ -24,6 +24,7 @@
 #include "io.h"
 #include "graphicsitemedge.h"
 #include "graphicsitemnode.h"
+#include "nodedisplayname.h"
 #include "sequenceutils.h"
 
 #include "layout/graphlayoutworker.h"
@@ -118,30 +119,27 @@ void AssemblyGraph::cleanUp() {
 
 //The function returns a node name, replacing "+" at the end with "-" or
 //vice-versa.
-static QString getOppositeNodeName(QString nodeName) {
-    QChar lastChar = nodeName.at(nodeName.size() - 1);
-    nodeName.chop(1);
-
-    if (lastChar == '-')
-        return nodeName + "+";
-    else
-        return nodeName + "-";
+static std::string getOppositeNodeName(std::string_view nodeName) {
+    std::string opposite(nodeName);
+    if (!opposite.empty())
+        opposite.back() = opposite.back() == '-' ? '+' : '-';
+    return opposite;
 }
 
 //This function makes a double edge: in one direction for the given nodes
 //and the opposite direction for their reverse complements.  It adds the
 //new edges to the vector here and to the nodes themselves.
-void AssemblyGraph::createDeBruijnEdge(const QString& node1Name, const QString& node2Name,
+void AssemblyGraph::createDeBruijnEdge(std::string_view node1Name, std::string_view node2Name,
                                        int overlap, EdgeOverlapType overlapType)
 {
-    QString node1Opposite = getOppositeNodeName(node1Name);
-    QString node2Opposite = getOppositeNodeName(node2Name);
+    std::string node1Opposite = getOppositeNodeName(node1Name);
+    std::string node2Opposite = getOppositeNodeName(node2Name);
 
     //Quit if any of the nodes don't exist.
-    auto node1 = m_deBruijnGraphNodes.find(node1Name.toStdString());
-    auto node2 = m_deBruijnGraphNodes.find(node2Name.toStdString());
-    auto negNode1 = m_deBruijnGraphNodes.find(node1Opposite.toStdString());
-    auto negNode2 = m_deBruijnGraphNodes.find(node2Opposite.toStdString());
+    auto node1 = m_deBruijnGraphNodes.find(node1Name);
+    auto node2 = m_deBruijnGraphNodes.find(node2Name);
+    auto negNode1 = m_deBruijnGraphNodes.find(node1Opposite);
+    auto negNode2 = m_deBruijnGraphNodes.find(node2Opposite);
     if (node1 == m_deBruijnGraphNodes.end() ||
         node2 == m_deBruijnGraphNodes.end() ||
         negNode1 == m_deBruijnGraphNodes.end() ||
@@ -711,7 +709,7 @@ std::vector<DeBruijnNode *> AssemblyGraph::getNodesFromListPartial(const QString
 
         bool found = false;
         for (auto &entry : m_deBruijnGraphNodes) {
-            QString nodeName = entry->getName();
+            const QString nodeName = nodeDisplayName(entry);
 
             if (nodeName.contains(queryName)) {
                 found = true;
@@ -829,21 +827,18 @@ std::vector<int> AssemblyGraph::makeOverlapCountVector()
     return overlapCounts;
 }
 
-QString AssemblyGraph::getUniqueNodeName(QString baseName) const {
-    //If the base name is untaken, then that's it!
-    if (!m_deBruijnGraphNodes.count((baseName + "+").toStdString()))
-        return baseName;
+std::string AssemblyGraph::getUniqueNodeName(std::string_view baseName) const {
+    std::string base(baseName);
+    if (!m_deBruijnGraphNodes.count(base + "+"))
+        return base;
 
     int suffix = 1;
     while (true) {
         ++suffix;
-        QString potentialUniqueName = baseName + "_" + QString::number(suffix);
-        if (!m_deBruijnGraphNodes.count((potentialUniqueName + "+").toStdString()))
+        std::string potentialUniqueName = base + "_" + std::to_string(suffix);
+        if (!m_deBruijnGraphNodes.count(potentialUniqueName + "+"))
             return potentialUniqueName;
     }
-
-    //Code should never get here.
-    return baseName;
 }
 
 
@@ -893,7 +888,7 @@ void AssemblyGraph::deleteNodes(const std::vector<DeBruijnNode *> &nodes)
 
     // Remove the nodes from the graph.
     for (auto *node : nodesToDelete)
-        m_deBruijnGraphNodes.erase(node->getName().toStdString());
+        m_deBruijnGraphNodes.erase(node->getName());
 
     for (auto *node : nodesToDelete)
         delete node;
@@ -929,15 +924,15 @@ void AssemblyGraph::duplicateNodePair(DeBruijnNode * node, BandageGraphicsScene 
     DeBruijnNode * originalPosNode = node;
     DeBruijnNode * originalNegNode = node->getReverseComplement();
 
-    QString newNodeBaseName = getNewNodeName(originalPosNode->getName());
-    QString newPosNodeName = newNodeBaseName + "+";
-    QString newNegNodeName = newNodeBaseName + "-";
+    std::string newNodeBaseName = getNewNodeName(originalPosNode->getName());
+    std::string newPosNodeName = newNodeBaseName + "+";
+    std::string newNegNodeName = newNodeBaseName + "-";
 
     double newDepth = node->getDepth() / 2.0;
 
     //Create the new nodes.
-    auto * newPosNode = new DeBruijnNode(newPosNodeName, newDepth, originalPosNode->getSequence());
-    auto * newNegNode = new DeBruijnNode(newNegNodeName, newDepth, originalNegNode->getSequence());
+    auto * newPosNode = new DeBruijnNode(newNodeBaseName, true, newDepth, originalPosNode->getSequence());
+    auto * newNegNode = new DeBruijnNode(newNodeBaseName, false, newDepth, originalNegNode->getSequence());
     newPosNode->setReverseComplement(newNegNode);
     newNegNode->setReverseComplement(newPosNode);
 
@@ -949,8 +944,8 @@ void AssemblyGraph::duplicateNodePair(DeBruijnNode * node, BandageGraphicsScene 
     setCsvData(newPosNode, getAllCsvData(originalPosNode));
     setCsvData(newNegNode, getAllCsvData(originalNegNode));
 
-    m_deBruijnGraphNodes.emplace(newPosNodeName.toStdString(), newPosNode);
-    m_deBruijnGraphNodes.emplace(newNegNodeName.toStdString(), newNegNode);
+    m_deBruijnGraphNodes.emplace(newPosNodeName, newPosNode);
+    m_deBruijnGraphNodes.emplace(newNegNodeName, newNegNode);
 
     std::vector<DeBruijnEdge *> leavingEdges = originalPosNode->getLeavingEdges();
     for (auto *edge : leavingEdges) {
@@ -973,18 +968,20 @@ void AssemblyGraph::duplicateNodePair(DeBruijnNode * node, BandageGraphicsScene 
     scene->duplicateGraphicsNode(originalNegNode, newNegNode, *this);
 }
 
-QString AssemblyGraph::getNewNodeName(QString oldNodeName) const
+std::string AssemblyGraph::getNewNodeName(std::string_view oldNodeName) const
 {
-    oldNodeName.chop(1); //Remove trailing +/-
+    if (!oldNodeName.empty() && (oldNodeName.back() == '+' || oldNodeName.back() == '-'))
+        oldNodeName.remove_suffix(1);
 
-    QString newNodeNameBase = oldNodeName + "_copy";
-    QString newNodeName = newNodeNameBase;
+    std::string newNodeNameBase(oldNodeName);
+    newNodeNameBase += "_copy";
+    std::string newNodeName = newNodeNameBase;
 
     int suffix = 1;
-    while (m_deBruijnGraphNodes.count((newNodeName + "+").toStdString()))
+    while (m_deBruijnGraphNodes.count(newNodeName + "+"))
     {
         ++suffix;
-        newNodeName = newNodeNameBase + QString::number(suffix);
+        newNodeName = newNodeNameBase + std::to_string(suffix);
     }
 
     return newNodeName;
@@ -1088,26 +1085,26 @@ bool AssemblyGraph::mergeNodes(QList<DeBruijnNode *> nodes, BandageGraphicsScene
     Path negPath = Path::makeFromOrderedNodes(revCompOrderedList, false);
     Sequence mergedNodeNegSequence{negPath.getPathSequence()};
 
-    QString newNodeBaseName;
+    std::string newNodeBaseName;
     for (int i = 0; i < orderedList.size(); ++i) {
         newNodeBaseName += orderedList[i]->getNameWithoutSign();
         if (i < orderedList.size() - 1)
             newNodeBaseName += "_";
     }
     newNodeBaseName = getUniqueNodeName(newNodeBaseName);
-    QString newPosNodeName = newNodeBaseName + "+";
-    QString newNegNodeName = newNodeBaseName + "-";
+    std::string newPosNodeName = newNodeBaseName + "+";
+    std::string newNegNodeName = newNodeBaseName + "-";
 
     double mergedNodeDepth = getMeanDepth(orderedList);
 
-    auto newPosNode = new DeBruijnNode(newPosNodeName, mergedNodeDepth, mergedNodePosSequence);
-    auto newNegNode = new DeBruijnNode(newNegNodeName, mergedNodeDepth, mergedNodeNegSequence);
+    auto newPosNode = new DeBruijnNode(newNodeBaseName, true, mergedNodeDepth, mergedNodePosSequence);
+    auto newNegNode = new DeBruijnNode(newNodeBaseName, false, mergedNodeDepth, mergedNodeNegSequence);
 
     newPosNode->setReverseComplement(newNegNode);
     newNegNode->setReverseComplement(newPosNode);
 
-    m_deBruijnGraphNodes.emplace(newPosNodeName.toStdString(), newPosNode);
-    m_deBruijnGraphNodes.emplace(newNegNodeName.toStdString(), newNegNode);
+    m_deBruijnGraphNodes.emplace(newPosNodeName, newPosNode);
+    m_deBruijnGraphNodes.emplace(newNegNodeName, newNegNode);
 
     for (auto *leavingEdge : orderedList.back()->getLeavingEdges())
         createDeBruijnEdge(newPosNodeName, leavingEdge->getEndingNode()->getName(), leavingEdge->getOverlap(),
@@ -1421,28 +1418,25 @@ void AssemblyGraph::changeNodeName(const QString& oldName, const QString& newNam
     if (checkNodeNameValidity(newName) != NODE_NAME_OKAY)
         return;
 
-    QString posOldNodeName = oldName + "+";
-    QString negOldNodeName = oldName + "-";
+    const std::string posOldNodeName = oldName.toStdString() + "+";
+    const std::string negOldNodeName = oldName.toStdString() + "-";
 
-    if (!m_deBruijnGraphNodes.count(posOldNodeName.toStdString()))
+    if (!m_deBruijnGraphNodes.count(posOldNodeName))
         return;
-    if (!m_deBruijnGraphNodes.count(negOldNodeName.toStdString()))
+    if (!m_deBruijnGraphNodes.count(negOldNodeName))
         return;
 
-    DeBruijnNode * posNode = m_deBruijnGraphNodes[posOldNodeName.toStdString()];
-    DeBruijnNode * negNode = m_deBruijnGraphNodes[negOldNodeName.toStdString()];
+    DeBruijnNode * posNode = m_deBruijnGraphNodes[posOldNodeName];
+    DeBruijnNode * negNode = m_deBruijnGraphNodes[negOldNodeName];
 
-    m_deBruijnGraphNodes.erase(posOldNodeName.toStdString());
-    m_deBruijnGraphNodes.erase(negOldNodeName.toStdString());
+    m_deBruijnGraphNodes.erase(posOldNodeName);
+    m_deBruijnGraphNodes.erase(negOldNodeName);
 
-    QString posNewNodeName = newName + "+";
-    QString negNewNodeName = newName + "-";
+    const std::string unsignedName = newName.toStdString();
+    posNode->setName(unsignedName);
 
-    posNode->setName(posNewNodeName);
-    negNode->setName(negNewNodeName);
-
-    m_deBruijnGraphNodes.emplace(posNewNodeName.toStdString(), posNode);
-    m_deBruijnGraphNodes.emplace(negNewNodeName.toStdString(), negNode);
+    m_deBruijnGraphNodes.emplace(unsignedName + "+", posNode);
+    m_deBruijnGraphNodes.emplace(unsignedName + "-", negNode);
 }
 
 
@@ -1451,6 +1445,9 @@ void AssemblyGraph::changeNodeName(const QString& oldName, const QString& newNam
 //without a +/- at the end.
 NodeNameStatus AssemblyGraph::checkNodeNameValidity(const QString& nodeName) const
 {
+    if (nodeName.isEmpty())
+        return NODE_NAME_EMPTY;
+
     if (nodeName.contains('\t'))
         return NODE_NAME_CONTAINS_TAB;
 

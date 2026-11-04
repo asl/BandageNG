@@ -23,22 +23,39 @@
 
 #include <QColor>
 #include <QByteArray>
+#include <string>
+#include <string_view>
+#include <utility>
 #include <vector>
 
 class DeBruijnEdge;
 class GraphicsItemNode;
 
+// Last character of a Bandage node key is the strand suffix. The stored name
+// does not include it.
+struct SignedNodeName {
+    std::string_view base;
+    bool positive = true;
+};
+
+inline SignedNodeName splitSignedNodeName(std::string_view signedName) {
+    if (!signedName.empty() && (signedName.back() == '+' || signedName.back() == '-'))
+        return {signedName.substr(0, signedName.size() - 1), signedName.back() == '+'};
+    return {signedName, true};
+}
+
 class DeBruijnNode
 {
 public:
     //CREATORS
-    DeBruijnNode(QString name, float depth, const Sequence &sequence, unsigned length = 0);
+    // `name` is the unsigned name. A negative node stores nothing.
+    DeBruijnNode(std::string_view name, bool positive, float depth, const Sequence &sequence, unsigned length = 0);
     ~DeBruijnNode() = default;
 
     //ACCESSORS
-    QString getName() const {return m_name;}
-    QString getNameWithoutSign() const {return m_name.left(m_name.length() - 1);}
-    QString getSign() const {if (m_name.length() > 0) return m_name.right(1); else return "+";}
+    std::string getName() const;
+    std::string_view getNameWithoutSign() const;
+    char getSign() const { return isPositiveNode() ? '+' : '-'; }
 
     double getDepth() const {return m_depth;}
 
@@ -76,8 +93,8 @@ public:
     bool isDrawn() const {return m_drawn;}
     bool thisNodeOrReverseComplementIsDrawn() const {return isDrawn() || getReverseComplement()->isDrawn();}
     bool isNotDrawn() const {return !m_drawn;}
-    bool isPositiveNode() const;
-    bool isNegativeNode() const;
+    bool isPositiveNode() const { return !m_name.empty(); }
+    bool isNegativeNode() const { return m_name.empty(); }
 
     bool isNodeConnected(DeBruijnNode * node) const;
     DeBruijnEdge * doesNodeLeadIn(DeBruijnNode * node) const;
@@ -100,10 +117,11 @@ public:
     void removeEdge(DeBruijnEdge * edge);
     void labelNeighbouringNodesAsDrawn(int nodeDistance);
     void setDepth(double newDepth) {m_depth = newDepth;}
-    void setName(QString newName) {m_name = std::move(newName);}
+    // Unsigned name. Empty is refused: that would make this node look negative.
+    void setName(std::string_view newName);
 
 private:
-    QString m_name;
+    std::string m_name;
     Sequence m_sequence;
     DeBruijnNode * m_reverseComplement;
     adt::SmallPODVector<DeBruijnEdge *> m_edges;

@@ -37,15 +37,6 @@ void ChangeNodeNameDialog::checkNodeNameValidity()
 {
     QString potentialName = ui->newNodeNameLineEdit->text();
 
-    //If the new name is blank, don't allow an accept but no need to show an
-    //error.
-    if (potentialName.length() == 0)
-    {
-        ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
-        ui->errorLabel->setText("");
-        return;
-    }
-
     if (potentialName == m_oldName)
     {
         ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
@@ -55,6 +46,10 @@ void ChangeNodeNameDialog::checkNodeNameValidity()
 
     NodeNameStatus nodeNameStatus = g_assemblyGraph->checkNodeNameValidity(potentialName);
     switch (nodeNameStatus) {
+        case NodeNameStatus::NODE_NAME_EMPTY:
+            ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
+            ui->errorLabel->setText("Name cannot be empty");
+            break;
         case NodeNameStatus::NODE_NAME_OKAY:
             ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(true);
             ui->errorLabel->setText("");
