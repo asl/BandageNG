@@ -142,6 +142,7 @@ private slots:
     void sequenceAccess();
     void sequenceSubstring();
     void sequenceDoubleReverseComplement();
+    void sequenceShort();
     void annotationGroupNodesWithAnnotations();
 
 
@@ -2070,6 +2071,70 @@ void BandageTests::sequenceDoubleReverseComplement() {
     Sequence sequence{"ATGCNATGCN"};
 
     QCOMPARE(sequence, sequence.GetReverseComplement().GetReverseComplement());
+}
+
+void BandageTests::sequenceShort() {
+    std::string bases59(59, 'A');
+    bases59[10] = 'C';
+    bases59[58] = 'G';
+    Sequence shortSeq{bases59};
+    QCOMPARE(shortSeq.size(), 59u);
+    QCOMPARE(shortSeq.capacity(), 0u);
+    QVERIFY(!shortSeq.missing());
+    QCOMPARE(shortSeq[0], 'A');
+    QCOMPARE(shortSeq[10], 'C');
+    QCOMPARE(shortSeq[58], 'G');
+
+    Sequence copy = shortSeq;
+    QCOMPARE(copy, shortSeq);
+    QCOMPARE(copy.capacity(), 0u);
+
+    Sequence rc = shortSeq.GetReverseComplement();
+    QCOMPARE(rc.capacity(), 0u);
+    QCOMPARE(rc.size(), 59u);
+    QCOMPARE(rc[0], 'C');
+    QCOMPARE(rc[48], 'G');
+    QCOMPARE(rc[58], 'T');
+    QCOMPARE(shortSeq, rc.GetReverseComplement());
+
+    Sequence head = shortSeq.Subseq(0, 4);
+    QCOMPARE(head.size(), 4u);
+    QCOMPARE(head.capacity(), 0u);
+    QCOMPARE(head[0], 'A');
+    QCOMPARE(head[3], 'A');
+
+    Sequence middle = shortSeq.Subseq(10, 12);
+    QCOMPARE(middle.size(), 2u);
+    QVERIFY(middle.capacity() > 0u);
+    QCOMPARE(middle[0], 'C');
+    QCOMPARE(middle[1], 'A');
+    QCOMPARE(middle, middle.GetReverseComplement().GetReverseComplement());
+
+    std::string bases60(60, 'T');
+    bases60[59] = 'G';
+    Sequence seq60{bases60};
+    QCOMPARE(seq60.capacity(), 0u);
+    QCOMPARE(seq60[59], 'G');
+    QCOMPARE(seq60.GetReverseComplement()[0], 'C');
+
+    std::string bases61(61, 'T');
+    Sequence seq61{bases61};
+    QVERIFY(seq61.capacity() > 0u);
+    QCOMPARE(seq61[60], 'T');
+
+    std::string withN(20, 'A');
+    withN[3] = 'N';
+    Sequence hasN{withN};
+    QCOMPARE(hasN.size(), 20u);
+    QVERIFY(hasN.capacity() > 0u);
+    QVERIFY(!hasN.missing());
+    QCOMPARE(hasN[3], 'N');
+    QCOMPARE(hasN[0], 'A');
+    Sequence hasNWindow = hasN.Subseq(2, 5);
+    QCOMPARE(hasNWindow.size(), 3u);
+    QCOMPARE(hasNWindow[0], 'A');
+    QCOMPARE(hasNWindow[1], 'N');
+    QCOMPARE(hasNWindow[2], 'A');
 }
 
 
