@@ -16,15 +16,29 @@
 #include <llvm/ADT/SparseBitVector.h>
 #include <llvm/Support/TrailingObjects.h>
 
-#include <vector>
-#include <string>
-#include <sstream>
+#include <cassert>
+#include <cstdint>
 #include <cstring>
+#include <new>
+#include <sstream>
+#include <string>
+#include <utility>
+#include <vector>
 
 // Silence bogus gcc warnings
 #if defined(__GCC__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wconversion"
+#endif
+
+// The short representation stores its flag in the top byte of the second
+// word. That byte is the top byte of a heap pointer for a long sequence, so
+// this only works when pointers are little-endian and their top byte is zero.
+#if defined(__BYTE_ORDER__)
+static_assert(__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__,
+              "short sequences require a little-endian platform");
+#elif !defined(_MSC_VER)
+#error "short sequences require a known little-endian platform"
 #endif
 
 class Sequence {
@@ -145,18 +159,207 @@ class Sequence {
         EmptyNucls empty_nucls_;
     };
 
-    size_t size_ : 32;
-    size_t from_ : 31;
-    bool   rtl_  : 1;  // Right to left + complimentary (?)
-    llvm::IntrusiveRefCntPtr<ManagedNuclBuffer> data_;
+    // Nucl buffers are words, low bases in the low bits, unused top bits zero:
+    //   |0000111122223333|000011112222....|
+    // A long sequence is two such words: (size:32, from:31, rtl:1) and a
+    // refcount pointer. A short ACGT sequence reuses those 16 bytes in the
+    // same word layout, so the rest of the code can keep reading words:
+    //   |0000111122223333|000011112222, metadata:8|
+    // The metadata byte is size (6 bits), rtl, and a non-zero short flag.
+    // 120 bits hold 60 bases. That byte is also the top of the pointer word.
+    // User-space pointers here have a zero top byte, so is_short() is
+    // "top byte != 0". Short sequences are copied, never shared. A window
+    // that does not start at 0 is stored long, so Subseq stays a view.
+    // Any N, including all-N, stays long; the inline form has no room for one.
+    struct LongRep {
+        size_t size_ : 32;
+        size_t from_ : 31;
+        bool rtl_ : 1;
+        llvm::IntrusiveRefCntPtr<ManagedNuclBuffer> data_;
+
+        LongRep() : size_(0), from_(0), rtl_(false), data_(nullptr) {}
+
+        LongRep(size_t size, size_t from, bool rtl, ManagedNuclBuffer *data)
+                : size_(size), from_(from), rtl_(rtl), data_(data) {
+            assert(data == nullptr || (reinterpret_cast<uintptr_t>(data) >> 56) == 0);
+        }
+
+        bool rtl() const { return rtl_; }
+        size_t from() const { return from_; }
+        size_t size() const { return size_; }
+    };
+
+    enum { ShortSize = sizeof(LongRep) / sizeof(ST),
+           MetadataOffset = (sizeof(ST) - 1) * 8,
+           MetadataMask = 0xFF,
+           DataMask = (ST(1) << MetadataOffset) - 1,
+           RTLOffset = 1, RTLMask = 0x1,
+           SizeOffset = 2, SizeMask = 0x3F };
+
+    static_assert(sizeof(ST) == 8, "short sequences assume 64-bit words");
+    static_assert(sizeof(LongRep) == 16, "long sequence representation must be 16 bytes");
+
+    struct ShortRep {
+        ST data[ShortSize];
+
+        ShortRep() : data{} {}
+
+        uint8_t metadata() const {
+            return (data[ShortSize - 1] >> MetadataOffset) & MetadataMask;
+        }
+        void set_metadata(size_t size, bool rtl) {
+            uint8_t meta = static_cast<uint8_t>(((size & SizeMask) << SizeOffset) | (rtl << RTLOffset) | 1);
+            data[ShortSize - 1] = (data[ShortSize - 1] & DataMask) | (ST(meta) << MetadataOffset);
+        }
+        void set_metadata(uint8_t meta) {
+            data[ShortSize - 1] = (data[ShortSize - 1] & DataMask) | (ST(meta) << MetadataOffset);
+        }
+
+        bool rtl() const { return (metadata() >> RTLOffset) & RTLMask; }
+        size_t size() const { return (metadata() >> SizeOffset) & SizeMask; }
+        size_t from() const { return 0; }
+    };
+
+    // One byte is metadata, so 120 bits / 2 = 60 bases.
+    static constexpr size_t ShortBits = (sizeof(ShortRep) - 1) << 3;
+    static constexpr size_t ShortN = ShortBits >> 1;
+
+    static_assert(SizeMask >= ShortN, "short size does not fit in the metadata byte");
+
+    union Rep {
+        LongRep l;
+        ShortRep s;
+
+        // The active member is not known yet, and LongRep / ShortRep have no
+        // common initial sequence, so naming either member here is undefined.
+        // The object representation is the remaining way to read the byte.
+        // Little-endian puts it last: top of the pointer when long, the short
+        // flag otherwise.
+        uint8_t metadata() const {
+            const auto *bytes = reinterpret_cast<const uint8_t *>(this);
+            return bytes[sizeof(Rep) - 1];
+        }
+        bool is_short() const { return metadata() != 0; }
+
+        Rep() noexcept : l() {}
+        ~Rep() noexcept { if (!is_short()) l.~LongRep(); }
+
+        Rep(const Rep &rhs) noexcept : l() {
+            if (rhs.is_short()) {
+                l.~LongRep();
+                new (&s) ShortRep(rhs.s);
+            } else {
+                l = rhs.l;
+            }
+        }
+        Rep(Rep &&rhs) noexcept : l() {
+            if (rhs.is_short()) {
+                l.~LongRep();
+                new (&s) ShortRep(rhs.s);
+            } else {
+                l = std::move(rhs.l);
+            }
+        }
+
+        Rep &operator=(const Rep &rhs) noexcept {
+            if (this == &rhs)
+                return *this;
+
+            bool thisShort = is_short();
+            if (rhs.is_short()) {
+                if (!thisShort)
+                    l.~LongRep();
+                if (thisShort)
+                    s = rhs.s;
+                else
+                    new (&s) ShortRep(rhs.s);
+            } else if (thisShort) {
+                new (&l) LongRep(rhs.l);
+            } else {
+                l = rhs.l;
+            }
+            return *this;
+        }
+        Rep &operator=(Rep &&rhs) noexcept {
+            if (this == &rhs)
+                return *this;
+
+            bool thisShort = is_short();
+            if (rhs.is_short()) {
+                if (!thisShort)
+                    l.~LongRep();
+                if (thisShort)
+                    s = rhs.s;
+                else
+                    new (&s) ShortRep(rhs.s);
+            } else if (thisShort) {
+                new (&l) LongRep(std::move(rhs.l));
+            } else {
+                l = std::move(rhs.l);
+            }
+            return *this;
+        }
+    };
+
+    Rep rep_;
+
+    enum class Storage { Short, LongBases, AllNs };
+    struct Counted {};
+
+    static bool fitsShort(size_t size) { return size <= ShortN; }
 
     static size_t DataSize(size_t size) {
         return (size + STN - 1) >> STNBits;
     }
 
+    bool is_short() const { return rep_.is_short(); }
+
+    size_t from() const { return is_short() ? rep_.s.from() : rep_.l.from(); }
+    bool rtl() const { return is_short() ? rep_.s.rtl() : rep_.l.rtl(); }
+
+    const ST *bytes() const { return is_short() ? rep_.s.data : rep_.l.data_->data(); }
+    ST *bytes() { return is_short() ? rep_.s.data : rep_.l.data_->data(); }
+
+    uint8_t metadata() const { return rep_.metadata(); }
+    void set_metadata(uint8_t meta) { rep_.s.set_metadata(meta); }
+
+    void adoptLong(size_t size, size_t from, bool rtl, ManagedNuclBuffer *data) {
+        rep_.l.~LongRep();
+        new (&rep_.l) LongRep(size, from, rtl, data);
+    }
+
+    Sequence(size_t size, Storage storage) {
+        if (storage == Storage::Short) {
+            rep_.l.~LongRep();
+            new (&rep_.s) ShortRep();
+            rep_.s.set_metadata(size, false);
+            return;
+        }
+        ManagedNuclBuffer *data = storage == Storage::AllNs
+                                      ? ManagedNuclBuffer::createAllNs()
+                                      : ManagedNuclBuffer::create(size);
+        adoptLong(size, 0, false, data);
+    }
+
     template<typename S>
-    void InitEmptyNucls(const S &s, bool rc = false) {
-        int int_size = static_cast<int>(size_);
+    static bool containsN(const S &s, size_t n) {
+        for (size_t i = 0; i < n; ++i) {
+            if (is_N(s[i]))
+                return true;
+        }
+        return false;
+    }
+
+    template<typename S>
+    Sequence(Counted, const S &s, size_t n, bool rc)
+            : Sequence(n, (containsN(s, n) || !fitsShort(n)) ? Storage::LongBases : Storage::Short) {
+        if (n > 0)
+            InitFromNucls(s, rc);
+    }
+
+    template<typename S>
+    void InitEmptyNucls(const S &s, bool rc) {
+        int int_size = static_cast<int>(size());
         int start = rc ? int_size - 1 : 0;
         int end = rc ? -1 : int_size;
         int step = rc ? -1 : 1;
@@ -164,53 +367,45 @@ class Sequence {
 
         for (int i = start; i != end; i += step) {
             if (LLVM_UNLIKELY(is_N(s[i])))
-                data_->empty_nucls_.set(cur_index);
+                rep_.l.data_->empty_nucls_.set(cur_index);
             cur_index++;
         }
     }
 
+    // Packing writes whole words and would clear the short metadata byte.
+    // The caller saves that byte and puts it back.
     template<typename S>
-    void InitFromNucls(const S &s, bool rc = false) {
-        InitEmptyNucls(s, rc);
-
-        size_t bytes_size = DataSize(size_);
-        ST *bytes = data_->data();
+    void packNucls(const S &s, size_t n, bool rc) {
+        size_t words = DataSize(n);
+        ST *dest = bytes();
 
         VERIFY(is_dignucl(s[0]) || is_nucl(s[0]) || is_N(s[0]));
 
-        // Which symbols does our string contain : 0123 or ACGT?
         bool digit_str = is_dignucl(s[0]);
 
-        // data -- one temporary variable corresponding to the i-th array element
-        // and some counters
         ST data = 0;
         size_t cnt = 0;
         size_t cur = 0;
 
         if (rc) {
-            for (int i = (int) size_ - 1; i >= 0; --i) {
-                //VERIFY(is_dignucl(s[i]) || is_nucl(s[i]) || is_N(s[0]));
-                char c = complement(digit_str ? s[(unsigned) i] : dignucl(s[(unsigned) i]));
-
+            for (int i = static_cast<int>(n) - 1; i >= 0; --i) {
+                char c = complement(digit_str ? s[static_cast<unsigned>(i)]
+                                              : dignucl(s[static_cast<unsigned>(i)]));
                 data = data | (ST(c) << cnt);
                 cnt += 2;
-
                 if (cnt == STBits) {
-                    bytes[cur++] = data;
+                    dest[cur++] = data;
                     cnt = 0;
                     data = 0;
                 }
             }
         } else {
-            for (size_t i = 0; i < size_; ++i) {
-                //VERIFY(is_dignucl(s[i]) || is_nucl(s[i]) || is_N(s[0]));
+            for (size_t i = 0; i < n; ++i) {
                 char c = digit_str ? s[i] : dignucl(s[i]);
-
                 data = data | (ST(c) << cnt);
                 cnt += 2;
-
                 if (cnt == STBits) {
-                    bytes[cur++] = data;
+                    dest[cur++] = data;
                     cnt = 0;
                     data = 0;
                 }
@@ -218,35 +413,66 @@ class Sequence {
         }
 
         if (cnt != 0)
-            bytes[cur++] = data;
+            dest[cur++] = data;
+        for (; cur < words; ++cur)
+            dest[cur] = 0;
+    }
 
-        for (; cur < bytes_size; ++cur)
-            bytes[cur] = 0;
+    template<typename S>
+    void InitFromNucls(const S &s, bool rc) {
+        if (!is_short())
+            InitEmptyNucls(s, rc);
+
+        uint8_t saved = is_short() ? metadata() : 0;
+        packNucls(s, size(), rc);
+        if (saved)
+            set_metadata(saved);
     }
 
     bool isEmptySymbol(size_t idx) const {
-        if (LLVM_LIKELY(data_->empty_nucls_.none()))
+        if (LLVM_LIKELY(rep_.l.data_->empty_nucls_.none()))
             return false;
-        return data_->empty_nucls_.test(idx);
+        return rep_.l.data_->empty_nucls_.test(idx);
     }
 
     char getNuclFromBuffer(size_t idx) const {
-        const ST *bytes = data_->data();
-        return static_cast<char>((bytes[idx >> STNBits] >> ((idx & (STN - size_t{1})) << size_t{1})) & size_t{3});
+        const ST *data = bytes();
+        return static_cast<char>((data[idx >> STNBits] >> ((idx & (STN - size_t{1})) << size_t{1})) & size_t{3});
     }
 
-    bool emptyNuclsEqual(const Sequence &that) const {
-        return data_->empty_nucls_.equals(that.data_->empty_nucls_);
-    }
+    // Low level constructor. A long source shares its buffer. A short source
+    // is copied, and a window that does not start at 0 is promoted to a long
+    // buffer so Subseq stays a view.
+    Sequence(const Sequence &seq, size_t from, size_t size, bool rtl) {
+        if (!seq.is_short()) {
+            rep_.l.size_ = size;
+            rep_.l.from_ = from;
+            rep_.l.rtl_ = rtl;
+            rep_.l.data_ = seq.rep_.l.data_;
+            return;
+        }
 
-    //Low level constructor. Handle with care.
-    Sequence(const Sequence &seq, size_t from, size_t size, bool rtl)
-            : size_(size), from_(from), rtl_(rtl), data_(seq.data_) {}
+        if (from != seq.from()) {
+            VERIFY(seq.from() == 0);
+            size_t seqSize = seq.size();
+            adoptLong(size, from, rtl, ManagedNuclBuffer::create(seqSize));
+            size_t destWords = DataSize(seqSize);
+            ST *dest = rep_.l.data_->data();
+            memcpy(dest, seq.bytes(), destWords * sizeof(ST));
+            if (destWords == ShortSize)
+                dest[ShortSize - 1] &= DataMask;
+            return;
+        }
+
+        rep_.l.~LongRep();
+        new (&rep_.s) ShortRep(seq.rep_.s);
+        rep_.s.set_metadata(size, rtl);
+    }
 
 public:
     explicit Sequence(size_t size, bool allNs = false)
-            : size_(size), from_(0), rtl_(false),
-              data_(allNs ? ManagedNuclBuffer::createAllNs() : ManagedNuclBuffer::create(size_)) {}
+            : Sequence(size, allNs ? Storage::AllNs
+                                   : (fitsShort(size) ? Storage::Short : Storage::LongBases)) {}
 
     /**
      * Sequence initialization (arbitrary size string)
@@ -254,78 +480,60 @@ public:
      * @param s ACGT or 0123-string
      */
     explicit Sequence(const char *s, bool rc = false)
-            : Sequence(strlen(s)) {
-        InitFromNucls(s, rc);
-    }
+            : Sequence(Counted{}, s, strlen(s), rc) {}
 
     explicit Sequence(char *s, bool rc = false)
-            : Sequence(strlen(s)) {
-        InitFromNucls(s, rc);
-    }
+            : Sequence(static_cast<const char *>(s), rc) {}
 
     template<typename S, typename = std::enable_if_t<has_size_method<S>::value>>
     explicit Sequence(const S &s, bool rc = false)
-            : Sequence(s.size()) {
-        if (s.size() > 0) {
-            InitFromNucls(s, rc);
-        }
-    }
+            : Sequence(Counted{}, s, s.size(), rc) {}
 
     Sequence()
             : Sequence(size_t{0}) {
-        memset(data_->data(), 0, DataSize(size_));
+        uint8_t saved = metadata();
+        if (size_t nbytes = DataSize(size()) * sizeof(ST))
+            memset(bytes(), 0, nbytes);
+        if (saved)
+            set_metadata(saved);
     }
 
     Sequence(const Sequence &s)
-            : Sequence(s, s.from_, s.size_, s.rtl_) {}
+            : Sequence(s, s.from(), s.size(), s.rtl()) {}
 
-    Sequence(Sequence &&) = default;
+    Sequence(Sequence &&) noexcept = default;
 
-    Sequence &operator=(const Sequence &rhs) {
-        if (&rhs == this)
-            return *this;
-
-        from_ = rhs.from_;
-        size_ = rhs.size_;
-        rtl_ = rhs.rtl_;
-        data_ = rhs.data_;
-
-        return *this;
-    }
-
-    Sequence &operator=(Sequence &&) = default;
+    Sequence &operator=(const Sequence &) noexcept = default;
+    Sequence &operator=(Sequence &&) noexcept = default;
 
     char operator[](const size_t index) const {
-        VERIFY_DEV(index < size_);
-        if (rtl_) {
-            size_t i = from_ + size_ - 1 - index;
-            if (LLVM_UNLIKELY(isEmptySymbol(i))) {
-                return 'N';
-            }
-            return nucl(complement(getNuclFromBuffer(i)));
-        } else {
-            size_t i = from_ + index;
-            if (LLVM_UNLIKELY(isEmptySymbol(i))) {
-                return 'N';
-            }
-            return nucl(getNuclFromBuffer(i));
-        }
+        VERIFY_DEV(index < size());
+        size_t i = rtl() ? from() + size() - 1 - index : from() + index;
+        if (!is_short() && LLVM_UNLIKELY(isEmptySymbol(i)))
+            return 'N';
+        char base = getNuclFromBuffer(i);
+        if (rtl())
+            base = complement(base);
+        return nucl(base);
     }
 
     bool operator==(const Sequence &that) const {
-        if (size_ != that.size_)
+        if (size() != that.size())
             return false;
 
-        if (data_->empty_nucls_.allNs() && that.data_->empty_nucls_.allNs())
-            return true;
+        if (!is_short() && !that.is_short()) {
+            if (rep_.l.data_->empty_nucls_.allNs() && that.rep_.l.data_->empty_nucls_.allNs())
+                return true;
+            if (rep_.l.data_ == that.rep_.l.data_ &&
+                rep_.l.from_ == that.rep_.l.from_ &&
+                rep_.l.rtl_ == that.rep_.l.rtl_ &&
+                rep_.l.data_->empty_nucls_.equals(that.rep_.l.data_->empty_nucls_))
+                return true;
+        }
 
-        if (data_ == that.data_ && from_ == that.from_ && rtl_ == that.rtl_ && emptyNuclsEqual(that))
-            return true;
-
-        for (size_t i = 0; i < size_; ++i) {
-            if (this->operator[](i) != that[i]) {
+        for (size_t i = 0; i < size(); ++i) {
+            if (this->operator[](i) != that[i])
                 return false;
-            }
         }
         return true;
     }
@@ -338,17 +546,16 @@ public:
      * @todo Might be optimized via int comparison (not so easy)
      */
     bool operator<(const Sequence &that) const {
-        size_t s = std::min(size_, that.size_);
+        size_t s = std::min(size(), that.size());
         for (size_t i = 0; i < s; ++i) {
-            if (this->operator[](i) != that[i]) {
-                return (this->operator[](i) < that[i]);
-            }
+            if (this->operator[](i) != that[i])
+                return this->operator[](i) < that[i];
         }
-        return (size_ < that.size_);
+        return size() < that.size();
     }
 
     Sequence GetReverseComplement() const {
-        return {*this, from_, size_, !rtl_};
+        return {*this, from(), size(), !rtl()};
     }
 
     inline Sequence operator<<(char c) const;
@@ -379,24 +586,25 @@ public:
 
     inline std::string err() const;
 
-    size_t size() const {
-        return size_;
-    }
+    size_t size() const { return is_short() ? rep_.s.size() : rep_.l.size(); }
 
+    // Heap bytes of the 2-bit buffer. Inline sequences and all-N report 0.
     size_t capacity() const {
-        if (LLVM_LIKELY(!data_->empty_nucls_.allNs()))
-            return DataSize(size_) * sizeof(ST);
+        if (is_short())
+            return 0;
+        if (LLVM_LIKELY(!rep_.l.data_->empty_nucls_.allNs()))
+            return DataSize(size()) * sizeof(ST);
         return 0;
     }
 
-    bool empty() const {
-        return size() == 0;
-    }
+    bool empty() const { return size() == 0; }
 
     bool missing() const {
-        if (LLVM_LIKELY(data_->empty_nucls_.none()))
+        if (is_short())
             return false;
-        return data_->empty_nucls_.covers(size_);
+        if (LLVM_LIKELY(rep_.l.data_->empty_nucls_.none()))
+            return false;
+        return rep_.l.data_->empty_nucls_.covers(size());
     }
 
     template<class Seq>
@@ -411,6 +619,8 @@ public:
     }
 };
 
+static_assert(sizeof(Sequence) == 16, "Sequence must stay 16 bytes");
+
 inline std::ostream &operator<<(std::ostream &os, const Sequence &s);
 
 template<class Seq>
@@ -420,26 +630,24 @@ Seq Sequence::start(size_t k) const {
 
 template<class Seq>
 Seq Sequence::end(size_t k) const {
-    return Seq(unsigned(k), *this, size_ - k);
+    return Seq(unsigned(k), *this, size() - k);
 }
 
-// O(1)
+// O(1) for a long sequence, which shares its buffer. A short sequence whose
+// window does not start at 0 is promoted to a long buffer.
 //including from, excluding to
 //safe if not #DEFINE NDEBUG
 Sequence Sequence::Subseq(size_t from, size_t to) const {
     VERIFY(to >= from);
-    VERIFY(to <= size_);
-    //VERIFY(to - from <= size_);
-    if (rtl_) {
-        return {*this, from_ + size_ - to, to - from, true};
-    } else {
-        return {*this, from_ + from, to - from, false};
-    }
+    VERIFY(to <= size());
+    if (rtl())
+        return {*this, this->from() + size() - to, to - from, true};
+    return {*this, this->from() + from, to - from, false};
 }
 
 //including from, excluding to
 Sequence Sequence::Subseq(size_t from) const {
-    return Subseq(from, size_);
+    return Subseq(from, size());
 }
 
 Sequence Sequence::First(size_t count) const {
@@ -447,7 +655,7 @@ Sequence Sequence::First(size_t count) const {
 }
 
 Sequence Sequence::Last(size_t count) const {
-    return Subseq(size_ - count);
+    return Subseq(size() - count);
 }
 
 /**
@@ -455,9 +663,8 @@ Sequence Sequence::Last(size_t count) const {
  */
 size_t Sequence::find(const Sequence &t, size_t from) const {
     for (size_t i = from; i <= size() - t.size(); i++) {
-        if (Subseq(i, i + t.size()) == t) {
+        if (Subseq(i, i + t.size()) == t)
             return i;
-        }
     }
     return -1ULL;
 }
@@ -467,34 +674,30 @@ size_t Sequence::find(const Sequence &t, size_t from) const {
  */
 Sequence Sequence::operator+(const Sequence &s) const {
     return Sequence(str() + s.str());
-    // TODO might be opposite to correct
-    //    int total = size_ + s.size_;
-    //    std::vector<Seq<4> > bytes((total + 3) >> 2);
-    //    for (size_t i = 0; i < size_; ++i) {
-    //        bytes[i / 4] = (bytes[i / 4] << operator [](i)); // TODO :-) use <<=
-    //    }
-    //    for (size_t i = 0, j = size_; i < s.size_; ++i, ++j) {
-    //        bytes[j / 4] = (bytes[j / 4]) << s[i];
-    //    }
-    //    return Sequence(new Data(bytes), 0, total, false);
 }
 
 std::string Sequence::str() const {
-    std::string res(size_, '-');
-    for (size_t i = 0; i < size_; ++i) {
+    std::string res(size(), '-');
+    for (size_t i = 0; i < size(); ++i)
         res[i] = nucl(this->operator[](i));
-    }
     return res;
 }
 
 std::string Sequence::err() const {
     std::ostringstream oss;
-    oss << "{ *data=" << data_->data() <<
-            ", from_=" << from_ <<
-            ", size_=" << size_ <<
-            ", rtl_=" << int(rtl_) <<
-            ", empty_nucls_=" << data_->empty_nucls_.bits() <<
-            ", allNs=" << int(data_->empty_nucls_.allNs()) << " }";
+    if (is_short()) {
+        oss << "{ short seq *data=" << static_cast<const void *>(bytes())
+            << ", from_=" << from()
+            << ", size_=" << size()
+            << ", rtl_=" << int(rtl()) << " }";
+        return oss.str();
+    }
+    oss << "{ *data=" << rep_.l.data_->data()
+        << ", from_=" << from()
+        << ", size_=" << size()
+        << ", rtl_=" << int(rtl())
+        << ", empty_nucls_=" << rep_.l.data_->empty_nucls_.bits()
+        << ", allNs=" << int(rep_.l.data_->empty_nucls_.allNs()) << " }";
     return oss.str();
 }
 
