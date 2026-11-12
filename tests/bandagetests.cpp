@@ -28,6 +28,7 @@
 
 #include "layout/graphlayoutworker.h"
 #include "layout/io.h"
+#include "ui/bandagegraphicsscene.h"
 
 #include "program/settings.h"
 #include "program/memory.h"
@@ -143,6 +144,7 @@ private slots:
     void sequenceSubstring();
     void sequenceDoubleReverseComplement();
     void sequenceShort();
+    void drawEdgeDirections();
     void annotationGroupNodesWithAnnotations();
 
 
@@ -2276,6 +2278,139 @@ void BandageTests::annotationGroupNodesWithAnnotations()
     singleModeNodes = group.getNodesWithAnnotations(/*doubleMode=*/false);
     QCOMPARE(singleModeNodes.size(), size_t(1));
     QCOMPARE(singleModeNodes.front(), node1Plus);
+}
+
+static void countSceneItems(BandageGraphicsScene &scene, int &nodes, int &edges) {
+    nodes = 0;
+    edges = 0;
+    for (auto *item : scene.items()) {
+        if (dynamic_cast<GraphicsItemNode *>(item) != nullptr)
+            ++nodes;
+        if (dynamic_cast<GraphicsItemEdge *>(item) != nullptr)
+            ++edges;
+    }
+}
+
+static BandageGraphicsScene *drawCorners(bool doubleMode) {
+    g_settings->doubleMode = doubleMode;
+    QString errorTitle;
+    QString errorMessage;
+    auto scope = graph::Scope::wholeGraph();
+    auto startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
+                                                 *g_assemblyGraph, scope);
+    g_assemblyGraph->resetNodes();
+    g_assemblyGraph->markNodesToDraw(scope, startingNodes);
+    auto layout = GraphLayoutWorker(g_settings->graphLayoutQuality,
+                                    g_settings->linearLayout,
+                                    g_settings->componentSeparation)
+                          .layoutGraph(*g_assemblyGraph);
+    auto *scene = new BandageGraphicsScene();
+    scene->addGraphicsItemsToScene(*g_assemblyGraph, layout);
+    return scene;
+}
+
+// test_draw_corners.gfa. a and b are ordinary segments. s is ATAT, so it is
+// its own reverse complement. The links are a+ → b+ together with b- → a-,
+// the hairpin a+ → a-, the self-loop a+ → a+, s → b+, and the loop s → s.
+void BandageTests::drawEdgeDirections()
+{
+    QVERIFY(g_assemblyGraph->loadGraphFromFile(testFile("test_draw_corners.gfa")));
+    QCOMPARE(g_assemblyGraph->m_nodeCount, 4);
+    QCOMPARE(g_assemblyGraph->m_edgeCount, 6);
+
+    QScopedPointer<BandageGraphicsScene> single(drawCorners(false));
+    int nodes = 0;
+    int edges = 0;
+    countSceneItems(*single, nodes, edges);
+    QCOMPARE(nodes, 3);
+    QCOMPARE(edges, 6);
+    for (auto *item : single->items()) {
+        auto *edgeItem = dynamic_cast<GraphicsItemEdge *>(item);
+        if (edgeItem == nullptr)
+            continue;
+        const bool palindromicLoop = edgeItem->edge()->getStartingNode()->getName() == "s+" &&
+                                     edgeItem->edge()->getEndingNode()->getName() == "s+";
+        // A 4-base palindromic self-loop has a zero-length end segment, so Qt
+        // drops the cubic and the path is only a move.
+        if (palindromicLoop)
+            QCOMPARE(edgeItem->path().elementCount(), 1);
+        else
+            QVERIFY(!edgeItem->path().isEmpty());
+    }
+
+    QScopedPointer<BandageGraphicsScene> doubled(drawCorners(true));
+    countSceneItems(*doubled, nodes, edges);
+    QCOMPARE(nodes, 5);
+    QCOMPARE(edges, 10);
+
+    DeBruijnNode *aPos = g_assemblyGraph->m_deBruijnGraphNodes["a+"];
+    DeBruijnNode *aNeg = g_assemblyGraph->m_deBruijnGraphNodes["a-"];
+    DeBruijnNode *bPos = g_assemblyGraph->m_deBruijnGraphNodes["b+"];
+    DeBruijnNode *bNeg = g_assemblyGraph->m_deBruijnGraphNodes["b-"];
+    int ownReverseComplement = 0;
+    int ordinaryLinks = 0;
+    DeBruijnEdge *reverseOrdinary = nullptr;
+    DeBruijnEdge *selfLoop = nullptr;
+    DeBruijnEdge *selfLoopReverse = nullptr;
+    for (DeBruijnEdge *edge : g_assemblyGraph->m_deBruijnGraphEdges) {
+        QVERIFY(edge->getGraphicsItemEdge() != nullptr);
+        QVERIFY(!edge->getGraphicsItemEdge()->path().isEmpty());
+        if (edge->isOwnReverseComplement()) {
+            ++ownReverseComplement;
+            continue;
+        }
+        if (edge->getStartingNode() == aPos && edge->getEndingNode() == aPos)
+            selfLoop = edge;
+        if (edge->getStartingNode() == aNeg && edge->getEndingNode() == aNeg)
+            selfLoopReverse = edge;
+        if (edge->getStartingNode() == bNeg && edge->getEndingNode() == aNeg)
+            reverseOrdinary = edge;
+        if (edge->getStartingNode() == aPos && edge->getEndingNode() == bPos)
+            ++ordinaryLinks;
+    }
+    QCOMPARE(ownReverseComplement, 2);
+    QCOMPARE(ordinaryLinks, 2);
+    QVERIFY(selfLoop != nullptr);
+    QVERIFY(selfLoopReverse != nullptr);
+    QVERIFY(reverseOrdinary != nullptr);
+
+    GraphicsItemNode *aItem = aPos->getGraphicsItemNode();
+    QVERIFY(aItem != nullptr);
+    aItem->shiftPoints(QPointF(25, 15));
+    aItem->fixEdgePaths();
+    QVERIFY(!selfLoop->getGraphicsItemEdge()->path().isEmpty());
+    QVERIFY(!selfLoopReverse->getGraphicsItemEdge()->path().isEmpty());
+
+    reverseOrdinary->getGraphicsItemEdge()->setSelected(true);
+    std::vector<DeBruijnEdge *> selected = doubled->getSelectedEdges();
+    QCOMPARE(selected.size(), 1u);
+    QCOMPARE(selected.front()->getStartingNode(), bNeg);
+    QCOMPARE(selected.front()->getEndingNode(), aNeg);
+
+    std::vector<DeBruijnNode *> hideA{aPos};
+    BandageGraphicsScene::removeGraphicsItemNodes(hideA, false);
+    QVERIFY(selfLoop->getGraphicsItemEdge() == nullptr);
+    QVERIFY(selfLoopReverse->getGraphicsItemEdge() != nullptr);
+    QVERIFY(reverseOrdinary->getGraphicsItemEdge() != nullptr);
+    countSceneItems(*doubled, nodes, edges);
+    QCOMPARE(edges, 6);
+
+    doubled.reset(drawCorners(true));
+    BandageGraphicsScene::removeGraphicsItemNodes(hideA, true);
+    QVERIFY(selfLoop->getGraphicsItemEdge() == nullptr);
+    QVERIFY(selfLoopReverse->getGraphicsItemEdge() == nullptr);
+    QVERIFY(reverseOrdinary->getGraphicsItemEdge() == nullptr);
+
+    doubled->addGraphicsItemsToScene(*g_assemblyGraph,
+                                    GraphLayoutWorker(g_settings->graphLayoutQuality,
+                                                      g_settings->linearLayout,
+                                                      g_settings->componentSeparation)
+                                            .layoutGraph(*g_assemblyGraph));
+    countSceneItems(*doubled, nodes, edges);
+    QCOMPARE(nodes, 5);
+    QCOMPARE(edges, 10);
+    for (DeBruijnEdge *edge : g_assemblyGraph->m_deBruijnGraphEdges)
+        QCOMPARE(edge->getGraphicsItemEdge()->scene(), doubled.data());
 }
 
 QTEST_MAIN(BandageTests)

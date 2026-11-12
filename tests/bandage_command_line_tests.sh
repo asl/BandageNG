@@ -154,6 +154,72 @@ test_all "$bandagepath image inputs/test.fastg tmp/test.png --query abc.fasta" 1
 test_all "$bandagepath image inputs/test_rgfa.gfa tmp/test.png --colour gfa" 0 "" ""; rm tmp/test.png
 test_all "$bandagepath image inputs/test.gfa tmp/test.png --colour gc" 0 "" ""; rm tmp/test.png
 
+count_layout_nodes() {
+    python3 -c 'import json,sys; print(len(json.load(open(sys.argv[1]))))' "$1"
+}
+
+count_svg_paths() {
+    python3 -c 'import sys; print(open(sys.argv[1]).read().count("<path"))' "$1"
+}
+
+test_layout_nodes() {
+    graph=$1
+    flags=$2
+    expected=$3
+
+    test_all "$bandagepath layout $graph tmp/draw.layout $flags" 0 "" ""
+    got=$(count_layout_nodes tmp/draw.layout)
+    if [[ $got == "$expected" ]]; then
+        passes=$((passes + 1))
+        echo "PASS: $got layout nodes ($graph $flags)"
+    else
+        fails=$((fails + 1))
+        echo "FAIL: layout nodes ($graph $flags)"
+        echo "   expected: $expected"
+        echo "   actual: $got"
+    fi
+    rm -f tmp/draw.layout
+}
+
+test_svg_paths() {
+    graph=$1
+    flags=$2
+    expected=$3
+    stderr=$4
+
+    test_all "$bandagepath image $graph tmp/draw.svg $flags" 0 "" "$stderr"
+    got=$(count_svg_paths tmp/draw.svg)
+    if [[ $got == "$expected" ]]; then
+        passes=$((passes + 1))
+        echo "PASS: $got svg paths ($graph $flags)"
+    else
+        fails=$((fails + 1))
+        echo "FAIL: svg paths ($graph $flags)"
+        echo "   expected: $expected"
+        echo "   actual: $got"
+    fi
+    rm -f tmp/draw.svg
+}
+
+test_layout_nodes inputs/test.gfa "" 17
+test_layout_nodes inputs/test.gfa "--double" 34
+test_layout_nodes inputs/test.gfa "--linear" 17
+test_layout_nodes inputs/test.gfa "--double --linear" 34
+test_layout_nodes inputs/test_draw_corners.gfa "" 3
+test_layout_nodes inputs/test_draw_corners.gfa "--double" 5
+test_layout_nodes inputs/test_draw_corners.gfa "--linear" 3
+test_layout_nodes inputs/test_draw_corners.gfa "--double --linear" 5
+
+test_svg_paths inputs/test.gfa "" 50 ""
+test_svg_paths inputs/test.gfa "--double" 100 ""
+test_svg_paths inputs/test_draw_corners.gfa "" 12 "QGraphicsScene::addItem: item has already been added to this scene"
+test_svg_paths inputs/test_draw_corners.gfa "--double" 20 "QGraphicsScene::addItem: item has already been added to this scene"
+
+test_all "$bandagepath image inputs/test.gfa tmp/test.png --double" 0 "" ""
+test_image_height tmp/test.png 1000; rm tmp/test.png
+test_all "$bandagepath image inputs/test_draw_corners.gfa tmp/test.png --linear --double" 0 "" "QGraphicsScene::addItem: item has already been added to this scene"
+test_image_height tmp/test.png 1000; rm tmp/test.png
+
 # BandageNG info tests
 test_all "$bandagepath info inputs/test.gfa --tsv" 0 "inputs/test.gfa 17 16 60 60 30959 29939 10 29.4118% 1 30959 0 2060 119 2001 2060 2060 2060 532.042 25939" ""
 
