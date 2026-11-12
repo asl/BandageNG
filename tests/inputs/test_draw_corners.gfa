@@ -1,0 +1,9 @@
+S	a	AAAA
+S	b	CCCC
+S	s	ATAT
+L	a	+	b	+	0M
+L	b	-	a	-	0M
+L	a	+	a	-	0M
+L	a	+	a	+	0M
+L	s	+	b	+	0M
+L	s	+	s	+	0M
