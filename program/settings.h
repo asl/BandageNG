@@ -93,6 +93,7 @@ public:
     Settings();
 
     bool doubleMode;
+    bool renderTextAsSVGText;
 
     NodeLengthMode nodeLengthMode;
     double autoNodeLengthPerMegabase;
