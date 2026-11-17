@@ -52,10 +52,8 @@ int handleReduceCmd(QApplication *app,
         outputFilename += ".gfa";
 
     QString inputFilename = QString::fromStdString(cmd.m_graph.generic_string());
-    if (!g_assemblyGraph->loadGraphFromFile(inputFilename)) {
-        outputText("Bandage-NG error: could not load " + inputFilename, &err);
+    if (!loadAssemblyGraph(inputFilename, err))
         return 1;
-    }
 
     if (cli.count("--query")) {
         if (!g_graphSearch->ready()) {

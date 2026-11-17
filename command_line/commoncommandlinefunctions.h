@@ -45,6 +45,7 @@ bool isCommand(const QString& text);
 bool isError(const QString& text);
 void outputText(const QString& text, QTextStream * out);
 void outputText(const QStringList& text, QTextStream * out);
+bool loadAssemblyGraph(const QString &filename, QTextStream &err);
 void getOnlineHelpMessage(QStringList * text);
 
 #endif // COMMANDCOMMANDLINEFUNCTIONS_H

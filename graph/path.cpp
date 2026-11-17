@@ -381,7 +381,7 @@ QByteArray Path::getPathSequence() const
     //If the path is circular, we trim the overlap from the first node.
     if (isCircular())
     {
-        int overlap = m_edges.back()->getOverlap();
+        int overlap = m_edges.back()->exactOverlapLength();
         if (overlap != 0)
             firstNodeSequence = utils::modifySequenceUsingOverlap(firstNodeSequence, overlap);
         sequence += firstNodeSequence;
@@ -399,7 +399,7 @@ QByteArray Path::getPathSequence() const
     //or has partial node ends.
     for (int i = 1; i < m_nodes.size(); ++i)
     {
-        int overlap = m_edges[i-1]->getOverlap();
+        int overlap = m_edges[i-1]->exactOverlapLength();
         QByteArray nodeSequence = utils::sequenceToQByteArray(m_nodes[i]->getSequence());
         if (overlap != 0)
             nodeSequence = utils::modifySequenceUsingOverlap(nodeSequence, overlap);
@@ -422,7 +422,7 @@ int Path::getLength() const {
         length += m_node->getLength();
 
     for (const auto *m_edge : m_edges)
-        length -= m_edge->getOverlap();
+        length -= m_edge->exactOverlapLength();
 
     length -= m_startLocation.getPosition() - 1;
 
@@ -763,7 +763,7 @@ std::vector<int> Path::getPosition(const DeBruijnNode *node) const {
     std::vector<int> res;
     for (size_t i = 0; i < m_nodes.size(); ++i) {
         if (i > 0)
-            pos -= m_edges[i-1]->getOverlap();
+            pos -= m_edges[i-1]->exactOverlapLength();
         if (m_nodes[i] == node)
             res.push_back(pos + 1); // all UI positions are 1-based
 
@@ -789,7 +789,7 @@ std::vector<DeBruijnNode *> Path::getNodesAt(int startPosition, int endPosition)
     std::vector<DeBruijnNode*> res;
     for (size_t i = 0; i < m_nodes.size(); ++i) {
         if (i > 0)
-            pos -= m_edges[i-1]->getOverlap();
+            pos -= m_edges[i-1]->exactOverlapLength();
         int nodeLen = m_nodes[i]->getLength();
         if (intersects(pos, pos + nodeLen - 1,
                        startPosition, endPosition))
@@ -809,7 +809,7 @@ Path::MappingPath Path::getNodeCovering(int startPosition, int endPosition) cons
     MappingPath res;
     for (size_t i = 0; i < m_nodes.size(); ++i) {
         if (i > 0)
-            pos -= m_edges[i-1]->getOverlap();
+            pos -= m_edges[i-1]->exactOverlapLength();
         int nodeLen = m_nodes[i]->getLength();
         if (intersects(pos, pos + nodeLen - 1,
                        startPosition, endPosition)) {

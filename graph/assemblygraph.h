@@ -27,6 +27,7 @@
 
 #include "io/gfa.h"
 
+#include "program/llvm.h"
 #include "seq/sequence.hpp"
 #include "parallel_hashmap/phmap.h"
 #include "tsl/htrie_map.h"
@@ -52,6 +53,10 @@ enum NodeNameStatus {NODE_NAME_OKAY, NODE_NAME_TAKEN, NODE_NAME_EMPTY,
     NODE_NAME_CONTAINS_TAB, NODE_NAME_CONTAINS_NEWLINE, NODE_NAME_CONTAINS_COMMA,
     NODE_NAME_CONTAINS_SPACE};
 enum SequencesLoadedFromFasta {NOT_READY, NOT_TRIED, TRIED};
+
+struct GraphLoadInfo {
+    bool complexOverlaps = false;
+};
 
 class AssemblyGraph : public QObject
 {
@@ -130,7 +135,7 @@ public:
     void recalculateAllNodeWidths(double averageNodeWidth,
                                   double depthPower, double depthEffectOnWidth);
 
-    bool loadGraphFromFile(const QString& filename);
+    bandage::Expected<GraphLoadInfo> loadGraphFromFile(const QString& filename);
     void markNodesToDraw(const graph::Scope &scope,
                          const std::vector<DeBruijnNode *>& startingNodes = {});
 
@@ -202,6 +207,9 @@ public:
 
     std::vector<DeBruijnNode *> getNodesInDepthRange(double min, double max) const;
 private:
+    void eraseNodeRecords(const DeBruijnNode *node);
+    void eraseEdgeRecords(const DeBruijnEdge *edge);
+
     std::vector<DeBruijnNode *> getNodesFromListExact(const QStringList& nodesList, std::vector<QString> * nodesNotInGraph) const;
     std::vector<DeBruijnNode *> getNodesFromListPartial(const QStringList& nodesList, std::vector<QString> * nodesNotInGraph) const;
     std::vector<int> makeOverlapCountVector();

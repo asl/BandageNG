@@ -18,8 +18,7 @@
 #pragma once
 
 #include "io/cigar.h"
-
-#include "llvm/Support/Error.h"
+#include "program/llvm.h"
 
 #include <QString>
 #include <memory>
@@ -31,7 +30,7 @@ class DeBruijnEdge;
 namespace io {
     class AssemblyGraphBuilder {
     public:
-        virtual llvm::Error build(AssemblyGraph &graph) = 0;
+        virtual bandage::Error build(AssemblyGraph &graph) = 0;
         virtual ~AssemblyGraphBuilder() = default;
 
         static std::unique_ptr<AssemblyGraphBuilder> get(const QString &fullFileName);
@@ -66,4 +65,10 @@ namespace io {
     bool loadGAFPaths(AssemblyGraph &graph, QString fileName);
     bool loadSPAlignerPaths(AssemblyGraph &graph, QString fileName);
     bool loadSPAdesPaths(AssemblyGraph &graph, QString fileName);
+
+    inline QString complexOverlapWarning() {
+        return QStringLiteral(
+                "This GFA file contains links with complex CIGAR strings (containing operators other than M).\n\n"
+                "Bandage does not support edge overlaps that are not perfect, so the behaviour of such edges in this graph is undefined.");
+    }
 }

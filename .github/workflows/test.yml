@@ -63,9 +63,9 @@ jobs:
       - name: Install BLAST
         run: |
              if [ "$RUNNER_OS" == "Linux" ]; then
-               sudo apt-get install -y ncbi-blast+ imagemagick
+               sudo apt-get install -y ncbi-blast+ imagemagick minimap2 hmmer
              elif [ "$RUNNER_OS" == "macOS" ]; then
-               brew install blast
+               brew install blast minimap2 hmmer
              fi
         shell: bash
 

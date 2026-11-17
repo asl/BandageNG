@@ -259,7 +259,7 @@ void ContiguityNodeColorer::determineContiguity(DeBruijnNode* node) {
             QApplication::processEvents();
             for (auto *pNode : path) {
                 upgradeContiguityStatus(pNode, MAYBE_CONTIGUOUS);
-                allCheckedNodes.insert(node);
+                allCheckedNodes.insert(pNode);
             }
         }
 

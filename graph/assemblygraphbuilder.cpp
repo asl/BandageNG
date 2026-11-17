@@ -26,7 +26,6 @@
 #include "io/fileutils.h"
 
 #include "seq/sequence.hpp"
-#include <llvm/Support/Error.h>
 
 #include <QFileInfo>
 #include <QFile>
@@ -362,7 +361,7 @@ namespace io {
     }
 
     using NodePair = std::pair<DeBruijnNode*, DeBruijnNode*>;
-    static llvm::Expected<NodePair>
+    static bandage::Expected<NodePair>
     addSegmentPair(std::string_view nodeName,
                    double nodeDepth, Sequence sequence,
                    AssemblyGraph &graph) {
@@ -370,7 +369,7 @@ namespace io {
 
         auto *nodePtr = maybeAddSegment(nodeName, nodeDepth, sequence, graph);
         if (!nodePtr)
-            return llvm::createStringError("Duplicate segment named: " + std::string(nodeName));
+            return bandage::createStringError("Duplicate segment named: " + std::string(nodeName));
 
         // Handle self-rc nodes. We record the same node under different names
         DeBruijnNode *oppositeNodePtr = nullptr;
@@ -398,7 +397,7 @@ namespace io {
             oppositeNodePtr =
                     maybeAddSegment(getOppositeNodeName(nodeName), nodeDepth, rcSeq, graph);
             if (!oppositeNodePtr)
-                return llvm::createStringError("Duplicate segment named: " + oppositeNodeName);
+                return bandage::createStringError("Duplicate segment named: " + oppositeNodeName);
         }
 
         nodePtr->setReverseComplement(oppositeNodePtr);
@@ -414,7 +413,7 @@ namespace io {
         return addSegmentPair(nodeName, 0, Sequence(), graph);
     }
 
-    static llvm::Expected<DeBruijnNode*> getNode(const std::string &name,
+    static bandage::Expected<DeBruijnNode*> getNode(const std::string &name,
                                                  AssemblyGraph &graph) {
         auto nodeIt = graph.m_deBruijnGraphNodes.find(name);
         if (nodeIt != graph.m_deBruijnGraphNodes.end())
@@ -430,7 +429,7 @@ namespace io {
 
     using EdgePair = std::pair<DeBruijnEdge*, DeBruijnEdge*>;
 
-    static llvm::Expected<EdgePair> addLink(const std::string &fromNode,
+    static bandage::Expected<EdgePair> addLink(const std::string &fromNode,
                                             const std::string &toNode,
                                             AssemblyGraph &graph) {
         // Get source / dest nodes (or create placeholders to fill in)
@@ -473,7 +472,7 @@ namespace io {
 
     class GFAAssemblyGraphBuilder : public AssemblyGraphBuilder {
       private:
-        llvm::Expected<bool> handleSegment(const gfa::segment &record,
+        bandage::Expected<bool> handleSegment(const gfa::segment &record,
                                            AssemblyGraph &graph) {
             bool sequencesAreMissing = false;
 
@@ -542,7 +541,7 @@ namespace io {
             return sequencesAreMissing;
         }
 
-        llvm::Error handleLink(const gfa::link &record,
+        bandage::Error handleLink(const gfa::link &record,
                                AssemblyGraph &graph) {
             std::string fromNode{record.lhs};
             fromNode.push_back(record.lhs_revcomp ? '-' : '+');
@@ -556,31 +555,33 @@ namespace io {
                 return edgePairOrErr.takeError();
 
             if (!edgePtr)
-                return llvm::Error::success();
+                return bandage::Error::success();
 
             hasCustomColours_ |=
                     handleStandardGFAEdgeTags(edgePtr, rcEdgePtr, record.tags, graph);
 
             const auto &overlap = record.overlap;
-            size_t overlapLength = 0;
             if (overlap.size() > 1 ||
                 (overlap.size() == 1 && overlap.front().op != 'M')) {
                 hasComplexOverlaps_ = true;
+                edgePtr->setOverlap(0);
+                edgePtr->setOverlapType(UNKNOWN_OVERLAP);
             } else if (overlap.size() == 1) {
-                overlapLength = overlap.front().count;
+                edgePtr->setOverlap(static_cast<int>(overlap.front().count));
+                edgePtr->setOverlapType(EXACT_OVERLAP);
+            } else {
+                edgePtr->setOverlap(0);
+                edgePtr->setOverlapType(EXACT_OVERLAP);
             }
-
-            edgePtr->setOverlap(static_cast<int>(overlapLength));
-            edgePtr->setOverlapType(EXACT_OVERLAP);
             if (rcEdgePtr) {
                 rcEdgePtr->setOverlap(edgePtr->getOverlap());
                 rcEdgePtr->setOverlapType(edgePtr->getOverlapType());
             }
 
-            return llvm::Error::success();
+            return bandage::Error::success();
         }
 
-        llvm::Error handleGapLink(const gfa::gaplink &record,
+        bandage::Error handleGapLink(const gfa::gaplink &record,
                                   AssemblyGraph &graph,
                                   bool isLink = false) {
             // FIXME: get rid of severe duplication!
@@ -598,7 +599,10 @@ namespace io {
             hasCustomColours_ |=
                     handleStandardGFAEdgeTags(edgePtr, rcEdgePtr, record.tags, graph);
 
-            edgePtr->setOverlap(record.distance == std::numeric_limits<int64_t>::min() ? 0 : record.distance);
+            int distance = 0;
+            if (!isLink && record.distance != std::numeric_limits<int64_t>::min())
+                distance = static_cast<int>(record.distance);
+            edgePtr->setOverlap(distance);
             edgePtr->setOverlapType(isLink ? EdgeOverlapType::EXTRA_LINK : EdgeOverlapType::JUMP);
             if (rcEdgePtr) {
                 rcEdgePtr->setOverlap(edgePtr->getOverlap());
@@ -614,10 +618,10 @@ namespace io {
             if (!graph.hasCustomStyle(rcEdgePtr))
                 graph.setCustomStyle(rcEdgePtr, isLink ? Qt::DotLine :Qt::DashLine);
 
-            return llvm::Error::success();
+            return bandage::Error::success();
         }
 
-        llvm::Error handlePath(const gfa::path &record,
+        bandage::Error handlePath(const gfa::path &record,
                                AssemblyGraph &graph) {
             std::vector<DeBruijnNode *> pathNodes;
             pathNodes.reserve(record.segments.size());
@@ -625,7 +629,7 @@ namespace io {
             for (const auto &node: record.segments) {
                 auto nodeIt = graph.m_deBruijnGraphNodes.find(node);
                 if (nodeIt == graph.m_deBruijnGraphNodes.end())
-                    return llvm::createStringError(llvm::Twine("malformed path string for path '")
+                    return bandage::createStringError(bandage::Twine("malformed path string for path '")
                                                + record.name + "', invalid node in path: " + node);
 
                 pathNodes.push_back(nodeIt.value());
@@ -634,16 +638,16 @@ namespace io {
             if (p.nodes().size() != pathNodes.size()) {
                 // We were unable to build path through the graph, likely the input
                 // file is invalid
-                return llvm::createStringError(llvm::Twine("malformed path string for path '")
+                return bandage::createStringError(bandage::Twine("malformed path string for path '")
                                                + record.name + "', cannot reconstruct path through the graph");
             }
 
             graph.m_deBruijnGraphPaths.emplace(record.name, std::move(p));
 
-            return llvm::Error::success();
+            return bandage::Error::success();
         }
 
-        llvm::Error handleWalk(const gfa::walk &record,
+        bandage::Error handleWalk(const gfa::walk &record,
                                AssemblyGraph &graph) {
             std::vector<DeBruijnNode *> walkNodes;
             walkNodes.reserve(record.Walk.size());
@@ -658,11 +662,11 @@ namespace io {
                 else if (orientation == '<')
                     nodeName.push_back('-');
                 else
-                    return llvm::createStringError(llvm::Twine("invalid walk string: ") + node);
+                    return bandage::createStringError(bandage::Twine("invalid walk string: ") + node);
 
                 auto nodeIt = graph.m_deBruijnGraphNodes.find(nodeName);
                 if (nodeIt == graph.m_deBruijnGraphNodes.end())
-                    return llvm::createStringError(llvm::Twine("malformed path string for walk '")
+                    return bandage::createStringError(bandage::Twine("malformed path string for walk '")
                                                + record.SeqId + "', invalid node in path: " + node);
 
                 walkNodes.push_back(nodeIt.value());
@@ -672,7 +676,7 @@ namespace io {
             if (p.nodes().size() != walkNodes.size()) {
                 // We were unable to build path through the graph, likely the input
                 // file is invalid
-                return llvm::createStringError(llvm::Twine("malformed walk string for walk '")
+                return bandage::createStringError(bandage::Twine("malformed walk string for walk '")
                                                + record.SeqId + "', cannot reconstruct path through the graph");
             }
 
@@ -685,13 +689,13 @@ namespace io {
                                                    seqStart, seqEnd, record.HapIndex,
                                                    std::move(p)});
 
-            return llvm::Error::success();
+            return bandage::Error::success();
         }
 
     public:
         using AssemblyGraphBuilder::AssemblyGraphBuilder;
 
-        llvm::Error build(AssemblyGraph &graph) override {
+        bandage::Error build(AssemblyGraph &graph) override {
             graph.m_filename = fileName_;
 
             bool sequencesAreMissing = false;
@@ -699,7 +703,7 @@ namespace io {
             std::unique_ptr<std::remove_pointer<gzFile>::type, decltype(&gzclose)>
                     fp(gzopen(fileName_.toStdString().c_str(), "r"), gzclose);
             if (!fp)
-                return llvm::createStringError("failed to open file: " + fileName_.toStdString());
+                return bandage::createStringError("failed to open file: " + fileName_.toStdString());
 
             size_t i = 0;
             char *line = nullptr;
@@ -713,7 +717,7 @@ namespace io {
                 if (!result)
                     continue;
 
-                llvm::Error E =
+                bandage::Error E =
                         std::visit([&](const auto &record) {
                                using T = std::decay_t<decltype(record)>;
                                if constexpr (std::is_same_v<T, gfa::segment>) {
@@ -734,7 +738,7 @@ namespace io {
                                    if (auto E = handleWalk(record, graph))
                                        return E;
                                }
-                               return llvm::Error(llvm::Error::success());
+                               return bandage::Error(bandage::Error::success());
                            },
                            *result);
                 if (E)
@@ -745,7 +749,7 @@ namespace io {
             if (sequencesAreMissing)
                 attemptToLoadSequencesFromFasta(graph);
 
-            return llvm::Error::success();
+            return bandage::Error::success();
         }
     };
 
@@ -797,7 +801,7 @@ namespace io {
             return name;
         }
 
-        llvm::Error build(AssemblyGraph &graph) override {
+        bandage::Error build(AssemblyGraph &graph) override {
             graph.m_filename = fileName_;
             graph.m_depthTag = "";
 
@@ -862,7 +866,7 @@ namespace io {
                     circularNodeNames.push_back(name);
 
                 if (name.length() < 1)
-                    return llvm::createStringError("load error");
+                    return bandage::createStringError("load error");
 
                 auto node = createStrandNode(name, depth, sequence);
                 graph.m_deBruijnGraphNodes.emplace(name.toStdString(), node);
@@ -875,14 +879,14 @@ namespace io {
                 graph.createDeBruijnEdge(circularNodeName.toStdString(), circularNodeName.toStdString(), 0, EXACT_OVERLAP);
             }
 
-            return llvm::Error::success();
+            return bandage::Error::success();
         }
     };
 
     class FastgAssemblyGraphBuilder : public AssemblyGraphBuilder {
         using AssemblyGraphBuilder::AssemblyGraphBuilder;
 
-        llvm::Error build(AssemblyGraph &graph) override {
+        bandage::Error build(AssemblyGraph &graph) override {
             graph.m_filename = fileName_;
             graph.m_depthTag = "KC";
 
@@ -918,7 +922,7 @@ namespace io {
                         QStringList thisNodeDetails = thisNode.split("_");
 
                         if (thisNodeDetails.size() < 6)
-                            return llvm::createStringError("load error");
+                            return bandage::createStringError("load error");
 
                         nodeName = thisNodeDetails.at(1);
                         if (negativeNode)
@@ -926,7 +930,7 @@ namespace io {
                         else
                             nodeName += "+";
                         if (graph.m_deBruijnGraphNodes.count(nodeName.toStdString()))
-                            return llvm::createStringError("load error");
+                            return bandage::createStringError("load error");
 
                         QString nodeDepthString = thisNodeDetails.at(5);
                         if (negativeNode) {
@@ -957,7 +961,7 @@ namespace io {
                             QStringList edgeNodeDetails = edgeNode.split("_");
 
                             if (edgeNodeDetails.size() < 2)
-                                return llvm::createStringError("load error");
+                                return bandage::createStringError("load error");
 
                             QString edgeNodeName = edgeNodeDetails.at(1);
                             if (negativeNode)
@@ -1010,9 +1014,9 @@ namespace io {
             graph.autoDetermineAllEdgesExactOverlap();
 
             if (graph.m_deBruijnGraphNodes.empty())
-                return llvm::createStringError("load error");
+                return bandage::createStringError("load error");
 
-            return llvm::Error::success();
+            return bandage::Error::success();
         }
     };
 
@@ -1024,7 +1028,7 @@ namespace io {
     class AsqgAssemblyGraphBuilder : public AssemblyGraphBuilder {
         using AssemblyGraphBuilder::AssemblyGraphBuilder;
 
-        llvm::Error build(AssemblyGraph &graph) override {
+        bandage::Error build(AssemblyGraph &graph) override {
             graph.m_filename = fileName_;
             graph.m_depthTag = "";
 
@@ -1047,7 +1051,7 @@ namespace io {
                     // Lines beginning with "VT" are sequence (node) lines
                     if (lineParts.at(0) == "VT") {
                         if (lineParts.size() < 3)
-                            return llvm::createStringError("load error");
+                            return bandage::createStringError("load error");
 
                         // We treat all nodes in this file as positive nodes and add "+" to the end of their names.
                         QString nodeName = lineParts.at(1);
@@ -1070,11 +1074,11 @@ namespace io {
                         // Instead, we save the starting and ending nodes and make the edges after
                         // we're done looking at the file.
                         if (lineParts.size() < 2)
-                            return llvm::createStringError("load error");
+                            return bandage::createStringError("load error");
 
                         QStringList edgeParts = lineParts[1].split(" ");
                         if (edgeParts.size() < 8)
-                            return llvm::createStringError("load error");
+                            return bandage::createStringError("load error");
 
                         QString s1Name = edgeParts.at(0);
                         QString s2Name = edgeParts.at(1);
@@ -1148,19 +1152,19 @@ namespace io {
             }
 
             if (graph.m_deBruijnGraphNodes.empty())
-                return llvm::createStringError("load error");
+                return bandage::createStringError("load error");
 
             if (badEdgeCount)
-                return llvm::createStringError("load error");
+                return bandage::createStringError("load error");
 
-            return llvm::Error::success();
+            return bandage::Error::success();
         }
     };
 
     class TrinityAssemblyGraphBuilder : public AssemblyGraphBuilder {
         using AssemblyGraphBuilder::AssemblyGraphBuilder;
 
-        llvm::Error build(AssemblyGraph &graph) override {
+        bandage::Error build(AssemblyGraph &graph) override {
             graph.m_filename = fileName_;
             graph.m_depthTag = "";
 
@@ -1188,13 +1192,13 @@ namespace io {
                 //or "TRINITY_GG", "TR" or "GG", then that will be trimmed off.
 
                 if (name.length() < 4)
-                    return llvm::createStringError("load error");
+                    return bandage::createStringError("load error");
 
                 int componentStartIndex = name.indexOf(QRegularExpression("c\\d+_"));
                 int componentEndIndex = name.indexOf("_", componentStartIndex);
 
                 if (componentStartIndex < 0 || componentEndIndex < 0)
-                    return llvm::createStringError("load error");
+                    return bandage::createStringError("load error");
 
                 QString component = name.left(componentEndIndex);
                 if (component.startsWith("TRINITY_DN") || component.startsWith("TRINITY_GG"))
@@ -1203,16 +1207,16 @@ namespace io {
                     component = component.remove(0, 2);
 
                 if (component.length() < 2)
-                    return llvm::createStringError("load error");
+                    return bandage::createStringError("load error");
 
                 int pathStartIndex = name.indexOf("path=[") + 6;
                 int pathEndIndex = name.indexOf("]", pathStartIndex);
                 if (pathStartIndex < 0 || pathEndIndex < 0)
-                    return llvm::createStringError("load error");
+                    return bandage::createStringError("load error");
                 int pathLength = pathEndIndex - pathStartIndex;
                 QString path = name.mid(pathStartIndex, pathLength);
                 if (path.size() == 0)
-                    return llvm::createStringError("load error");
+                    return bandage::createStringError("load error");
 
                 QStringList pathParts = path.split(" ");
 
@@ -1222,7 +1226,7 @@ namespace io {
                     const QString &pathPart = pathParts.at(i);
                     QStringList nodeParts = pathPart.split(":");
                     if (nodeParts.size() < 2)
-                        return llvm::createStringError("load error");
+                        return bandage::createStringError("load error");
 
                     //Most node numbers will be formatted simply as the number, but some
                     //(I don't know why) have '@' and the start and '@!' at the end.  In
@@ -1239,7 +1243,7 @@ namespace io {
                         QStringList nodeRangeParts = nodeRange.split("-");
 
                         if (nodeRangeParts.size() < 2)
-                            return llvm::createStringError("load error");
+                            return bandage::createStringError("load error");
 
                         int nodeRangeStart = nodeRangeParts.at(0).toInt();
                         int nodeRangeEnd = nodeRangeParts.at(1).toInt();
@@ -1286,9 +1290,9 @@ namespace io {
             graph.setAllEdgesExactOverlap(0);
 
             if (graph.m_deBruijnGraphNodes.empty())
-                return llvm::createStringError("load error");
+                return bandage::createStringError("load error");
 
-            return llvm::Error::success();
+            return bandage::Error::success();
         }
     };
 
@@ -1314,15 +1318,15 @@ namespace io {
             }
         }
 
-        static inline llvm::SmallVector<std::string_view, 4>
+        static inline bandage::SmallVector<std::string_view, 4>
         split(const std::string_view s, const std::string_view delim,
               bool compress = false) {
-            llvm::SmallVector<std::string_view, 4> elems;
+            bandage::SmallVector<std::string_view, 4> elems;
             split(s, delim, std::back_inserter(elems), compress);
             return elems;
         }
 
-        llvm::Error handleEntry(const kstring_t &name,
+        bandage::Error handleEntry(const kstring_t &name,
                                 const kstring_t &seq,
                                 const kstring_t &comment,
                                 AssemblyGraph &graph) {
@@ -1334,7 +1338,7 @@ namespace io {
 
             auto underscorePos = nodeName.find_first_of('_');
             if (underscorePos == std::string::npos)
-                return llvm::createStringError("Invalid sequence name: %s, no underscore", nodeName.c_str());
+                return bandage::createStringError("Invalid sequence name: %s, no underscore", nodeName.c_str());
             nodeName = nodeName.substr(underscorePos + 1);
 
             Sequence sequence(seq.s);
@@ -1350,7 +1354,7 @@ namespace io {
                         nodeDepth = strtod(fields[2].data(), nullptr);
                     } else if (fields.front() == "L" && fields.size() == 4) {
                         if (fields[1].size() != 1 || fields[3].size() != 1)
-                            return llvm::createStringError("Invalid tag: " + std::string(tag));
+                            return bandage::createStringError("Invalid tag: " + std::string(tag));
                         fromNode.back() = fields[1].front();
 
                         toNode.assign(fields[2]);
@@ -1372,7 +1376,7 @@ namespace io {
                             rcEdgePtr->setOverlapType(edgePtr->getOverlapType());
                         }
                     } else
-                        return llvm::createStringError("Invalid tag: " + std::string(tag));
+                        return bandage::createStringError("Invalid tag: " + std::string(tag));
                 }
             }
 
@@ -1383,7 +1387,7 @@ namespace io {
 
             auto [nodePtr, oppositeNodePtr] = nodePairOrErr.get();
 
-            return llvm::Error::success();
+            return bandage::Error::success();
         }
 
       public:
@@ -1466,7 +1470,7 @@ namespace io {
     public:
         using LoganBaseAssemblyGraphBuilder::LoganBaseAssemblyGraphBuilder;
 
-        llvm::Error build(AssemblyGraph &graph) override {
+        bandage::Error build(AssemblyGraph &graph) override {
             graph.m_filename = fileName_;
             graph.m_depthTag = "ka";
 
@@ -1475,7 +1479,7 @@ namespace io {
             std::unique_ptr<FILE, decltype(&fclose)>
                     fin(fopen(fileName_.toStdString().c_str(), "rb"), fclose);
             if (!fin)
-                return llvm::createStringError("failed to open file: " + fileName_.toStdString());
+                return bandage::createStringError("failed to open file: " + fileName_.toStdString());
 
             zstdFile_s fp;
             fp.fin = fin.get();
@@ -1489,7 +1493,7 @@ namespace io {
             }
 
             graph.m_sequencesLoadedFromFasta = NOT_TRIED;
-            return llvm::Error::success();
+            return bandage::Error::success();
         }
     };
 
@@ -1500,7 +1504,7 @@ namespace io {
     public:
         using LoganBaseAssemblyGraphBuilder::LoganBaseAssemblyGraphBuilder;
 
-        llvm::Error build(AssemblyGraph &graph) override {
+        bandage::Error build(AssemblyGraph &graph) override {
             graph.m_filename = fileName_;
             graph.m_depthTag = "ka";
 
@@ -1509,7 +1513,7 @@ namespace io {
             std::unique_ptr<std::remove_pointer_t<gzFile>, decltype(&gzclose)>
                     fp(gzopen(fileName_.toStdString().c_str(), "r"), gzclose);
             if (!fp)
-                return llvm::createStringError("failed to open file: " + fileName_.toStdString());
+                return bandage::createStringError("failed to open file: " + fileName_.toStdString());
 
             std::unique_ptr<kseq_t, decltype(&kseq_destroy)>
                     seq(kseq_init(fp.get()), kseq_destroy);
@@ -1520,7 +1524,7 @@ namespace io {
             }
 
             graph.m_sequencesLoadedFromFasta = NOT_TRIED;
-            return llvm::Error::success();
+            return bandage::Error::success();
         }
     };
 

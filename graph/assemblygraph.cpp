@@ -22,6 +22,7 @@
 #include "parallel_hashmap/phmap.h"
 #include "path.h"
 #include "io.h"
+#include "program/llvm.h"
 #include "graphicsitemedge.h"
 #include "graphicsitemnode.h"
 #include "nodedisplayname.h"
@@ -112,8 +113,12 @@ void AssemblyGraph::cleanUp() {
     m_nodeTags.clear();
     m_edgeTags.clear();
     m_nodeColors.clear();
+    m_edgeColors.clear();
+    m_edgeStyles.clear();
     m_nodeLabels.clear();
     m_nodeCSVData.clear();
+    m_csvHeaders.clear();
+    m_depthTag.clear();
 
     clearGraphInfo();
 }
@@ -431,11 +436,17 @@ bool AssemblyGraph::loadCSV(const QString &filename, QStringList *columns, QStri
             continue;
 
         QString colourString = cols[colourCol];
+        if (colourString.isEmpty())
+            continue;
+
         QColor colour(colourString);
         if (!colour.isValid()) {
-            QColor presetColor = presetColours[colourCategories.size() % presetColours.size()];
-            auto colorCat = colourCategories.insert(colourString, presetColor);
-            colour = colorCat.value();
+            auto existing = colourCategories.find(colourString);
+            if (existing == colourCategories.end()) {
+                QColor presetColor = presetColours[colourCategories.size() % presetColours.size()];
+                existing = colourCategories.insert(colourString, presetColor);
+            }
+            colour = existing.value();
         }
 
         for (auto *node: nodes)
@@ -508,17 +519,18 @@ QString AssemblyGraph::getNodeNameFromString(QString string) const
         return nodeName + "+";
 }
 
-// Returns true if successful, false if not.
-bool AssemblyGraph::loadGraphFromFile(const QString& filename) {
+bandage::Expected<GraphLoadInfo> AssemblyGraph::loadGraphFromFile(const QString& filename) {
     cleanUp();
 
     auto builder = io::AssemblyGraphBuilder::get(filename);
     if (!builder)
-        return false;
+        return bandage::createStringError("graph format not recognised: " + filename.toStdString());
 
     builder->treatJumpsAsLinks(g_settings->jumpsAsLinks);
-    if (auto E = builder->build(*this))
-        return false;
+    if (auto E = builder->build(*this)) {
+        cleanUp();
+        return std::move(E);
+    }
 
     determineGraphInfo();
 
@@ -526,7 +538,7 @@ bool AssemblyGraph::loadGraphFromFile(const QString& filename) {
     g_memory->clearGraphSpecificMemory();
     g_settings->nodeColorer->reset();
 
-    return true;
+    return GraphLoadInfo{builder->hasComplexOverlaps()};
 }
 
 
@@ -868,6 +880,19 @@ int AssemblyGraph::getDrawnNodeCount() const {
 }
 
 
+void AssemblyGraph::eraseNodeRecords(const DeBruijnNode *node) {
+    m_nodeColors.erase(node);
+    m_nodeLabels.erase(node);
+    m_nodeTags.erase(node);
+    m_nodeCSVData.erase(node);
+}
+
+void AssemblyGraph::eraseEdgeRecords(const DeBruijnEdge *edge) {
+    m_edgeColors.erase(edge);
+    m_edgeStyles.erase(edge);
+    m_edgeTags.erase(edge);
+}
+
 void AssemblyGraph::deleteNodes(const std::vector<DeBruijnNode *> &nodes)
 {
     //Build a list of nodes to delete.
@@ -891,8 +916,10 @@ void AssemblyGraph::deleteNodes(const std::vector<DeBruijnNode *> &nodes)
     deleteEdges(edgesToDelete);
 
     // Remove the nodes from the graph.
-    for (auto *node : nodesToDelete)
+    for (auto *node : nodesToDelete) {
+        eraseNodeRecords(node);
         m_deBruijnGraphNodes.erase(node->getName());
+    }
 
     for (auto *node : nodesToDelete)
         delete node;
@@ -912,6 +939,7 @@ void AssemblyGraph::deleteEdges(const std::vector<DeBruijnEdge *> &edges)
         DeBruijnNode * startingNode = edge->getStartingNode();
         DeBruijnNode * endingNode = edge->getEndingNode();
 
+        eraseEdgeRecords(edge);
         m_deBruijnGraphEdges.erase(edge);
         startingNode->removeEdge(edge);
         endingNode->removeEdge(edge);

@@ -33,7 +33,7 @@
 namespace CLI {
 std::istringstream &operator>>(std::istringstream &in, QString &val) {
     std::string s;
-    in >> s;
+    std::getline(in, s);
     val = QString::fromStdString(s);
 
     return in;

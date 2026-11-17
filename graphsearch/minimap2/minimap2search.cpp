@@ -214,6 +214,7 @@ QString Minimap2Search::doSearch(Queries &queries, QString extraParameters) {
         return (m_lastError = "Failed to create temporary query file");
 
     writeQueryFile(&tmpFile, queries);
+    tmpFile.flush();
 
     QStringList minimap2Options;
     minimap2Options << extraParameters.split(" ", Qt::SkipEmptyParts)

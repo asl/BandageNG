@@ -136,3 +136,35 @@ void AnnotationsManager::cleanUp() {
     nextFreeId = 0;
     emit annotationGroupsUpdated();
 }
+
+namespace {
+// BED intervals are 0-based and half-open. Annotations are 1-based and inclusive,
+// matching query hits: the base at the start of a node is 1. The BED end is
+// already the 1-based inclusive end, so only a non-empty start moves by one.
+int64_t bedIntervalStart(int64_t start, int64_t end) {
+    return end > start ? start + 1 : start;
+}
+}
+
+void addBedAnnotation(AnnotationGroup &group, DeBruijnNode *node, const bed::Line &bedLine) {
+    constexpr double mainWidth = 1;
+    constexpr double thickWidth = 1.3;
+    constexpr double blockWidth = 1.6;
+
+    auto &annotation = group.annotationMap[node].emplace_back(
+            std::make_unique<Annotation>(bedIntervalStart(bedLine.chromStart, bedLine.chromEnd),
+                                         bedLine.chromEnd, bedLine.name));
+    annotation->addView(std::make_unique<SolidView>(mainWidth, bedLine.itemRgb.toQColor()));
+    if (bedLine.thickEnd > bedLine.thickStart) {
+        annotation->addView(std::make_unique<BedThickView>(
+                thickWidth, bedLine.itemRgb.toQColor(),
+                bedIntervalStart(bedLine.thickStart, bedLine.thickEnd), bedLine.thickEnd));
+    }
+    std::vector<bed::Block> blocks;
+    for (const auto &block : bedLine.blocks) {
+        if (block.end > block.start)
+            blocks.push_back(bed::Block{bedIntervalStart(block.start, block.end), block.end});
+    }
+    if (!blocks.empty())
+        annotation->addView(std::make_unique<BedBlockView>(blockWidth, bedLine.itemRgb.toQColor(), blocks));
+}

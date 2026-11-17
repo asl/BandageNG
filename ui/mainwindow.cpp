@@ -385,7 +385,7 @@ void MainWindow::loadGraph(QString fullFileName) {
     progress->setWindowModality(Qt::WindowModal);
     progress->show();
 
-    auto *watcher = new QFutureWatcher<llvm::Error>;
+    auto *watcher = new QFutureWatcher<bandage::Error>;
     connect(watcher, &QFutureWatcher<bool>::finished,
             this,
             [=]() {
@@ -393,7 +393,7 @@ void MainWindow::loadGraph(QString fullFileName) {
                     QString errorTitle = "Error loading graph";
                     QString errorMessage = "There was an error when attempting to load\n"
                                            + fullFileName + ":\n"
-                                           + QString::fromStdString(llvm::toString(std::move(E))) + "\n\n"
+                                           + QString::fromStdString(bandage::toString(std::move(E))) + "\n\n"
                                            + "Please verify that this file has the correct format.";
                     QMessageBox::warning(this, errorTitle, errorMessage);
                     resetScene();
@@ -404,13 +404,7 @@ void MainWindow::loadGraph(QString fullFileName) {
                 }
 
                 if (builder->hasComplexOverlaps())
-                    QMessageBox::warning(this, "Unsupported CIGAR",
-                                         "This GFA file contains "
-                                         "links with complex CIGAR strings (containing "
-                                         "operators other than M).\n\n"
-                                         "Bandage does not support edge overlaps that are not "
-                                         "perfect, so the behaviour of such edges in this graph "
-                                         "is undefined.");
+                    QMessageBox::warning(this, "Unsupported CIGAR", io::complexOverlapWarning());
 
                 setUiState(GRAPH_LOADED);
                 setWindowTitle("BandageNG - " + fullFileName);
