@@ -58,6 +58,35 @@
 #include <iostream>
 #include <memory>
 
+#define REQUIRE_OK(var, expr) \
+    auto var##Result = (expr); \
+    if (!var##Result) \
+        QFAIL(bandage::toString(var##Result.takeError()).c_str()); \
+    auto var = std::move(*var##Result)
+
+#define EXPECT_DRAWN(scopeExpr, expectedCount) \
+    do { \
+        REQUIRE_OK(expectDrawnNodes, graph::getStartingNodes(*g_assemblyGraph, scopeExpr)); \
+        g_assemblyGraph->resetNodes(); \
+        g_assemblyGraph->markNodesToDraw(scopeExpr, expectDrawnNodes); \
+        QCOMPARE(g_assemblyGraph->getDrawnNodeCount(), expectedCount); \
+    } while (false)
+
+#define EXPECT_PATH_ERROR(pathText, circular, sentence) \
+    do { \
+        auto pathErrorResult = Path::makeFromString(pathText, *g_assemblyGraph, circular); \
+        if (pathErrorResult) \
+            QFAIL("expected a path error"); \
+        std::string pathErrorTitle; \
+        std::string pathErrorBody; \
+        bandage::handleAllErrors(pathErrorResult.takeError(), [&](const bandage::TextError &err) { \
+            pathErrorTitle = err.title(); \
+            pathErrorBody = err.text(); \
+        }); \
+        QCOMPARE(QString::fromStdString(pathErrorTitle), QString("Invalid path")); \
+        QCOMPARE(QString::fromStdString(pathErrorBody), QString(sentence)); \
+    } while (false)
+
 class BandageTests : public QObject
 {
     Q_OBJECT
@@ -360,16 +389,45 @@ void BandageTests::loadTrinity()
 void BandageTests::pathFunctionsOnGFA()
 {
     requireGraphLoad(testFile("test.gfa"));
+    REQUIRE_OK(testPath1, Path::makeFromString("(1996) 9+, 13+ (5)", *g_assemblyGraph, false));
+    REQUIRE_OK(testPath2, Path::makeFromString("(1996) 9+, 13+ (5)", *g_assemblyGraph, false));
+    REQUIRE_OK(testPath3, Path::makeFromString("(1996) 9+, 13+ (6)", *g_assemblyGraph, false));
+    REQUIRE_OK(testPath4, Path::makeFromString("9+, 13+, 14-", *g_assemblyGraph, false));
 
-    QString pathStringFailure;
-    Path testPath1 = Path::makeFromString("(1996) 9+, 13+ (5)", *g_assemblyGraph, false, &pathStringFailure);
-    QVERIFY2(pathStringFailure.isEmpty(), qPrintable(pathStringFailure));
-    Path testPath2 = Path::makeFromString("(1996) 9+, 13+ (5)", *g_assemblyGraph, false, &pathStringFailure);
-    QVERIFY2(pathStringFailure.isEmpty(), qPrintable(pathStringFailure));
-    Path testPath3 = Path::makeFromString("(1996) 9+, 13+ (6)", *g_assemblyGraph, false, &pathStringFailure);
-    QVERIFY2(pathStringFailure.isEmpty(), qPrintable(pathStringFailure));
-    Path testPath4 = Path::makeFromString("9+, 13+, 14-", *g_assemblyGraph, false, &pathStringFailure);
-    QVERIFY2(pathStringFailure.isEmpty(), qPrintable(pathStringFailure));
+    auto badPath = Path::makeFromString("not a path", *g_assemblyGraph, false);
+    QVERIFY(!badPath);
+    QString badTitle;
+    QString badText;
+    bandage::handleAllErrors(badPath.takeError(), [&](const bandage::TextError &err) {
+        badTitle = QString::fromStdString(err.title());
+        badText = QString::fromStdString(err.text());
+    });
+    QCOMPARE(badTitle, QString("Invalid path"));
+    QCOMPARE(badText, QString("the text is not formatted correctly"));
+    EXPECT_PATH_ERROR("(1) 9+", true, "circular paths cannot contain start or end positions");
+    EXPECT_PATH_ERROR("missing+", false, "the following nodes are not in the graph: missing+");
+    EXPECT_PATH_ERROR("(999999) 9+", false, "starting node position not valid");
+    EXPECT_PATH_ERROR("9+ (999999)", false, "ending node position not valid");
+    DeBruijnNode *pathStart = g_assemblyGraph->m_deBruijnGraphNodes["9+"];
+    QString disconnected;
+    for (auto &entry : g_assemblyGraph->m_deBruijnGraphNodes) {
+        DeBruijnNode *candidate = entry;
+        if (candidate == pathStart)
+            continue;
+        bool linked = false;
+        for (auto *edge : pathStart->edges()) {
+            if (edge->getStartingNode() == pathStart && edge->getEndingNode() == candidate) {
+                linked = true;
+                break;
+            }
+        }
+        if (!linked) {
+            disconnected = QString::fromStdString(candidate->getName());
+            break;
+        }
+    }
+    QVERIFY(!disconnected.isEmpty());
+    EXPECT_PATH_ERROR(QString("9+, %1").arg(disconnected), false, "the nodes do not form a path");
 
     DeBruijnNode * node4Minus = g_assemblyGraph->m_deBruijnGraphNodes["4-"];
     DeBruijnNode * node9Plus = g_assemblyGraph->m_deBruijnGraphNodes["9+"];
@@ -420,12 +478,8 @@ void BandageTests::pathFunctionsOnGFA()
 void BandageTests::pathFunctionsOnFastg()
 {
     requireGraphLoad(testFile("test.fastg"));
-
-    QString pathStringFailure;
-    Path testPath1 = Path::makeFromString("(50234) 6+, 26+, 23+, 26+, 24+ (200)", *g_assemblyGraph, false, &pathStringFailure);
-    QVERIFY2(pathStringFailure.isEmpty(), qPrintable(pathStringFailure));
-    Path testPath2 = Path::makeFromString("26+, 23+", *g_assemblyGraph, true, &pathStringFailure);
-    QVERIFY2(pathStringFailure.isEmpty(), qPrintable(pathStringFailure));
+    REQUIRE_OK(testPath1, Path::makeFromString("(50234) 6+, 26+, 23+, 26+, 24+ (200)", *g_assemblyGraph, false));
+    REQUIRE_OK(testPath2, Path::makeFromString("26+, 23+", *g_assemblyGraph, true));
     QCOMPARE(testPath1.getLength(), 1764);
     QCOMPARE(testPath2.getLength(), 1387);
     QCOMPARE(testPath1.isCircular(), false);
@@ -444,13 +498,10 @@ void BandageTests::pathFunctionsOnGfaSequencesInGraph()
     QCOMPARE(g_assemblyGraph->m_deBruijnGraphEdges.size(), 24);
 
     //Check a couple short paths.
-    QString pathStringFailure;
 
-    Path testPath1 = Path::makeFromString("232+, 277+", *g_assemblyGraph, false, &pathStringFailure);
-    QVERIFY2(pathStringFailure.isEmpty(), qPrintable(pathStringFailure));
+    REQUIRE_OK(testPath1, Path::makeFromString("232+, 277+", *g_assemblyGraph, false));
     QByteArray testPath1Sequence = "CCTTATACGAAGCCCAGGTTAATCCTGGGCTTTTTGTTGAATCTGATCATTGGTAGCAAACAGATCAGGATTGGTAATTTTGATGTTTTCCTGACAACTCCTGCAAAGCATCAGCCCAGCAAAAAGTTGTACATGTTCCGTTGATTCACAGAAGGCACATGGCTTAGGAAAAGAGATGATATTGGCTGAATTGACTAATTCTGTTGACATAAGAAGTAACCTTGGATTGTACATATTTATTTTTAATAAATTTCAATACTTTATACCTAATTTAGCCACTAAAATTTGTACATTATTGTATAATCCATGTGTACATATTATTTTTTATAATTTTCATTCACTTAGACCCAAAATAGTATTTATTTTTGTACAACACCATGTACAGAACAATAATCATATAAATCAAATTTTTAGCATAAAAAAGTCCATTAATTTTGTACACAATTCTGAAACTTAAAAATCTAAACTTTCATCAATTTTTTTCATAATTTCAATAAATTAACCTTAATTTTAAGATATATTCTGAAATTTGGTTTGAAAGCTGTTTTTACATTATATTTCAATACTTTAAATCAAAAAATTGGATATTTTTTGAAAAACTCAATGAAAGTTTATTTTTTATTTAAAAACAACTAGTTATATTAGTTTTTATCCATTTTTTTGAAACAGTTTCTATATGATAAAAAAACCTATAAAAACCATATCTAGCAAAGGTTTGAGGGTTATCATCTTTAGATGCGTGGTGTGTGACAAAAAAATCCCGGCATGTGCCGGATTCTGGATTAGAAAATTGGCTAAAGTGACGTAGGACTGGTGCTTGGTTTTACATGGAAAAAAGTATTTATTTTCTGGTTTATAAAAACGTAAAAAGATCAGTTTTTGTTCATTCATCCAGGTTAAAAATTTCAACCTAAAACTTTAATTATGAAAAGCTTCACAGAAAGCATTCAAATGCGATTTAAGAGCCTTTATCTAAAAAACATAGATCTTATAGCGAAAAACAGAAAACAGCTCAAAAAACGCAAAAGAGAGTGAAGTAAAGAGATGTTTTGACTTTAGATAGCTGCATAGAGCGAGTGTCTACGAGCGAACTATCAAAATTTGCGTCTAGACTCTCTGAAAAACATTTTTTTGCCCTCTTTAGCCTAAGAAAGCTTAATTTTCATGCAGAAATTTGCTCCTGGACCGAGCGTAGCGAGAAAAAAAGCTCATGAGCGAAGCGAATTCCGAGTTGCTTTTGCTTTTTCTTAAAGTCACGCAAGTATTAACCAAAAAATTGCCCCGACGAACTGAGCGAAAGCGAAGTTCAATAGAGTTTGAGCGAAGCGAAAACCAAGGGC";
-    Path testPath2 = Path::makeFromString("277-, 232-", *g_assemblyGraph, false, &pathStringFailure);
-    QVERIFY2(pathStringFailure.isEmpty(), qPrintable(pathStringFailure));
+    REQUIRE_OK(testPath2, Path::makeFromString("277-, 232-", *g_assemblyGraph, false));
     QByteArray testPath2Sequence = "GCCCTTGGTTTTCGCTTCGCTCAAACTCTATTGAACTTCGCTTTCGCTCAGTTCGTCGGGGCAATTTTTTGGTTAATACTTGCGTGACTTTAAGAAAAAGCAAAAGCAACTCGGAATTCGCTTCGCTCATGAGCTTTTTTTCTCGCTACGCTCGGTCCAGGAGCAAATTTCTGCATGAAAATTAAGCTTTCTTAGGCTAAAGAGGGCAAAAAAATGTTTTTCAGAGAGTCTAGACGCAAATTTTGATAGTTCGCTCGTAGACACTCGCTCTATGCAGCTATCTAAAGTCAAAACATCTCTTTACTTCACTCTCTTTTGCGTTTTTTGAGCTGTTTTCTGTTTTTCGCTATAAGATCTATGTTTTTTAGATAAAGGCTCTTAAATCGCATTTGAATGCTTTCTGTGAAGCTTTTCATAATTAAAGTTTTAGGTTGAAATTTTTAACCTGGATGAATGAACAAAAACTGATCTTTTTACGTTTTTATAAACCAGAAAATAAATACTTTTTTCCATGTAAAACCAAGCACCAGTCCTACGTCACTTTAGCCAATTTTCTAATCCAGAATCCGGCACATGCCGGGATTTTTTTGTCACACACCACGCATCTAAAGATGATAACCCTCAAACCTTTGCTAGATATGGTTTTTATAGGTTTTTTTATCATATAGAAACTGTTTCAAAAAAATGGATAAAAACTAATATAACTAGTTGTTTTTAAATAAAAAATAAACTTTCATTGAGTTTTTCAAAAAATATCCAATTTTTTGATTTAAAGTATTGAAATATAATGTAAAAACAGCTTTCAAACCAAATTTCAGAATATATCTTAAAATTAAGGTTAATTTATTGAAATTATGAAAAAAATTGATGAAAGTTTAGATTTTTAAGTTTCAGAATTGTGTACAAAATTAATGGACTTTTTTATGCTAAAAATTTGATTTATATGATTATTGTTCTGTACATGGTGTTGTACAAAAATAAATACTATTTTGGGTCTAAGTGAATGAAAATTATAAAAAATAATATGTACACATGGATTATACAATAATGTACAAATTTTAGTGGCTAAATTAGGTATAAAGTATTGAAATTTATTAAAAATAAATATGTACAATCCAAGGTTACTTCTTATGTCAACAGAATTAGTCAATTCAGCCAATATCATCTCTTTTCCTAAGCCATGTGCCTTCTGTGAATCAACGGAACATGTACAACTTTTTGCTGGGCTGATGCTTTGCAGGAGTTGTCAGGAAAACATCAAAATTACCAATCCTGATCTGTTTGCTACCAATGATCAGATTCAACAAAAAGCCCAGGATTAACCTGGGCTTCGTATAAGG";
     QCOMPARE(testPath1.getPathSequence(), testPath1Sequence);
     QCOMPARE(testPath2.getPathSequence(), testPath2Sequence);
@@ -478,12 +529,9 @@ void BandageTests::pathFunctionsOnGfaSequencesInFasta()
     QCOMPARE(node282Minus->getLength(), 1819);
 
     //Check a couple short paths.
-    QString pathStringFailure;
-    Path testPath1 = Path::makeFromString("232+, 277+", *g_assemblyGraph, false, &pathStringFailure);
-    QVERIFY2(pathStringFailure.isEmpty(), qPrintable(pathStringFailure));
+    REQUIRE_OK(testPath1, Path::makeFromString("232+, 277+", *g_assemblyGraph, false));
     QByteArray testPath1Sequence = "CCTTATACGAAGCCCAGGTTAATCCTGGGCTTTTTGTTGAATCTGATCATTGGTAGCAAACAGATCAGGATTGGTAATTTTGATGTTTTCCTGACAACTCCTGCAAAGCATCAGCCCAGCAAAAAGTTGTACATGTTCCGTTGATTCACAGAAGGCACATGGCTTAGGAAAAGAGATGATATTGGCTGAATTGACTAATTCTGTTGACATAAGAAGTAACCTTGGATTGTACATATTTATTTTTAATAAATTTCAATACTTTATACCTAATTTAGCCACTAAAATTTGTACATTATTGTATAATCCATGTGTACATATTATTTTTTATAATTTTCATTCACTTAGACCCAAAATAGTATTTATTTTTGTACAACACCATGTACAGAACAATAATCATATAAATCAAATTTTTAGCATAAAAAAGTCCATTAATTTTGTACACAATTCTGAAACTTAAAAATCTAAACTTTCATCAATTTTTTTCATAATTTCAATAAATTAACCTTAATTTTAAGATATATTCTGAAATTTGGTTTGAAAGCTGTTTTTACATTATATTTCAATACTTTAAATCAAAAAATTGGATATTTTTTGAAAAACTCAATGAAAGTTTATTTTTTATTTAAAAACAACTAGTTATATTAGTTTTTATCCATTTTTTTGAAACAGTTTCTATATGATAAAAAAACCTATAAAAACCATATCTAGCAAAGGTTTGAGGGTTATCATCTTTAGATGCGTGGTGTGTGACAAAAAAATCCCGGCATGTGCCGGATTCTGGATTAGAAAATTGGCTAAAGTGACGTAGGACTGGTGCTTGGTTTTACATGGAAAAAAGTATTTATTTTCTGGTTTATAAAAACGTAAAAAGATCAGTTTTTGTTCATTCATCCAGGTTAAAAATTTCAACCTAAAACTTTAATTATGAAAAGCTTCACAGAAAGCATTCAAATGCGATTTAAGAGCCTTTATCTAAAAAACATAGATCTTATAGCGAAAAACAGAAAACAGCTCAAAAAACGCAAAAGAGAGTGAAGTAAAGAGATGTTTTGACTTTAGATAGCTGCATAGAGCGAGTGTCTACGAGCGAACTATCAAAATTTGCGTCTAGACTCTCTGAAAAACATTTTTTTGCCCTCTTTAGCCTAAGAAAGCTTAATTTTCATGCAGAAATTTGCTCCTGGACCGAGCGTAGCGAGAAAAAAAGCTCATGAGCGAAGCGAATTCCGAGTTGCTTTTGCTTTTTCTTAAAGTCACGCAAGTATTAACCAAAAAATTGCCCCGACGAACTGAGCGAAAGCGAAGTTCAATAGAGTTTGAGCGAAGCGAAAACCAAGGGC";
-    Path testPath2 = Path::makeFromString("277-, 232-", *g_assemblyGraph, false, &pathStringFailure);
-    QVERIFY2(pathStringFailure.isEmpty(), qPrintable(pathStringFailure));
+    REQUIRE_OK(testPath2, Path::makeFromString("277-, 232-", *g_assemblyGraph, false));
     QByteArray testPath2Sequence = "GCCCTTGGTTTTCGCTTCGCTCAAACTCTATTGAACTTCGCTTTCGCTCAGTTCGTCGGGGCAATTTTTTGGTTAATACTTGCGTGACTTTAAGAAAAAGCAAAAGCAACTCGGAATTCGCTTCGCTCATGAGCTTTTTTTCTCGCTACGCTCGGTCCAGGAGCAAATTTCTGCATGAAAATTAAGCTTTCTTAGGCTAAAGAGGGCAAAAAAATGTTTTTCAGAGAGTCTAGACGCAAATTTTGATAGTTCGCTCGTAGACACTCGCTCTATGCAGCTATCTAAAGTCAAAACATCTCTTTACTTCACTCTCTTTTGCGTTTTTTGAGCTGTTTTCTGTTTTTCGCTATAAGATCTATGTTTTTTAGATAAAGGCTCTTAAATCGCATTTGAATGCTTTCTGTGAAGCTTTTCATAATTAAAGTTTTAGGTTGAAATTTTTAACCTGGATGAATGAACAAAAACTGATCTTTTTACGTTTTTATAAACCAGAAAATAAATACTTTTTTCCATGTAAAACCAAGCACCAGTCCTACGTCACTTTAGCCAATTTTCTAATCCAGAATCCGGCACATGCCGGGATTTTTTTGTCACACACCACGCATCTAAAGATGATAACCCTCAAACCTTTGCTAGATATGGTTTTTATAGGTTTTTTTATCATATAGAAACTGTTTCAAAAAAATGGATAAAAACTAATATAACTAGTTGTTTTTAAATAAAAAATAAACTTTCATTGAGTTTTTCAAAAAATATCCAATTTTTTGATTTAAAGTATTGAAATATAATGTAAAAACAGCTTTCAAACCAAATTTCAGAATATATCTTAAAATTAAGGTTAATTTATTGAAATTATGAAAAAAATTGATGAAAGTTTAGATTTTTAAGTTTCAGAATTGTGTACAAAATTAATGGACTTTTTTATGCTAAAAATTTGATTTATATGATTATTGTTCTGTACATGGTGTTGTACAAAAATAAATACTATTTTGGGTCTAAGTGAATGAAAATTATAAAAAATAATATGTACACATGGATTATACAATAATGTACAAATTTTAGTGGCTAAATTAGGTATAAAGTATTGAAATTTATTAAAAATAAATATGTACAATCCAAGGTTACTTCTTATGTCAACAGAATTAGTCAATTCAGCCAATATCATCTCTTTTCCTAAGCCATGTGCCTTCTGTGAATCAACGGAACATGTACAACTTTTTGCTGGGCTGATGCTTTGCAGGAGTTGTCAGGAAAACATCAAAATTACCAATCCTGATCTGTTTGCTACCAATGATCAGATTCAACAAAAAGCCCAGGATTAACCTGGGCTTCGTATAAGG";
 
     //Check the paths sequences. Doing so will trigger the loading of node
@@ -750,15 +798,12 @@ void BandageTests::graphScope()
 {
     requireGraphLoad(testFile("test.fastg"));
 
-    QString errorTitle;
-    QString errorMessage;
     int drawnNodes;
 
     {
         g_settings->doubleMode = false;
         auto scope = graph::Scope::wholeGraph();
-        auto startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
-                                                     *g_assemblyGraph, scope);
+        REQUIRE_OK(startingNodes, graph::getStartingNodes(*g_assemblyGraph, scope));
         g_assemblyGraph->resetNodes();
         g_assemblyGraph->markNodesToDraw(scope, startingNodes);
         drawnNodes = g_assemblyGraph->getDrawnNodeCount();
@@ -768,8 +813,7 @@ void BandageTests::graphScope()
     {
         g_settings->doubleMode = true;
         auto scope = graph::Scope::wholeGraph();
-        auto startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
-                                                     *g_assemblyGraph, scope);
+        REQUIRE_OK(startingNodes, graph::getStartingNodes(*g_assemblyGraph, scope));
 
         g_assemblyGraph->resetNodes();
         g_assemblyGraph->markNodesToDraw(scope, startingNodes);
@@ -780,8 +824,7 @@ void BandageTests::graphScope()
     {
         g_settings->doubleMode = false;
         auto scope = graph::Scope::aroundNodes("1");
-        auto startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
-                                                     *g_assemblyGraph, scope);
+        REQUIRE_OK(startingNodes, graph::getStartingNodes(*g_assemblyGraph, scope));
         g_assemblyGraph->resetNodes();
         g_assemblyGraph->markNodesToDraw(scope, startingNodes);
         drawnNodes = g_assemblyGraph->getDrawnNodeCount();
@@ -791,8 +834,7 @@ void BandageTests::graphScope()
     {
         g_settings->doubleMode = true;
         auto scope = graph::Scope::aroundNodes("1");
-        auto startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
-                                                     *g_assemblyGraph, scope);
+        REQUIRE_OK(startingNodes, graph::getStartingNodes(*g_assemblyGraph, scope));
         g_assemblyGraph->resetNodes();
         g_assemblyGraph->markNodesToDraw(scope, startingNodes);
         drawnNodes = g_assemblyGraph->getDrawnNodeCount();
@@ -801,9 +843,7 @@ void BandageTests::graphScope()
     {
         g_settings->doubleMode = true;
         auto scope = graph::Scope::aroundNodes("1+");
-        auto startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
-                                                     *g_assemblyGraph,
-                                                     scope);
+        REQUIRE_OK(startingNodes, graph::getStartingNodes(*g_assemblyGraph, scope));
         g_assemblyGraph->resetNodes();
         g_assemblyGraph->markNodesToDraw(scope, startingNodes);
         drawnNodes = g_assemblyGraph->getDrawnNodeCount();
@@ -813,8 +853,7 @@ void BandageTests::graphScope()
     {
         g_settings->doubleMode = false;
         auto scope = graph::Scope::aroundNodes("1", 1);
-        auto startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
-                                                     *g_assemblyGraph, scope);
+        REQUIRE_OK(startingNodes, graph::getStartingNodes(*g_assemblyGraph, scope));
         g_assemblyGraph->resetNodes();
         g_assemblyGraph->markNodesToDraw(scope, startingNodes);
         drawnNodes = g_assemblyGraph->getDrawnNodeCount();
@@ -824,8 +863,7 @@ void BandageTests::graphScope()
     {
         g_settings->doubleMode = false;
         auto scope = graph::Scope::aroundNodes("1", 2);
-        auto startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
-                                                     *g_assemblyGraph, scope);
+        REQUIRE_OK(startingNodes, graph::getStartingNodes(*g_assemblyGraph, scope));
         g_assemblyGraph->resetNodes();
         g_assemblyGraph->markNodesToDraw(scope, startingNodes);
         drawnNodes = g_assemblyGraph->getDrawnNodeCount();
@@ -835,8 +873,7 @@ void BandageTests::graphScope()
     {
         g_settings->doubleMode = false;
         auto scope = graph::Scope::depthRange(0.0, 211.0);
-        auto startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
-                                                     *g_assemblyGraph, scope);
+        REQUIRE_OK(startingNodes, graph::getStartingNodes(*g_assemblyGraph, scope));
         g_assemblyGraph->resetNodes();
         g_assemblyGraph->markNodesToDraw(scope, startingNodes);
         drawnNodes = g_assemblyGraph->getDrawnNodeCount();
@@ -847,9 +884,7 @@ void BandageTests::graphScope()
         g_settings->nodeDistance = 10; // this should be ignored everywhere
         g_settings->doubleMode = false;
         auto scope = graph::Scope::depthRange(0.0, 211.0);
-        auto startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
-                                                     *g_assemblyGraph, scope
-        );
+        REQUIRE_OK(startingNodes, graph::getStartingNodes(*g_assemblyGraph, scope));
         g_assemblyGraph->resetNodes();
         g_assemblyGraph->markNodesToDraw(scope, startingNodes);
         drawnNodes = g_assemblyGraph->getDrawnNodeCount();
@@ -859,9 +894,7 @@ void BandageTests::graphScope()
     {
         g_settings->doubleMode = false;
         auto scope = graph::Scope::depthRange(211.0, 1000.0);
-        auto startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
-                                                     *g_assemblyGraph,
-                                                     scope);
+        REQUIRE_OK(startingNodes, graph::getStartingNodes(*g_assemblyGraph, scope));
         g_assemblyGraph->resetNodes();
         g_assemblyGraph->markNodesToDraw(scope, startingNodes);
         drawnNodes = g_assemblyGraph->getDrawnNodeCount();
@@ -871,9 +904,7 @@ void BandageTests::graphScope()
     {
         g_settings->doubleMode = false;
         auto scope = graph::Scope::depthRange(40.0, 211.0);
-        auto startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
-                                                     *g_assemblyGraph, scope
-        );
+        REQUIRE_OK(startingNodes, graph::getStartingNodes(*g_assemblyGraph, scope));
         g_assemblyGraph->resetNodes();
         g_assemblyGraph->markNodesToDraw(scope, startingNodes);
         drawnNodes = g_assemblyGraph->getDrawnNodeCount();
@@ -888,9 +919,7 @@ void BandageTests::graphScope()
 
         g_settings->doubleMode = false;
         auto scope = graph::Scope::aroundHits(g_graphSearch->queries(), "all");
-        auto startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
-                                                     *g_assemblyGraph,
-                                                     scope);
+        REQUIRE_OK(startingNodes, graph::getStartingNodes(*g_assemblyGraph, scope));
         g_assemblyGraph->resetNodes();
         g_assemblyGraph->markNodesToDraw(scope, startingNodes);
         drawnNodes = g_assemblyGraph->getDrawnNodeCount();
@@ -900,9 +929,7 @@ void BandageTests::graphScope()
     {
         g_settings->doubleMode = false;
         auto scope = graph::Scope::aroundHits(g_graphSearch->queries(), "all", 1);
-        auto startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
-                                                     *g_assemblyGraph,
-                                                     scope);
+        REQUIRE_OK(startingNodes, graph::getStartingNodes(*g_assemblyGraph, scope));
         g_assemblyGraph->resetNodes();
         g_assemblyGraph->markNodesToDraw(scope, startingNodes);
         drawnNodes = g_assemblyGraph->getDrawnNodeCount();
@@ -912,9 +939,7 @@ void BandageTests::graphScope()
     {
         g_settings->doubleMode = false;
         auto scope = graph::Scope::aroundHits(g_graphSearch->queries(), "all", 2);
-        auto startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
-                                                     *g_assemblyGraph,
-                                                     scope);
+        REQUIRE_OK(startingNodes, graph::getStartingNodes(*g_assemblyGraph, scope));
         g_assemblyGraph->resetNodes();
         g_assemblyGraph->markNodesToDraw(scope, startingNodes);
         drawnNodes = g_assemblyGraph->getDrawnNodeCount();
@@ -935,86 +960,78 @@ void BandageTests::graphScopeComponent() {
 
     QString errorTitle;
     QString errorMessage;
-    int drawnNodes;
-
-    auto draw = [&](const graph::Scope &scope) {
-        errorTitle.clear();
-        errorMessage.clear();
-        auto startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
-                                                     *g_assemblyGraph, scope);
-        g_assemblyGraph->resetNodes();
-        g_assemblyGraph->markNodesToDraw(scope, startingNodes);
-        return g_assemblyGraph->getDrawnNodeCount();
-    };
 
     {
         g_settings->doubleMode = false;
-        QCOMPARE(draw(graph::Scope::wholeGraph()), 6);
+        EXPECT_DRAWN(graph::Scope::wholeGraph(), 6);
     }
     {
         g_settings->doubleMode = true;
-        QCOMPARE(draw(graph::Scope::wholeGraph()), 12);
+        EXPECT_DRAWN(graph::Scope::wholeGraph(), 12);
     }
 
     {
         g_settings->doubleMode = false;
-        QCOMPARE(draw(graph::Scope::aroundComponent("a1")), 3);
-        QVERIFY(errorMessage.isEmpty());
+        EXPECT_DRAWN(graph::Scope::aroundComponent("a1"), 3);
     }
     {
         g_settings->doubleMode = true;
-        QCOMPARE(draw(graph::Scope::aroundComponent("a1")), 6);
+        EXPECT_DRAWN(graph::Scope::aroundComponent("a1"), 6);
     }
     {
         g_settings->doubleMode = false;
-        QCOMPARE(draw(graph::Scope::aroundComponent("a1,b1")), 5);
+        EXPECT_DRAWN(graph::Scope::aroundComponent("a1,b1"), 5);
     }
     {
         g_settings->doubleMode = false;
-        QCOMPARE(draw(graph::Scope::aroundComponent("c1")), 1);
+        EXPECT_DRAWN(graph::Scope::aroundComponent("c1"), 1);
     }
     {
         g_settings->doubleMode = true;
-        QCOMPARE(draw(graph::Scope::aroundComponent("c1")), 2);
+        EXPECT_DRAWN(graph::Scope::aroundComponent("c1"), 2);
     }
     {
         g_settings->doubleMode = false;
-        QCOMPARE(draw(graph::Scope::aroundComponent({}, "PATH_A")), 3);
+        EXPECT_DRAWN(graph::Scope::aroundComponent({}, "PATH_A"), 3);
     }
     {
         g_settings->doubleMode = false;
-        QCOMPARE(draw(graph::Scope::aroundComponent({}, "PATH_A,PATH_B")), 5);
+        EXPECT_DRAWN(graph::Scope::aroundComponent({}, "PATH_A,PATH_B"), 5);
     }
     {
         g_settings->doubleMode = false;
-        QCOMPARE(draw(graph::Scope::aroundComponent({}, {}, "WALK_A")), 3);
+        EXPECT_DRAWN(graph::Scope::aroundComponent({}, {}, "WALK_A"), 3);
     }
     {
         g_settings->doubleMode = false;
-        QCOMPARE(draw(graph::Scope::aroundComponent({}, "PATH_A", "WALK_B")), 5);
+        EXPECT_DRAWN(graph::Scope::aroundComponent({}, "PATH_A", "WALK_B"), 5);
     }
     {
         g_settings->nodeDistance = 10;
         g_settings->doubleMode = false;
-        QCOMPARE(draw(graph::Scope::aroundComponent("a1")), 3);
+        EXPECT_DRAWN(graph::Scope::aroundComponent("a1"), 3);
     }
     {
         g_settings->doubleMode = false;
-        auto startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
-                                                     *g_assemblyGraph,
+        auto startingNodes = graph::getStartingNodes(*g_assemblyGraph,
                                                      graph::Scope::aroundComponent({}));
+        QVERIFY(!startingNodes);
+        bandage::handleAllErrors(startingNodes.takeError(), [&](const bandage::TextError &err) {
+            errorTitle = QString::fromStdString(err.title());
+            errorMessage = QString::fromStdString(err.text());
+        });
         QVERIFY(!errorMessage.isEmpty());
-        QVERIFY(startingNodes.empty());
     }
     {
-        errorTitle.clear();
-        errorMessage.clear();
-        auto startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
-                                                     *g_assemblyGraph,
+        auto startingNodes = graph::getStartingNodes(*g_assemblyGraph,
                                                      graph::Scope::aroundComponent({}, "NO_SUCH_PATH"));
-        QVERIFY(!errorMessage.isEmpty());
+        QVERIFY(!startingNodes);
+        bandage::handleAllErrors(startingNodes.takeError(), [&](const bandage::TextError &err) {
+            errorTitle = QString::fromStdString(err.title());
+            errorMessage = QString::fromStdString(err.text());
+        });
         QCOMPARE(errorTitle, QString("Invalid path"));
-        QVERIFY(startingNodes.empty());
+        QCOMPARE(errorMessage, QString("No path with such name is loaded: NO_SUCH_PATH"));
     }
 }
 
@@ -1022,15 +1039,10 @@ void BandageTests::graphScopeComponent() {
 void BandageTests::graphLayout() {
     requireGraphLoad(testFile("test.fastg"));
 
-    QString errorTitle;
-    QString errorMessage;
-
     {
         g_settings->doubleMode = false;
         auto scope = graph::Scope::wholeGraph();
-        auto startingNodes =
-                graph::getStartingNodes(&errorTitle, &errorMessage,
-                                        *g_assemblyGraph, scope);
+        REQUIRE_OK(startingNodes, graph::getStartingNodes(*g_assemblyGraph, scope));
         g_assemblyGraph->resetNodes();
         g_assemblyGraph->markNodesToDraw(scope, startingNodes);
         QCOMPARE(g_assemblyGraph->getDrawnNodeCount(), 44);
@@ -1045,9 +1057,7 @@ void BandageTests::graphLayout() {
     {
         g_settings->doubleMode = true;
         auto scope = graph::Scope::wholeGraph();
-        auto startingNodes =
-                graph::getStartingNodes(&errorTitle, &errorMessage,
-                                        *g_assemblyGraph, scope);
+        REQUIRE_OK(startingNodes, graph::getStartingNodes(*g_assemblyGraph, scope));
         g_assemblyGraph->resetNodes();
         g_assemblyGraph->markNodesToDraw(scope, startingNodes);
         QCOMPARE(g_assemblyGraph->getDrawnNodeCount(), 88);
@@ -1580,9 +1590,7 @@ void BandageTests::graphEdits()
 
     //Get the path sequence now to compare to the merged node sequence at the
     //end.
-    QString pathStringFailure;
-    Path path = Path::makeFromString("6+, 26+, 23+, 26+, 24+", *g_assemblyGraph, false, &pathStringFailure);
-    QVERIFY2(pathStringFailure.isEmpty(), qPrintable(pathStringFailure));
+    REQUIRE_OK(path, Path::makeFromString("6+, 26+, 23+, 26+, 24+", *g_assemblyGraph, false));
     QByteArray pathSequence = path.getPathSequence();
 
     g_assemblyGraph->duplicateNodePair(g_assemblyGraph->m_deBruijnGraphNodes["26+"], 0);
@@ -1626,12 +1634,8 @@ void BandageTests::fastgToGfa()
     long long fastgTotalLength = g_assemblyGraph->m_totalLength;
     long long fastgShortestContig = g_assemblyGraph->m_shortestContig;
     long long fastgLongestContig = g_assemblyGraph->m_longestContig;
-
-    QString pathStringFailure;
-    Path fastgTestPath1 = Path::makeFromString("24+, 14+, 39-, 43-, 42-, 2-, 4+, 33+, 35-, 31-, 44-, 27+, 9-, 28-, 44+, 31+, 36+", *g_assemblyGraph, false, &pathStringFailure);
-    QVERIFY2(pathStringFailure.isEmpty(), qPrintable(pathStringFailure));
-    Path fastgTestPath2 = Path::makeFromString("16+, 7+, 13+, 37+, 41-, 40-, 42+, 43+, 39+, 14-, 22-, 20+, 7-, 25-, 32-, 38+, 3-", *g_assemblyGraph, false, &pathStringFailure);
-    QVERIFY2(pathStringFailure.isEmpty(), qPrintable(pathStringFailure));
+    REQUIRE_OK(fastgTestPath1, Path::makeFromString("24+, 14+, 39-, 43-, 42-, 2-, 4+, 33+, 35-, 31-, 44-, 27+, 9-, 28-, 44+, 31+, 36+", *g_assemblyGraph, false));
+    REQUIRE_OK(fastgTestPath2, Path::makeFromString("16+, 7+, 13+, 37+, 41-, 40-, 42+, 43+, 39+, 14-, 22-, 20+, 7-, 25-, 32-, 38+, 3-", *g_assemblyGraph, false));
     QByteArray fastgTestPath1Sequence = fastgTestPath1.getPathSequence();
     QByteArray fastgTestPath2Sequence = fastgTestPath2.getPathSequence();
 
@@ -1645,10 +1649,8 @@ void BandageTests::fastgToGfa()
     long long gfaShortestContig = g_assemblyGraph->m_shortestContig;
     long long gfaLongestContig = g_assemblyGraph->m_longestContig;
 
-    Path gfaTestPath1 = Path::makeFromString("24+, 14+, 39-, 43-, 42-, 2-, 4+, 33+, 35-, 31-, 44-, 27+, 9-, 28-, 44+, 31+, 36+", *g_assemblyGraph, false, &pathStringFailure);
-    QVERIFY2(pathStringFailure.isEmpty(), qPrintable(pathStringFailure));
-    Path gfaTestPath2 = Path::makeFromString("16+, 7+, 13+, 37+, 41-, 40-, 42+, 43+, 39+, 14-, 22-, 20+, 7-, 25-, 32-, 38+, 3-", *g_assemblyGraph, false, &pathStringFailure);
-    QVERIFY2(pathStringFailure.isEmpty(), qPrintable(pathStringFailure));
+    REQUIRE_OK(gfaTestPath1, Path::makeFromString("24+, 14+, 39-, 43-, 42-, 2-, 4+, 33+, 35-, 31-, 44-, 27+, 9-, 28-, 44+, 31+, 36+", *g_assemblyGraph, false));
+    REQUIRE_OK(gfaTestPath2, Path::makeFromString("16+, 7+, 13+, 37+, 41-, 40-, 42+, 43+, 39+, 14-, 22-, 20+, 7-, 25-, 32-, 38+, 3-", *g_assemblyGraph, false));
     QByteArray gfaTestPath1Sequence = gfaTestPath1.getPathSequence();
     QByteArray gfaTestPath2Sequence = gfaTestPath2.getPathSequence();
 
@@ -1680,9 +1682,7 @@ void BandageTests::mergeNodesOnGfa()
     DeBruijnNode * node282Plus = g_assemblyGraph->m_deBruijnGraphNodes["282+"];
 
     //Create a path before merging the nodes.
-    QString pathStringFailure;
-    Path testPath1 = Path::makeFromString("6+, 280+, 232-, 333+, 289+, 283+", *g_assemblyGraph, true, &pathStringFailure);
-    QVERIFY2(pathStringFailure.isEmpty(), qPrintable(pathStringFailure));
+    REQUIRE_OK(testPath1, Path::makeFromString("6+, 280+, 232-, 333+, 289+, 283+", *g_assemblyGraph, true));
     QByteArray path1Sequence = testPath1.getPathSequence();
 
     int path1Length = testPath1.getLength();
@@ -1713,8 +1713,7 @@ void BandageTests::mergeNodesOnGfa()
 
     //If we make a circular path with this node, its length should be equal to
     //the length of the path made before.
-    Path testPath2 = Path::makeFromString(QString::fromStdString(lastNode->getName()), *g_assemblyGraph, true, &pathStringFailure);
-    QVERIFY2(pathStringFailure.isEmpty(), qPrintable(pathStringFailure));
+    REQUIRE_OK(testPath2, Path::makeFromString(QString::fromStdString(lastNode->getName()), *g_assemblyGraph, true));
     QCOMPARE(path1Length, testPath2.getLength());
 
     //The sequence of this second path should also match the sequence of the
@@ -2304,15 +2303,16 @@ static void countSceneItems(BandageGraphicsScene &scene, int &nodes, int &edges)
     }
 }
 
-static BandageGraphicsScene *drawCorners(bool doubleMode) {
+static BandageGraphicsScene *drawCorners(bool doubleMode, std::string *error) {
     g_settings->doubleMode = doubleMode;
-    QString errorTitle;
-    QString errorMessage;
     auto scope = graph::Scope::wholeGraph();
-    auto startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
-                                                 *g_assemblyGraph, scope);
+    auto startingNodes = graph::getStartingNodes(*g_assemblyGraph, scope);
+    if (!startingNodes) {
+        *error = bandage::toString(startingNodes.takeError());
+        return nullptr;
+    }
     g_assemblyGraph->resetNodes();
-    g_assemblyGraph->markNodesToDraw(scope, startingNodes);
+    g_assemblyGraph->markNodesToDraw(scope, *startingNodes);
     auto layout = GraphLayoutWorker(g_settings->graphLayoutQuality,
                                     g_settings->linearLayout,
                                     g_settings->componentSeparation)
@@ -2331,7 +2331,10 @@ void BandageTests::drawEdgeDirections()
     QCOMPARE(g_assemblyGraph->m_nodeCount, 4);
     QCOMPARE(g_assemblyGraph->m_edgeCount, 6);
 
-    QScopedPointer<BandageGraphicsScene> single(drawCorners(false));
+    std::string cornerError;
+    QScopedPointer<BandageGraphicsScene> single(drawCorners(false, &cornerError));
+    if (!cornerError.empty())
+        QFAIL(cornerError.c_str());
     int nodes = 0;
     int edges = 0;
     countSceneItems(*single, nodes, edges);
@@ -2351,7 +2354,10 @@ void BandageTests::drawEdgeDirections()
             QVERIFY(!edgeItem->path().isEmpty());
     }
 
-    QScopedPointer<BandageGraphicsScene> doubled(drawCorners(true));
+    cornerError.clear();
+    QScopedPointer<BandageGraphicsScene> doubled(drawCorners(true, &cornerError));
+    if (!cornerError.empty())
+        QFAIL(cornerError.c_str());
     countSceneItems(*doubled, nodes, edges);
     QCOMPARE(nodes, 5);
     QCOMPARE(edges, 10);
@@ -2408,7 +2414,10 @@ void BandageTests::drawEdgeDirections()
     countSceneItems(*doubled, nodes, edges);
     QCOMPARE(edges, 6);
 
-    doubled.reset(drawCorners(true));
+    cornerError.clear();
+    doubled.reset(drawCorners(true, &cornerError));
+    if (!cornerError.empty())
+        QFAIL(cornerError.c_str());
     BandageGraphicsScene::removeGraphicsItemNodes(hideA, true);
     QVERIFY(selfLoop->getGraphicsItemEdge() == nullptr);
     QVERIFY(selfLoopReverse->getGraphicsItemEdge() == nullptr);
@@ -2436,11 +2445,16 @@ static bool writeTextFile(const QString &path, const QByteArray &contents) {
 static int drawScope(const graph::Scope &scope, QString &errorTitle, QString &errorMessage) {
     errorTitle.clear();
     errorMessage.clear();
-    auto startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
-                                                 *g_assemblyGraph, scope);
+    auto startingNodes = graph::getStartingNodes(*g_assemblyGraph, scope);
     g_assemblyGraph->resetNodes();
-    if (errorMessage.isEmpty())
-        g_assemblyGraph->markNodesToDraw(scope, startingNodes);
+    if (!startingNodes) {
+        bandage::handleAllErrors(startingNodes.takeError(), [&](const bandage::TextError &err) {
+            errorTitle = QString::fromStdString(err.title());
+            errorMessage = QString::fromStdString(err.text());
+        });
+    } else {
+        g_assemblyGraph->markNodesToDraw(scope, *startingNodes);
+    }
     return g_assemblyGraph->getDrawnNodeCount();
 }
 
@@ -2496,6 +2510,10 @@ void BandageTests::loadWalks() {
     QVERIFY(QString::fromStdString(bandage::toString(badOrientationResult.takeError()))
                     .contains("invalid walk string"));
     QVERIFY(g_assemblyGraph->m_deBruijnGraphNodes.empty());
+    QCOMPARE(g_assemblyGraph->m_nodeCount, 0);
+    QCOMPARE(g_assemblyGraph->m_edgeCount, 0);
+    QVERIFY(g_assemblyGraph->m_filename.isEmpty());
+    QCOMPARE(g_assemblyGraph->m_sequencesLoadedFromFasta, NOT_READY);
 
     const QString missingNode = tempFile("walk-missing-node.gfa");
     QVERIFY(writeTextFile(missingNode,
@@ -2506,6 +2524,10 @@ void BandageTests::loadWalks() {
     QVERIFY(QString::fromStdString(bandage::toString(missingNodeResult.takeError()))
                     .contains("invalid node"));
     QVERIFY(g_assemblyGraph->m_deBruijnGraphNodes.empty());
+    QCOMPARE(g_assemblyGraph->m_nodeCount, 0);
+    QCOMPARE(g_assemblyGraph->m_edgeCount, 0);
+    QVERIFY(g_assemblyGraph->m_filename.isEmpty());
+    QCOMPARE(g_assemblyGraph->m_sequencesLoadedFromFasta, NOT_READY);
 }
 
 void BandageTests::graphScopePathsWalksAndErrors() {
@@ -2588,12 +2610,9 @@ void BandageTests::graphScopePathsWalksAndErrors() {
 
 void BandageTests::layoutRoundTrip() {
     requireGraphLoad(testFile("test.gfa"));
-    QString errorTitle;
-    QString errorMessage;
     g_settings->doubleMode = false;
     auto scope = graph::Scope::wholeGraph();
-    auto startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
-                                                 *g_assemblyGraph, scope);
+    REQUIRE_OK(startingNodes, graph::getStartingNodes(*g_assemblyGraph, scope));
     g_assemblyGraph->resetNodes();
     g_assemblyGraph->markNodesToDraw(scope, startingNodes);
     QCOMPARE(g_assemblyGraph->getDrawnNodeCount(), 17);
@@ -2624,9 +2643,11 @@ void BandageTests::loadBedAnnotations() {
     const QString bedPath = tempFile("features.bed");
     QVERIFY(writeTextFile(bedPath,
                           "1\t0\t10\tshort\t0\t+\t2\t8\t255,0,0\t2\t3,4\t0,5\n"
+                          "2\t0\t4\tplain\t0\t+\t0\t0\n"
+                          "3\t5\t5\tempty\t0\t+\n"
                           "missing\t0\t4\tgone\t0\t+\n"));
     const auto lines = bed::load(bedPath.toStdString());
-    QCOMPARE(lines.size(), 2u);
+    QCOMPARE(lines.size(), 4u);
 
     auto &group = g_annotationsManager->createAnnotationGroup(
             g_settings->bedAnnotationGroupName);
@@ -2662,7 +2683,32 @@ void BandageTests::loadBedAnnotations() {
     QCOMPARE(blocks->blocks()[0].thickEnd(), 3);
     QCOMPARE(blocks->blocks()[1].thickStart(), 6);
     QCOMPARE(blocks->blocks()[1].thickEnd(), 9);
-    QCOMPARE(group.getNodesWithAnnotations(true).size(), 1u);
+
+    auto node2 = g_assemblyGraph->m_deBruijnGraphNodes["2+"];
+    const auto &plain = group.getAnnotations(node2);
+    QCOMPARE(plain.size(), 1u);
+    QCOMPARE(plain.front()->start(), 1);
+    QCOMPARE(plain.front()->end(), 4);
+    QCOMPARE(plain.front()->getViews().size(), annotations.front()->getViews().size());
+    for (size_t i = 0; i < annotations.front()->getViews().size(); ++i)
+        QCOMPARE(plain.front()->getViews()[i]->getTypeName(),
+                 annotations.front()->getViews()[i]->getTypeName());
+    auto *plainThick = dynamic_cast<BedThickView *>(plain.front()->getViews()[1].get());
+    auto *plainBlocks = dynamic_cast<BedBlockView *>(plain.front()->getViews()[2].get());
+    QVERIFY(plainThick != nullptr);
+    QVERIFY(plainBlocks != nullptr);
+    QVERIFY(plainThick->thickEnd() < plainThick->thickStart());
+    QVERIFY(plainBlocks->blocks().empty());
+
+    auto node3 = g_assemblyGraph->m_deBruijnGraphNodes["3+"];
+    const auto &emptyInterval = group.getAnnotations(node3);
+    QCOMPARE(emptyInterval.size(), 1u);
+    QVERIFY(emptyInterval.front()->end() < emptyInterval.front()->start());
+    QCOMPARE(emptyInterval.front()->getViews().size(), annotations.front()->getViews().size());
+    for (size_t i = 0; i < annotations.front()->getViews().size(); ++i)
+        QCOMPARE(emptyInterval.front()->getViews()[i]->getTypeName(),
+                 annotations.front()->getViews()[i]->getTypeName());
+    QCOMPARE(group.getNodesWithAnnotations(true).size(), 3u);
 }
 
 void BandageTests::gfaTagsAndCsvColours() {
@@ -2763,12 +2809,30 @@ void BandageTests::gfaTagsAndCsvColours() {
             coloured = edge;
     }
     QVERIFY(coloured != nullptr);
-    auto *colouredReverse = coloured->getReverseComplement();
+    const auto edgeCount = g_assemblyGraph->m_deBruijnGraphEdges.size();
+    const auto edgeColourCount = g_assemblyGraph->m_edgeColors.size();
+    const auto edgeStyleCount = g_assemblyGraph->m_edgeStyles.size();
+    const auto edgeTagCount = g_assemblyGraph->m_edgeTags.size();
     g_assemblyGraph->deleteEdges({coloured});
-    QVERIFY(g_assemblyGraph->m_edgeColors.find(coloured) == g_assemblyGraph->m_edgeColors.end());
-    QVERIFY(g_assemblyGraph->m_edgeStyles.find(coloured) == g_assemblyGraph->m_edgeStyles.end());
-    QVERIFY(g_assemblyGraph->m_edgeTags.find(coloured) == g_assemblyGraph->m_edgeTags.end());
-    QVERIFY(g_assemblyGraph->m_edgeColors.find(colouredReverse) == g_assemblyGraph->m_edgeColors.end());
+    QCOMPARE(g_assemblyGraph->m_deBruijnGraphEdges.size(), edgeCount - 2);
+    QVERIFY(g_assemblyGraph->m_edgeColors.size() < edgeColourCount);
+    QVERIFY(g_assemblyGraph->m_edgeStyles.size() < edgeStyleCount);
+    QVERIFY(g_assemblyGraph->m_edgeTags.size() < edgeTagCount);
+
+    g_assemblyGraph->cleanUp();
+    auto *self = new DeBruijnNode("s", true, 1.0f, Sequence("ATAT"));
+    self->setReverseComplement(self);
+    g_assemblyGraph->m_deBruijnGraphNodes["s+"] = self;
+    g_assemblyGraph->m_deBruijnGraphNodes["s-"] = self;
+    g_assemblyGraph->setCustomColour(self, QColor("#00ff00"));
+    g_assemblyGraph->setCustomLabel(self, "self");
+    QCOMPARE(g_assemblyGraph->m_deBruijnGraphNodes.size(), 2);
+    QCOMPARE(g_assemblyGraph->m_nodeColors.size(), 1);
+    QCOMPARE(g_assemblyGraph->m_nodeLabels.size(), 1);
+    g_assemblyGraph->deleteNodes({self});
+    QCOMPARE(g_assemblyGraph->m_deBruijnGraphNodes.size(), 0);
+    QCOMPARE(g_assemblyGraph->m_nodeColors.size(), 0);
+    QCOMPARE(g_assemblyGraph->m_nodeLabels.size(), 0);
 }
 
 void BandageTests::nodeColorers() {
@@ -3183,6 +3247,18 @@ void BandageTests::gfaJumpsOverlapsAndFastaCircularity() {
     QVERIFY(overlapText.contains("\t*"));
     QVERIFY(overlapText.contains("12M"));
     QVERIFY(!overlapText.contains("0M"));
+    requireGraphLoad(writtenOverlaps);
+    bool reloadedUnknown = false;
+    bool reloadedTwelve = false;
+    for (auto *edge : g_assemblyGraph->m_deBruijnGraphEdges) {
+        if (edge->getOverlapType() == UNKNOWN_OVERLAP && edge->getOverlap() == 0)
+            reloadedUnknown = true;
+        if (edge->getOverlapType() == EXACT_OVERLAP && edge->getOverlap() == 12)
+            reloadedTwelve = true;
+        QVERIFY(!(edge->getOverlapType() == EXACT_OVERLAP && edge->getOverlap() == 0));
+    }
+    QVERIFY(reloadedUnknown);
+    QVERIFY(reloadedTwelve);
 
     const QString fastaPath = tempFile("circular.fa");
     QVERIFY(writeTextFile(fastaPath,

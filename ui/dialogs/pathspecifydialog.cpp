@@ -79,32 +79,31 @@ void PathSpecifyDialog::checkPathValidity()
         return;
     }
 
-    //Create a path from the user-supplied string.
-    QString pathStringFailure;
     QString pathText = ui->pathTextEdit->toPlainText().simplified();
-    g_memory->userSpecifiedPath = Path::makeFromString(pathText,
-                                                       *g_assemblyGraph,
-                                                       ui->circularPathCheckBox->isChecked(),
-                                                       &pathStringFailure);
-
-    //If the Path turned out to be empty, that means that makeFromString failed.
-    if (g_memory->userSpecifiedPath.isEmpty())
-    {
-        if (pathText == "")
-            ui->validPathLabel->setText("No path specified");
-        else
-            ui->validPathLabel->setText("Invalid path: " + pathStringFailure);
-
+    if (pathText.isEmpty()) {
+        ui->validPathLabel->setText("No path specified");
         setPathValidityUiElements(false);
+        return;
     }
 
-    //If the Path isn't empty, then we have succeeded!
-    else
-    {
-        int pathLength = g_memory->userSpecifiedPath.getLength();
-        ui->validPathLabel->setText("Valid path: " + formatIntForDisplay(pathLength) + " bp");
-        setPathValidityUiElements(true);
+    auto path = Path::makeFromString(pathText, *g_assemblyGraph,
+                                     ui->circularPathCheckBox->isChecked());
+    if (!path) {
+        bandage::reportError(path.takeError(),
+                             [&](const bandage::TextError &err) {
+                                 ui->validPathLabel->setText(QString::fromStdString(err.message()));
+                             },
+                             [&](const std::string &message) {
+                                 ui->validPathLabel->setText(QString::fromStdString(message));
+                             });
+        setPathValidityUiElements(false);
+        return;
     }
+
+    g_memory->userSpecifiedPath = std::move(*path);
+    int pathLength = g_memory->userSpecifiedPath.getLength();
+    ui->validPathLabel->setText("Valid path: " + formatIntForDisplay(pathLength) + " bp");
+    setPathValidityUiElements(true);
 }
 
 

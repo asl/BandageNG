@@ -252,6 +252,7 @@ check_gfa_names() {
 }
 
 test_all "$bandagepath reduce inputs/test_components.gfa tmp/component.gfa --scope aroundcomponent --nodes a1" 0 "" ""
+test_all "$bandagepath reduce inputs/test_components.gfa tmp/missing-node.gfa --scope aroundcomponent --nodes zzz" 1 "" "The following nodes are not in the graph: zzz"
 check_gfa_names tmp/component.gfa S "a1 a2 a3" "b1 b2 c1"
 check_gfa_names tmp/component.gfa P "PATH_A" "PATH_B"
 check_gfa_names tmp/component.gfa W "WALK_A" "WALK_B" 4

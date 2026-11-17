@@ -151,20 +151,29 @@ void addBedAnnotation(AnnotationGroup &group, DeBruijnNode *node, const bed::Lin
     constexpr double thickWidth = 1.3;
     constexpr double blockWidth = 1.6;
 
-    auto &annotation = group.annotationMap[node].emplace_back(
-            std::make_unique<Annotation>(bedIntervalStart(bedLine.chromStart, bedLine.chromEnd),
-                                         bedLine.chromEnd, bedLine.name));
-    annotation->addView(std::make_unique<SolidView>(mainWidth, bedLine.itemRgb.toQColor()));
-    if (bedLine.thickEnd > bedLine.thickStart) {
-        annotation->addView(std::make_unique<BedThickView>(
-                thickWidth, bedLine.itemRgb.toQColor(),
-                bedIntervalStart(bedLine.thickStart, bedLine.thickEnd), bedLine.thickEnd));
+    int64_t annotationStart = 1;
+    int64_t annotationEnd = 0;
+    if (bedLine.chromEnd > bedLine.chromStart) {
+        annotationStart = bedLine.chromStart + 1;
+        annotationEnd = bedLine.chromEnd;
     }
+    auto &annotation = group.annotationMap[node].emplace_back(
+            std::make_unique<Annotation>(annotationStart, annotationEnd, bedLine.name));
+    annotation->addView(std::make_unique<SolidView>(mainWidth, bedLine.itemRgb.toQColor()));
+
+    int64_t thickStart = 1;
+    int64_t thickEnd = 0;
+    if (bedLine.thickEnd > bedLine.thickStart) {
+        thickStart = bedIntervalStart(bedLine.thickStart, bedLine.thickEnd);
+        thickEnd = bedLine.thickEnd;
+    }
+    annotation->addView(std::make_unique<BedThickView>(
+            thickWidth, bedLine.itemRgb.toQColor(), thickStart, thickEnd));
+
     std::vector<bed::Block> blocks;
     for (const auto &block : bedLine.blocks) {
         if (block.end > block.start)
             blocks.push_back(bed::Block{bedIntervalStart(block.start, block.end), block.end});
     }
-    if (!blocks.empty())
-        annotation->addView(std::make_unique<BedBlockView>(blockWidth, bedLine.itemRgb.toQColor(), blocks));
+    annotation->addView(std::make_unique<BedBlockView>(blockWidth, bedLine.itemRgb.toQColor(), blocks));
 }

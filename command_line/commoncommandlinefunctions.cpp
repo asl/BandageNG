@@ -20,6 +20,7 @@
 
 #include "graph/assemblygraph.h"
 #include "graph/io.h"
+#include "program/error.h"
 #include "program/globals.h"
 #include "program/llvm.h"
 #include "program/memory.h"
@@ -29,6 +30,16 @@
 #include <QApplication>
 #include <QRegularExpression>
 
+
+void writeTextError(QTextStream &out, bandage::Error err) {
+    bandage::reportError(std::move(err),
+                         [&](const bandage::TextError &textError) {
+                             out << QString::fromStdString(textError.text()) << Qt::endl;
+                         },
+                         [&](const std::string &message) {
+                             out << QString::fromStdString(message) << Qt::endl;
+                         });
+}
 
 bool loadAssemblyGraph(const QString &filename, QTextStream &err) {
     auto loaded = g_assemblyGraph->loadGraphFromFile(filename);

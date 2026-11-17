@@ -35,6 +35,7 @@
 #include <QString>
 #include <QPair>
 #include <QObject>
+#include <string>
 #include <vector>
 
 class DeBruijnNode;
@@ -142,8 +143,8 @@ public:
     bool loadCSV(const QString& filename, QStringList * columns, QString * errormsg, bool * coloursLoaded);
 
     static bool checkIfStringHasNodes(QString nodesString);
-    static QString generateNodesNotFoundErrorMessage(const std::vector<QString> &nodesNotInGraph,
-                                                     bool exact);
+    static std::string generateNodesNotFoundErrorMessage(const std::vector<QString> &nodesNotInGraph,
+                                                         bool exact);
     std::pair<DeBruijnNode*, DeBruijnNode*> getNodes(const QString &nodeName) const;
 
     std::vector<DeBruijnNode *> getNodesFromStringList(QString nodeNamesString,

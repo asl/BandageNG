@@ -79,7 +79,8 @@ void WalkListDialog::refineByNode() {
     if (!nodesNotInGraph.empty()) {
         QMessageBox::information(this, "Nodes not found",
                                  // FIXME: This is crazy!
-                                 AssemblyGraph::generateNodesNotFoundErrorMessage(nodesNotInGraph, true));
+                                 QString::fromStdString(
+                                         AssemblyGraph::generateNodesNotFoundErrorMessage(nodesNotInGraph, true)));
         return;
     }
 
