@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "program/error.h"
+
 #include <QString>
 #include <vector>
 #include <variant>
@@ -159,7 +161,9 @@ namespace graph {
                 const QString &pathName, unsigned distance = 0,
                 const QString &walkName = {});
 
-    std::vector<DeBruijnNode *>
-    getStartingNodes(QString *errorTitle, QString *errorMessage,
-                     const AssemblyGraph &graph, const Scope &graphScope = Scope::wholeGraph());
+    // The list may be empty: the whole-graph scope has no seeds. A failure is a
+    // bandage::TextError with a title and a message.
+    bandage::Expected<std::vector<DeBruijnNode *>>
+    getStartingNodes(const AssemblyGraph &graph,
+                     const Scope &graphScope = Scope::wholeGraph());
 }

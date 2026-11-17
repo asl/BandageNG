@@ -49,18 +49,21 @@ namespace graph {
         }
     }
 
-    std::vector<DeBruijnNode *>
-    getStartingNodes(QString *errorTitle, QString *errorMessage,
-                     const AssemblyGraph &graph, const Scope &graphScope) {
+    static bandage::Expected<std::vector<DeBruijnNode *>>
+    textError(std::string title, std::string message) {
+        return bandage::make_error<bandage::TextError>(std::move(title), std::move(message));
+    }
+
+    bandage::Expected<std::vector<DeBruijnNode *>>
+    getStartingNodes(const AssemblyGraph &graph, const Scope &graphScope) {
         switch (graphScope.graphScope()) {
             default:
-                return {};
+                return std::vector<DeBruijnNode *>{};
             case AROUND_NODE: {
                 if (AssemblyGraph::checkIfStringHasNodes(graphScope.nodeList())) {
-                    *errorTitle = "No starting nodes";
-                    *errorMessage = "Please enter at least one node when drawing the graph using the 'Around node(s)' scope. "
-                                    "Separate multiple nodes with commas.";
-                    return {};
+                    return textError("No starting nodes",
+                                     "Please enter at least one node when drawing the graph using the 'Around node(s)' scope. "
+                                     "Separate multiple nodes with commas.");
                 }
 
                 // Make sure the nodes the user typed in are actually in the graph.
@@ -70,31 +73,24 @@ namespace graph {
                                                      g_settings->startingNodesExactMatch,
                                                      &nodesNotInGraph);
                 if (!nodesNotInGraph.empty()) {
-                    *errorTitle = "Nodes not found";
-                    *errorMessage =
-                            AssemblyGraph::generateNodesNotFoundErrorMessage(nodesNotInGraph,
-                                                                             g_settings->startingNodesExactMatch);
+                    return textError("Nodes not found",
+                                     AssemblyGraph::generateNodesNotFoundErrorMessage(
+                                             nodesNotInGraph, g_settings->startingNodesExactMatch));
                 }
 
                 return nodesInGraph;
             }
             case AROUND_PATHS: {
                 auto pathIt = graph.m_deBruijnGraphPaths.find(graphScope.path().toStdString());
-                if (pathIt == graph.m_deBruijnGraphPaths.end()) {
-                    *errorTitle = "Invalid path";
-                    *errorMessage = "No path with such name is loaded";
-                    return {};
-                }
+                if (pathIt == graph.m_deBruijnGraphPaths.end())
+                    return textError("Invalid path", "No path with such name is loaded");
 
                 return pathIt->nodes();
             }
             case AROUND_WALKS: {
                 auto pathIt = graph.m_deBruijnGraphWalks.find(graphScope.walk().toStdString());
-                if (pathIt == graph.m_deBruijnGraphWalks.end()) {
-                    *errorTitle = "Invalid walk";
-                    *errorMessage = "No walk with such sequence name is loaded";
-                    return {};
-                }
+                if (pathIt == graph.m_deBruijnGraphWalks.end())
+                    return textError("Invalid walk", "No walk with such sequence name is loaded");
 
                 return pathIt->walk.nodes();
             }
@@ -104,10 +100,9 @@ namespace graph {
                 bool hasNodes = !AssemblyGraph::checkIfStringHasNodes(graphScope.componentNodes());
 
                 if (!hasNodes && pathNames.empty() && walkNames.empty()) {
-                    *errorTitle = "No starting nodes";
-                    *errorMessage = "Please enter at least one node, path or walk when drawing the graph using the "
-                                    "'Around connected component' scope. Separate multiple names with commas.";
-                    return {};
+                    return textError("No starting nodes",
+                                     "Please enter at least one node, path or walk when drawing the graph using the "
+                                     "'Around connected component' scope. Separate multiple names with commas.");
                 }
 
                 std::unordered_set<DeBruijnNode *> seen;
@@ -119,11 +114,9 @@ namespace graph {
                                                                   g_settings->startingNodesExactMatch,
                                                                   &nodesNotInGraph);
                     if (!nodesNotInGraph.empty()) {
-                        *errorTitle = "Nodes not found";
-                        *errorMessage =
-                                AssemblyGraph::generateNodesNotFoundErrorMessage(nodesNotInGraph,
-                                                                                 g_settings->startingNodesExactMatch);
-                        return {};
+                        return textError("Nodes not found",
+                                         AssemblyGraph::generateNodesNotFoundErrorMessage(
+                                                 nodesNotInGraph, g_settings->startingNodesExactMatch));
                     }
                     appendUnique(nodesInGraph, seen, fromNodes);
                 }
@@ -138,9 +131,8 @@ namespace graph {
                     appendUnique(nodesInGraph, seen, pathIt->nodes());
                 }
                 if (!missingPaths.empty()) {
-                    *errorTitle = "Invalid path";
-                    *errorMessage = "No path with such name is loaded: " + missingPaths.join(", ");
-                    return {};
+                    return textError("Invalid path",
+                                     ("No path with such name is loaded: " + missingPaths.join(", ")).toStdString());
                 }
 
                 QStringList missingWalks;
@@ -153,15 +145,13 @@ namespace graph {
                     appendUnique(nodesInGraph, seen, walkIt->walk.nodes());
                 }
                 if (!missingWalks.empty()) {
-                    *errorTitle = "Invalid walk";
-                    *errorMessage = "No walk with such sequence name is loaded: " + missingWalks.join(", ");
-                    return {};
+                    return textError("Invalid walk",
+                                     ("No walk with such sequence name is loaded: " + missingWalks.join(", ")).toStdString());
                 }
 
                 if (nodesInGraph.empty()) {
-                    *errorTitle = "No starting nodes";
-                    *errorMessage = "The specified nodes, paths and walks did not match anything in the graph.";
-                    return {};
+                    return textError("No starting nodes",
+                                     "The specified nodes, paths and walks did not match anything in the graph.");
                 }
 
                 return nodesInGraph;
@@ -171,28 +161,27 @@ namespace graph {
                 if (const auto *queries = graphScope.queries())
                     startingNodes = queries->getNodesFromHits(graphScope.queryName());
                 if (startingNodes.empty()) {
-                    *errorTitle = "No hits";
-                    *errorMessage = "To draw the graph around graph hits, you must first conduct a graph search.";
+                    return textError("No hits",
+                                     "To draw the graph around graph hits, you must first conduct a graph search.");
                 }
                 return startingNodes;
             }
             case DEPTH_RANGE: {
                 if (graphScope.minDepth() > graphScope.maxDepth()) {
-                    *errorTitle = "Invalid depth range";
-                    *errorMessage = "The maximum depth must be greater than or equal to the minimum depth.";
-                    return {};
+                    return textError("Invalid depth range",
+                                     "The maximum depth must be greater than or equal to the minimum depth.");
                 }
 
                 auto startingNodes = graph.getNodesInDepthRange(graphScope.minDepth(), graphScope.maxDepth());
                 if (startingNodes.empty()) {
-                    *errorTitle = "No nodes in range";
-                    *errorMessage = "There are no nodes with depths in the specified range.";
+                    return textError("No nodes in range",
+                                     "There are no nodes with depths in the specified range.");
                 }
                 return startingNodes;
             }
         }
 
-        return {};
+        return std::vector<DeBruijnNode *>{};
     }
 
     Scope scope(GraphScope graphScope, const QString &nodesList,

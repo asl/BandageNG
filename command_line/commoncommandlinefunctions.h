@@ -20,6 +20,7 @@
 #define COMMANDCOMMANDLINEFUNCTIONS_H
 
 #include "program/colormap.h"
+#include "program/error.h"
 
 #include <QString>
 #include <QStringList>
@@ -46,6 +47,7 @@ bool isError(const QString& text);
 void outputText(const QString& text, QTextStream * out);
 void outputText(const QStringList& text, QTextStream * out);
 bool loadAssemblyGraph(const QString &filename, QTextStream &err);
+void writeTextError(QTextStream &out, bandage::Error err);
 void getOnlineHelpMessage(QStringList * text);
 
 #endif // COMMANDCOMMANDLINEFUNCTIONS_H

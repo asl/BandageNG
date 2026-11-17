@@ -25,6 +25,9 @@
 
 void SolidView::drawFigure(QPainter &painter, GraphicsItemNode &graphicsItemNode, bool reverseComplement, int64_t start,
                            int64_t end) const {
+    if (end < start)
+        return;
+
     QPen pen;
     pen.setCapStyle(Qt::FlatCap);
     pen.setJoinStyle(Qt::BevelJoin);

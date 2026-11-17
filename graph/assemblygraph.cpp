@@ -119,6 +119,8 @@ void AssemblyGraph::cleanUp() {
     m_nodeCSVData.clear();
     m_csvHeaders.clear();
     m_depthTag.clear();
+    m_filename.clear();
+    m_sequencesLoadedFromFasta = NOT_READY;
 
     clearGraphInfo();
 }
@@ -321,6 +323,8 @@ void AssemblyGraph::determineGraphInfo()
 
 void AssemblyGraph::clearGraphInfo()
 {
+    m_nodeCount = 0;
+    m_edgeCount = 0;
     m_totalLength = 0;
     m_shortestContig = 0;
     m_longestContig = 0;
@@ -519,24 +523,31 @@ QString AssemblyGraph::getNodeNameFromString(QString string) const
         return nodeName + "+";
 }
 
+static void releaseGraphUsers() {
+    g_memory->clearGraphSpecificMemory();
+    g_settings->nodeColorer->reset();
+}
+
 bandage::Expected<GraphLoadInfo> AssemblyGraph::loadGraphFromFile(const QString& filename) {
     cleanUp();
 
     auto builder = io::AssemblyGraphBuilder::get(filename);
-    if (!builder)
+    if (!builder) {
+        releaseGraphUsers();
         return bandage::createStringError("graph format not recognised: " + filename.toStdString());
+    }
 
     builder->treatJumpsAsLinks(g_settings->jumpsAsLinks);
     if (auto E = builder->build(*this)) {
         cleanUp();
+        releaseGraphUsers();
         return std::move(E);
     }
 
     determineGraphInfo();
 
     // FIXME: get rid of this!
-    g_memory->clearGraphSpecificMemory();
-    g_settings->nodeColorer->reset();
+    releaseGraphUsers();
 
     return GraphLoadInfo{builder->hasComplexOverlaps()};
 }
@@ -628,17 +639,14 @@ bool AssemblyGraph::checkIfStringHasNodes(QString nodesString) {
     return (nodesList.empty());
 }
 
-QString AssemblyGraph::generateNodesNotFoundErrorMessage(const std::vector<QString> &nodesNotInGraph, bool exact) {
-    QString errorMessage;
-    if (exact)
-        errorMessage += "The following nodes are not in the graph:\n";
-    else
-        errorMessage += "The following queries do not match any nodes in the graph:\n";
+std::string AssemblyGraph::generateNodesNotFoundErrorMessage(const std::vector<QString> &nodesNotInGraph, bool exact) {
+    std::string errorMessage = exact ? "The following nodes are not in the graph:\n"
+                                      : "The following queries do not match any nodes in the graph:\n";
 
     for (size_t i = 0; i < nodesNotInGraph.size(); ++i) {
-        errorMessage += nodesNotInGraph[i];
-        if (i != nodesNotInGraph.size() - 1)
+        if (i != 0)
             errorMessage += ", ";
+        errorMessage += nodesNotInGraph[i].toStdString();
     }
     errorMessage += "\n";
 
@@ -918,7 +926,10 @@ void AssemblyGraph::deleteNodes(const std::vector<DeBruijnNode *> &nodes)
     // Remove the nodes from the graph.
     for (auto *node : nodesToDelete) {
         eraseNodeRecords(node);
-        m_deBruijnGraphNodes.erase(node->getName());
+        const std::string name = node->getName();
+        m_deBruijnGraphNodes.erase(name);
+        if (node->getReverseComplement() == node)
+            m_deBruijnGraphNodes.erase(getOppositeNodeName(name));
     }
 
     for (auto *node : nodesToDelete)

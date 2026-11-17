@@ -126,36 +126,33 @@ Path Path::makeFromOrderedNodes(const std::vector<DeBruijnNode *> &nodes, bool c
 
 
 
-Path Path::makeFromString(const QString& pathString, const AssemblyGraph &graph,
-                          bool circular,
-                          QString * pathStringFailure) {
+static bandage::Expected<Path> pathError(std::string sentence) {
+    return bandage::make_error<bandage::TextError>("Invalid path", std::move(sentence));
+}
+
+bandage::Expected<Path> Path::makeFromString(const QString& pathString, const AssemblyGraph &graph,
+                                             bool circular) {
     Path path;
 
     QRegularExpression re(R"(^(?:\(([0-9]+)\) ?)*((?:[^,]+[-\+], ?)*[^,]+[-\+])(?: ?\(([0-9]+)\))*$)");
     QRegularExpressionMatch match = re.match(pathString);
 
     //If the string failed to match the regex, return an empty path.
-    if (!match.hasMatch()) {
-        *pathStringFailure = "the text is not formatted correctly";
-        return path;
-    }
+    if (!match.hasMatch())
+        return pathError("the text is not formatted correctly");
 
     QString startPosString = match.captured(1);
     QString nodeListString = match.captured(2);
     QString endPosString = match.captured(3);
 
     //Circular paths cannot have start and end positions.
-    if (circular && (startPosString != "" || endPosString != "")) {
-        *pathStringFailure = "circular paths cannot contain start or end positions";
-        return path;
-    }
+    if (circular && (startPosString != "" || endPosString != ""))
+        return pathError("circular paths cannot contain start or end positions");
 
     //Make sure there is at least one proposed node name listed.
     QStringList nodeNameList = nodeListString.simplified().split(",", Qt::SkipEmptyParts);
-    if (nodeNameList.empty()) {
-        *pathStringFailure = "the text is not formatted correctly";
-        return path;
-    }
+    if (nodeNameList.empty())
+        return pathError("the text is not formatted correctly");
 
     //Find which node names are and are not actually in the graph.
     std::vector<DeBruijnNode *> nodesInGraph;
@@ -171,13 +168,13 @@ Path Path::makeFromString(const QString& pathString, const AssemblyGraph &graph,
 
     //If the path contains nodes not in the graph, we fail.
     if (!nodesNotInGraph.empty()) {
-        *pathStringFailure = "the following nodes are not in the graph: ";
+        std::string sentence = "the following nodes are not in the graph: ";
         for (int i = 0; i < nodesNotInGraph.size(); ++i) {
-            *pathStringFailure += nodesNotInGraph[i];
-            if (i != nodesNotInGraph.size() - 1)
-                *pathStringFailure += ", ";
+            if (i != 0)
+                sentence += ", ";
+            sentence += nodesNotInGraph[i].toStdString();
         }
-        return path;
+        return pathError(std::move(sentence));
     }
 
     //If the code got here, then the list at least consists of valid nodes.
@@ -187,11 +184,8 @@ Path Path::makeFromString(const QString& pathString, const AssemblyGraph &graph,
     //If the path is empty, then we don't have to worry about start/end
     //positions, and we just return it.
     if (path.isEmpty()) {
-        if (circular)
-            *pathStringFailure = "the nodes do not form a circular path";
-        else
-            *pathStringFailure = "the nodes do not form a path";
-        return path;
+        return pathError(circular ? "the nodes do not form a circular path"
+                                  : "the nodes do not form a path");
     }
 
     //If the code got here, then a path was made, and now we must check whether
@@ -202,8 +196,7 @@ Path Path::makeFromString(const QString& pathString, const AssemblyGraph &graph,
     if (startPosString.length() > 0) {
         int startPos = startPosString.toInt();
         if (startPos < 1 || startPos > firstNode->getLength()) {
-            *pathStringFailure = "starting node position not valid";
-            return {};
+            return pathError("starting node position not valid");
         }
 
         path.m_startLocation = GraphLocation(firstNode, startPos);
@@ -214,8 +207,7 @@ Path Path::makeFromString(const QString& pathString, const AssemblyGraph &graph,
     if (endPosString.length() > 0) {
         int endPos = endPosString.toInt();
         if (endPos < 1 || endPos > lastNode->getLength()) {
-            *pathStringFailure = "ending node position not valid";
-            return {};
+            return pathError("ending node position not valid");
         }
 
         path.m_endLocation = GraphLocation(lastNode, endPos);

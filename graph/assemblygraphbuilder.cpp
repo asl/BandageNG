@@ -571,7 +571,7 @@ namespace io {
                 edgePtr->setOverlapType(EXACT_OVERLAP);
             } else {
                 edgePtr->setOverlap(0);
-                edgePtr->setOverlapType(EXACT_OVERLAP);
+                edgePtr->setOverlapType(UNKNOWN_OVERLAP);
             }
             if (rcEdgePtr) {
                 rcEdgePtr->setOverlap(edgePtr->getOverlap());

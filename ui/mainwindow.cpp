@@ -1080,8 +1080,6 @@ void MainWindow::setupWalkSelectionLineEdit(QLineEdit *lineEdit) {
 
 
 void MainWindow::drawGraph() {
-    QString errorTitle;
-    QString errorMessage;
     g_settings->doubleMode = ui->doubleNodesRadioButton->isChecked();
 
     auto scope =
@@ -1094,17 +1092,23 @@ void MainWindow::drawGraph() {
                          ui->nodeDistanceSpinBox->value(),
                          ui->walkSelectionLineEdit->displayText());
 
-    auto startingNodes = graph::getStartingNodes(&errorTitle, &errorMessage,
-                                                 *g_assemblyGraph, scope);
-
-    if (!errorMessage.isEmpty()) {
-        QMessageBox::information(this, errorTitle, errorMessage);
+    auto startingNodes = graph::getStartingNodes(*g_assemblyGraph, scope);
+    if (!startingNodes) {
+        bandage::reportError(startingNodes.takeError(),
+                             [&](const bandage::TextError &err) {
+                                 QMessageBox::information(this, QString::fromStdString(err.title()),
+                                                          QString::fromStdString(err.text()));
+                             },
+                             [&](const std::string &message) {
+                                 QMessageBox::information(this, "Error",
+                                                          QString::fromStdString(message));
+                             });
         return;
     }
 
     resetScene();
     g_assemblyGraph->resetNodes();
-    g_assemblyGraph->markNodesToDraw(scope, startingNodes);
+    g_assemblyGraph->markNodesToDraw(scope, *startingNodes);
     layoutGraph();
 }
 
@@ -1832,8 +1836,10 @@ void MainWindow::doSelectNodes(const std::vector<DeBruijnNode *> &nodesToSelect,
     if (!nodesNotInGraph.empty() || !nodesNotFound.empty()) {
         QString errorMessage;
         if (!nodesNotInGraph.empty())
-            errorMessage += g_assemblyGraph->generateNodesNotFoundErrorMessage(nodesNotInGraph,
-                                                                               ui->selectionSearchNodesExactMatchRadioButton->isChecked());
+            errorMessage += QString::fromStdString(
+                    g_assemblyGraph->generateNodesNotFoundErrorMessage(
+                            nodesNotInGraph,
+                            ui->selectionSearchNodesExactMatchRadioButton->isChecked()));
         if (!nodesNotFound.empty()) {
             if (errorMessage.length() > 0)
                 errorMessage += "\n";

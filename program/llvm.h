@@ -24,11 +24,18 @@
 namespace bandage {
 
 using llvm::Error;
+using llvm::ErrorInfoBase;
 template <typename T>
 using Expected = llvm::Expected<T>;
+template <typename ThisErrT, typename ParentErrT = llvm::ErrorInfoBase>
+using ErrorInfo = llvm::ErrorInfo<ThisErrT, ParentErrT>;
 
 using llvm::consumeError;
 using llvm::createStringError;
+using llvm::handleAllErrors;
+using llvm::inconvertibleErrorCode;
+using llvm::make_error;
+using llvm::raw_ostream;
 using llvm::toString;
 using llvm::Twine;
 

@@ -20,6 +20,7 @@
 #define PATH_H
 
 #include "graphlocation.h"
+#include "program/error.h"
 
 #include <QByteArray>
 #include <QList>
@@ -55,10 +56,9 @@ public:
                                        bool strandSpecific);
     static Path makeFromOrderedNodes(const std::vector<DeBruijnNode *> &nodes,
                                      bool circular);
-    static Path makeFromString(const QString& pathString,
-                               const AssemblyGraph &graph,
-                               bool circular,
-                               QString * pathStringFailure);
+    static bandage::Expected<Path> makeFromString(const QString& pathString,
+                                                  const AssemblyGraph &graph,
+                                                  bool circular);
 
     //ACCESSORS
     const auto& nodes() const {return m_nodes;}
