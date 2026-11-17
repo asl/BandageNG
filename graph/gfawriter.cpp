@@ -114,12 +114,14 @@ namespace gfa {
         gfaLinkLine += '\t';
         gfaLinkLine += endingNode->getSign();
         gfaLinkLine += '\t';
-        // Emit overlap for normal links and distance for jump links
-        if (isJump) {
+        const auto overlapType = edge->getOverlapType();
+        if (overlapType == JUMP) {
             gfaLinkLine += edge->getOverlap() == 0 ? "*" : qPrintable(QString::number(edge->getOverlap()));
-        } else {
+        } else if (overlapType == EXACT_OVERLAP || overlapType == AUTO_DETERMINED_EXACT_OVERLAP) {
             gfaLinkLine += qPrintable(QString::number(edge->getOverlap()));
             gfaLinkLine += "M";
+        } else {
+            gfaLinkLine += '*';
         }
 
         if (graph.hasCustomColour(edge)) {
@@ -164,7 +166,47 @@ namespace gfa {
             gfaPathLine += QByteArray(stepName.data(), int(stepName.size()));
         }
 
+        // Path CIGAR strings are not stored, so the overlaps field is unspecified.
+        gfaPathLine += "\t*";
         return gfaPathLine;
+    }
+
+    static bool pathFullyDrawn(const Path &path) {
+        if (path.nodes().empty())
+            return false;
+        for (const auto *node : path.nodes()) {
+            if (!node->thisNodeOrReverseComplementIsDrawn())
+                return false;
+        }
+        return true;
+    }
+
+    static QByteArray getGfaWalkLine(const std::string &seqId, const Walk &walk) {
+        QByteArray line = "W\t";
+        line += QByteArray(walk.sampleId.data(), int(walk.sampleId.size()));
+        line += '\t';
+        line += QByteArray::number(walk.hapIndex);
+        line += '\t';
+        line += QByteArray(seqId.data(), int(seqId.size()));
+        line += '\t';
+        line += QByteArray::number(walk.seqStart);
+        line += '\t';
+        line += QByteArray::number(walk.seqEnd);
+        line += '\t';
+        for (const auto *node : walk.walk.nodes()) {
+            line += node->isPositiveNode() ? '>' : '<';
+            const auto name = node->getNameWithoutSign();
+            line += QByteArray(name.data(), int(name.size()));
+        }
+        return line;
+    }
+
+    static void writeWalks(QTextStream &out, const AssemblyGraph &graph, bool onlyFullyDrawn) {
+        for (auto it = graph.m_deBruijnGraphWalks.begin(); it != graph.m_deBruijnGraphWalks.end(); ++it) {
+            if (onlyFullyDrawn && !pathFullyDrawn(it->walk))
+                continue;
+            out << getGfaWalkLine(it.key(), *it) << '\n';
+        }
     }
 
     bool saveEntireGraph(const QString &filename,
@@ -194,6 +236,7 @@ namespace gfa {
         for (auto it = graph.m_deBruijnGraphPaths.begin(); it != graph.m_deBruijnGraphPaths.end(); ++it)
             out << getGfaPathLine(it.key(), *it, graph) << '\n';
 
+        writeWalks(out, graph, false);
         return true;
     }
 
@@ -222,9 +265,12 @@ namespace gfa {
         for (const auto *node: edgesToSave)
             out << getGfaLinkLine(node, graph) << '\n';
 
-        for (auto it = graph.m_deBruijnGraphPaths.begin(); it != graph.m_deBruijnGraphPaths.end(); ++it)
-            out << getGfaPathLine(it.key(), *it, graph) << '\n';
+        for (auto it = graph.m_deBruijnGraphPaths.begin(); it != graph.m_deBruijnGraphPaths.end(); ++it) {
+            if (pathFullyDrawn(*it))
+                out << getGfaPathLine(it.key(), *it, graph) << '\n';
+        }
 
+        writeWalks(out, graph, true);
         return true;
     }
 }

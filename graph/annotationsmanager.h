@@ -68,6 +68,8 @@ struct AnnotationGroup {
     [[nodiscard]] std::vector<DeBruijnNode *> getNodesWithAnnotations(bool doubleMode) const;
 };
 
+void addBedAnnotation(AnnotationGroup &group, DeBruijnNode *node, const bed::Line &bedLine);
+
 class AnnotationsManager : public QObject {
 Q_OBJECT
 

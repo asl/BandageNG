@@ -149,7 +149,7 @@ test_all "$bandagepath image inputs/test.fastg tmp/test.png  --width 500 --heigh
 test_image_width_and_height tmp/test.png 500 400; rm tmp/test.png
 test_all "$bandagepath image abc.fastg tmp/test.png" 105 "" "<graph>: File does not exist: abc.fastg Run with --help or --helpall for more information."
 test_all "$bandagepath image inputs/test.fastg tmp/test.abc" 1 "" "Bandage-NG error: the output filename must end in .png, .jpg or .svg"
-test_all "$bandagepath image inputs/test.csv tmp/test.png" 1 "" "Bandage-NG error: could not load inputs/test.csv"
+test_all "$bandagepath image inputs/test.csv tmp/test.png" 1 "" "Bandage-NG error: could not load inputs/test.csv: graph format not recognised: inputs/test.csv"
 test_all "$bandagepath image inputs/test.fastg tmp/test.png --query abc.fasta" 105 "" "--query: File does not exist: abc.fasta Run with --help or --helpall for more information."
 test_all "$bandagepath image inputs/test_rgfa.gfa tmp/test.png --colour gfa" 0 "" ""; rm tmp/test.png
 test_all "$bandagepath image inputs/test.gfa tmp/test.png --colour gc" 0 "" ""; rm tmp/test.png
@@ -224,8 +224,71 @@ test_image_height tmp/test.png 1000; rm tmp/test.png
 test_all "$bandagepath info inputs/test.gfa --tsv" 0 "inputs/test.gfa 17 16 60 60 30959 29939 10 29.4118% 1 30959 0 2060 119 2001 2060 2060 2060 532.042 25939" ""
 
 # BandageNG reduce tests
+check_gfa_names() {
+    file=$1
+    kind=$2
+    present=$3
+    absent=$4
+    nameField=${5:-2}
+    ok=true
+    for name in $present; do
+        if ! awk -F'\t' -v k="$kind" -v n="$name" -v f="$nameField" '$1==k && $f==n {found=1} END{exit !found}' "$file"; then
+            echo "FAIL: $file missing $kind $name"
+            ok=false
+        fi
+    done
+    for name in $absent; do
+        if awk -F'\t' -v k="$kind" -v n="$name" -v f="$nameField" '$1==k && $f==n {found=1} END{exit !found}' "$file"; then
+            echo "FAIL: $file unexpected $kind $name"
+            ok=false
+        fi
+    done
+    if $ok; then
+        passes=$((passes + 1))
+        echo "PASS: $file $kind names"
+    else
+        fails=$((fails + 1))
+    fi
+}
+
 test_all "$bandagepath reduce inputs/test_components.gfa tmp/component.gfa --scope aroundcomponent --nodes a1" 0 "" ""
+check_gfa_names tmp/component.gfa S "a1 a2 a3" "b1 b2 c1"
+check_gfa_names tmp/component.gfa P "PATH_A" "PATH_B"
+check_gfa_names tmp/component.gfa W "WALK_A" "WALK_B" 4
+if awk -F'\t' '$1=="P" && $4!="*" {bad=1} END{exit bad}' tmp/component.gfa; then
+    passes=$((passes + 1))
+    echo "PASS: reduce around a1 path overlaps"
+else
+    fails=$((fails + 1))
+    echo "FAIL: reduce around a1 path overlaps field"
+fi
+"$bandagepath" info tmp/component.gfa 1> tmp/std_out 2> tmp/std_err
+info_exit=$?
+if [[ $info_exit == 0 && ! -s tmp/std_err ]]; then
+    passes=$((passes + 1))
+    echo "PASS: reload reduced component"
+else
+    fails=$((fails + 1))
+    echo "FAIL: reload reduced component"
+    echo "   exit: $info_exit"
+    echo "   stderr: $(cat tmp/std_err)"
+fi
+rm -f tmp/std_out tmp/std_err
+
 test_all "$bandagepath reduce inputs/test_components.gfa tmp/component.gfa --scope aroundcomponent --path PATH_A,PATH_B" 0 "" ""
+check_gfa_names tmp/component.gfa S "a1 a2 a3 b1 b2" "c1"
+check_gfa_names tmp/component.gfa P "PATH_A PATH_B" ""
+check_gfa_names tmp/component.gfa W "WALK_A WALK_B" "" 4
+
+test_all "$bandagepath reduce inputs/test_components.gfa tmp/component.gfa --scope aroundcomponent --walk WALK_A" 0 "" ""
+check_gfa_names tmp/component.gfa S "a1 a2 a3" "b1 b2 c1"
+check_gfa_names tmp/component.gfa P "PATH_A" "PATH_B"
+check_gfa_names tmp/component.gfa W "WALK_A" "WALK_B" 4
+
+test_all "$bandagepath reduce inputs/test_components.gfa tmp/component.gfa --scope aroundnodes --nodes a1 --distance 0" 0 "" ""
+check_gfa_names tmp/component.gfa S "a1" "a2 a3 b1 b2 c1"
+check_gfa_names tmp/component.gfa P "" "PATH_A PATH_B"
+check_gfa_names tmp/component.gfa W "" "WALK_A WALK_B" 4
 rm tmp/component.gfa
 
 # BandageNG load tests
@@ -318,6 +381,45 @@ test_all "$bandagepath --maxevprod" 114 "" "--maxevprod: 1 required SCINOT:FLOAT
 # querypaths uses the active --searcher (no longer BLAST-gated at CLI parse)
 test_all "$bandagepath querypaths --searcher minimap2" 106 "" "<graph> is required Run with --help or --helpall for more information."
 
+check_querypaths_tsv() {
+    label=$1
+    shift
+    rm -f tmp/qp.tsv
+    "$@" 1> tmp/std_out 2> tmp/std_err
+    exit_code=$?
+    rows=0
+    if [[ -f tmp/qp.tsv ]]; then
+        rows=$(wc -l < tmp/qp.tsv | tr -d ' ')
+    fi
+    header=""
+    if [[ -f tmp/qp.tsv ]]; then
+        header=$(head -n 1 tmp/qp.tsv)
+    fi
+    if [[ $exit_code == 0 && $header == Query* && $rows -ge 2 ]]; then
+        passes=$((passes + 1))
+        echo "PASS: querypaths $label ($rows rows)"
+    else
+        fails=$((fails + 1))
+        echo "FAIL: querypaths $label"
+        echo "   exit: $exit_code rows: $rows"
+        echo "   header: $header"
+        echo "   stderr: $(cat tmp/std_err)"
+    fi
+    rm -f tmp/std_out tmp/std_err tmp/qp.tsv
+}
+
+check_querypaths_tsv blast "$bandagepath" querypaths inputs/test_query_paths.gfa inputs/test_query_paths.fasta tmp/qp
+
+if ! hmmbuild --dna tmp/nucl.hmm <(printf '# STOCKHOLM 1.0\n#=GF ID nuclq\nnuclq\tATGAAAACCCTGCTGATCCTGGCAGCAGCAGCAGCAAAAG\n//\n') >/dev/null; then
+    fails=$((fails + 1))
+    echo "FAIL: hmmbuild"
+else
+    passes=$((passes + 1))
+    echo "PASS: hmmbuild"
+fi
+check_querypaths_tsv minimap2 "$bandagepath" querypaths inputs/test_search.gfa inputs/test_search_nucl.fasta tmp/qp --searcher minimap2 --searchp="-x sr --for-only"
+check_querypaths_tsv hmmer "$bandagepath" querypaths inputs/test_search.gfa tmp/nucl.hmm tmp/qp --searcher hmmer --maxevprod off
+rm -f tmp/nucl.hmm
 
 rmdir tmp
 

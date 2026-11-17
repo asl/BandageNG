@@ -60,10 +60,8 @@ int handleInfoCmd(QApplication *app,
     QTextStream err(stderr);
 
     QString inputFile = QString::fromStdString(cmd.m_graph.generic_string());
-    if (!g_assemblyGraph->loadGraphFromFile(inputFile)) {
-        err << "Bandage-NG error: could not load " << inputFile << Qt::endl;
+    if (!loadAssemblyGraph(inputFile, err))
         return 1;
-    }
 
     int nodeCount = g_assemblyGraph->m_nodeCount;
     int edgeCount = g_assemblyGraph->m_edgeCount;

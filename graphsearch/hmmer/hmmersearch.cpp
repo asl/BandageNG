@@ -231,6 +231,7 @@ QString HmmerSearch::doOneSearch(search::QuerySequenceType sequenceType,
     }
 
     writeQueryFile(&tmpQueryFile, queries, sequenceType);
+    tmpQueryFile.flush();
 
     QTemporaryFile tmpOutFile(temporaryDir().filePath("hits.XXXXXX.tblout"));
     if (!tmpOutFile.open()) {

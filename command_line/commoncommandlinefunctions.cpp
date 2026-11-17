@@ -19,7 +19,9 @@
 #include "commoncommandlinefunctions.h"
 
 #include "graph/assemblygraph.h"
+#include "graph/io.h"
 #include "program/globals.h"
+#include "program/llvm.h"
 #include "program/memory.h"
 
 #include <QDir>
@@ -27,6 +29,18 @@
 #include <QApplication>
 #include <QRegularExpression>
 
+
+bool loadAssemblyGraph(const QString &filename, QTextStream &err) {
+    auto loaded = g_assemblyGraph->loadGraphFromFile(filename);
+    if (!loaded) {
+        err << "Bandage-NG error: could not load " << filename << ": "
+            << QString::fromStdString(bandage::toString(loaded.takeError())) << Qt::endl;
+        return false;
+    }
+    if (loaded->complexOverlaps)
+        err << "Bandage-NG warning: " << io::complexOverlapWarning() << Qt::endl;
+    return true;
+}
 
 void outputText(const QString& text, QTextStream * out) {
     QStringList list;

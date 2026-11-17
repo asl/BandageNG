@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "llvm/ADT/iterator_range.h"
+#include "program/llvm.h"
 #include "seq/sequence.hpp"
 #include "small_vector/small_pod_vector.hpp"
 
@@ -81,8 +81,8 @@ public:
     const auto edgeBegin() const { return m_edges.begin(); }
     auto edgeEnd() { return m_edges.end(); }
     const auto edgeEnd() const { return m_edges.end(); }
-    auto edges() { return llvm::make_range(edgeBegin(), edgeEnd()); }
-    const auto edges() const { return llvm::make_range(edgeBegin(), edgeEnd()); }
+    auto edges() { return bandage::make_range(edgeBegin(), edgeEnd()); }
+    const auto edges() const { return bandage::make_range(edgeBegin(), edgeEnd()); }
 
     std::vector<DeBruijnEdge *> getEnteringEdges() const;
     std::vector<DeBruijnEdge *> getLeavingEdges() const;

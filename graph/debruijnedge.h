@@ -60,6 +60,11 @@ public:
         unsigned m = CHAR_BIT * sizeof(decltype(m_overlap)) - OVERLAP_BITS;
         return (m_overlap << m) >> m;
     }
+    int exactOverlapLength() const {
+        if (m_overlapType == EXACT_OVERLAP || m_overlapType == AUTO_DETERMINED_EXACT_OVERLAP)
+            return getOverlap();
+        return 0;
+    }
     EdgeOverlapType getOverlapType() const {return m_overlapType;}
     DeBruijnNode * getOtherNode(const DeBruijnNode * node) const;
     bool testExactOverlap(int overlap) const;

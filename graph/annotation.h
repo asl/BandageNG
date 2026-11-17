@@ -89,6 +89,9 @@ public:
         return "BED Thick";
     }
 
+    [[nodiscard]] int64_t thickStart() const { return m_thickStart; }
+    [[nodiscard]] int64_t thickEnd() const { return m_thickEnd; }
+
 private:
     int64_t m_thickStart;
     int64_t m_thickEnd;
@@ -106,6 +109,8 @@ public:
         return "BED Blocks";
     }
 
+    [[nodiscard]] const std::vector<BedThickView> &blocks() const { return m_blocks; }
+
 private:
     const double m_widthMultiplier;
     const QColor m_color;
@@ -121,6 +126,10 @@ public:
                     const std::set<ViewId> &viewsToShow) const;
 
     void drawDescription(QPainter &painter, GraphicsItemNode &graphicsItemNode, bool reverseComplement) const;
+
+    [[nodiscard]] int64_t start() const { return m_start; }
+    [[nodiscard]] int64_t end() const { return m_end; }
+    [[nodiscard]] const std::string &text() const { return m_text; }
 
     void addView(std::unique_ptr<IAnnotationView> view) {
         m_views.emplace_back(std::move(view));

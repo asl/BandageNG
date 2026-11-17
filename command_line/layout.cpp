@@ -61,11 +61,8 @@ int handleLayoutCmd(QApplication *app,
     }
 
     QString inputFile = QString::fromStdString(cmd.m_graph.generic_string());
-    bool loadSuccess = g_assemblyGraph->loadGraphFromFile(inputFile);
-    if (!loadSuccess) {
-        outputText("Bandage-NG error: could not load " + inputFile, &err);
+    if (!loadAssemblyGraph(inputFile, err))
         return 1;
-    }
 
     if (cli.count("--query")) {
         if (!g_graphSearch->ready()) {
