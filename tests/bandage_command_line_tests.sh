@@ -212,8 +212,8 @@ test_layout_nodes inputs/test_draw_corners.gfa "--double --linear" 5
 
 test_svg_paths inputs/test.gfa "" 50 ""
 test_svg_paths inputs/test.gfa "--double" 100 ""
-test_svg_paths inputs/test_draw_corners.gfa "" 12 "QGraphicsScene::addItem: item has already been added to this scene"
-test_svg_paths inputs/test_draw_corners.gfa "--double" 20 "QGraphicsScene::addItem: item has already been added to this scene"
+test_svg_paths inputs/test_draw_corners.gfa "" 11 "QGraphicsScene::addItem: item has already been added to this scene"
+test_svg_paths inputs/test_draw_corners.gfa "--double" 18 "QGraphicsScene::addItem: item has already been added to this scene"
 
 test_all "$bandagepath image inputs/test.gfa tmp/test.png --double" 0 "" ""
 test_image_height tmp/test.png 1000; rm tmp/test.png
@@ -222,6 +222,7 @@ test_image_height tmp/test.png 1000; rm tmp/test.png
 
 # BandageNG info tests
 test_all "$bandagepath info inputs/test.gfa --tsv" 0 "inputs/test.gfa 17 16 60 60 30959 29939 10 29.4118% 1 30959 0 2060 119 2001 2060 2060 2060 532.042 25939" ""
+test_all "$bandagepath info inputs/test_draw_corners.gfa --tsv" 0 "inputs/test_draw_corners.gfa 4 5 0 0 16 16 1 12.5% 1 12 0 4 4 4 4 4 4 0 0" ""
 
 # BandageNG reduce tests
 check_gfa_names() {

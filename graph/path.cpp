@@ -101,7 +101,7 @@ Path Path::makeFromOrderedNodes(const std::vector<DeBruijnNode *> &nodes, bool c
 
         bool foundEdge = false;
         for (auto *edge : node1->edges()) {
-            if (edge->getEndingNode() == node2 && edge->getStartingNode() == node1) {
+            if (edge->connects(node1, node2)) {
                 path.m_edges.push_back(edge);
                 foundEdge = true;
                 break;
@@ -344,8 +344,7 @@ bool Path::checkForOtherEdges() {
     for (auto * startingNode : m_nodes) {
         for (auto * endingNode : m_nodes) {
             for (auto *edge : startingNode->edges()) {
-                if (edge->getStartingNode() == startingNode &&
-                    edge->getEndingNode() == endingNode)
+                if (edge->connects(startingNode, endingNode))
                     allConnectingEdges.push_back(edge);
             }
         }
@@ -493,8 +492,7 @@ bool Path::isCircular() const {
     const DeBruijnNode * firstNode = m_nodes.front();
     const DeBruijnNode * lastNode = m_nodes.back();
 
-    return (lastEdge->getStartingNode() == lastNode &&
-            lastEdge->getEndingNode() == firstNode);
+    return lastEdge->connects(lastNode, firstNode);
 }
 
 
@@ -514,7 +512,7 @@ bool Path::canNodeFitOnEnd(DeBruijnNode * node, Path * extendedPath) const {
 
     DeBruijnNode * lastNode = m_nodes.back();
     for (auto *edge : lastNode->edges()) {
-        if (edge->getStartingNode() == lastNode && edge->getEndingNode() == node) {
+        if (edge->connects(lastNode, node)) {
             *extendedPath = *this;
             extendedPath->m_edges.push_back(edge);
             extendedPath->m_nodes.push_back(node);
@@ -537,7 +535,7 @@ bool Path::canNodeFitAtStart(DeBruijnNode * node, Path *extendedPath) const {
 
     DeBruijnNode * firstNode = m_nodes.front();
     for (auto *edge : firstNode->edges()) {
-        if (edge->getStartingNode() == node && edge->getEndingNode() == firstNode) {
+        if (edge->connects(node, firstNode)) {
             *extendedPath = *this;
             extendedPath->m_edges.insert(extendedPath->m_edges.begin(), edge);
             extendedPath->m_nodes.insert(extendedPath->m_nodes.begin(), node);
@@ -565,13 +563,11 @@ QList<Path> Path::extendPathInAllPossibleWays() const
         return returnList;
 
     DeBruijnNode * lastNode = m_nodes.back();
-    std::vector<DeBruijnEdge *> nextEdges = lastNode->getLeavingEdges();
-    for (auto nextEdge : nextEdges)
-    {
-        DeBruijnNode * nextNode = nextEdge->getEndingNode();
+    for (auto link : lastNode->outgoing_edges()) {
+        DeBruijnNode * nextNode = link.otherNode();
 
         Path newPath(*this);
-        newPath.m_edges.push_back(nextEdge);
+        newPath.m_edges.push_back(link.edge());
         newPath.m_nodes.push_back(nextNode);
         newPath.m_endLocation = GraphLocation::endOfNode(nextNode);
 

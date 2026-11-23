@@ -28,6 +28,81 @@
 #include <cassert>
 #include <cmath>
 
+DeBruijnNode *DirectedEdge::otherNode() const {
+    return m_outgoing ? m_edge->downstream(m_origin) : m_edge->upstream(m_origin);
+}
+
+int DirectedEdge::overlap() const {
+    return m_edge->getOverlap();
+}
+
+EdgeOverlapType DirectedEdge::overlapType() const {
+    return m_edge->getOverlapType();
+}
+
+bool IncidentEdgeIterator::onOutgoingPass() const {
+    return m_filter == IncidentFilter::Outgoing ||
+           (m_filter == IncidentFilter::Both && m_outgoingPass);
+}
+
+void IncidentEdgeIterator::skip() {
+    auto wanted = [&](DeBruijnEdge *edge) {
+        return onOutgoingPass() ? edge->leaves(m_origin) : edge->enters(m_origin);
+    };
+    while (m_it != m_end && !wanted(*m_it))
+        ++m_it;
+    if (m_it == m_end && m_filter == IncidentFilter::Both && m_outgoingPass) {
+        m_outgoingPass = false;
+        m_it = m_begin;
+        while (m_it != m_end && !wanted(*m_it))
+            ++m_it;
+    }
+}
+
+IncidentEdgeIterator::IncidentEdgeIterator(IncidentEdgeIterator::EdgeIt begin,
+                                           IncidentEdgeIterator::EdgeIt end,
+                                           const DeBruijnNode *origin,
+                                           IncidentFilter filter, bool isEnd)
+        : m_it(isEnd ? end : begin), m_begin(begin), m_end(end), m_origin(origin),
+          m_filter(filter), m_outgoingPass(filter != IncidentFilter::Both || !isEnd) {
+    if (!isEnd)
+        skip();
+}
+
+DirectedEdge IncidentEdgeIterator::operator*() const {
+    return DirectedEdge(*m_it, m_origin, onOutgoingPass());
+}
+
+IncidentEdgeIterator &IncidentEdgeIterator::operator++() {
+    ++m_it;
+    skip();
+    return *this;
+}
+
+OutgoingEdgeIterator DeBruijnNode::outgoing_begin() const {
+    return OutgoingEdgeIterator(edgeBegin(), edgeEnd(), this, IncidentFilter::Outgoing, false);
+}
+
+OutgoingEdgeIterator DeBruijnNode::outgoing_end() const {
+    return OutgoingEdgeIterator(edgeBegin(), edgeEnd(), this, IncidentFilter::Outgoing, true);
+}
+
+IncomingEdgeIterator DeBruijnNode::incoming_begin() const {
+    return IncomingEdgeIterator(edgeBegin(), edgeEnd(), this, IncidentFilter::Incoming, false);
+}
+
+IncomingEdgeIterator DeBruijnNode::incoming_end() const {
+    return IncomingEdgeIterator(edgeBegin(), edgeEnd(), this, IncidentFilter::Incoming, true);
+}
+
+IncidentEdgeIterator DeBruijnNode::incident_begin() const {
+    return IncidentEdgeIterator(edgeBegin(), edgeEnd(), this, IncidentFilter::Both, false);
+}
+
+IncidentEdgeIterator DeBruijnNode::incident_end() const {
+    return IncidentEdgeIterator(edgeBegin(), edgeEnd(), this, IncidentFilter::Both, true);
+}
+
 #include <set>
 #include <string>
 #include <unordered_set>
@@ -176,18 +251,17 @@ QByteArray DeBruijnNode::getUpstreamSequence(int upstreamSequenceLength) const {
 
 unsigned DeBruijnNode::getLengthWithoutTrailingOverlap() const {
     unsigned length = getLength();
-    std::vector<DeBruijnEdge *> leavingEdges = getLeavingEdges();
-
-    if (leavingEdges.empty())
+    auto leaving = outgoing_edges();
+    if (leaving.empty())
         return length;
 
     int maxOverlap = 0;
-    for (const auto *leavingEdge : leavingEdges)
-        maxOverlap = std::max(maxOverlap, leavingEdge->getOverlap());
+    for (auto link : leaving)
+        maxOverlap = std::max(maxOverlap, link.overlap());
 
-    if (maxOverlap > length)
+    if (maxOverlap > static_cast<int>(length))
         return 0;
-    
+
     return length - maxOverlap;
 }
 
@@ -222,9 +296,9 @@ void DeBruijnNode::labelNeighbouringNodesAsDrawn(int nodeDistance) {
                         g_settings->doubleMode ? node : node->getCanonical();
             nodeToMark->m_drawn = true;
 
-            for (auto *m_edge : node->m_edges) {
-                DeBruijnNode * otherNode = m_edge->getOtherNode(node);
-                if (!otherNode->thisNodeOrReverseComplementIsDrawn())
+            for (auto link : node->incident_edges()) {
+                DeBruijnNode *otherNode = link.otherNode();
+                if (otherNode != nullptr && !otherNode->thisNodeOrReverseComplementIsDrawn())
                     seen.insert(otherNode);
             }
         }
@@ -242,7 +316,7 @@ void DeBruijnNode::labelNeighbouringNodesAsDrawn(int nodeDistance) {
 DeBruijnEdge * DeBruijnNode::doesNodeLeadIn(DeBruijnNode * node) const
 {
     for (auto *edge : m_edges) {
-        if (edge->getStartingNode() == node && edge->getEndingNode() == this)
+        if (edge->connects(node, this))
             return edge;
     }
     return nullptr;
@@ -254,7 +328,7 @@ DeBruijnEdge * DeBruijnNode::doesNodeLeadIn(DeBruijnNode * node) const
 DeBruijnEdge * DeBruijnNode::doesNodeLeadAway(DeBruijnNode * node) const
 {
     for (auto *edge : m_edges) {
-        if (edge->getStartingNode() == this && edge->getEndingNode() == node)
+        if (edge->connects(this, node))
             return edge;
     }
     return nullptr;
@@ -263,7 +337,7 @@ DeBruijnEdge * DeBruijnNode::doesNodeLeadAway(DeBruijnNode * node) const
 
 bool DeBruijnNode::isNodeConnected(DeBruijnNode * node) const {
     for (auto *edge : m_edges) {
-        if (edge->getStartingNode() == node || edge->getEndingNode() == node)
+        if (edge->connects(node, this) || edge->connects(this, node))
             return true;
     }
     return false;
@@ -271,50 +345,18 @@ bool DeBruijnNode::isNodeConnected(DeBruijnNode * node) const {
 
 
 
-std::vector<DeBruijnEdge *> DeBruijnNode::getEnteringEdges() const
-{
-    std::vector<DeBruijnEdge *> returnVector;
-    for (auto *edge : m_edges) {
-        if (this == edge->getEndingNode())
-            returnVector.push_back(edge);
-    }
-    return returnVector;
-}
-std::vector<DeBruijnEdge *> DeBruijnNode::getLeavingEdges() const
-{
-    std::vector<DeBruijnEdge *> returnVector;
-    for (auto *edge : m_edges) {
-        if (this == edge->getStartingNode())
-            returnVector.push_back(edge);
-    }
-    return returnVector;
+std::vector<DeBruijnNode *> DeBruijnNode::getDownstreamNodes() const {
+    std::vector<DeBruijnNode *> nodes;
+    for (auto link : outgoing_edges())
+        nodes.push_back(link.otherNode());
+    return nodes;
 }
 
-
-
-std::vector<DeBruijnNode *> DeBruijnNode::getDownstreamNodes() const
-{
-    std::vector<DeBruijnEdge *> leavingEdges = getLeavingEdges();
-
-    std::vector<DeBruijnNode *> returnVector;
-    returnVector.reserve(leavingEdges.size());
-    for (auto *leavingEdge : leavingEdges)
-        returnVector.push_back(leavingEdge->getEndingNode());
-
-    return returnVector;
-}
-
-
-std::vector<DeBruijnNode *> DeBruijnNode::getUpstreamNodes() const
-{
-    std::vector<DeBruijnEdge *> enteringEdges = getEnteringEdges();
-
-    std::vector<DeBruijnNode *> returnVector;
-    returnVector.reserve(enteringEdges.size());
-    for (auto *enteringEdge : enteringEdges)
-        returnVector.push_back(enteringEdge->getStartingNode());
-
-    return returnVector;
+std::vector<DeBruijnNode *> DeBruijnNode::getUpstreamNodes() const {
+    std::vector<DeBruijnNode *> nodes;
+    for (auto link : incoming_edges())
+        nodes.push_back(link.otherNode());
+    return nodes;
 }
 
 bool DeBruijnNode::isInDepthRange(double min, double max) const
@@ -345,7 +387,7 @@ DeBruijnEdge * DeBruijnNode::getSelfLoopingEdge() const
 {
     for (auto edge : m_edges)
     {
-        if (edge->getStartingNode() == this && edge->getEndingNode() == this)
+        if (edge->connects(this, this))
             return edge;
     }
 
@@ -361,13 +403,9 @@ int DeBruijnNode::getDeadEndCount() const
     if (m_edges.empty())
         return 2;
 
-    std::vector<DeBruijnEdge *> enteringEdges = getEnteringEdges();
-    std::vector<DeBruijnEdge *> leavingEdges = getLeavingEdges();
-
-    if (!enteringEdges.empty() && !leavingEdges.empty())
+    if (!incoming_edges().empty() && !outgoing_edges().empty())
         return 0;
-    else
-        return 1;
+    return 1;
 }
 
 
@@ -379,12 +417,14 @@ std::vector<DeBruijnNode *> DeBruijnNode::getAllConnectedPositiveNodes() const
 {
     std::unordered_set<DeBruijnNode *> connectedPositiveNodesSet;
 
-    for (auto *edge : m_edges) {
-        DeBruijnNode * connectedNode = edge->getOtherNode(this);
+    for (auto link : incident_edges()) {
+        DeBruijnNode *connectedNode = link.otherNode();
+        if (connectedNode == nullptr)
+            continue;
         if (connectedNode->isNegativeNode())
             connectedNode = connectedNode->getReverseComplement();
-
-        connectedPositiveNodesSet.insert(connectedNode);
+        if (connectedNode != nullptr)
+            connectedPositiveNodesSet.insert(connectedNode);
     }
 
     return { connectedPositiveNodesSet.begin(), connectedPositiveNodesSet.end() };

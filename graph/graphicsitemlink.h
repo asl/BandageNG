@@ -30,7 +30,7 @@ class AssemblyGraph;
 class GraphicsItemLink : public GraphicsItemEdge {
 public:
     explicit GraphicsItemLink(DeBruijnEdge *deBruijnEdge, const AssemblyGraph &graph,
-                              QGraphicsItem *parent = nullptr);
+                              bool reversed = false, QGraphicsItem *parent = nullptr);
 
     void remakePath() override;
 };

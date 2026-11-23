@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "directededge.h"
 #include "program/llvm.h"
 #include "seq/sequence.hpp"
 #include "small_vector/small_pod_vector.hpp"
@@ -84,8 +85,22 @@ public:
     auto edges() { return bandage::make_range(edgeBegin(), edgeEnd()); }
     const auto edges() const { return bandage::make_range(edgeBegin(), edgeEnd()); }
 
-    std::vector<DeBruijnEdge *> getEnteringEdges() const;
-    std::vector<DeBruijnEdge *> getLeavingEdges() const;
+    OutgoingEdgeIterator outgoing_begin() const;
+    OutgoingEdgeIterator outgoing_end() const;
+    auto outgoing_edges() const {
+        return bandage::make_range(outgoing_begin(), outgoing_end());
+    }
+    IncomingEdgeIterator incoming_begin() const;
+    IncomingEdgeIterator incoming_end() const;
+    auto incoming_edges() const {
+        return bandage::make_range(incoming_begin(), incoming_end());
+    }
+    IncidentEdgeIterator incident_begin() const;
+    IncidentEdgeIterator incident_end() const;
+    auto incident_edges() const {
+        return bandage::make_range(incident_begin(), incident_end());
+    }
+
     std::vector<DeBruijnNode *> getDownstreamNodes() const;
     std::vector<DeBruijnNode *> getUpstreamNodes() const;
     std::vector<DeBruijnNode *> getAllConnectedPositiveNodes() const;

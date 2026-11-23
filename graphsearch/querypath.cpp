@@ -140,7 +140,7 @@ int QueryPath::getHitOverlap(const Hit * hit1, const Hit * hit2) const {
     else {
         bool found = false;
         for (const DeBruijnEdge *edge : hit1->m_node->edges()) {
-            if (edge->getEndingNode() != hit2->m_node)
+            if (!edge->connects(hit1->m_node, hit2->m_node))
                 continue;
             if (edge->getOverlapType() == JUMP)
                 continue;

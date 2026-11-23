@@ -36,6 +36,7 @@
 #include <QPair>
 #include <QObject>
 #include <string>
+#include <string_view>
 #include <vector>
 
 class DeBruijnNode;
@@ -91,6 +92,13 @@ public:
     phmap::parallel_flat_hash_map<const DeBruijnEdge*, EdgeStyle> m_edgeStyles;
     // Edge colors
     phmap::parallel_flat_hash_map<const DeBruijnEdge*, QColor> m_edgeColors;
+    // Colour of the reverse direction. Empty unless that direction sets one.
+    phmap::parallel_flat_hash_map<const DeBruijnEdge*, QColor> m_edgeReverseColors;
+    // Graphics item for the reverse direction. Empty until that direction is drawn.
+    phmap::parallel_flat_hash_map<const DeBruijnEdge*, GraphicsItemEdge*> m_reverseGraphicsItems;
+    // Overlap text for an overlap that is not a single length. An exact
+    // overlap is identified by its length and has no entry here.
+    phmap::parallel_flat_hash_map<const DeBruijnEdge*, std::string> m_overlapKeys;
 
     // CSV data
     phmap::parallel_flat_hash_map<const DeBruijnNode*, QStringList> m_nodeCSVData;
@@ -122,11 +130,29 @@ public:
     SequencesLoadedFromFasta m_sequencesLoadedFromFasta;
 
     void cleanUp();
+    struct MadeLink {
+        DeBruijnEdge *edge = nullptr;
+        // Set when the requested ends are the opposite direction from the stored ones.
+        bool reversed = false;
+        bool created = false;
+    };
+
+    // One object, stored in the positive orientation. A repeat of either
+    // direction with the same overlap and type returns the existing edge.
+    // When allowDistinctOverlap is false, any existing connection is reused.
+    // overlapKey distinguishes overlaps that share a numeric length of 0.
+    MadeLink makeLink(DeBruijnNode *from, DeBruijnNode *to,
+                      int overlap, EdgeOverlapType overlapType,
+                      bool allowDistinctOverlap,
+                      std::string_view overlapKey = {});
     void createDeBruijnEdge(std::string_view node1Name, std::string_view node2Name,
                             int overlap = 0,
                             EdgeOverlapType overlapType = UNKNOWN_OVERLAP);
     void resetNodes();
     void resetEdges();
+    // Drop graphics pointers. Drawn flags stay, so a scene rebuild can
+    // create items for edges that are already marked drawn.
+    void clearEdgeGraphicsItems();
     double getMeanDepth(bool drawnNodesOnly = false);
     static double getMeanDepth(const std::vector<DeBruijnNode *> &nodes);
 
@@ -179,11 +205,16 @@ public:
     long long getTotalLengthOrphanedNodes() const;
 
     bool hasCustomColour(const DeBruijnNode* node) const;
-    bool hasCustomColour(const DeBruijnEdge* edge) const;
+    bool hasCustomColour(const DeBruijnEdge* edge, bool reverse = false) const;
     QColor getCustomColour(const DeBruijnNode* node) const;
-    QColor getCustomColour(const DeBruijnEdge* edge) const;
+    QColor getCustomColour(const DeBruijnEdge* edge, bool reverse = false) const;
     void setCustomColour(const DeBruijnNode* node, QColor color);
-    void setCustomColour(const DeBruijnEdge* edge, QColor color);
+    void setCustomColour(const DeBruijnEdge* edge, QColor color, bool reverse = false);
+
+    GraphicsItemEdge *reverseGraphicsItem(const DeBruijnEdge *edge) const;
+    void setReverseGraphicsItem(const DeBruijnEdge *edge, GraphicsItemEdge *item);
+    // The graphics item for one direction. Clears that pointer.
+    GraphicsItemEdge *takeGraphicsItem(DeBruijnEdge *edge, bool reversed);
 
     EdgeStyle getCustomStyle(const DeBruijnEdge* edge) const;
     void setCustomStyle(const DeBruijnEdge* edge, Qt::PenStyle lineStyle);

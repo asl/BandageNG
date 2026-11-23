@@ -115,8 +115,11 @@ namespace gfa {
         gfaLinkLine += endingNode->getSign();
         gfaLinkLine += '\t';
         const auto overlapType = edge->getOverlapType();
-        if (overlapType == JUMP) {
-            gfaLinkLine += edge->getOverlap() == 0 ? "*" : qPrintable(QString::number(edge->getOverlap()));
+        auto keyIt = graph.m_overlapKeys.find(edge);
+        if (keyIt != graph.m_overlapKeys.end() && !keyIt->second.empty()) {
+            gfaLinkLine += QByteArray(keyIt->second.data(), int(keyIt->second.size()));
+        } else if (overlapType == JUMP) {
+            gfaLinkLine += qPrintable(QString::number(edge->getOverlap()));
         } else if (overlapType == EXACT_OVERLAP || overlapType == AUTO_DETERMINED_EXACT_OVERLAP) {
             gfaLinkLine += qPrintable(QString::number(edge->getOverlap()));
             gfaLinkLine += "M";
@@ -128,9 +131,9 @@ namespace gfa {
             gfaLinkLine += "\tCL:Z:";
             gfaLinkLine += qPrintable(getColourName(graph.getCustomColour(edge)));
         }
-        if (!edge->isOwnReverseComplement() && graph.hasCustomColour(edge->getReverseComplement())) {
+        if (!edge->isOwnReverseComplement() && graph.hasCustomColour(edge, true)) {
             gfaLinkLine += "\tC2:Z:";
-            gfaLinkLine += qPrintable(getColourName(graph.getCustomColour(edge->getReverseComplement())));
+            gfaLinkLine += qPrintable(getColourName(graph.getCustomColour(edge, true)));
         }
 
         auto tagIt = graph.m_edgeTags.find(edge);
@@ -223,10 +226,8 @@ namespace gfa {
         }
 
         QList<const DeBruijnEdge *> edgesToSave;
-        for (const DeBruijnEdge *edge : graph.m_deBruijnGraphEdges) {
-            if (edge->isPositiveEdge())
-                edgesToSave.push_back(edge);
-        }
+        for (const DeBruijnEdge *edge : graph.m_deBruijnGraphEdges)
+            edgesToSave.push_back(edge);
 
         std::sort(edgesToSave.begin(), edgesToSave.end(), DeBruijnEdge::compareEdgePointers);
 
@@ -255,8 +256,7 @@ namespace gfa {
         QList<const DeBruijnEdge *> edgesToSave;
         for (const DeBruijnEdge *edge : graph.m_deBruijnGraphEdges) {
             if (edge->getStartingNode()->thisNodeOrReverseComplementIsDrawn() &&
-                edge->getEndingNode()->thisNodeOrReverseComplementIsDrawn() &&
-                edge->isPositiveEdge())
+                edge->getEndingNode()->thisNodeOrReverseComplementIsDrawn())
                 edgesToSave.push_back(edge);
         }
 

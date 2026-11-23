@@ -36,6 +36,7 @@
 
 #include <kseq/kseq.h>
 #include <type_traits>
+#include <algorithm>
 #include <zlib.h>
 #include <zstd.h>
 
@@ -294,27 +295,50 @@ static bool maybeAddCustomColor(const Entity *e,
 }
 
 namespace io {
-    bool handleStandardGFAEdgeTags(const DeBruijnEdge *edgePtr,
-                                   const DeBruijnEdge *rcEdgePtr,
+    // Apply the standard tags of one GFA L or J record to the stored link.
+    //
+    // `edge` is the one object for the link. `reversed` is set when the
+    // record names the opposite direction from the stored ends. CL colours
+    // the direction the record names, and C2 colours the other one. An
+    // own-reverse-complement edge has one direction, so C2 is ignored.
+    //
+    // `fillEmptyColoursOnly` is for a record that found an existing link.
+    // A colour is written only when that direction has none yet. Width,
+    // pen style, and the stored tag list stay as the first record set
+    // them. Otherwise WD sets the width, PS sets the pen style, and every
+    // tag on the record is stored on the edge.
+    //
+    // Returns true when a colour was written.
+    bool handleStandardGFAEdgeTags(const DeBruijnEdge *edge,
+                                   bool reversed,
                                    const std::vector<gfa::tag> &tags,
-                                   AssemblyGraph &graph) {
+                                   AssemblyGraph &graph,
+                                   bool fillEmptyColoursOnly) {
+        auto addColour = [&](const char *tagName, bool reverse) {
+            if (auto cb = gfa::getTag<std::string>(tagName, tags)) {
+                if (fillEmptyColoursOnly && graph.hasCustomColour(edge, reverse))
+                    return false;
+                graph.setCustomColour(edge, cb->c_str(), reverse);
+                return true;
+            }
+            return false;
+        };
+
         bool hasCustomColours = false;
-        hasCustomColours |= maybeAddCustomColor(edgePtr, tags, "CL", graph);
-        hasCustomColours |= maybeAddCustomColor(rcEdgePtr, tags, "C2", graph);
+        hasCustomColours |= addColour("CL", reversed);
+        if (!edge->isOwnReverseComplement())
+            hasCustomColours |= addColour("C2", !reversed);
 
-        if (auto wd = gfa::getNumericTag("WD", tags)) {
-            graph.setCustomStyle(edgePtr, *wd);
-            graph.setCustomStyle(rcEdgePtr, *wd);
-        }
+        if (fillEmptyColoursOnly)
+            return hasCustomColours;
 
-        if (auto ps = gfa::getTag<int64_t>("PS", tags)) {
-            graph.setCustomStyle(edgePtr, Qt::PenStyle(*ps));
-            graph.setCustomStyle(rcEdgePtr, Qt::PenStyle(*ps));
-        }
+        if (auto wd = gfa::getNumericTag("WD", tags))
+            graph.setCustomStyle(edge, *wd);
 
-        maybeAddGFATags(edgePtr, graph.m_edgeTags, tags, false);
-        if (rcEdgePtr)
-            maybeAddGFATags(rcEdgePtr, graph.m_edgeTags, tags, false);
+        if (auto ps = gfa::getTag<int64_t>("PS", tags))
+            graph.setCustomStyle(edge, Qt::PenStyle(*ps));
+
+        maybeAddGFATags(edge, graph.m_edgeTags, tags, false);
 
         return hasCustomColours;
     }
@@ -380,14 +404,46 @@ namespace io {
             auto [oppositeNodeStorage, inserted] = graph.m_deBruijnGraphNodes.insert(oppositeNodeName, nodePtr);
             if (!inserted) {
                 oppositeNodePtr = *oppositeNodeStorage;
+                // connects() uses the reverse complement. Point both names at
+                // the surviving node before comparing links through it.
+                nodePtr->setReverseComplement(nodePtr);
+                oppositeNodePtr->setReverseComplement(nodePtr);
 
-                for (auto *edge : oppositeNodePtr->edges()) {
+                std::vector<DeBruijnEdge *> moved(oppositeNodePtr->edgeBegin(),
+                                                  oppositeNodePtr->edgeEnd());
+                for (auto *edge : moved) {
                     if (edge->getEndingNode() == oppositeNodePtr)
                         edge->setEndingNode(nodePtr);
                     if (edge->getStartingNode() == oppositeNodePtr)
                         edge->setStartingNode(nodePtr);
+                    oppositeNodePtr->removeEdge(edge);
                     nodePtr->addEdge(edge);
                 }
+
+                std::vector<DeBruijnEdge *> incident(nodePtr->edgeBegin(), nodePtr->edgeEnd());
+                std::vector<DeBruijnEdge *> drop;
+                auto keyOf = [&](const DeBruijnEdge *edge) {
+                    auto it = graph.m_overlapKeys.find(edge);
+                    return it == graph.m_overlapKeys.end() ? std::string() : it->second;
+                };
+                for (size_t i = 0; i < incident.size(); ++i) {
+                    for (size_t j = 0; j < i; ++j) {
+                        DeBruijnEdge *edge = incident[i];
+                        DeBruijnEdge *kept = incident[j];
+                        if (std::find(drop.begin(), drop.end(), kept) != drop.end())
+                            continue;
+                        if (edge->getOverlap() != kept->getOverlap() ||
+                            edge->getOverlapType() != kept->getOverlapType() ||
+                            keyOf(edge) != keyOf(kept))
+                            continue;
+                        if (edge->connects(kept->getStartingNode(), kept->getEndingNode())) {
+                            drop.push_back(edge);
+                            break;
+                        }
+                    }
+                }
+                if (!drop.empty())
+                    graph.deleteEdges(drop);
 
                 *oppositeNodeStorage = nodePtr;
             }
@@ -427,12 +483,12 @@ namespace io {
         return nodePairOrErr.get().first;
     }
 
-    using EdgePair = std::pair<DeBruijnEdge*, DeBruijnEdge*>;
-
-    static bandage::Expected<EdgePair> addLink(const std::string &fromNode,
-                                            const std::string &toNode,
-                                            AssemblyGraph &graph) {
-        // Get source / dest nodes (or create placeholders to fill in)
+    static bandage::Expected<AssemblyGraph::MadeLink> addLink(const std::string &fromNode,
+                                                              const std::string &toNode,
+                                                              AssemblyGraph &graph,
+                                                              int overlap,
+                                                              EdgeOverlapType overlapType,
+                                                              std::string_view overlapKey = {}) {
         DeBruijnNode *fromNodePtr, *toNodePtr;
 
         if (auto nodeOrErr = getNode(fromNode, graph))
@@ -445,29 +501,7 @@ namespace io {
         else
             return nodeOrErr.takeError();
 
-        DeBruijnEdge *edgePtr = nullptr, *rcEdgePtr = nullptr;
-        edgePtr = new DeBruijnEdge(fromNodePtr, toNodePtr);
-
-        bool isOwnPair = fromNodePtr == toNodePtr->getReverseComplement() &&
-                         toNodePtr == fromNodePtr->getReverseComplement();
-        graph.m_deBruijnGraphEdges.emplace(edgePtr);
-        fromNodePtr->addEdge(edgePtr);
-        toNodePtr->addEdge(edgePtr);
-
-        if (isOwnPair) {
-            edgePtr->setReverseComplement(edgePtr);
-        } else {
-            auto *rcFromNodePtr = fromNodePtr->getReverseComplement();
-            auto *rcToNodePtr = toNodePtr->getReverseComplement();
-            rcEdgePtr = new DeBruijnEdge(rcToNodePtr, rcFromNodePtr);
-            rcFromNodePtr->addEdge(rcEdgePtr);
-            rcToNodePtr->addEdge(rcEdgePtr);
-            edgePtr->setReverseComplement(rcEdgePtr);
-            rcEdgePtr->setReverseComplement(edgePtr);
-            graph.m_deBruijnGraphEdges.emplace(rcEdgePtr);
-        }
-
-        return std::pair{edgePtr, rcEdgePtr};
+        return graph.makeLink(fromNodePtr, toNodePtr, overlap, overlapType, true, overlapKey);
     }
 
     class GFAAssemblyGraphBuilder : public AssemblyGraphBuilder {
@@ -548,35 +582,33 @@ namespace io {
             std::string toNode{record.rhs};
             toNode.push_back(record.rhs_revcomp ? '-' : '+');
 
-            DeBruijnEdge *edgePtr, *rcEdgePtr;
-            if (auto edgePairOrErr = addLink(fromNode, toNode, graph)) {
-                std::tie(edgePtr, rcEdgePtr) = *edgePairOrErr;
-            } else
-                return edgePairOrErr.takeError();
+            const auto &overlap = record.overlap;
+            std::string overlapKey;
+            size_t overlapLength = 0;
+            // An empty overlap is the unspecified "*", not a zero-length match.
+            if (overlap.empty()) {
+                overlapKey = "*";
+            } else if (overlap.size() > 1 || overlap.front().op != 'M') {
+                hasComplexOverlaps_ = true;
+                for (const auto &op : overlap) {
+                    overlapKey += std::to_string(op.count);
+                    overlapKey.push_back(op.op);
+                }
+            } else {
+                overlapLength = overlap.front().count;
+            }
 
-            if (!edgePtr)
-                return bandage::Error::success();
+            AssemblyGraph::MadeLink made;
+            if (auto madeOrErr = addLink(fromNode, toNode, graph,
+                                         static_cast<int>(overlapLength), EXACT_OVERLAP,
+                                         overlapKey))
+                made = *madeOrErr;
+            else
+                return madeOrErr.takeError();
 
             hasCustomColours_ |=
-                    handleStandardGFAEdgeTags(edgePtr, rcEdgePtr, record.tags, graph);
-
-            const auto &overlap = record.overlap;
-            if (overlap.size() > 1 ||
-                (overlap.size() == 1 && overlap.front().op != 'M')) {
-                hasComplexOverlaps_ = true;
-                edgePtr->setOverlap(0);
-                edgePtr->setOverlapType(UNKNOWN_OVERLAP);
-            } else if (overlap.size() == 1) {
-                edgePtr->setOverlap(static_cast<int>(overlap.front().count));
-                edgePtr->setOverlapType(EXACT_OVERLAP);
-            } else {
-                edgePtr->setOverlap(0);
-                edgePtr->setOverlapType(UNKNOWN_OVERLAP);
-            }
-            if (rcEdgePtr) {
-                rcEdgePtr->setOverlap(edgePtr->getOverlap());
-                rcEdgePtr->setOverlapType(edgePtr->getOverlapType());
-            }
+                    handleStandardGFAEdgeTags(made.edge, made.reversed, record.tags, graph,
+                                              !made.created);
 
             return bandage::Error::success();
         }
@@ -590,33 +622,40 @@ namespace io {
             std::string toNode{record.rhs};
             toNode.push_back(record.rhs_revcomp ? '-' : '+');
 
-            DeBruijnEdge *edgePtr, *rcEdgePtr;
-            if (auto edgePairOrErr = addLink(fromNode, toNode, graph)) {
-                std::tie(edgePtr, rcEdgePtr) = *edgePairOrErr;
-            } else
-                return edgePairOrErr.takeError();
-
-            hasCustomColours_ |=
-                    handleStandardGFAEdgeTags(edgePtr, rcEdgePtr, record.tags, graph);
-
-            int distance = 0;
-            if (!isLink && record.distance != std::numeric_limits<int64_t>::min())
-                distance = static_cast<int>(record.distance);
-            edgePtr->setOverlap(distance);
-            edgePtr->setOverlapType(isLink ? EdgeOverlapType::EXTRA_LINK : EdgeOverlapType::JUMP);
-            if (rcEdgePtr) {
-                rcEdgePtr->setOverlap(edgePtr->getOverlap());
-                rcEdgePtr->setOverlapType(edgePtr->getOverlapType());
+            std::string overlapKey;
+            int overlap = 0;
+            EdgeOverlapType overlapType;
+            if (isLink) {
+                // The gap is not an overlap. Keep the link, and write "*"
+                // rather than the distance as a match.
+                overlapType = EXTRA_LINK;
+                overlapKey = "*";
+            } else if (record.distance == std::numeric_limits<int64_t>::min()) {
+                overlapType = JUMP;
+                overlapKey = "*";
+            } else {
+                overlapType = JUMP;
+                overlap = static_cast<int>(record.distance);
             }
 
-            if (!graph.hasCustomColour(edgePtr))
-                graph.setCustomColour(edgePtr, isLink ? "green" : "red");
-            if (!graph.hasCustomColour(rcEdgePtr))
-                graph.setCustomColour(rcEdgePtr, isLink ? "green" : "red");
-            if (!graph.hasCustomStyle(edgePtr))
-                graph.setCustomStyle(edgePtr, isLink ? Qt::DotLine : Qt::DashLine);
-            if (!graph.hasCustomStyle(rcEdgePtr))
-                graph.setCustomStyle(rcEdgePtr, isLink ? Qt::DotLine :Qt::DashLine);
+            AssemblyGraph::MadeLink made;
+            if (auto madeOrErr = addLink(fromNode, toNode, graph, overlap, overlapType, overlapKey))
+                made = *madeOrErr;
+            else
+                return madeOrErr.takeError();
+
+            // A new link takes every tag. An existing one is the other
+            // direction or a repeat record, so only empty colours are filled.
+            hasCustomColours_ |=
+                    handleStandardGFAEdgeTags(made.edge, made.reversed, record.tags, graph,
+                                              !made.created);
+
+            const char *colour = isLink ? "green" : "red";
+            auto style = isLink ? Qt::DotLine : Qt::DashLine;
+            if (!graph.hasCustomColour(made.edge, made.reversed))
+                graph.setCustomColour(made.edge, colour, made.reversed);
+            if (!graph.hasCustomStyle(made.edge))
+                graph.setCustomStyle(made.edge, style);
 
             return bandage::Error::success();
         }
@@ -1360,21 +1399,11 @@ namespace io {
                         toNode.assign(fields[2]);
                         toNode.push_back(fields[3].front());
 
-                        DeBruijnEdge *edgePtr, *rcEdgePtr;
-
-                        if (auto edgePairOrErr = addLink(fromNode, toNode, graph)) {
-                            std::tie(edgePtr, rcEdgePtr) = *edgePairOrErr;
+                        if (auto madeOrErr = addLink(fromNode, toNode, graph, 31, EXACT_OVERLAP)) {
+                            if (!madeOrErr->created)
+                                continue;
                         } else
-                            return edgePairOrErr.takeError();
-
-                        // Logan hard-coded
-                        size_t overlapLength = 31;
-                        edgePtr->setOverlap(static_cast<int>(overlapLength));
-                        edgePtr->setOverlapType(EXACT_OVERLAP);
-                        if (rcEdgePtr) {
-                            rcEdgePtr->setOverlap(edgePtr->getOverlap());
-                            rcEdgePtr->setOverlapType(edgePtr->getOverlapType());
-                        }
+                            return madeOrErr.takeError();
                     } else
                         return bandage::createStringError("Invalid tag: " + std::string(tag));
                 }

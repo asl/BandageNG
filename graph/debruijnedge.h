@@ -20,29 +20,23 @@
 
 #include "debruijnnode.h"
 
-class GraphicsItemEdge;
+#include <utility>
 
-enum EdgeOverlapType {
-    UNKNOWN_OVERLAP,
-    EXACT_OVERLAP,
-    AUTO_DETERMINED_EXACT_OVERLAP,
-    JUMP,
-    EXTRA_LINK
-};
+class GraphicsItemEdge;
 
 class DeBruijnEdge
 {
-    static constexpr unsigned OVERLAP_BITS = 28;
+    // Two drawn bits share the overlap word, so the edge stays 32 bytes.
+    static constexpr unsigned OVERLAP_BITS = 27;
 
     DeBruijnNode * m_startingNode;
     DeBruijnNode * m_endingNode;
     GraphicsItemEdge * m_graphicsItemEdge;
-    DeBruijnEdge * m_reverseComplement;
 
     bool m_drawn : 1;
+    bool m_drawnReverse : 1;
     EdgeOverlapType m_overlapType : 3;
     int m_overlap : OVERLAP_BITS;
-    // We are having 4 bytes here for now due to alignment requirements
 
 public:
     //CREATORS
@@ -53,9 +47,12 @@ public:
     void setStartingNode(DeBruijnNode *node) { m_startingNode = node;}
     void setEndingNode(DeBruijnNode *node) { m_endingNode = node;}
 
+    // Stored orientation, or the opposite direction when `reversed` is set.
+    std::pair<DeBruijnNode *, DeBruijnNode *> orientedEnds(bool reversed) const;
+
     GraphicsItemEdge * getGraphicsItemEdge() const {return m_graphicsItemEdge;}
-    DeBruijnEdge * getReverseComplement() const {return m_reverseComplement;}
     bool isDrawn() const {return m_drawn;}
+    bool isDrawnReverse() const {return m_drawnReverse;}
     int getOverlap() const {
         unsigned m = CHAR_BIT * sizeof(decltype(m_overlap)) - OVERLAP_BITS;
         return (m_overlap << m) >> m;
@@ -66,7 +63,40 @@ public:
         return 0;
     }
     EdgeOverlapType getOverlapType() const {return m_overlapType;}
-    DeBruijnNode * getOtherNode(const DeBruijnNode * node) const;
+
+    // One object stores one ordered pair of ends. The reverse direction is
+    // rc(stored end) -> rc(stored start). An own-RC link is that pair
+    // reversed onto itself (A+ -> A-, or a self-loop on a palindromic
+    // segment), so it has a single direction. The node in these queries
+    // holds the pointer: a stored end, or the reverse complement of one.
+
+    // The other end of the orientation `node` is on. The stored start and
+    // the stored end swap. rc(stored end) and rc(stored start) swap. This
+    // is one node for either direction. downstream() and upstream() are
+    // what split a palindromic node.
+    DeBruijnNode * other(const DeBruijnNode * node) const;
+    // Same as other().
+    DeBruijnNode * getOtherNode(const DeBruijnNode * node) const { return other(node); }
+    // Neighbour along this edge. DirectedEdge::otherNode() uses
+    // downstream() when the edge leaves `node` and upstream() when it
+    // enters. A node with a distinct reverse complement is incident from
+    // one side, and both return other(). A palindromic node is one object
+    // on both sides: downstream() is the node reached by leaving,
+    // upstream() the node reached by entering. Stored as S -> B,
+    // downstream(S) is B and upstream(S) is rc(B). A self-loop S -> S
+    // stays on S either way.
+    DeBruijnNode * downstream(const DeBruijnNode * node) const;
+    DeBruijnNode * upstream(const DeBruijnNode * node) const;
+    // This edge departs `node`. `node` is the stored start, or rc(stored
+    // end) on a link with a distinct reverse direction.
+    bool leaves(const DeBruijnNode * node) const;
+    // This edge arrives at `node`. `node` is the stored end, or
+    // rc(stored start) on a link with a distinct reverse direction.
+    bool enters(const DeBruijnNode * node) const;
+    // `from` -> `to` is the stored pair, or rc(stored end) -> rc(stored
+    // start) when that direction is a different pair of nodes.
+    bool connects(const DeBruijnNode * from, const DeBruijnNode * to) const;
+
     bool testExactOverlap(int overlap) const;
     void tracePaths(bool forward,
                     int stepsRemaining,
@@ -78,24 +108,22 @@ public:
                          const DeBruijnNode * target,
                          std::vector<DeBruijnNode *> pathSoFar,
                          bool includeReverseComplement) const;
+    // True when the stored ends are a positive orientation.
     bool isPositiveEdge() const;
     bool isNegativeEdge() const {return !isPositiveEdge();}
-    bool isOwnReverseComplement() const {return this == getReverseComplement();}
+    static bool isPositiveOrientation(const DeBruijnNode *from, const DeBruijnNode *to);
+    bool isOwnReverseComplement() const;
     static bool compareEdgePointers(const DeBruijnEdge * a, const DeBruijnEdge * b);
 
     //MODIFERS
     void setGraphicsItemEdge(GraphicsItemEdge * gie) {m_graphicsItemEdge = gie;}
-    void setReverseComplement(DeBruijnEdge * rc) {m_reverseComplement = rc;}
     void setOverlap(int ol) {m_overlap = ol;}
     void setOverlapType(EdgeOverlapType olt) {m_overlapType = olt;}
-    void reset() {m_graphicsItemEdge = nullptr; m_drawn = false;}
-    bool determineIfDrawn() { return (m_drawn = edgeIsVisible());}
+    void reset() {m_graphicsItemEdge = nullptr; m_drawn = false; m_drawnReverse = false;}
+    bool determineIfDrawn();
     void setExactOverlap(int overlap) {m_overlap = overlap; m_overlapType = EXACT_OVERLAP;}
     void autoDetermineExactOverlap();
 
 private:
-    bool edgeIsVisible() const;
     static unsigned timesNodeInPath(const DeBruijnNode * node, const std::vector<DeBruijnNode *> &path);
-    static std::vector<DeBruijnEdge *> findNextEdgesInPath(DeBruijnNode * nextNode,
-                                                           bool forward) ;
 };

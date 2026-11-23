@@ -32,9 +32,10 @@
 
 GraphicsItemEdge::GraphicsItemEdge(DeBruijnEdge *deBruijnEdge,
                                    const AssemblyGraph &graph,
+                                   bool reversed,
                                    QGraphicsItem *parent)
-    : QGraphicsPathItem(parent), m_deBruijnEdge(deBruijnEdge) {
-    m_edgeColor = graph.getCustomColour(deBruijnEdge);
+    : QGraphicsPathItem(parent), m_edge(deBruijnEdge, reversed) {
+    m_edgeColor = graph.getCustomColour(deBruijnEdge, reversed);
     auto style = graph.getCustomStyle(deBruijnEdge);
     m_penStyle = style.lineStyle;
     if (style.width > 0)
@@ -61,10 +62,12 @@ QPainterPath GraphicsItemEdge::shape() const {
     return stroker.createStroke(path());
 }
 
-static void getControlPointLocations(const DeBruijnEdge *edge,
+std::pair<DeBruijnNode *, DeBruijnNode *> GraphicsItemEdge::orientedNodes() const {
+    return edge()->orientedEnds(reversed());
+}
+
+static void getControlPointLocations(DeBruijnNode *startingNode, DeBruijnNode *endingNode,
                                      QLineF &start, QLineF &end) {
-    DeBruijnNode *startingNode = edge->getStartingNode();
-    DeBruijnNode *endingNode = edge->getEndingNode();
 
     if (const auto *startingGraphicsItemNode = startingNode->getGraphicsItemNode()) {
         start = startingGraphicsItemNode->getLastSegment();
@@ -148,8 +151,10 @@ static void makeOrdinaryPath(QPainterPath &path,
 
 
 void GraphicsItemEdge::remakePath() {
+    auto [startingNode, endingNode] = orientedNodes();
+
     QLineF startSegment, endSegment;
-    getControlPointLocations(m_deBruijnEdge, startSegment, endSegment);
+    getControlPointLocations(startingNode, endingNode, startSegment, endSegment);
 
     QPainterPath path;
 
@@ -157,8 +162,6 @@ void GraphicsItemEdge::remakePath() {
     // is made of only one line segment, then a special path is
     // required, otherwise the edge will be mostly hidden underneath
     // the node.
-    DeBruijnNode *startingNode = m_deBruijnEdge->getStartingNode();
-    DeBruijnNode *endingNode = m_deBruijnEdge->getEndingNode();
     if (startingNode == endingNode) {
         GraphicsItemNode * graphicsItemNode = startingNode->getGraphicsItemNode();
         if (!graphicsItemNode)

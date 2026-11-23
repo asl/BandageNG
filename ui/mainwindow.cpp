@@ -37,6 +37,7 @@
 #include "graph/debruijnnode.h"
 #include "graph/nodedisplayname.h"
 #include "graph/debruijnedge.h"
+#include "graph/graphicsitemedge.h"
 #include "graph/graphicsitemnode.h"
 #include "graph/graphicsitemedge.h"
 #include "graph/graphicsitemlink.h"
@@ -537,18 +538,8 @@ void MainWindow::loadGraphLinks(QString fullFileName) {
     m_scene->blockSignals(true);
     for (DeBruijnEdge *edge : newEdges) {
         edge->determineIfDrawn();
-        if (!edge->isDrawn())
-            continue;
-
-        auto *graphicsItemEdge =
-                edge->getOverlapType() == EdgeOverlapType::EXTRA_LINK ?
-                new GraphicsItemLink(edge, *g_assemblyGraph) :
-                new GraphicsItemEdge(edge, *g_assemblyGraph);
-
-        graphicsItemEdge->setZValue(-1.0);
-        edge->setGraphicsItemEdge(graphicsItemEdge);
-        graphicsItemEdge->setFlag(QGraphicsItem::ItemIsSelectable);
-        m_scene->addItem(graphicsItemEdge);
+        if (edge->isDrawn() || edge->isDrawnReverse())
+            m_scene->addIncidentEdgeGraphics(edge, *g_assemblyGraph, true);
     }
     m_scene->blockSignals(false);
 
@@ -691,16 +682,34 @@ void MainWindow::getSelectedNodeInfo(int & selectedNodeCount, QString & selected
 
 QString MainWindow::getSelectedEdgeListText()
 {
-    std::vector<DeBruijnEdge *> selectedEdges = m_scene->getSelectedEdges();
+    struct SelectedDirection {
+        const DeBruijnEdge *edge = nullptr;
+        bool reversed = false;
 
-    std::sort(selectedEdges.begin(), selectedEdges.end(), DeBruijnEdge::compareEdgePointers);
+        SelectedDirection(const DeBruijnEdge *edge, bool reversed)
+                : edge(edge), reversed(reversed) {}
+    };
+    std::vector<SelectedDirection> selected;
+    for (auto *item : m_scene->selectedItems()) {
+        auto *edgeItem = dynamic_cast<GraphicsItemEdge *>(item);
+        if (edgeItem == nullptr)
+            continue;
+        selected.emplace_back(edgeItem->edge(), edgeItem->reversed());
+    }
+    std::sort(selected.begin(), selected.end(),
+              [](const SelectedDirection &a, const SelectedDirection &b) {
+                  if (a.edge != b.edge)
+                      return DeBruijnEdge::compareEdgePointers(a.edge, b.edge);
+                  return !a.reversed && b.reversed;
+              });
 
     QString edgeText;
-    for (size_t i = 0; i < selectedEdges.size(); ++i) {
-        const auto *edge = selectedEdges[i];
-        edgeText += nodeDisplayName(edge->getStartingNode());
+    for (size_t i = 0; i < selected.size(); ++i) {
+        const auto *edge = selected[i].edge;
+        auto [from, to] = edge->orientedEnds(selected[i].reversed);
+        edgeText += nodeDisplayName(from);
         edgeText += " to ";
-        edgeText += nodeDisplayName(edge->getEndingNode());
+        edgeText += nodeDisplayName(to);
         int overlap = edge->getOverlap();
 
         switch (edge->getOverlapType()) {
@@ -724,12 +733,12 @@ QString MainWindow::getSelectedEdgeListText()
                 edgeText += QString(" (%1bp)").arg(overlap);
         }
 
-        if (i != selectedEdges.size() - 1)
+        if (i != selected.size() - 1)
             edgeText += ", ";
     }
 
-    if (selectedEdges.size() == 1) {
-        auto tags = g_assemblyGraph->m_edgeTags.find(selectedEdges.front());
+    if (selected.size() == 1) {
+        auto tags = g_assemblyGraph->m_edgeTags.find(selected.front().edge);
         if (tags != g_assemblyGraph->m_edgeTags.end()) {
             std::stringstream txt;
             for (const auto &tag : tags->second)

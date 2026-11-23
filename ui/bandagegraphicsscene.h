@@ -56,7 +56,11 @@ public:
                                                bool reverseComplement);
 
     void duplicateGraphicsNode(DeBruijnNode * originalNode, DeBruijnNode * newNode,
-                               const AssemblyGraph &graph);
+                               AssemblyGraph &graph);
+    // One graphics item per drawn direction. A second call for the same edge
+    // does not create another item.
+    void addIncidentEdgeGraphics(DeBruijnEdge *edge, AssemblyGraph &graph,
+                                 bool requireDrawn = false);
 
 private:
     void removeGraphicsItemNodes(const std::unordered_set<GraphicsItemNode*> &nodes);

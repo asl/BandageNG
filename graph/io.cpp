@@ -30,10 +30,9 @@
 
 namespace io {
 namespace {
-    std::pair<DeBruijnEdge*, DeBruijnEdge*>
-    addLink(const std::string &fromNodeName, const std::string &toNodeName,
-            const std::vector<cigar::tag> &tags,
-            AssemblyGraph &graph) {
+    DeBruijnEdge *addLink(const std::string &fromNodeName, const std::string &toNodeName,
+                          const std::vector<cigar::tag> &tags,
+                          AssemblyGraph &graph) {
         auto [fromNode, fromNodeRc] = graph.getNodes(QString::fromStdString(fromNodeName));
         if (!fromNode)
             throw std::logic_error("Cannot find node: " + fromNodeName);
@@ -41,47 +40,17 @@ namespace {
         if (!toNode)
             throw std::logic_error("Cannot find node: " + toNodeName);
 
-        DeBruijnEdge *edgePtr = nullptr, *rcEdgePtr = nullptr;
-        edgePtr = new DeBruijnEdge(fromNode, toNode);
+        AssemblyGraph::MadeLink made = graph.makeLink(fromNode, toNode, 0,
+                                                      EdgeOverlapType::EXTRA_LINK, true);
+        const bool fillEmpty = !made.created;
+        handleStandardGFAEdgeTags(made.edge, made.reversed, tags, graph, fillEmpty);
 
-        bool isOwnPair = fromNode == toNode->getReverseComplement() &&
-                         toNode == fromNode->getReverseComplement();
-        graph.m_deBruijnGraphEdges.emplace(edgePtr);
-        fromNode->addEdge(edgePtr);
-        toNode->addEdge(edgePtr);
+        if (!graph.hasCustomColour(made.edge, made.reversed))
+            graph.setCustomColour(made.edge, "green", made.reversed);
+        if (!graph.hasCustomStyle(made.edge))
+            graph.setCustomStyle(made.edge, Qt::DotLine);
 
-        if (isOwnPair) {
-            edgePtr->setReverseComplement(edgePtr);
-        } else {
-            auto *rcFromNodePtr = fromNode->getReverseComplement();
-            auto *rcToNodePtr = toNode->getReverseComplement();
-            rcEdgePtr = new DeBruijnEdge(rcToNodePtr, rcFromNodePtr);
-            rcFromNodePtr->addEdge(rcEdgePtr);
-            rcToNodePtr->addEdge(rcEdgePtr);
-            edgePtr->setReverseComplement(rcEdgePtr);
-            rcEdgePtr->setReverseComplement(edgePtr);
-            graph.m_deBruijnGraphEdges.emplace(rcEdgePtr);
-        }
-
-        handleStandardGFAEdgeTags(edgePtr, rcEdgePtr, tags, graph);
-
-        edgePtr->setOverlap(0);
-        edgePtr->setOverlapType(EdgeOverlapType::EXTRA_LINK);
-        if (rcEdgePtr) {
-            rcEdgePtr->setOverlap(edgePtr->getOverlap());
-            rcEdgePtr->setOverlapType(edgePtr->getOverlapType());
-        }
-
-        if (!graph.hasCustomColour(edgePtr))
-            graph.setCustomColour(edgePtr, "green");
-        if (!graph.hasCustomColour(rcEdgePtr))
-            graph.setCustomColour(rcEdgePtr, "green");
-        if (!graph.hasCustomStyle(edgePtr))
-            graph.setCustomStyle(edgePtr, Qt::DotLine);
-        if (!graph.hasCustomStyle(rcEdgePtr))
-            graph.setCustomStyle(rcEdgePtr, Qt::DotLine);
-
-        return { edgePtr, rcEdgePtr };
+        return made.created ? made.edge : nullptr;
     }
 }
 
@@ -138,14 +107,11 @@ namespace {
                 std::string toNodeName{link->rhs};
                 toNodeName.push_back(link->rhs_revcomp ? '-' : '+');
 
-                auto [edgePtr, rcEdgePtr] =
+                DeBruijnEdge *edgePtr =
                         addLink(fromNodeName, toNodeName, link->tags, graph);
 
-                if (newEdges) {
+                if (newEdges && edgePtr)
                     newEdges->push_back(edgePtr);
-                    if (rcEdgePtr)
-                        newEdges->push_back(rcEdgePtr);
-                }
             }
         }
 
@@ -183,12 +149,9 @@ namespace {
                     tags.push_back(*optTag);
             }
 
-            auto [edgePtr, rcEdgePtr] = addLink(s1Sv, s2Sv, tags, graph);
-            if (newEdges) {
+            DeBruijnEdge *edgePtr = addLink(s1Sv, s2Sv, tags, graph);
+            if (newEdges && edgePtr)
                 newEdges->push_back(edgePtr);
-                if (rcEdgePtr)
-                    newEdges->push_back(rcEdgePtr);
-            }
         }
 
         return true;

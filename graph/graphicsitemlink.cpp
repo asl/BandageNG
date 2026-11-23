@@ -24,8 +24,8 @@
 #include "program/settings.h"
 
 GraphicsItemLink::GraphicsItemLink(DeBruijnEdge *deBruijnEdge, const AssemblyGraph &graph,
-                                   QGraphicsItem *parent)
-        : GraphicsItemEdge(deBruijnEdge, graph, parent) {
+                                   bool reversed, QGraphicsItem *parent)
+        : GraphicsItemEdge(deBruijnEdge, graph, reversed, parent) {
     remakePath();
 }
 
@@ -96,8 +96,7 @@ static void makePathConnectingNodeToSelf(QPainterPath &path,
 }
 
 void GraphicsItemLink::remakePath() {
-    DeBruijnNode *startingNode = edge()->getStartingNode();
-    DeBruijnNode *endingNode = edge()->getEndingNode();
+    auto [startingNode, endingNode] = orientedNodes();
 
     // Link goes from the median of one node into median of other node.
     QLineF startMidSegment, endMidSegment;
