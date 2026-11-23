@@ -71,7 +71,7 @@ namespace {
                 continue;
 
             if (auto *path = std::get_if<gfa::path>(&*val)) {
-                std::vector<DeBruijnNode*> pathNodes;
+                std::vector<DeBruijnNode *> pathNodes;
                 pathNodes.reserve(path->segments.size());
 
                 for (const auto &node: path->segments)
@@ -86,7 +86,7 @@ namespace {
 
     bool loadGFALinks(AssemblyGraph &graph,
                       QString fileName,
-                      std::vector<DeBruijnEdge*> *newEdges) {
+                      std::vector<DeBruijnEdge *> *newEdges) {
         QFile inputFile(fileName);
         if (!inputFile.open(QIODevice::ReadOnly))
             return false;
@@ -120,7 +120,7 @@ namespace {
 
     bool loadLinks(AssemblyGraph &graph,
                    QString fileName,
-                   std::vector<DeBruijnEdge*> *newEdges) {
+                   std::vector<DeBruijnEdge *> *newEdges) {
         csv::CSVFormat format;
         format.delimiter('\t')
                 .quote('"')

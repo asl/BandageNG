@@ -46,7 +46,7 @@ public:
 
 private:
     const AssemblyGraph &m_graph;
-    phmap::flat_hash_map<DeBruijnNode*, adt::SmallPODVector<T>> m_data;
+    phmap::flat_hash_map<DeBruijnNode *, adt::SmallPODVector<T>> m_data;
 };
 
 using GraphLayout = GraphLayoutStorage<QPointF>;

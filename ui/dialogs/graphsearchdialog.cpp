@@ -234,7 +234,7 @@ void GraphSearchDialog::buildGraphDatabaseInThread() {
 void GraphSearchDialog::buildDatabase(bool separateThread) {
     setUiStep(GRAPH_DB_BUILD_IN_PROGRESS);
 
-    auto * progress = new MyProgressDialog(this, "Running " + m_graphSearch->name() + " database...",
+    auto *progress = new MyProgressDialog(this, "Running " + m_graphSearch->name() + " database...",
                                            separateThread,
                                            "Cancel build",
                                            "Cancelling build...",
@@ -275,7 +275,7 @@ void GraphSearchDialog::loadQueriesFromFileButtonClicked() {
 }
 
 void GraphSearchDialog::loadQueriesFromFile(const QString& fullFileName) {
-    auto * progress = new MyProgressDialog(this, "Loading queries...", false);
+    auto *progress = new MyProgressDialog(this, "Loading queries...", false);
     progress->setWindowModality(Qt::WindowModal);
     progress->show();
 
@@ -360,7 +360,7 @@ void GraphSearchDialog::runGraphSearches(bool separateThread) {
 
     clearHits();
 
-    auto * progress = new MyProgressDialog(this, "Running " + m_graphSearch->name() + " search...",
+    auto *progress = new MyProgressDialog(this, "Running " + m_graphSearch->name() + " search...",
                                            separateThread,
                                            "Cancel search",
                                            "Cancelling search...",
@@ -819,8 +819,8 @@ void QueriesListModel::setColor(const QModelIndex &index, QColor color) {
 }
 
 void PathButtonDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
-    const auto *model = qobject_cast<const QSortFilterProxyModel*>(index.model());
-    auto *query = qobject_cast<const QueriesListModel*>(model->sourceModel())->query(model->mapToSource(index));
+    const auto *model = qobject_cast<const QSortFilterProxyModel *>(index.model());
+    auto *query = qobject_cast<const QueriesListModel *>(model->sourceModel())->query(model->mapToSource(index));
     if (query && query->wasSearchedFor()) {
         QStyleOptionButton btn;
         btn.features = QStyleOptionButton::None;
@@ -839,8 +839,8 @@ void PathButtonDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
 bool PathButtonDelegate::editorEvent(QEvent *event, QAbstractItemModel *model, const QStyleOptionViewItem &option,
                                      const QModelIndex &index) {
     if (event->type() == QEvent::MouseButtonRelease) {
-        const auto *proxyModel = qobject_cast<const QSortFilterProxyModel*>(model);
-        auto *query = qobject_cast<const QueriesListModel*>(proxyModel->sourceModel())->query(proxyModel->mapToSource(index));
+        const auto *proxyModel = qobject_cast<const QSortFilterProxyModel *>(model);
+        auto *query = qobject_cast<const QueriesListModel *>(proxyModel->sourceModel())->query(proxyModel->mapToSource(index));
         if (query && query->wasSearchedFor()) {
             auto *queryPathsDialog = new QueryPathsDialog(query, nullptr);
 

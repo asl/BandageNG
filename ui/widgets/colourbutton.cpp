@@ -19,7 +19,7 @@
 #include "colourbutton.h"
 #include <QColorDialog>
 
-ColourButton::ColourButton(QWidget * parent) :
+ColourButton::ColourButton(QWidget *parent) :
     QPushButton(parent)
 {
     connect(this, SIGNAL(clicked(bool)), this, SLOT(chooseColour()));

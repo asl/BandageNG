@@ -24,7 +24,7 @@
 #include "program/settings.h"
 #include "bandagegraphicsview.h"
 
-GraphicsViewZoom::GraphicsViewZoom(BandageGraphicsView * view) :
+GraphicsViewZoom::GraphicsViewZoom(BandageGraphicsView *view) :
     QObject(view), m_view(view)
 {
     g_absoluteZoom = 1.0;
@@ -74,7 +74,7 @@ bool GraphicsViewZoom::eventFilter(QObject *object, QEvent *event)
 {
     if (event->type() == QEvent::MouseMove)
     {
-        auto * mouseEvent = dynamic_cast<QMouseEvent*>(event);
+        auto *mouseEvent = dynamic_cast<QMouseEvent *>(event);
         QPointF delta = targetViewportPos - mouseEvent->pos();
         if (qAbs(delta.x()) > 5 || qAbs(delta.y()) > 5)
         {
@@ -84,7 +84,7 @@ bool GraphicsViewZoom::eventFilter(QObject *object, QEvent *event)
     }
     else if (event->type() == QEvent::Wheel)
     {
-        auto * wheelEvent = dynamic_cast<QWheelEvent*>(event);
+        auto *wheelEvent = dynamic_cast<QWheelEvent *>(event);
         if (QApplication::keyboardModifiers() == m_modifiers)
         {
             double angle = wheelEvent->angleDelta().y();
@@ -98,7 +98,7 @@ bool GraphicsViewZoom::eventFilter(QObject *object, QEvent *event)
     }
     else if (event->type() == QEvent::NativeGesture)
     {
-        auto * gestureEvent = dynamic_cast<QNativeGestureEvent *>(event);
+        auto *gestureEvent = dynamic_cast<QNativeGestureEvent *>(event);
         if (gestureEvent->gestureType() == Qt::ZoomNativeGesture)
         {
             double factor = 1.0 + gestureEvent->value();

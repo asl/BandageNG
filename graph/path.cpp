@@ -190,8 +190,8 @@ bandage::Expected<Path> Path::makeFromString(const QString& pathString, const As
 
     //If the code got here, then a path was made, and now we must check whether
     //the start/end points are valid.
-    DeBruijnNode * firstNode = path.m_nodes.front();
-    DeBruijnNode * lastNode = path.m_nodes.back();
+    DeBruijnNode *firstNode = path.m_nodes.front();
+    DeBruijnNode *lastNode = path.m_nodes.back();
 
     if (startPosString.length() > 0) {
         int startPos = startPosString.toInt();
@@ -223,7 +223,7 @@ bandage::Expected<Path> Path::makeFromString(const QString& pathString, const As
 //to add the node on one of the path's ends.
 //It can, however, add a node that connects the end to both ends,
 //making a circular Path.
-bool Path::addNode(DeBruijnNode * newNode, bool strandSpecific, bool makeCircularIfPossible) {
+bool Path::addNode(DeBruijnNode *newNode, bool strandSpecific, bool makeCircularIfPossible) {
     //If the Path is empty, then this function always succeeds.
     if (m_nodes.empty()) {
         m_nodes.push_back(newNode);
@@ -233,7 +233,7 @@ bool Path::addNode(DeBruijnNode * newNode, bool strandSpecific, bool makeCircula
         if (makeCircularIfPossible) {
             // If there is an edge connecting the node to itself, then add that
             // too to make a circular path.
-            if (DeBruijnEdge * selfLoopingEdge = newNode->getSelfLoopingEdge())
+            if (DeBruijnEdge *selfLoopingEdge = newNode->getSelfLoopingEdge())
                 m_edges.push_back(selfLoopingEdge);
         }
 
@@ -249,7 +249,7 @@ bool Path::addNode(DeBruijnNode * newNode, bool strandSpecific, bool makeCircula
     // Check to see if the node can be added anywhere in the middle
     // of the Path.  If so, this function fails.
     for (int i = 1; i < m_nodes.size() - 1; ++i) {
-        DeBruijnNode * middleNode = m_nodes.at(i);
+        DeBruijnNode *middleNode = m_nodes.at(i);
         if (middleNode->isNodeConnected(newNode))
             return false;
     }
@@ -341,8 +341,8 @@ bool Path::checkForOtherEdges() {
     // First compile a list of all edges which connect any
     // node in the Path to any other node in the Path.
     QList<DeBruijnEdge *> allConnectingEdges;
-    for (auto * startingNode : m_nodes) {
-        for (auto * endingNode : m_nodes) {
+    for (auto *startingNode : m_nodes) {
+        for (auto *endingNode : m_nodes) {
             for (auto *edge : startingNode->edges()) {
                 if (edge->connects(startingNode, endingNode))
                     allConnectingEdges.push_back(edge);
@@ -397,7 +397,7 @@ QByteArray Path::getPathSequence() const
         sequence += nodeSequence;
     }
 
-    DeBruijnNode * lastNode = m_nodes.back();
+    DeBruijnNode *lastNode = m_nodes.back();
     int amountToTrimFromEnd = lastNode->getLength() - m_endLocation.getPosition();
     sequence.chop(amountToTrimFromEnd);
 
@@ -417,7 +417,7 @@ int Path::getLength() const {
 
     length -= m_startLocation.getPosition() - 1;
 
-    DeBruijnNode * lastNode = m_nodes.back();
+    DeBruijnNode *lastNode = m_nodes.back();
     length -= lastNode->getLength() - m_endLocation.getPosition();
 
     return length;
@@ -488,9 +488,9 @@ bool Path::isCircular() const {
     if (m_nodes.size() != m_edges.size())
         return false;
 
-    const DeBruijnEdge * lastEdge = m_edges.back();
-    const DeBruijnNode * firstNode = m_nodes.front();
-    const DeBruijnNode * lastNode = m_nodes.back();
+    const DeBruijnEdge *lastEdge = m_edges.back();
+    const DeBruijnNode *firstNode = m_nodes.front();
+    const DeBruijnNode *lastNode = m_nodes.back();
 
     return lastEdge->connects(lastNode, firstNode);
 }
@@ -501,7 +501,7 @@ bool Path::isCircular() const {
 //the end/front of the path to form a larger valid path.
 //If so, they set the path pointed to by extendedPath to equal the new, larger
 //path.
-bool Path::canNodeFitOnEnd(DeBruijnNode * node, Path * extendedPath) const {
+bool Path::canNodeFitOnEnd(DeBruijnNode *node, Path *extendedPath) const {
     if (isEmpty()) {
         *extendedPath = Path::makeFromOrderedNodes({ node }, false);
         return true;
@@ -510,7 +510,7 @@ bool Path::canNodeFitOnEnd(DeBruijnNode * node, Path * extendedPath) const {
     if (isCircular())
         return false;
 
-    DeBruijnNode * lastNode = m_nodes.back();
+    DeBruijnNode *lastNode = m_nodes.back();
     for (auto *edge : lastNode->edges()) {
         if (edge->connects(lastNode, node)) {
             *extendedPath = *this;
@@ -524,7 +524,7 @@ bool Path::canNodeFitOnEnd(DeBruijnNode * node, Path * extendedPath) const {
     return false;
 }
 
-bool Path::canNodeFitAtStart(DeBruijnNode * node, Path *extendedPath) const {
+bool Path::canNodeFitAtStart(DeBruijnNode *node, Path *extendedPath) const {
     if (isEmpty()) {
         *extendedPath = Path::makeFromOrderedNodes({ node }, false);
         return true;
@@ -533,7 +533,7 @@ bool Path::canNodeFitAtStart(DeBruijnNode * node, Path *extendedPath) const {
     if (isCircular())
         return false;
 
-    DeBruijnNode * firstNode = m_nodes.front();
+    DeBruijnNode *firstNode = m_nodes.front();
     for (auto *edge : firstNode->edges()) {
         if (edge->connects(node, firstNode)) {
             *extendedPath = *this;
@@ -562,9 +562,9 @@ QList<Path> Path::extendPathInAllPossibleWays() const
     if (isCircular())
         return returnList;
 
-    DeBruijnNode * lastNode = m_nodes.back();
+    DeBruijnNode *lastNode = m_nodes.back();
     for (auto link : lastNode->outgoing_edges()) {
-        DeBruijnNode * nextNode = link.otherNode();
+        DeBruijnNode *nextNode = link.otherNode();
 
         Path newPath(*this);
         newPath.m_edges.push_back(link.edge());
@@ -628,7 +628,7 @@ QList<Path> Path::getAllPossiblePaths(GraphLocation startLocation,
         QList<Path>::iterator j = unfinishedPaths.begin();
         while (j != unfinishedPaths.end())
         {
-            DeBruijnNode * lastNode = (*j).m_nodes.back();
+            DeBruijnNode *lastNode = (*j).m_nodes.back();
             if (lastNode == endLocation.getNode())
             {
                 Path potentialFinishedPath = *j;
@@ -667,11 +667,11 @@ void Path::extendPathToIncludeEntirityOfNodes() {
 }
 
 
-bool Path::containsNode(const DeBruijnNode * node) const {
+bool Path::containsNode(const DeBruijnNode *node) const {
     return std::find(m_nodes.begin(), m_nodes.end(), node) != m_nodes.end();
 }
 
-bool Path::containsEntireNode(const DeBruijnNode * node) const {
+bool Path::containsEntireNode(const DeBruijnNode *node) const {
     if (m_nodes.empty())
         return false;
 
@@ -692,14 +692,14 @@ bool Path::containsEntireNode(const DeBruijnNode * node) const {
 }
 
 
-bool Path::isInMiddleOfPath(const DeBruijnNode * node) const {
+bool Path::isInMiddleOfPath(const DeBruijnNode *node) const {
     return containsNode(node) && !isStartingNode(node) && !isEndingNode(node);
 }
 
 
 //This function counts the number of times the node is in the path, not
 //counting the first or last nodes.
-unsigned Path::numberOfOccurrencesInMiddleOfPath(const DeBruijnNode * node) const {
+unsigned Path::numberOfOccurrencesInMiddleOfPath(const DeBruijnNode *node) const {
     unsigned count = 0;
     for (int i = 1; i < m_nodes.size() - 1; ++i)
         count += (m_nodes[i] == node);
@@ -707,11 +707,11 @@ unsigned Path::numberOfOccurrencesInMiddleOfPath(const DeBruijnNode * node) cons
     return count;
 }
 
-bool Path::isStartingNode(const DeBruijnNode * node) const {
+bool Path::isStartingNode(const DeBruijnNode *node) const {
     return (!m_nodes.empty() && m_nodes.front() == node);
 }
 
-bool Path::isEndingNode(const DeBruijnNode * node) const {
+bool Path::isEndingNode(const DeBruijnNode *node) const {
     return (!m_nodes.empty() && m_nodes.back() == node);
 }
 
@@ -774,7 +774,7 @@ std::vector<DeBruijnNode *> Path::getNodesAt(int startPosition, int endPosition)
 
     startPosition -= 1; endPosition -= 1; // all UI positions are 1-based, convert to 0-based
 
-    std::vector<DeBruijnNode*> res;
+    std::vector<DeBruijnNode *> res;
     for (size_t i = 0; i < m_nodes.size(); ++i) {
         if (i > 0)
             pos -= m_edges[i-1]->exactOverlapLength();

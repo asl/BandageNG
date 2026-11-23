@@ -53,13 +53,13 @@ bool loadAssemblyGraph(const QString &filename, QTextStream &err) {
     return true;
 }
 
-void outputText(const QString& text, QTextStream * out) {
+void outputText(const QString& text, QTextStream *out) {
     QStringList list;
     list << text;
     outputText(list, out);
 }
 
-void outputText(const QStringList& text, QTextStream * out) {
+void outputText(const QStringList& text, QTextStream *out) {
     QStringList wrapped;
 
     bool seenHeaderOrList = false;
@@ -216,7 +216,7 @@ bool isError(const QString& text)
     return text.startsWith("Bandage-NG error");
 }
 
-void getOnlineHelpMessage(QStringList * text)
+void getOnlineHelpMessage(QStringList *text)
 {
     *text << "Online Bandage help: https://github.com/asl/BandageNG/wiki";
     *text << "";

@@ -38,7 +38,7 @@ BandageGraphicsView::BandageGraphicsView(QObject * /*parent*/) :
 
 
 
-void BandageGraphicsView::mousePressEvent(QMouseEvent * event)
+void BandageGraphicsView::mousePressEvent(QMouseEvent *event)
 {
     if (event->modifiers() == Qt::CTRL)
         setDragMode(QGraphicsView::ScrollHandDrag);
@@ -50,14 +50,14 @@ void BandageGraphicsView::mousePressEvent(QMouseEvent * event)
     QGraphicsView::mousePressEvent(event);
 }
 
-void BandageGraphicsView::mouseReleaseEvent(QMouseEvent * event)
+void BandageGraphicsView::mouseReleaseEvent(QMouseEvent *event)
 {
     QGraphicsView::mouseReleaseEvent(event);
     setDragMode(QGraphicsView::RubberBandDrag);
     g_settings->nodeDragging = NEARBY_PIECES;
 }
 
-void BandageGraphicsView::mouseMoveEvent(QMouseEvent * event)
+void BandageGraphicsView::mouseMoveEvent(QMouseEvent *event)
 {
     //If the user drags the right mouse button while holding control,
     //the view rotates.
@@ -82,12 +82,12 @@ void BandageGraphicsView::mouseMoveEvent(QMouseEvent * event)
 }
 
 
-void BandageGraphicsView::mouseDoubleClickEvent(QMouseEvent * event)
+void BandageGraphicsView::mouseDoubleClickEvent(QMouseEvent *event)
 {
     //Find the node beneath the cursor.
-    QGraphicsItem * item = itemAt(event->pos());
+    QGraphicsItem *item = itemAt(event->pos());
 
-    auto * graphicsItemNode = dynamic_cast<GraphicsItemNode *>(item);
+    auto *graphicsItemNode = dynamic_cast<GraphicsItemNode *>(item);
     if (graphicsItemNode != nullptr)
         emit doubleClickedNode(graphicsItemNode->m_deBruijnNode);
 }
@@ -114,7 +114,7 @@ double BandageGraphicsView::distance(double x1, double y1, double x2, double y2)
     return sqrt(xDiff * xDiff + yDiff * yDiff);
 }
 
-void BandageGraphicsView::keyPressEvent(QKeyEvent * event)
+void BandageGraphicsView::keyPressEvent(QKeyEvent *event)
 {
     //This function uses angle in the same way that the mouse wheel code
     //in GraphicsViewZoom does.  This keeps the zoom steps consistent
@@ -259,7 +259,7 @@ QPointF BandageGraphicsView::findIntersectionWithViewportBoundary(QLineF line)
 //If a line intersections the scene rectangle but both of its end points are
 //outside the scene rectangle, then this function will return the part of the
 //line which is in the scene rectangle.
-QLineF BandageGraphicsView::findVisiblePartOfLine(QLineF line, bool * success)
+QLineF BandageGraphicsView::findVisiblePartOfLine(QLineF line, bool *success)
 {
     QPointF c1, c2, c3, c4;
     getFourViewportCornersInSceneCoordinates(&c1, &c2, &c3, &c4);
@@ -299,7 +299,7 @@ QLineF BandageGraphicsView::findVisiblePartOfLine(QLineF line, bool * success)
 }
 
 
-void BandageGraphicsView::getFourViewportCornersInSceneCoordinates(QPointF * c1, QPointF * c2, QPointF * c3, QPointF * c4)
+void BandageGraphicsView::getFourViewportCornersInSceneCoordinates(QPointF *c1, QPointF *c2, QPointF *c3, QPointF *c4)
 {
     *c1 = mapToScene(QPoint(0, 0));
     *c2 = mapToScene(QPoint(viewport()->width(), 0));

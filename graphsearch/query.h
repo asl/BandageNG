@@ -34,7 +34,7 @@ namespace search {
 
     class Query {
     public:
-        using Hits = std::vector<const Hit*>;
+        using Hits = std::vector<const Hit *>;
 
         //CREATORS
         Query(QString name, QString sequence, QByteArray aux = QByteArray());
@@ -66,7 +66,7 @@ namespace search {
         // MODIFIERS
         void setName(QString newName) { m_name = std::move(newName); }
         template<typename... Args>
-        const Hit* emplaceHit(Args&&... args) {
+        const Hit *emplaceHit(Args&&... args) {
             m_hits.emplace_back(new Hit(std::forward<Args>(args)...));
             return m_hits.back().get();
         }

@@ -57,5 +57,5 @@ namespace gaf {
               tags(std::move(t)) {}
     };
 
-    std::optional<record> parseRecord(const char* line, size_t len);
+    std::optional<record> parseRecord(const char *line, size_t len);
 } // namespace gaf

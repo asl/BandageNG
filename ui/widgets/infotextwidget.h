@@ -25,11 +25,11 @@ class InfoTextWidget : public QWidget
 {
     Q_OBJECT
 public:
-    explicit InfoTextWidget(QWidget * parent);
+    explicit InfoTextWidget(QWidget *parent);
 
 protected:
     void paintEvent(QPaintEvent *) override;
-    void mousePressEvent(QMouseEvent * event) override;
+    void mousePressEvent(QMouseEvent *event) override;
     bool event(QEvent *event) override;
 };
 

@@ -262,7 +262,7 @@ struct record {
 }; // namespace grammar
 
 
-std::optional<gfa::record> parseRecord(const char* line, size_t len) {
+std::optional<gfa::record> parseRecord(const char *line, size_t len) {
     lexy::visualization_options opts;
     opts.max_lexeme_width = 35;
 

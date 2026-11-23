@@ -154,14 +154,14 @@ void DeBruijnNode::setName(std::string_view newName) {
 
 //This function adds an edge to the Node, but only if the edge hasn't already
 //been added.
-void DeBruijnNode::addEdge(DeBruijnEdge * edge) {
+void DeBruijnNode::addEdge(DeBruijnEdge *edge) {
     if (std::find(m_edges.begin(), m_edges.end(), edge) == m_edges.end())
         m_edges.push_back(edge);
 }
 
 
 //This function deletes an edge from the node, if it exists.
-void DeBruijnNode::removeEdge(DeBruijnEdge * edge) {
+void DeBruijnNode::removeEdge(DeBruijnEdge *edge) {
     m_edges.erase(std::remove(m_edges.begin(), m_edges.end(), edge), m_edges.end());
 }
 
@@ -214,7 +214,7 @@ QByteArray DeBruijnNode::getAAFasta(unsigned shift, bool sign, bool newLines, bo
 }
 
 QByteArray DeBruijnNode::getUpstreamSequence(int upstreamSequenceLength) const {
-    std::vector<DeBruijnNode*> upstreamNodes = getUpstreamNodes();
+    std::vector<DeBruijnNode *> upstreamNodes = getUpstreamNodes();
 
     QByteArray bestUpstreamNodeSequence;
 
@@ -288,7 +288,7 @@ QByteArray DeBruijnNode::getNodeNameForFasta(bool sign) const
 // definitely be drawn, so that one is excluded from the recursive call.
 // FIXME: this function does not belong here
 void DeBruijnNode::labelNeighbouringNodesAsDrawn(int nodeDistance) {
-    std::unordered_set<DeBruijnNode*> worklist, seen;
+    std::unordered_set<DeBruijnNode *> worklist, seen;
     worklist.insert(this);
     for (int depth = 0; depth <= nodeDistance; depth++) {
         for (auto *node : worklist) {
@@ -313,7 +313,7 @@ void DeBruijnNode::labelNeighbouringNodesAsDrawn(int nodeDistance) {
 //This function checks to see if the passed node leads into
 //this node.  If so, it returns the connecting edge.  If not,
 //it returns a null pointer.
-DeBruijnEdge * DeBruijnNode::doesNodeLeadIn(DeBruijnNode * node) const
+DeBruijnEdge *DeBruijnNode::doesNodeLeadIn(DeBruijnNode *node) const
 {
     for (auto *edge : m_edges) {
         if (edge->connects(node, this))
@@ -325,7 +325,7 @@ DeBruijnEdge * DeBruijnNode::doesNodeLeadIn(DeBruijnNode * node) const
 //This function checks to see if the passed node leads away from
 //this node.  If so, it returns the connecting edge.  If not,
 //it returns a null pointer.
-DeBruijnEdge * DeBruijnNode::doesNodeLeadAway(DeBruijnNode * node) const
+DeBruijnEdge *DeBruijnNode::doesNodeLeadAway(DeBruijnNode *node) const
 {
     for (auto *edge : m_edges) {
         if (edge->connects(this, node))
@@ -335,7 +335,7 @@ DeBruijnEdge * DeBruijnNode::doesNodeLeadAway(DeBruijnNode * node) const
 }
 
 
-bool DeBruijnNode::isNodeConnected(DeBruijnNode * node) const {
+bool DeBruijnNode::isNodeConnected(DeBruijnNode *node) const {
     for (auto *edge : m_edges) {
         if (edge->connects(node, this) || edge->connects(this, node))
             return true;
@@ -383,7 +383,7 @@ Sequence &DeBruijnNode::getSequence()
 
 //If the node has an edge which leads to itself (creating a loop), this function
 //will return it.  Otherwise, it returns 0.
-DeBruijnEdge * DeBruijnNode::getSelfLoopingEdge() const
+DeBruijnEdge *DeBruijnNode::getSelfLoopingEdge() const
 {
     for (auto edge : m_edges)
     {

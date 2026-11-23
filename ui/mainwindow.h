@@ -62,15 +62,15 @@ public:
 
 private:
     Ui::MainWindow *ui;
-    BandageGraphicsScene * m_scene;
+    BandageGraphicsScene *m_scene;
 
-    GraphicsViewZoom * m_graphicsViewZoom;
+    GraphicsViewZoom *m_graphicsViewZoom;
     double m_previousZoomSpinBoxValue;
     QString m_imageFilter;
     QString m_fileToLoadOnStartup;
     bool m_drawGraphAfterLoad;
     UiState m_uiState;
-    GraphSearchDialog * m_graphSearchDialog;
+    GraphSearchDialog *m_graphSearchDialog;
 
     bool m_alreadyShown;
 
@@ -86,7 +86,7 @@ private:
                              QString & selectedNodeListText, QString & selectedNodeLengthText, QString &selectedNodeDepthText,
                              QString &selectNodeTagText);
     QString getSelectedEdgeListText();
-    std::vector<DeBruijnNode *> getNodesFromLineEdit(QLineEdit * lineEdit, bool exactMatch, std::vector<QString> * nodesNotInGraph = nullptr);
+    std::vector<DeBruijnNode *> getNodesFromLineEdit(QLineEdit *lineEdit, bool exactMatch, std::vector<QString> * nodesNotInGraph = nullptr);
     void setUiState(UiState uiState);
     void selectBasedOnContiguity(ContiguityStatus contiguityStatus);
     void setWidgetsFromSettings();

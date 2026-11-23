@@ -117,7 +117,7 @@ static ssize_t gzgetdelim(char **buf, size_t *bufsiz, int delimiter, gzFile fp) 
 
     if (*buf == NULL || *bufsiz == 0) {
         *bufsiz = BUFSIZ;
-        if ((*buf = (char*)malloc(*bufsiz)) == NULL)
+        if ((*buf = (char *)malloc(*bufsiz)) == NULL)
             return -1;
     }
 
@@ -142,7 +142,7 @@ static ssize_t gzgetdelim(char **buf, size_t *bufsiz, int delimiter, gzFile fp) 
             char *nbuf;
             size_t nbufsiz = *bufsiz * 2;
             ssize_t d = ptr - *buf;
-            if ((nbuf = (char*)realloc(*buf, nbufsiz)) == NULL)
+            if ((nbuf = (char *)realloc(*buf, nbufsiz)) == NULL)
                 return -1;
 
             *buf = nbuf;
@@ -384,7 +384,7 @@ namespace io {
                 = createStrandNode(nodeName, nodeDepth, sequence));
     }
 
-    using NodePair = std::pair<DeBruijnNode*, DeBruijnNode*>;
+    using NodePair = std::pair<DeBruijnNode *, DeBruijnNode *>;
     static bandage::Expected<NodePair>
     addSegmentPair(std::string_view nodeName,
                    double nodeDepth, Sequence sequence,
@@ -469,7 +469,7 @@ namespace io {
         return addSegmentPair(nodeName, 0, Sequence(), graph);
     }
 
-    static bandage::Expected<DeBruijnNode*> getNode(const std::string &name,
+    static bandage::Expected<DeBruijnNode *> getNode(const std::string &name,
                                                  AssemblyGraph &graph) {
         auto nodeIt = graph.m_deBruijnGraphNodes.find(name);
         if (nodeIt != graph.m_deBruijnGraphNodes.end())
@@ -1489,7 +1489,7 @@ namespace io {
             }
 
             len = std::min(len, state->output.pos - state->readPos);
-            memcpy(buf, (uint8_t*)state->output.dst + state->readPos, len);
+            memcpy(buf, (uint8_t *)state->output.dst + state->readPos, len);
             state->readPos += len;
             return len;
         }

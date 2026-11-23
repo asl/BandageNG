@@ -52,7 +52,7 @@ void GraphSearch::cleanUp() {
 
 #ifdef Q_OS_WIN32
 //On Windows, we use the WHERE command to find a program.
-bool GraphSearch::findProgram(const QString &programName, QString * command)
+bool GraphSearch::findProgram(const QString &programName, QString *command)
 {
     QProcess find;
     find.start("WHERE", QStringList(programName));
@@ -63,7 +63,7 @@ bool GraphSearch::findProgram(const QString &programName, QString * command)
 
 #else
 //On Mac/Linux we use the which command to find a program.
-bool GraphSearch::findProgram(const QString &programName, QString * command)
+bool GraphSearch::findProgram(const QString &programName, QString *command)
 {
     QProcess find;
 

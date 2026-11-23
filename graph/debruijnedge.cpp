@@ -43,7 +43,7 @@ std::pair<DeBruijnNode *, DeBruijnNode *> DeBruijnEdge::orientedEnds(bool revers
     return {m_endingNode->getReverseComplement(), m_startingNode->getReverseComplement()};
 }
 
-DeBruijnNode * DeBruijnEdge::other(const DeBruijnNode * node) const {
+DeBruijnNode *DeBruijnEdge::other(const DeBruijnNode *node) const {
     if (node == m_startingNode)
         return m_endingNode;
     if (node == m_endingNode)
@@ -61,7 +61,7 @@ static bool nodeIsOwnReverseComplement(const DeBruijnNode *node) {
     return node != nullptr && node->getReverseComplement() == node;
 }
 
-DeBruijnNode * DeBruijnEdge::downstream(const DeBruijnNode * node) const {
+DeBruijnNode *DeBruijnEdge::downstream(const DeBruijnNode *node) const {
     if (!nodeIsOwnReverseComplement(node))
         return other(node);
     if (node == m_startingNode)
@@ -71,7 +71,7 @@ DeBruijnNode * DeBruijnEdge::downstream(const DeBruijnNode * node) const {
     return other(node);
 }
 
-DeBruijnNode * DeBruijnEdge::upstream(const DeBruijnNode * node) const {
+DeBruijnNode *DeBruijnEdge::upstream(const DeBruijnNode *node) const {
     if (!nodeIsOwnReverseComplement(node))
         return other(node);
     if (node == m_endingNode && node != m_startingNode)
@@ -83,7 +83,7 @@ DeBruijnNode * DeBruijnEdge::upstream(const DeBruijnNode * node) const {
     return other(node);
 }
 
-bool DeBruijnEdge::leaves(const DeBruijnNode * node) const {
+bool DeBruijnEdge::leaves(const DeBruijnNode *node) const {
     if (node == m_startingNode)
         return true;
     if (isOwnReverseComplement())
@@ -91,7 +91,7 @@ bool DeBruijnEdge::leaves(const DeBruijnNode * node) const {
     return node == m_endingNode->getReverseComplement();
 }
 
-bool DeBruijnEdge::enters(const DeBruijnNode * node) const {
+bool DeBruijnEdge::enters(const DeBruijnNode *node) const {
     if (node == m_endingNode)
         return true;
     if (isOwnReverseComplement())
@@ -99,7 +99,7 @@ bool DeBruijnEdge::enters(const DeBruijnNode * node) const {
     return node == m_startingNode->getReverseComplement();
 }
 
-bool DeBruijnEdge::connects(const DeBruijnNode * from, const DeBruijnNode * to) const {
+bool DeBruijnEdge::connects(const DeBruijnNode *from, const DeBruijnNode *to) const {
     if (m_startingNode == from && m_endingNode == to)
         return true;
     if (isOwnReverseComplement())
@@ -165,14 +165,14 @@ bool DeBruijnEdge::isPositiveEdge() const {
 void DeBruijnEdge::tracePaths(bool forward,
                               int stepsRemaining,
                               std::vector< std::vector <DeBruijnNode *> > &allPaths,
-                              const DeBruijnNode * startingNode,
+                              const DeBruijnNode *startingNode,
                               std::vector<DeBruijnNode *> pathSoFar) const {
     //This can go for a while, so keep the UI responsive.
     QApplication::processEvents();
 
     // The edge may be stored in the opposite orientation from this path.
     const DeBruijnNode *here = pathSoFar.empty() ? startingNode : pathSoFar.back();
-    DeBruijnNode * nextNode = forward ? downstream(here) : upstream(here);
+    DeBruijnNode *nextNode = forward ? downstream(here) : upstream(here);
 
     //Add that node to the path so far.
     pathSoFar.push_back(nextNode);
@@ -192,7 +192,7 @@ void DeBruijnEdge::tracePaths(bool forward,
         return;
     }
     for (auto link : links) {
-        DeBruijnNode * nextNextNode = link.otherNode();
+        DeBruijnNode *nextNextNode = link.otherNode();
 
         if (nextNextNode == startingNode) {
             allPaths.push_back(pathSoFar);
@@ -206,7 +206,7 @@ void DeBruijnEdge::tracePaths(bool forward,
 
 
 // This function counts how many times a node appears in a path
-unsigned DeBruijnEdge::timesNodeInPath(const DeBruijnNode * node, const std::vector<DeBruijnNode *> &path) {
+unsigned DeBruijnEdge::timesNodeInPath(const DeBruijnNode *node, const std::vector<DeBruijnNode *> &path) {
     unsigned count = 0;
     for (auto *i : path)
         count += (i == node);
@@ -218,7 +218,7 @@ unsigned DeBruijnEdge::timesNodeInPath(const DeBruijnNode * node, const std::vec
 
 bool DeBruijnEdge::leadsOnlyToNode(bool forward,
                                    int stepsRemaining,
-                                   const DeBruijnNode * target,
+                                   const DeBruijnNode *target,
                                    std::vector<DeBruijnNode *> pathSoFar,
                                    bool includeReverseComplement) const
 {
@@ -226,7 +226,7 @@ bool DeBruijnEdge::leadsOnlyToNode(bool forward,
     QApplication::processEvents();
 
     // Callers pass the node this edge was reached from as the last entry.
-    DeBruijnNode * nextNode = forward ? downstream(pathSoFar.back())
+    DeBruijnNode *nextNode = forward ? downstream(pathSoFar.back())
                                      : upstream(pathSoFar.back());
 
     //Add that node to the path so far.
@@ -258,7 +258,7 @@ bool DeBruijnEdge::leadsOnlyToNode(bool forward,
     if (links.empty())
         return false;
     for (auto link : links) {
-        DeBruijnNode * nextNextNode = link.otherNode();
+        DeBruijnNode *nextNextNode = link.otherNode();
         if (timesNodeInPath(nextNextNode, pathSoFar) < 2) {
             if (!link.edge()->leadsOnlyToNode(forward, stepsRemaining, target, pathSoFar,
                                               includeReverseComplement))
@@ -334,7 +334,7 @@ static bool parseWholeNumber(std::string_view text, long long &value) {
     return error == std::errc() && parsed == end;
 }
 
-bool DeBruijnEdge::compareEdgePointers(const DeBruijnEdge * a, const DeBruijnEdge * b) {
+bool DeBruijnEdge::compareEdgePointers(const DeBruijnEdge *a, const DeBruijnEdge *b) {
     const std::string aStart = a->getStartingNode()->getName();
     const std::string bStart = b->getStartingNode()->getName();
     long long aStartNumber = 0;

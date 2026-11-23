@@ -72,10 +72,10 @@ public:
     QByteArray getAAFasta(unsigned shift, bool sign, bool newLines, bool evenIfEmpty) const;
 
     char getBaseAt(int i) const {if (i >= 0 && i < m_sequence.size()) return m_sequence[i]; else return '\0';} // NOTE
-    DeBruijnNode * getReverseComplement() const {return m_reverseComplement;}
+    DeBruijnNode *getReverseComplement() const {return m_reverseComplement;}
     DeBruijnNode *getCanonical() const { return isPositiveNode() ? const_cast<DeBruijnNode *>(this) : m_reverseComplement; }
 
-    GraphicsItemNode * getGraphicsItemNode() const {return m_graphicsItemNode;}
+    GraphicsItemNode *getGraphicsItemNode() const {return m_graphicsItemNode;}
     bool hasGraphicsItem() const {return m_graphicsItemNode != nullptr;}
 
     auto edgeBegin() { return m_edges.begin(); }
@@ -111,9 +111,9 @@ public:
     bool isPositiveNode() const { return !m_name.empty(); }
     bool isNegativeNode() const { return m_name.empty(); }
 
-    bool isNodeConnected(DeBruijnNode * node) const;
-    DeBruijnEdge * doesNodeLeadIn(DeBruijnNode * node) const;
-    DeBruijnEdge * doesNodeLeadAway(DeBruijnNode * node) const;
+    bool isNodeConnected(DeBruijnNode *node) const;
+    DeBruijnEdge *doesNodeLeadIn(DeBruijnNode *node) const;
+    DeBruijnEdge *doesNodeLeadAway(DeBruijnNode *node) const;
     bool isInDepthRange(double min, double max) const;
     bool sequenceIsMissing() const;
     DeBruijnEdge *getSelfLoopingEdge() const;
@@ -121,15 +121,15 @@ public:
 
     void setSequence(const QByteArray &newSeq) {m_sequence = Sequence(newSeq); m_length = m_sequence.size();}
     void setSequence(const Sequence &newSeq) {m_sequence = newSeq; m_length = m_sequence.size();}
-    void setReverseComplement(DeBruijnNode * rc) {m_reverseComplement = rc;}
-    void setGraphicsItemNode(GraphicsItemNode * gin) {m_graphicsItemNode = gin;}
+    void setReverseComplement(DeBruijnNode *rc) {m_reverseComplement = rc;}
+    void setGraphicsItemNode(GraphicsItemNode *gin) {m_graphicsItemNode = gin;}
     void setAsSpecial() {m_specialNode = true;}
     void setAsNotSpecial() {m_specialNode = false;}
     void setAsDrawn() {m_drawn = true;}
     void setAsNotDrawn() {m_drawn = false;}
     void resetNode();
-    void addEdge(DeBruijnEdge * edge);
-    void removeEdge(DeBruijnEdge * edge);
+    void addEdge(DeBruijnEdge *edge);
+    void removeEdge(DeBruijnEdge *edge);
     void labelNeighbouringNodesAsDrawn(int nodeDistance);
     void setDepth(double newDepth) {m_depth = newDepth;}
     // Unsigned name. Empty is refused: that would make this node look negative.
@@ -138,10 +138,10 @@ public:
 private:
     std::string m_name;
     Sequence m_sequence;
-    DeBruijnNode * m_reverseComplement;
+    DeBruijnNode *m_reverseComplement;
     adt::SmallPODVector<DeBruijnEdge *> m_edges;
 
-    GraphicsItemNode * m_graphicsItemNode;
+    GraphicsItemNode *m_graphicsItemNode;
 
     float m_depth;
 
@@ -154,5 +154,5 @@ private:
 
     static std::vector<DeBruijnNode *> getNodesCommonToAllPaths(std::vector< std::vector <DeBruijnNode *> > * paths,
                                                                 bool includeReverseComplements) ;
-    bool doesPathLeadOnlyToNode(DeBruijnNode * node, bool includeReverseComplement);
+    bool doesPathLeadOnlyToNode(DeBruijnNode *node, bool includeReverseComplement);
 };

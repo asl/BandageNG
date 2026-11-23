@@ -13,7 +13,7 @@ VerticalLabel::VerticalLabel(const QString &text, QWidget *parent)
 {
 }
 
-void VerticalLabel::paintEvent(QPaintEvent*)
+void VerticalLabel::paintEvent(QPaintEvent *)
 {
     QPainter painter(this);
     painter.setPen(Qt::black);

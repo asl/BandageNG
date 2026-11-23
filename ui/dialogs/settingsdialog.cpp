@@ -94,26 +94,26 @@ SettingsDialog::~SettingsDialog()
 //These functions either set a widget to a value or set the value to the widget.  Pointers to
 //these functions will be passed to loadOrSaveSettingsToOrFromWidgets, so that one function can
 //take care of both save and load functionality.
-void setOneSettingFromWidget(FloatSetting * setting, QDoubleSpinBox * spinBox, bool percentage) {setting->val = spinBox->value() / (percentage ? 100.0 : 1.0);}
-void setOneSettingFromWidget(IntSetting * setting, QSpinBox * spinBox) {setting->val = spinBox->value();}
-void setOneSettingFromWidget(QColor * setting, ColourButton * button) {*setting = button->m_colour;}
-void setOneSettingFromWidget(SciNotSetting * setting, QDoubleSpinBox * coefficientSpinBox, QSpinBox * exponentSpinBox) {setting->val = SciNot(coefficientSpinBox->value(), exponentSpinBox->value());}
-void setOneSettingFromWidget(bool * setting, QCheckBox * checkBox) {*setting = checkBox->isChecked();}
-void setOneWidgetFromSetting(QColor * setting, ColourButton * button) {button->setColour(*setting);}
-void setOneWidgetFromSetting(bool * setting, QCheckBox * checkBox) {checkBox->setChecked(*setting);}
-void setOneWidgetFromSetting(FloatSetting * setting, QDoubleSpinBox * spinBox, bool percentage)
+void setOneSettingFromWidget(FloatSetting *setting, QDoubleSpinBox *spinBox, bool percentage) {setting->val = spinBox->value() / (percentage ? 100.0 : 1.0);}
+void setOneSettingFromWidget(IntSetting *setting, QSpinBox *spinBox) {setting->val = spinBox->value();}
+void setOneSettingFromWidget(QColor *setting, ColourButton *button) {*setting = button->m_colour;}
+void setOneSettingFromWidget(SciNotSetting *setting, QDoubleSpinBox *coefficientSpinBox, QSpinBox *exponentSpinBox) {setting->val = SciNot(coefficientSpinBox->value(), exponentSpinBox->value());}
+void setOneSettingFromWidget(bool *setting, QCheckBox *checkBox) {*setting = checkBox->isChecked();}
+void setOneWidgetFromSetting(QColor *setting, ColourButton *button) {button->setColour(*setting);}
+void setOneWidgetFromSetting(bool *setting, QCheckBox *checkBox) {checkBox->setChecked(*setting);}
+void setOneWidgetFromSetting(FloatSetting *setting, QDoubleSpinBox *spinBox, bool percentage)
 {
     spinBox->setMinimum(setting->min * (percentage ? 100.0 : 1.0));
     spinBox->setMaximum(setting->max * (percentage ? 100.0 : 1.0));
     spinBox->setValue(setting->val * (percentage ? 100.0 : 1.0));
 }
-void setOneWidgetFromSetting(IntSetting * setting, QSpinBox * spinBox)
+void setOneWidgetFromSetting(IntSetting *setting, QSpinBox *spinBox)
 {
     spinBox->setMinimum(setting->min);
     spinBox->setMaximum(setting->max);
     spinBox->setValue(setting->val);
 }
-void setOneWidgetFromSetting(SciNotSetting * setting, QDoubleSpinBox * coefficientSpinBox, QSpinBox * exponentSpinBox)
+void setOneWidgetFromSetting(SciNotSetting *setting, QDoubleSpinBox *coefficientSpinBox, QSpinBox *exponentSpinBox)
 {
     coefficientSpinBox->setMinimum(setting->min.getCoefficient());
     coefficientSpinBox->setMaximum(setting->max.getCoefficient());
@@ -145,7 +145,7 @@ void SettingsDialog::setSettingsFromWidgets()
 
 
 
-void SettingsDialog::loadOrSaveSettingsToOrFromWidgets(bool setWidgets, Settings * settings)
+void SettingsDialog::loadOrSaveSettingsToOrFromWidgets(bool setWidgets, Settings *settings)
 {
     void (*doubleFunctionPointer)(FloatSetting *, QDoubleSpinBox *, bool);
     void (*intFunctionPointer)(IntSetting *, QSpinBox *);

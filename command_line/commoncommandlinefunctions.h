@@ -44,10 +44,10 @@ bool isSectionHeader(const QString& text);
 bool isListItem(QString text);
 bool isCommand(const QString& text);
 bool isError(const QString& text);
-void outputText(const QString& text, QTextStream * out);
-void outputText(const QStringList& text, QTextStream * out);
+void outputText(const QString& text, QTextStream *out);
+void outputText(const QStringList& text, QTextStream *out);
 bool loadAssemblyGraph(const QString &filename, QTextStream &err);
 void writeTextError(QTextStream &out, bandage::Error err);
-void getOnlineHelpMessage(QStringList * text);
+void getOnlineHelpMessage(QStringList *text);
 
 #endif // COMMANDCOMMANDLINEFUNCTIONS_H

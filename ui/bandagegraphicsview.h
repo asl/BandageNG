@@ -42,33 +42,33 @@ public:
     void undoRotation();
 
 
-    GraphicsViewZoom * m_zoom;
+    GraphicsViewZoom *m_zoom;
     QPoint m_previousPos;
 
     void setAntialiasing(bool antialiasingOn);
     bool isPointVisible(QPointF p);
     QPointF findIntersectionWithViewportBoundary(QLineF line);
-    QLineF findVisiblePartOfLine(QLineF line, bool * success);
+    QLineF findVisiblePartOfLine(QLineF line, bool *success);
 
 protected:
-    void mousePressEvent(QMouseEvent * event);
-    void mouseReleaseEvent(QMouseEvent * event);
-    void mouseMoveEvent(QMouseEvent * event);
-    void keyPressEvent(QKeyEvent * event);
-    void mouseDoubleClickEvent(QMouseEvent * event);
+    void mousePressEvent(QMouseEvent *event);
+    void mouseReleaseEvent(QMouseEvent *event);
+    void mouseMoveEvent(QMouseEvent *event);
+    void keyPressEvent(QKeyEvent *event);
+    void mouseDoubleClickEvent(QMouseEvent *event);
 
 private:
     double m_rotation;
 
     static double distance(double x1, double y1, double x2, double y2);
     static double angleBetweenTwoLines(QPointF line1Start, QPointF line1End, QPointF line2Start, QPointF line2End);
-    void getFourViewportCornersInSceneCoordinates(QPointF * c1, QPointF * c2, QPointF * c3, QPointF * c4);
+    void getFourViewportCornersInSceneCoordinates(QPointF *c1, QPointF *c2, QPointF *c3, QPointF *c4);
     static bool differentSidesOfLine(QPointF p1, QPointF p2, QLineF line);
     static bool differentSidesOfLine(QPointF p1, QPointF p2, QPointF p3, QPointF p4, QLineF line);
     static bool sideOfLine(QPointF p, QLineF line);
 
 signals:
-    void doubleClickedNode(DeBruijnNode * node);
+    void doubleClickedNode(DeBruijnNode *node);
     void copySelectedSequencesToClipboard();
     void saveSelectedSequencesToFile();
 };

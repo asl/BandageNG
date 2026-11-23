@@ -84,7 +84,7 @@ void WalkListDialog::refineByNode() {
         return;
     }
 
-    auto *model = qobject_cast<WalkListModel*>(ui->walksView->model());
+    auto *model = qobject_cast<WalkListModel *>(ui->walksView->model());
     model->refineWalkOrder(nodes);
 
     // Resort
@@ -93,7 +93,7 @@ void WalkListDialog::refineByNode() {
 }
 
 WalkListModel::WalkListModel(const AssemblyGraph &g,
-                             const std::vector<DeBruijnNode*> &startNodes,
+                             const std::vector<DeBruijnNode *> &startNodes,
                              QObject *parent)
   : QAbstractTableModel(parent), graph(g) {
     // Build a coverage map: which node is covered by which walks (used for filtering)
@@ -235,7 +235,7 @@ QVariant WalkListModel::data(const QModelIndex &index, int role) const {
     return {};
 }
 
-void WalkListModel::refineWalkOrder(const std::vector<DeBruijnNode*> &nodes) {
+void WalkListModel::refineWalkOrder(const std::vector<DeBruijnNode *> &nodes) {
     beginResetModel();
 
     m_orderedWalks.clear();

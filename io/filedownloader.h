@@ -26,7 +26,7 @@ class FileDownloader : public QObject {
     Q_OBJECT
 
 public:
-    explicit FileDownloader(QObject* parent = nullptr);
+    explicit FileDownloader(QObject *parent = nullptr);
     void download(const QString& url, const QString& outputPath = QString());
 
 signals:
@@ -35,10 +35,10 @@ signals:
     void error(const QString& message);
 
 private:
-    void processDataChunk(QNetworkReply* reply);
-    void handleFinished(QNetworkReply* reply);
+    void processDataChunk(QNetworkReply *reply);
+    void handleFinished(QNetworkReply *reply);
 
-    QNetworkAccessManager* m_manager;
+    QNetworkAccessManager *m_manager;
     QFile m_file;
     QString m_outputPath;
     qint64 m_bytesReceived = 0;

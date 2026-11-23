@@ -80,7 +80,7 @@ void PathListDialog::refineByNode() {
         return;
     }
 
-    auto *model = qobject_cast<PathListModel*>(ui->pathsView->model());
+    auto *model = qobject_cast<PathListModel *>(ui->pathsView->model());
     model->refinePathOrder(nodes);
 
     // Resort
@@ -89,7 +89,7 @@ void PathListDialog::refineByNode() {
 }
 
 PathListModel::PathListModel(const AssemblyGraph &g,
-                             const std::vector<DeBruijnNode*> &startNodes,
+                             const std::vector<DeBruijnNode *> &startNodes,
                              QObject *parent)
   : QAbstractTableModel(parent), graph(g) {
     // Build a coverage map: which node is covered by which paths (used for filtering)
@@ -189,7 +189,7 @@ QVariant PathListModel::data(const QModelIndex &index, int role) const {
     return {};
 }
 
-void PathListModel::refinePathOrder(const std::vector<DeBruijnNode*> &nodes) {
+void PathListModel::refinePathOrder(const std::vector<DeBruijnNode *> &nodes) {
     beginResetModel();
 
     m_orderedPaths.clear();

@@ -40,7 +40,7 @@ class GraphSearch;
 // FIXME: This is bad. Factor this out when possible
 extern QSharedPointer<Settings> g_settings;
 extern QSharedPointer<Memory> g_memory;
-extern BandageGraphicsView * g_graphicsView;
+extern BandageGraphicsView *g_graphicsView;
 extern double g_absoluteZoom;
 extern std::unique_ptr<search::GraphSearch> g_graphSearch;
 extern QSharedPointer<AssemblyGraph> g_assemblyGraph;

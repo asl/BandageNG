@@ -55,14 +55,14 @@ void HitFiltersDialog::checkBoxesChanged()
 }
 
 
-void setSpinBoxValMinAndMax(QSpinBox * spinBox, IntSetting setting)
+void setSpinBoxValMinAndMax(QSpinBox *spinBox, IntSetting setting)
 {
     spinBox->setValue(setting.val);
     spinBox->setMinimum(setting.min);
     spinBox->setMaximum(setting.max);
 }
 
-void setSpinBoxValMinAndMax(QDoubleSpinBox * spinBox, FloatSetting setting)
+void setSpinBoxValMinAndMax(QDoubleSpinBox *spinBox, FloatSetting setting)
 {
     spinBox->setValue(setting.val);
     spinBox->setMinimum(setting.min);

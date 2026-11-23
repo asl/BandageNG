@@ -245,8 +245,8 @@ Qt::ItemFlags QueryPathsModel::flags(const QModelIndex &index) const {
 }
 
 void CopyPathSequenceDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
-    const auto *proxyModel = qobject_cast<const QSortFilterProxyModel*>(index.model());
-    const auto *model = qobject_cast<const QueryPathsModel*>(proxyModel->sourceModel());
+    const auto *proxyModel = qobject_cast<const QSortFilterProxyModel *>(index.model());
+    const auto *model = qobject_cast<const QueryPathsModel *>(proxyModel->sourceModel());
     const auto &queryPath = model->m_queryPaths[proxyModel->mapToSource(index).row()];
 
     QStyleOptionButton btn;
@@ -264,8 +264,8 @@ void CopyPathSequenceDelegate::paint(QPainter *painter, const QStyleOptionViewIt
 bool CopyPathSequenceDelegate::editorEvent(QEvent *event, QAbstractItemModel *model, const QStyleOptionViewItem &option,
                                            const QModelIndex &index) {
     if (event->type() == QEvent::MouseButtonRelease) {
-        const auto *proxyModel = qobject_cast<const QSortFilterProxyModel*>(model);
-        const auto *dataModel = qobject_cast<const QueryPathsModel*>(proxyModel->sourceModel());
+        const auto *proxyModel = qobject_cast<const QSortFilterProxyModel *>(model);
+        const auto *dataModel = qobject_cast<const QueryPathsModel *>(proxyModel->sourceModel());
         const auto &queryPath = dataModel->m_queryPaths[proxyModel->mapToSource(index).row()];
 
         QApplication::clipboard()->setText(queryPath.getPath().getPathSequence());

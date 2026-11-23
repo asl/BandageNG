@@ -3,7 +3,7 @@
 #include <QFileDialog>
 #include <QMessageBox>
 
-LoganDownloadDialog::LoganDownloadDialog(QWidget* parent)
+LoganDownloadDialog::LoganDownloadDialog(QWidget *parent)
     : QDialog(parent), ui(new Ui::LoganDownloadDialog) {
     ui->setupUi(this);
 

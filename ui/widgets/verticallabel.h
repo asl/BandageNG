@@ -14,7 +14,7 @@ public:
     explicit VerticalLabel(const QString &text, QWidget *parent=nullptr);
 
 protected:
-    void paintEvent(QPaintEvent*) override;
+    void paintEvent(QPaintEvent *) override;
     QSize sizeHint() const override ;
     QSize minimumSizeHint() const override;
 };

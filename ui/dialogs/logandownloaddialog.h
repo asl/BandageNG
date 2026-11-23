@@ -33,7 +33,7 @@ public:
         Contigs
     };
 
-    explicit LoganDownloadDialog(QWidget* parent = nullptr);
+    explicit LoganDownloadDialog(QWidget *parent = nullptr);
     ~LoganDownloadDialog();
 
     DownloadType downloadType() const;
@@ -53,6 +53,6 @@ signals:
     
 private:
     QString m_outputPath;
-    Ui::LoganDownloadDialog* ui;
-    FileDownloader* m_downloader;
+    Ui::LoganDownloadDialog *ui;
+    FileDownloader *m_downloader;
 };

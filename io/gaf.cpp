@@ -82,7 +82,7 @@ namespace gaf {
         };
     }
 
-    std::optional<record> parseRecord(const char* line, size_t len) {
+    std::optional<record> parseRecord(const char *line, size_t len) {
         auto result = lexy::parse<grammar::record>(lexy::string_input(line, len), lexy_ext::report_error);
         if (result.has_value())
             return std::make_optional(result.value());

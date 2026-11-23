@@ -51,7 +51,7 @@ namespace graph {
         std::variant<
                 std::nullptr_t, // whole graph
                 QString, // path or node
-                std::pair<const search::Queries*, QString>, // hits
+                std::pair<const search::Queries *, QString>, // hits
                 std::pair<double, double>, // depth
                 ComponentSeed // connected component seeds
         > m_opt;
@@ -70,11 +70,11 @@ namespace graph {
         }
 
         const search::Queries *queries() const {
-            return std::get<std::pair<const search::Queries*, QString>>(m_opt).first;
+            return std::get<std::pair<const search::Queries *, QString>>(m_opt).first;
         };
 
         QString queryName() const {
-            return std::get<std::pair<const search::Queries*, QString>>(m_opt).second;
+            return std::get<std::pair<const search::Queries *, QString>>(m_opt).second;
         };
 
         QString nodeList() const {

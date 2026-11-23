@@ -46,9 +46,9 @@
 
 //This constructor makes a new GraphicsItemNode by copying the line points of
 //the given node.
-GraphicsItemNode::GraphicsItemNode(DeBruijnNode * deBruijnNode,
-                                   GraphicsItemNode * toCopy,
-                                   QGraphicsItem * parent) :
+GraphicsItemNode::GraphicsItemNode(DeBruijnNode *deBruijnNode,
+                                   GraphicsItemNode *toCopy,
+                                   QGraphicsItem *parent) :
     QGraphicsItem(parent), m_deBruijnNode(deBruijnNode),
     m_linePoints(toCopy->m_linePoints),
     m_colour(toCopy->m_colour),
@@ -153,7 +153,7 @@ static bool anyNodeDisplayText() {
            g_settings->displayNodeCsvData;
 }
 
-void GraphicsItemNode::paint(QPainter * painter, const QStyleOptionGraphicsItem *, QWidget *)
+void GraphicsItemNode::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *)
 {
     static AnnotationGroup::AnnotationVector emptyAnnotations{};
 
@@ -265,7 +265,7 @@ void GraphicsItemNode::paint(QPainter * painter, const QStyleOptionGraphicsItem 
 }
 
 
-void GraphicsItemNode::drawTextPathAtLocation(QPainter * painter, const QPainterPath &textPath, QPointF centre)
+void GraphicsItemNode::drawTextPathAtLocation(QPainter *painter, const QPainterPath &textPath, QPointF centre)
 {
     QRectF textBoundingRect = textPath.boundingRect();
     double textHeight = textBoundingRect.height();
@@ -376,7 +376,7 @@ QPainterPath GraphicsItemNode::shape() const
 }
 
 
-void GraphicsItemNode::mousePressEvent(QGraphicsSceneMouseEvent * event)
+void GraphicsItemNode::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
     m_grabIndex = 0;
     QPointF grabPoint = event->pos();
@@ -396,7 +396,7 @@ void GraphicsItemNode::mousePressEvent(QGraphicsSceneMouseEvent * event)
 
 //When this node graphics item is moved, each of the connected edge
 //graphics items will need to be adjusted accordingly.
-void GraphicsItemNode::mouseMoveEvent(QGraphicsSceneMouseEvent * event)
+void GraphicsItemNode::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 {
     QPointF difference = event->pos() - event->lastPos();
 
@@ -431,7 +431,7 @@ void GraphicsItemNode::fixEdgePaths(std::vector<GraphicsItemNode *> * nodes) con
             edgesToFix.insert(edge);
     } else {
         for (auto &graphicNode : *nodes) {
-            DeBruijnNode * node = graphicNode->m_deBruijnNode;
+            DeBruijnNode *node = graphicNode->m_deBruijnNode;
             for (auto *edge : node->edges())
                 edgesToFix.insert(edge);
         }
@@ -807,7 +807,7 @@ double GraphicsItemNode::posToFraction(int64_t pos) const {
 
 //This function outlines and shades the appropriate part of a node if it is
 //in the user-specified path.
-void GraphicsItemNode::exactPathHighlightNode(QPainter * painter)
+void GraphicsItemNode::exactPathHighlightNode(QPainter *painter)
 {
     if (g_memory->userSpecifiedPath.containsNode(m_deBruijnNode))
         pathHighlightNode2(painter, m_deBruijnNode, false, &g_memory->userSpecifiedPath);
@@ -820,14 +820,14 @@ void GraphicsItemNode::exactPathHighlightNode(QPainter * painter)
 
 //This function outlines and shades the appropriate part of a node if it is
 //in the user-specified path.
-void GraphicsItemNode::queryPathHighlightNode(QPainter * painter)
+void GraphicsItemNode::queryPathHighlightNode(QPainter *painter)
 {
     if (g_memory->queryPaths.empty())
         return;
 
     for (auto &queryPath : g_memory->queryPaths)
     {
-        Path * path = &queryPath;
+        Path *path = &queryPath;
         if (path->containsNode(m_deBruijnNode))
             pathHighlightNode2(painter, m_deBruijnNode, false, path);
 
@@ -837,7 +837,7 @@ void GraphicsItemNode::queryPathHighlightNode(QPainter * painter)
     }
 }
 
-static void pathHighlightNode3(QPainter * painter,
+static void pathHighlightNode3(QPainter *painter,
                                QPainterPath highlightPath) {
     QBrush shadingBrush(g_settings->pathHighlightShadingColour);
     painter->fillPath(highlightPath, shadingBrush);
@@ -850,10 +850,10 @@ static void pathHighlightNode3(QPainter * painter,
     painter->drawPath(highlightPath);
 }
 
-void GraphicsItemNode::pathHighlightNode2(QPainter * painter,
-                                          DeBruijnNode * node,
+void GraphicsItemNode::pathHighlightNode2(QPainter *painter,
+                                          DeBruijnNode *node,
                                           bool reverse,
-                                          Path * path)
+                                          Path *path)
 {
     int numberOfTimesInMiddle = path->numberOfOccurrencesInMiddleOfPath(node);
     for (int i = 0; i < numberOfTimesInMiddle; ++i)

@@ -47,7 +47,7 @@ class PathButtonDelegate : public QStyledItemDelegate {
     Q_OBJECT
     Q_DISABLE_COPY(PathButtonDelegate)
 public:
-    explicit PathButtonDelegate(QObject* parent = nullptr)
+    explicit PathButtonDelegate(QObject *parent = nullptr)
             : QStyledItemDelegate(parent)
     {}
 
