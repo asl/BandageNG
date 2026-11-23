@@ -25,69 +25,135 @@
 #include <cmath>
 #include <QApplication>
 
+static_assert(sizeof(DeBruijnEdge) == 32, "DeBruijnEdge must stay in the 32-byte size class");
+
 DeBruijnEdge::DeBruijnEdge(DeBruijnNode *startingNode, DeBruijnNode *endingNode) :
-    m_startingNode(startingNode), m_endingNode(endingNode), m_graphicsItemEdge(nullptr), m_reverseComplement(nullptr),
-    m_drawn(false), m_overlapType(UNKNOWN_OVERLAP), m_overlap(0)
-{
+    m_startingNode(startingNode), m_endingNode(endingNode), m_graphicsItemEdge(nullptr),
+    m_drawn(false), m_drawnReverse(false), m_overlapType(UNKNOWN_OVERLAP), m_overlap(0) {
 }
 
-//This function assumes that the parameter node pointer is one of the two nodes
-//in this edge, and it returns the other one.
-DeBruijnNode * DeBruijnEdge::getOtherNode(const DeBruijnNode * node) const
-{
-    return node == m_startingNode ?  m_endingNode : m_startingNode;
+bool DeBruijnEdge::isOwnReverseComplement() const {
+    return m_startingNode == m_endingNode->getReverseComplement() &&
+           m_endingNode == m_startingNode->getReverseComplement();
 }
 
+std::pair<DeBruijnNode *, DeBruijnNode *> DeBruijnEdge::orientedEnds(bool reversed) const {
+    if (!reversed || isOwnReverseComplement())
+        return {m_startingNode, m_endingNode};
+    return {m_endingNode->getReverseComplement(), m_startingNode->getReverseComplement()};
+}
 
-//This function determines whether the edge should be drawn to the screen.
-bool DeBruijnEdge::edgeIsVisible() const
-{
-    //If the program is in double mode, then draw any edge where both of its
-    //nodes are drawn.
-    if (g_settings->doubleMode)
-        return m_startingNode->isDrawn() && m_endingNode->isDrawn();
-
-    //If the program is in single mode, then draw any edge where both of its
-    //nodes or their reverse complements are drawn.
-    else
-    {
-        bool drawEdge = (m_startingNode->isDrawn() || m_startingNode->getReverseComplement()->isDrawn())
-                && (m_endingNode->isDrawn() || m_endingNode->getReverseComplement()->isDrawn());
-        if (!drawEdge)
-            return false;
-
-        //But it is also necessary to avoid drawing both an edge and its
-        //reverse complement edge.
-        return isPositiveEdge();
+DeBruijnNode * DeBruijnEdge::other(const DeBruijnNode * node) const {
+    if (node == m_startingNode)
+        return m_endingNode;
+    if (node == m_endingNode)
+        return m_startingNode;
+    if (!isOwnReverseComplement()) {
+        if (node == m_endingNode->getReverseComplement())
+            return m_startingNode->getReverseComplement();
+        if (node == m_startingNode->getReverseComplement())
+            return m_endingNode->getReverseComplement();
     }
+    return m_startingNode;
 }
 
+static bool nodeIsOwnReverseComplement(const DeBruijnNode *node) {
+    return node != nullptr && node->getReverseComplement() == node;
+}
 
+DeBruijnNode * DeBruijnEdge::downstream(const DeBruijnNode * node) const {
+    if (!nodeIsOwnReverseComplement(node))
+        return other(node);
+    if (node == m_startingNode)
+        return m_endingNode;
+    if (!isOwnReverseComplement() && node == m_endingNode->getReverseComplement())
+        return m_startingNode->getReverseComplement();
+    return other(node);
+}
 
-//This function says whether an edge is 'positive'.  This is used to distinguish
-//an edge from its reverse complement - i.e. half of the graph edges are
-//positive and their reverse complements are negative.
-//When one node in the edge is positive and the other is negative, then the
-//choice is somewhat arbitrary.
-bool DeBruijnEdge::isPositiveEdge() const
-{
-    //If both nodes have a positive number, show this edge, and not
-    //the reverse complement where both nodes are negative.
-    if (m_startingNode->isPositiveNode() && m_endingNode->isPositiveNode())
+DeBruijnNode * DeBruijnEdge::upstream(const DeBruijnNode * node) const {
+    if (!nodeIsOwnReverseComplement(node))
+        return other(node);
+    if (node == m_endingNode && node != m_startingNode)
+        return m_startingNode;
+    if (node == m_startingNode && !isOwnReverseComplement())
+        return m_endingNode->getReverseComplement();
+    if (node == m_endingNode)
+        return m_startingNode;
+    return other(node);
+}
+
+bool DeBruijnEdge::leaves(const DeBruijnNode * node) const {
+    if (node == m_startingNode)
         return true;
-    if (m_startingNode->isNegativeNode() && m_endingNode->isNegativeNode())
-        return false;
-
-    //Edges that are their own reverse complement are considered positive (but
-    //will not have a negative counterpart).
     if (isOwnReverseComplement())
-        return true;
+        return false;
+    return node == m_endingNode->getReverseComplement();
+}
 
-    //If the code got here, then one node is positive and the other
-    //negative.  In this case, just choose the one with the first name
-    //alphabetically - an arbitrary choice, but at least it is
-    //consistent.
-    return (m_startingNode->getName() > m_reverseComplement->m_startingNode->getName());
+bool DeBruijnEdge::enters(const DeBruijnNode * node) const {
+    if (node == m_endingNode)
+        return true;
+    if (isOwnReverseComplement())
+        return false;
+    return node == m_startingNode->getReverseComplement();
+}
+
+bool DeBruijnEdge::connects(const DeBruijnNode * from, const DeBruijnNode * to) const {
+    if (m_startingNode == from && m_endingNode == to)
+        return true;
+    if (isOwnReverseComplement())
+        return false;
+    return from == m_endingNode->getReverseComplement() &&
+           to == m_startingNode->getReverseComplement();
+}
+
+bool DeBruijnEdge::determineIfDrawn() {
+    auto strandDrawn = [](const DeBruijnNode *node) {
+        return node->isDrawn() ||
+               (node->getReverseComplement() != nullptr && node->getReverseComplement()->isDrawn());
+    };
+
+    if (g_settings->doubleMode) {
+        m_drawn = m_startingNode->isDrawn() && m_endingNode->isDrawn();
+        if (isOwnReverseComplement()) {
+            m_drawnReverse = false;
+        } else {
+            DeBruijnNode *revFrom = m_endingNode->getReverseComplement();
+            DeBruijnNode *revTo = m_startingNode->getReverseComplement();
+            m_drawnReverse = revFrom != nullptr && revTo != nullptr &&
+                             revFrom->isDrawn() && revTo->isDrawn();
+        }
+    } else {
+        // Single mode draws the stored (positive) direction once.
+        m_drawnReverse = false;
+        m_drawn = strandDrawn(m_startingNode) && strandDrawn(m_endingNode);
+    }
+    return m_drawn || m_drawnReverse;
+}
+
+// Stored ends are the positive direction. Mixed signs use the same name
+// comparison the old pair used against the reverse edge's start, which is
+// the reverse complement of the stored end.
+bool DeBruijnEdge::isPositiveOrientation(const DeBruijnNode *from, const DeBruijnNode *to) {
+    if (from->isPositiveNode() && to->isPositiveNode())
+        return true;
+    if (from->isNegativeNode() && to->isNegativeNode())
+        return false;
+    if (from == to->getReverseComplement() && to == from->getReverseComplement())
+        return true;
+    // The opposite direction is two positive ends, so this request is the
+    // other way. A null reverse complement keeps the name comparison.
+    DeBruijnNode *rcFrom = from->getReverseComplement();
+    DeBruijnNode *rcTo = to->getReverseComplement();
+    if (rcFrom != nullptr && rcTo != nullptr &&
+        rcFrom->isPositiveNode() && rcTo->isPositiveNode())
+        return false;
+    return from->getName() > to->getReverseComplement()->getName();
+}
+
+bool DeBruijnEdge::isPositiveEdge() const {
+    return isPositiveOrientation(m_startingNode, m_endingNode);
 }
 
 
@@ -104,12 +170,9 @@ void DeBruijnEdge::tracePaths(bool forward,
     //This can go for a while, so keep the UI responsive.
     QApplication::processEvents();
 
-    //Find the node in the direction we are tracing.
-    DeBruijnNode * nextNode;
-    if (forward)
-        nextNode = m_endingNode;
-    else
-        nextNode = m_startingNode;
+    // The edge may be stored in the opposite orientation from this path.
+    const DeBruijnNode *here = pathSoFar.empty() ? startingNode : pathSoFar.back();
+    DeBruijnNode * nextNode = forward ? downstream(here) : upstream(here);
 
     //Add that node to the path so far.
     pathSoFar.push_back(nextNode);
@@ -123,42 +186,21 @@ void DeBruijnEdge::tracePaths(bool forward,
     }
 
     //If the code got here, then more steps remain.
-    //Find the edges that are in the correct direction.
-    std::vector<DeBruijnEdge *> nextEdges = findNextEdgesInPath(nextNode, forward);
-
-    //If there are no next edges, then we are finished with the
-    //path search, even though steps remain.
-    if (nextEdges.empty())
-    {
+    auto links = forward ? nextNode->outgoing_edges() : nextNode->incoming_edges();
+    if (links.empty()) {
         allPaths.push_back(pathSoFar);
         return;
     }
+    for (auto link : links) {
+        DeBruijnNode * nextNextNode = link.otherNode();
 
-    //Call this function on all of the next edges.
-    //However, we also need to check to see if we are tracing a loop
-    //and stop if that is the case.
-    for (auto nextEdge : nextEdges)
-    {
-        //Determine the node that this next edge leads to.
-        DeBruijnNode * nextNextNode;
-        if (forward)
-            nextNextNode = nextEdge->m_endingNode;
-        else
-            nextNextNode = nextEdge->m_startingNode;
-
-        //If that node is the starting node, then we've made
-        //a full loop and the path should be considered complete.
-        if (nextNextNode == startingNode)
-        {
+        if (nextNextNode == startingNode) {
             allPaths.push_back(pathSoFar);
             continue;
         }
 
-        //If that node is already in the path TWICE so far, that means
-        //we're caught in a loop, and we should throw this path out.
-        //If it appears 0 or 1 times, then continue the path search.
         if (timesNodeInPath(nextNextNode, pathSoFar) < 2)
-            nextEdge->tracePaths(forward, stepsRemaining, allPaths, startingNode, pathSoFar);
+            link.edge()->tracePaths(forward, stepsRemaining, allPaths, startingNode, pathSoFar);
     }
 }
 
@@ -183,12 +225,9 @@ bool DeBruijnEdge::leadsOnlyToNode(bool forward,
     //This can go for a while, so keep the UI responsive.
     QApplication::processEvents();
 
-    //Find the node in the direction we are tracing.
-    DeBruijnNode * nextNode;
-    if (forward)
-        nextNode = m_endingNode;
-    else
-        nextNode = m_startingNode;
+    // Callers pass the node this edge was reached from as the last entry.
+    DeBruijnNode * nextNode = forward ? downstream(pathSoFar.back())
+                                     : upstream(pathSoFar.back());
 
     //Add that node to the path so far.
     pathSoFar.push_back(nextNode);
@@ -215,56 +254,18 @@ bool DeBruijnEdge::leadsOnlyToNode(bool forward,
         return false;
 
     //If the code got here, then more steps remain.
-    //Find the edges that are in the correct direction.
-    std::vector<DeBruijnEdge *> nextEdges = findNextEdgesInPath(nextNode, forward);
-
-    //If there are no next edges, then the search failed, even
-    //though steps remain.
-    if (nextEdges.empty())
+    auto links = forward ? nextNode->outgoing_edges() : nextNode->incoming_edges();
+    if (links.empty())
         return false;
-
-    //In order for the search to succeed, this function needs to return true
-    //for all of the nextEdges.
-    //However, we also need to check to see if we are tracing a loop
-    //and stop if that is the case.
-    for (auto nextEdge : nextEdges)
-    {
-        //Determine the node that this next edge leads to.
-        DeBruijnNode * nextNextNode;
-        if (forward)
-            nextNextNode = nextEdge->m_endingNode;
-        else
-            nextNextNode = nextEdge->m_startingNode;
-
-        //If that node is already in the path TWICE so far, that means
-        //we're caught in a loop, and we should throw this path out.
-        //If it appears 0 or 1 times, then continue the path search.
-        if (timesNodeInPath(nextNextNode, pathSoFar) < 2)
-        {
-            if (!nextEdge->leadsOnlyToNode(forward, stepsRemaining, target, pathSoFar, includeReverseComplement) )
+    for (auto link : links) {
+        DeBruijnNode * nextNextNode = link.otherNode();
+        if (timesNodeInPath(nextNextNode, pathSoFar) < 2) {
+            if (!link.edge()->leadsOnlyToNode(forward, stepsRemaining, target, pathSoFar,
+                                              includeReverseComplement))
                 return false;
         }
     }
-
-    //If the code got here, then the search succeeded!
     return true;
-}
-
-
-std::vector<DeBruijnEdge *> DeBruijnEdge::findNextEdgesInPath(DeBruijnNode * nextNode,
-                                                              bool forward)
-{
-    std::vector<DeBruijnEdge *> nextEdges;
-    for (DeBruijnEdge * edge : nextNode->edges()) {
-        //If forward, we're looking for edges that lead away from
-        //nextNode.  If backward, we're looking for edges that lead
-        //into nextNode.
-        if ((forward && edge->m_startingNode == nextNode) ||
-            (!forward && edge->m_endingNode == nextNode))
-            nextEdges.push_back(edge);
-    }
-
-    return nextEdges;
 }
 
 

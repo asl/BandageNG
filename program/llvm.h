@@ -17,7 +17,10 @@
 
 #pragma once
 
+#include "llvm/ADT/PointerIntPair.h"
+#include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/SmallVector.h"
+#include "llvm/ADT/iterator.h"
 #include "llvm/ADT/iterator_range.h"
 #include "llvm/Support/Error.h"
 
@@ -40,6 +43,9 @@ using llvm::toString;
 using llvm::Twine;
 
 using llvm::SmallVector;
+using llvm::PointerIntPair;
+using llvm::hasSingleElement;
+using llvm::iterator_facade_base;
 using llvm::make_range;
 
 } // namespace bandage

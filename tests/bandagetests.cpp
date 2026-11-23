@@ -181,6 +181,11 @@ private slots:
     void sequenceSubstring();
     void sequenceDoubleReverseComplement();
     void sequenceShort();
+    void oneEdgePerLink();
+    void duplicateNodeWithSelfLoop();
+    void loadDistinctGfaOverlaps();
+    void loadLoganPalindromicSegment();
+    void queryPathOverlapReverseStoredEdge();
     void drawEdgeDirections();
     void annotationGroupNodesWithAnnotations();
     void loadWalks();
@@ -218,7 +223,7 @@ void BandageTests::loadFastg()
 
     //Check that the appropriate number of nodes/edges are present.
     QCOMPARE(g_assemblyGraph->m_deBruijnGraphNodes.size(), 88);
-    QCOMPARE(g_assemblyGraph->m_deBruijnGraphEdges.size(), 118);
+    QCOMPARE(g_assemblyGraph->m_deBruijnGraphEdges.size(), 59);
 
     //Check the length of a couple nodes.
     DeBruijnNode * node1 = g_assemblyGraph->m_deBruijnGraphNodes["1+"];
@@ -232,8 +237,19 @@ void BandageTests::loadLogan()
     requireGraphLoad(testFile("test.contigs.fa.zst"));
 
     // Check that the appropriate number of nodes/edges are present.
+    // The fixture has 9586 L tags. Opposite directions share one object.
+    // Segments 3221 and 3247 equal their own reverse complement. The four
+    // L tags on each collapse to one self-loop once the two strand names
+    // are the same node, so those segments contribute two own-reverse-
+    // complement edges rather than six.
     QCOMPARE(g_assemblyGraph->m_deBruijnGraphNodes.size(), 6562);
-    QCOMPARE(g_assemblyGraph->m_deBruijnGraphEdges.size(), 19168);
+    QCOMPARE(g_assemblyGraph->m_deBruijnGraphEdges.size(), 4791);
+    size_t ownReverseComplement = 0;
+    for (DeBruijnEdge *edge : g_assemblyGraph->m_deBruijnGraphEdges) {
+        if (edge->isOwnReverseComplement())
+            ++ownReverseComplement;
+    }
+    QCOMPARE(ownReverseComplement, 2u);
 
     // Check the length of a couple nodes.
     DeBruijnNode * node1 = g_assemblyGraph->m_deBruijnGraphNodes["1+"];
@@ -248,7 +264,7 @@ void BandageTests::loadGFAWithPlaceholders()
 
     //Check that the appropriate number of nodes/edges are present.
     QCOMPARE(g_assemblyGraph->m_deBruijnGraphNodes.size(), 8);
-    QCOMPARE(g_assemblyGraph->m_deBruijnGraphEdges.size(), 8);
+    QCOMPARE(g_assemblyGraph->m_deBruijnGraphEdges.size(), 4);
 
     //Check the length of a couple nodes.
     DeBruijnNode * node1 = g_assemblyGraph->m_deBruijnGraphNodes["1+"];
@@ -265,7 +281,7 @@ void BandageTests::loadGFA12()
 
     //Check that the appropriate number of nodes/edges/paths are present.
     QCOMPARE(g_assemblyGraph->m_deBruijnGraphNodes.size(), 12);
-    QCOMPARE(g_assemblyGraph->m_deBruijnGraphEdges.size(), 16);
+    QCOMPARE(g_assemblyGraph->m_deBruijnGraphEdges.size(), 8);
     QCOMPARE(g_assemblyGraph->m_deBruijnGraphPaths.size(), 5);
 }
 
@@ -277,7 +293,7 @@ void BandageTests::loadGFA()
 
     //Check that the appropriate number of nodes/edges are present.
     QCOMPARE(g_assemblyGraph->m_deBruijnGraphNodes.size(), 34);
-    QCOMPARE(g_assemblyGraph->m_deBruijnGraphEdges.size(), 32);
+    QCOMPARE(g_assemblyGraph->m_deBruijnGraphEdges.size(), 16);
 
     //Check the length of a couple nodes.
     DeBruijnNode * node1 = g_assemblyGraph->m_deBruijnGraphNodes["1+"];
@@ -308,7 +324,7 @@ void BandageTests::loadGAF()
 
     //Check that the appropriate number of nodes/edges are present.
     QCOMPARE(g_assemblyGraph->m_deBruijnGraphNodes.size(), 8);
-    QCOMPARE(g_assemblyGraph->m_deBruijnGraphEdges.size(), 8);
+    QCOMPARE(g_assemblyGraph->m_deBruijnGraphEdges.size(), 4);
 
     //Check the length of a couple nodes.
     DeBruijnNode * node1 = g_assemblyGraph->m_deBruijnGraphNodes["1+"];
@@ -328,7 +344,7 @@ void BandageTests::loadSPAdesPaths()
 
     // Check that the appropriate number of nodes/edges are present.
     QCOMPARE(g_assemblyGraph->m_deBruijnGraphNodes.size(), 34);
-    QCOMPARE(g_assemblyGraph->m_deBruijnGraphEdges.size(), 32);
+    QCOMPARE(g_assemblyGraph->m_deBruijnGraphEdges.size(), 16);
 
     // Check the length of a couple nodes.
     DeBruijnNode * node1 = g_assemblyGraph->m_deBruijnGraphNodes["1+"];
@@ -353,7 +369,7 @@ void BandageTests::loadLinks()
 
     // Check that the appropriate number of nodes/edges are present.
     QCOMPARE(g_assemblyGraph->m_deBruijnGraphNodes.size(), 34);
-    QCOMPARE(g_assemblyGraph->m_deBruijnGraphEdges.size(), 32);
+    QCOMPARE(g_assemblyGraph->m_deBruijnGraphEdges.size(), 16);
 
     // Check the length of a couple nodes.
     DeBruijnNode * node1 = g_assemblyGraph->m_deBruijnGraphNodes["1+"];
@@ -363,8 +379,8 @@ void BandageTests::loadLinks()
 
     std::vector<DeBruijnEdge*> newEdges;
     QVERIFY(io::loadLinks(*g_assemblyGraph, testFile("test.links.tsv"), &newEdges));
-    QCOMPARE(newEdges.size(), 4);
-    QCOMPARE(g_assemblyGraph->m_deBruijnGraphEdges.size(), 36);
+    QCOMPARE(newEdges.size(), 2);
+    QCOMPARE(g_assemblyGraph->m_deBruijnGraphEdges.size(), 18);
 }
 
 
@@ -374,7 +390,7 @@ void BandageTests::loadTrinity()
 
     //Check that the appropriate number of nodes/edges are present.
     QCOMPARE(g_assemblyGraph->m_deBruijnGraphNodes.size(), 1170);
-    QCOMPARE(g_assemblyGraph->m_deBruijnGraphEdges.size(), 1056);
+    QCOMPARE(g_assemblyGraph->m_deBruijnGraphEdges.size(), 528);
 
     //Check the length of a couple nodes.
     DeBruijnNode * node10241 = g_assemblyGraph->m_deBruijnGraphNodes["4|c4_10241+"];
@@ -495,7 +511,7 @@ void BandageTests::pathFunctionsOnGfaSequencesInGraph()
 
     //Check that the number of nodes/edges.
     QCOMPARE(g_assemblyGraph->m_deBruijnGraphNodes.size(), 18);
-    QCOMPARE(g_assemblyGraph->m_deBruijnGraphEdges.size(), 24);
+    QCOMPARE(g_assemblyGraph->m_deBruijnGraphEdges.size(), 12);
 
     //Check a couple short paths.
 
@@ -516,7 +532,7 @@ void BandageTests::pathFunctionsOnGfaSequencesInFasta()
 
     //Check that the number of nodes/edges.
     QCOMPARE(g_assemblyGraph->m_deBruijnGraphNodes.size(), 18);
-    QCOMPARE(g_assemblyGraph->m_deBruijnGraphEdges.size(), 24);
+    QCOMPARE(g_assemblyGraph->m_deBruijnGraphEdges.size(), 12);
 
     //Since a node sequence hasn't be required yet, the nodes should still have
     //just '*' for their sequence. But they should still report the correct
@@ -1586,7 +1602,7 @@ void BandageTests::graphEdits()
     requireGraphLoad(testFile("test.fastg"));
 
     QCOMPARE(g_assemblyGraph->m_deBruijnGraphNodes.size(), 88);
-    QCOMPARE(g_assemblyGraph->m_deBruijnGraphEdges.size(), 118);
+    QCOMPARE(g_assemblyGraph->m_deBruijnGraphEdges.size(), 59);
 
     //Get the path sequence now to compare to the merged node sequence at the
     //end.
@@ -1596,7 +1612,7 @@ void BandageTests::graphEdits()
     g_assemblyGraph->duplicateNodePair(g_assemblyGraph->m_deBruijnGraphNodes["26+"], 0);
 
     QCOMPARE(g_assemblyGraph->m_deBruijnGraphNodes.size(), 90);
-    QCOMPARE(g_assemblyGraph->m_deBruijnGraphEdges.size(), 126);
+    QCOMPARE(g_assemblyGraph->m_deBruijnGraphEdges.size(), 63);
 
     std::vector<DeBruijnEdge *> edgesToRemove;
     edgesToRemove.push_back(getEdgeFromNodeNames("26_copy+", "24+"));
@@ -1606,12 +1622,12 @@ void BandageTests::graphEdits()
     g_assemblyGraph->deleteEdges(edgesToRemove);
 
     QCOMPARE(g_assemblyGraph->m_deBruijnGraphNodes.size(), 90);
-    QCOMPARE(g_assemblyGraph->m_deBruijnGraphEdges.size(), 118);
+    QCOMPARE(g_assemblyGraph->m_deBruijnGraphEdges.size(), 59);
 
     g_assemblyGraph->mergeAllPossible();
 
     QCOMPARE(g_assemblyGraph->m_deBruijnGraphNodes.size(), 82);
-    QCOMPARE(g_assemblyGraph->m_deBruijnGraphEdges.size(), 110);
+    QCOMPARE(g_assemblyGraph->m_deBruijnGraphEdges.size(), 55);
 
     DeBruijnNode * mergedNode = g_assemblyGraph->m_deBruijnGraphNodes["6_26_copy_23_26_24+"];
     if (mergedNode == nullptr)
@@ -2151,6 +2167,151 @@ void BandageTests::sequenceShort() {
     QCOMPARE(hasNWindow[2], 'A');
 }
 
+void BandageTests::oneEdgePerLink()
+{
+    Sequence seq(std::string(32, 'A'));
+    auto *aPos = new DeBruijnNode("a", true, 1.0, seq);
+    auto *aNeg = new DeBruijnNode("a", false, 1.0, seq);
+    auto *bPos = new DeBruijnNode("b", true, 1.0, seq);
+    auto *bNeg = new DeBruijnNode("b", false, 1.0, seq);
+    aPos->setReverseComplement(aNeg);
+    aNeg->setReverseComplement(aPos);
+    bPos->setReverseComplement(bNeg);
+    bNeg->setReverseComplement(bPos);
+    g_assemblyGraph->m_deBruijnGraphNodes[aPos->getName()] = aPos;
+    g_assemblyGraph->m_deBruijnGraphNodes[aNeg->getName()] = aNeg;
+    g_assemblyGraph->m_deBruijnGraphNodes[bPos->getName()] = bPos;
+    g_assemblyGraph->m_deBruijnGraphNodes[bNeg->getName()] = bNeg;
+
+    g_assemblyGraph->createDeBruijnEdge("a+", "b+", 0, EXACT_OVERLAP);
+    QCOMPARE(g_assemblyGraph->m_deBruijnGraphEdges.size(), 1);
+    DeBruijnEdge *edge = *g_assemblyGraph->m_deBruijnGraphEdges.begin();
+    QVERIFY(edge->leaves(aPos));
+    QVERIFY(edge->enters(bPos));
+    QVERIFY(edge->leaves(bNeg));
+    QVERIFY(edge->enters(aNeg));
+    QCOMPARE(edge->other(aPos), bPos);
+    QCOMPARE(edge->other(bNeg), aNeg);
+    bool sawOutgoing = false;
+    for (auto link : aPos->outgoing_edges()) {
+        if (link.edge() != edge)
+            continue;
+        sawOutgoing = true;
+        QCOMPARE(link.otherNode(), bPos);
+        QCOMPARE(link.overlap(), 0);
+        QCOMPARE(link.overlapType(), EXACT_OVERLAP);
+    }
+    QVERIFY(sawOutgoing);
+    bool sawReverse = false;
+    for (auto link : bNeg->outgoing_edges()) {
+        if (link.edge() != edge)
+            continue;
+        sawReverse = true;
+        QCOMPARE(link.otherNode(), aNeg);
+    }
+    QVERIFY(sawReverse);
+    QVERIFY(aPos->doesNodeLeadAway(bPos));
+    QVERIFY(bNeg->doesNodeLeadAway(aNeg));
+
+    g_assemblyGraph->createDeBruijnEdge("b-", "a-", 0, EXACT_OVERLAP);
+    QCOMPARE(g_assemblyGraph->m_deBruijnGraphEdges.size(), 1);
+
+    auto sameOverlap = g_assemblyGraph->makeLink(aPos, bPos, 0, EXACT_OVERLAP, true);
+    QVERIFY(!sameOverlap.created);
+    QCOMPARE(g_assemblyGraph->m_deBruijnGraphEdges.size(), 1);
+
+    auto parallel = g_assemblyGraph->makeLink(aPos, bPos, 10, EXACT_OVERLAP, true);
+    QVERIFY(parallel.created);
+    QCOMPARE(parallel.edge->getOverlap(), 10);
+    QCOMPARE(g_assemblyGraph->m_deBruijnGraphEdges.size(), 2);
+    auto parallelReverse = g_assemblyGraph->makeLink(bNeg, aNeg, 10, EXACT_OVERLAP, true);
+    QVERIFY(!parallelReverse.created);
+
+    g_assemblyGraph->createDeBruijnEdge("a+", "b+", 99, EXACT_OVERLAP);
+    QCOMPARE(g_assemblyGraph->m_deBruijnGraphEdges.size(), 2);
+
+    g_assemblyGraph->createDeBruijnEdge("a+", "a-", 0, EXACT_OVERLAP);
+    QCOMPARE(g_assemblyGraph->m_deBruijnGraphEdges.size(), 3);
+    DeBruijnEdge *self = nullptr;
+    for (DeBruijnEdge *candidate : g_assemblyGraph->m_deBruijnGraphEdges) {
+        if (candidate->isOwnReverseComplement())
+            self = candidate;
+    }
+    QVERIFY(self != nullptr);
+    QVERIFY(self->leaves(aPos));
+    QVERIFY(self->enters(aNeg));
+    QVERIFY(!self->leaves(aNeg));
+    QCOMPARE(self->other(aPos), aNeg);
+
+    auto *palindrome = new DeBruijnNode("s", true, 1.0, seq);
+    palindrome->setReverseComplement(palindrome);
+    g_assemblyGraph->m_deBruijnGraphNodes[palindrome->getName()] = palindrome;
+    auto palindromeLink = g_assemblyGraph->makeLink(palindrome, bPos, 5, EXACT_OVERLAP, true);
+    QVERIFY(palindromeLink.created);
+    QVERIFY(palindromeLink.edge->leaves(palindrome));
+    QVERIFY(palindromeLink.edge->enters(palindrome));
+    auto palOut = palindrome->outgoing_edges();
+    QCOMPARE(palOut.begin()->otherNode(), bPos);
+    QCOMPARE(palOut.begin()->overlap(), 5);
+    auto palIn = palindrome->incoming_edges();
+    QCOMPARE(palIn.begin()->otherNode(), bNeg);
+    auto palindromeReturn = g_assemblyGraph->makeLink(bNeg, palindrome, 5, EXACT_OVERLAP, true);
+    QVERIFY(!palindromeReturn.created);
+
+    std::vector<cigar::tag> ownTags;
+    ownTags.emplace_back("CL", "Z", std::string("red"));
+    ownTags.emplace_back("C2", "Z", std::string("blue"));
+    io::handleStandardGFAEdgeTags(self, false, ownTags, *g_assemblyGraph);
+    QCOMPARE(g_assemblyGraph->getCustomColour(self), QColor("red"));
+    QVERIFY(!g_assemblyGraph->hasCustomColour(self, true));
+
+    std::vector<cigar::tag> forwardColour;
+    forwardColour.emplace_back("CL", "Z", std::string("red"));
+    io::handleStandardGFAEdgeTags(edge, false, forwardColour, *g_assemblyGraph);
+    std::vector<cigar::tag> reverseColour;
+    reverseColour.emplace_back("CL", "Z", std::string("blue"));
+    io::handleStandardGFAEdgeTags(edge, true, reverseColour, *g_assemblyGraph, true);
+    QCOMPARE(g_assemblyGraph->getCustomColour(edge), QColor("red"));
+    QCOMPARE(g_assemblyGraph->getCustomColour(edge, true), QColor("blue"));
+    std::vector<cigar::tag> overwrite;
+    overwrite.emplace_back("CL", "Z", std::string("green"));
+    io::handleStandardGFAEdgeTags(edge, false, overwrite, *g_assemblyGraph, true);
+    QCOMPARE(g_assemblyGraph->getCustomColour(edge), QColor("red"));
+
+    const int beforeComplex = static_cast<int>(g_assemblyGraph->m_deBruijnGraphEdges.size());
+    auto complexA = g_assemblyGraph->makeLink(aPos, bPos, 0, EXACT_OVERLAP, true, "5M1I4M");
+    auto complexB = g_assemblyGraph->makeLink(aPos, bPos, 0, EXACT_OVERLAP, true, "3M2D");
+    QVERIFY(complexA.created);
+    QVERIFY(complexB.created);
+    QVERIFY(complexA.edge != complexB.edge);
+    auto complexAgain = g_assemblyGraph->makeLink(bNeg, aNeg, 0, EXACT_OVERLAP, true, "5M1I4M");
+    QVERIFY(!complexAgain.created);
+    QCOMPARE(complexAgain.edge, complexA.edge);
+    QCOMPARE(static_cast<int>(g_assemblyGraph->m_deBruijnGraphEdges.size()), beforeComplex + 2);
+
+    QVERIFY(!DeBruijnEdge::isPositiveOrientation(palindrome, bNeg));
+    auto palToNeg = g_assemblyGraph->makeLink(palindrome, bNeg, 1, EXACT_OVERLAP, true);
+    QVERIFY(palToNeg.created);
+    QCOMPARE(palToNeg.edge->getStartingNode(), bPos);
+    QCOMPARE(palToNeg.edge->getEndingNode(), palindrome);
+
+    g_assemblyGraph->createDeBruijnEdge("a+", "b-", 3, EXACT_OVERLAP);
+    DeBruijnEdge *renamed = nullptr;
+    for (DeBruijnEdge *edge : g_assemblyGraph->m_deBruijnGraphEdges) {
+        if (edge->getOverlap() == 3)
+            renamed = edge;
+    }
+    QVERIFY(renamed != nullptr);
+    g_assemblyGraph->changeNodeName("b", "0");
+    auto reused = g_assemblyGraph->makeLink(renamed->getStartingNode(), renamed->getEndingNode(),
+                                            3, EXACT_OVERLAP, true);
+    QVERIFY(!reused.created);
+    QCOMPARE(reused.edge, renamed);
+    g_assemblyGraph->determineGraphInfo();
+    QCOMPARE(g_assemblyGraph->m_edgeCount,
+             static_cast<int>(g_assemblyGraph->m_deBruijnGraphEdges.size()));
+}
+
 
 
 
@@ -2172,7 +2333,7 @@ DeBruijnEdge * BandageTests::getEdgeFromNodeNames(QString startingNodeName,
     DeBruijnNode * endingNode = g_assemblyGraph->m_deBruijnGraphNodes[endingNodeName.toStdString()];
 
     for (DeBruijnEdge *edge : startingNode->edges()) {
-        if (edge->getEndingNode() == endingNode)
+        if (edge->connects(startingNode, endingNode))
             return edge;
     }
 
@@ -2322,6 +2483,46 @@ static BandageGraphicsScene *drawCorners(bool doubleMode, std::string *error) {
     return scene;
 }
 
+// The link is stored as a+ → b+. A path along b- → a- uses that same edge,
+// so the hit overlap has to come from connects(), not the stored end.
+void BandageTests::queryPathOverlapReverseStoredEdge() {
+    Sequence seq(std::string(20, 'A'));
+    auto addPair = [&](const char *name) {
+        auto *pos = new DeBruijnNode(name, true, 1.0, seq);
+        auto *neg = new DeBruijnNode(name, false, 1.0, seq);
+        pos->setReverseComplement(neg);
+        neg->setReverseComplement(pos);
+        g_assemblyGraph->m_deBruijnGraphNodes[pos->getName()] = pos;
+        g_assemblyGraph->m_deBruijnGraphNodes[neg->getName()] = neg;
+        return std::pair{pos, neg};
+    };
+    auto [aPos, aNeg] = addPair("a");
+    auto [bPos, bNeg] = addPair("b");
+    auto *cPos = addPair("c").first;
+    g_assemblyGraph->createDeBruijnEdge("a+", "b+", 10, EXACT_OVERLAP);
+
+    auto *query = new search::Query("q", QString(20, 'A'));
+    const SciNot eValue(2.0, -4);
+    auto hit = [&](DeBruijnNode *node, int nodeStart, int nodeEnd,
+                   int queryStart, int queryEnd) {
+        return query->emplaceHit(query, node, 100.0, 10, 0, 0,
+                                 queryStart, queryEnd, nodeStart, nodeEnd,
+                                 eValue, 20.0);
+    };
+    const auto *forwardA = hit(aPos, 11, 20, 1, 10);
+    const auto *forwardB = hit(bPos, 1, 10, 11, 20);
+    const auto *reverseB = hit(bNeg, 11, 20, 1, 10);
+    const auto *reverseA = hit(aNeg, 1, 10, 11, 20);
+    const auto *loose = hit(cPos, 1, 10, 11, 20);
+
+    search::QueryPath forward(Path(), query, {forwardA, forwardB});
+    search::QueryPath reverse(Path(), query, {reverseB, reverseA});
+    search::QueryPath disconnected(Path(), query, {forwardA, loose});
+    QCOMPARE(forward.getEvalueProduct(), reverse.getEvalueProduct());
+    QVERIFY(forward.getEvalueProduct() != disconnected.getEvalueProduct());
+    delete query;
+}
+
 // test_draw_corners.gfa. a and b are ordinary segments. s is ATAT, so it is
 // its own reverse complement. The links are a+ → b+ together with b- → a-,
 // the hairpin a+ → a-, the self-loop a+ → a+, s → b+, and the loop s → s.
@@ -2329,7 +2530,8 @@ void BandageTests::drawEdgeDirections()
 {
     requireGraphLoad(testFile("test_draw_corners.gfa"));
     QCOMPARE(g_assemblyGraph->m_nodeCount, 4);
-    QCOMPARE(g_assemblyGraph->m_edgeCount, 6);
+    QCOMPARE(g_assemblyGraph->m_edgeCount, 5);
+    QCOMPARE(g_assemblyGraph->m_deBruijnGraphEdges.size(), 5u);
 
     std::string cornerError;
     QScopedPointer<BandageGraphicsScene> single(drawCorners(false, &cornerError));
@@ -2339,11 +2541,12 @@ void BandageTests::drawEdgeDirections()
     int edges = 0;
     countSceneItems(*single, nodes, edges);
     QCOMPARE(nodes, 3);
-    QCOMPARE(edges, 6);
+    QCOMPARE(edges, 5);
     for (auto *item : single->items()) {
         auto *edgeItem = dynamic_cast<GraphicsItemEdge *>(item);
         if (edgeItem == nullptr)
             continue;
+        QVERIFY(g_assemblyGraph->reverseGraphicsItem(edgeItem->edge()) == nullptr);
         const bool palindromicLoop = edgeItem->edge()->getStartingNode()->getName() == "s+" &&
                                      edgeItem->edge()->getEndingNode()->getName() == "s+";
         // A 4-base palindromic self-loop has a zero-length end segment, so Qt
@@ -2360,68 +2563,96 @@ void BandageTests::drawEdgeDirections()
         QFAIL(cornerError.c_str());
     countSceneItems(*doubled, nodes, edges);
     QCOMPARE(nodes, 5);
-    QCOMPARE(edges, 10);
+    QCOMPARE(edges, 8);
 
     DeBruijnNode *aPos = g_assemblyGraph->m_deBruijnGraphNodes["a+"];
     DeBruijnNode *aNeg = g_assemblyGraph->m_deBruijnGraphNodes["a-"];
     DeBruijnNode *bPos = g_assemblyGraph->m_deBruijnGraphNodes["b+"];
     DeBruijnNode *bNeg = g_assemblyGraph->m_deBruijnGraphNodes["b-"];
+    DeBruijnNode *s = g_assemblyGraph->m_deBruijnGraphNodes["s+"];
     int ownReverseComplement = 0;
-    int ordinaryLinks = 0;
-    DeBruijnEdge *reverseOrdinary = nullptr;
+    DeBruijnEdge *ordinary = nullptr;
+    DeBruijnEdge *hairpin = nullptr;
     DeBruijnEdge *selfLoop = nullptr;
-    DeBruijnEdge *selfLoopReverse = nullptr;
+    DeBruijnEdge *palindromeLink = nullptr;
+    DeBruijnEdge *palindromeLoop = nullptr;
     for (DeBruijnEdge *edge : g_assemblyGraph->m_deBruijnGraphEdges) {
         QVERIFY(edge->getGraphicsItemEdge() != nullptr);
-        QVERIFY(!edge->getGraphicsItemEdge()->path().isEmpty());
         if (edge->isOwnReverseComplement()) {
             ++ownReverseComplement;
+            QVERIFY(g_assemblyGraph->reverseGraphicsItem(edge) == nullptr);
+            QVERIFY(!edge->isDrawnReverse());
+            if (edge->getStartingNode() == aPos)
+                hairpin = edge;
+            else
+                palindromeLoop = edge;
             continue;
         }
+        QVERIFY(g_assemblyGraph->reverseGraphicsItem(edge) != nullptr);
+        QVERIFY(!g_assemblyGraph->reverseGraphicsItem(edge)->path().isEmpty());
+        if (edge->connects(aPos, bPos) && edge->getStartingNode() == aPos &&
+            edge->getEndingNode() == bPos)
+            ordinary = edge;
         if (edge->getStartingNode() == aPos && edge->getEndingNode() == aPos)
             selfLoop = edge;
-        if (edge->getStartingNode() == aNeg && edge->getEndingNode() == aNeg)
-            selfLoopReverse = edge;
-        if (edge->getStartingNode() == bNeg && edge->getEndingNode() == aNeg)
-            reverseOrdinary = edge;
-        if (edge->getStartingNode() == aPos && edge->getEndingNode() == bPos)
-            ++ordinaryLinks;
+        if (edge->connects(s, bPos))
+            palindromeLink = edge;
     }
     QCOMPARE(ownReverseComplement, 2);
-    QCOMPARE(ordinaryLinks, 2);
+    QVERIFY(ordinary != nullptr);
+    QVERIFY(hairpin != nullptr);
     QVERIFY(selfLoop != nullptr);
-    QVERIFY(selfLoopReverse != nullptr);
-    QVERIFY(reverseOrdinary != nullptr);
+    QVERIFY(palindromeLink != nullptr);
+    QVERIFY(palindromeLoop != nullptr);
+    QCOMPARE(g_assemblyGraph->m_deBruijnGraphEdges.size(), 5u);
 
     GraphicsItemNode *aItem = aPos->getGraphicsItemNode();
     QVERIFY(aItem != nullptr);
     aItem->shiftPoints(QPointF(25, 15));
     aItem->fixEdgePaths();
     QVERIFY(!selfLoop->getGraphicsItemEdge()->path().isEmpty());
-    QVERIFY(!selfLoopReverse->getGraphicsItemEdge()->path().isEmpty());
+    QVERIFY(!g_assemblyGraph->reverseGraphicsItem(selfLoop)->path().isEmpty());
+    QCOMPARE(selfLoop->getGraphicsItemEdge()->edge(), selfLoop);
+    QCOMPARE(g_assemblyGraph->reverseGraphicsItem(selfLoop)->edge(), selfLoop);
 
-    reverseOrdinary->getGraphicsItemEdge()->setSelected(true);
+    GraphicsItemEdge *reverseItem = g_assemblyGraph->reverseGraphicsItem(ordinary);
+    reverseItem->setSelected(true);
     std::vector<DeBruijnEdge *> selected = doubled->getSelectedEdges();
     QCOMPARE(selected.size(), 1u);
-    QCOMPARE(selected.front()->getStartingNode(), bNeg);
-    QCOMPARE(selected.front()->getEndingNode(), aNeg);
+    QCOMPARE(selected.front(), ordinary);
+    QVERIFY(reverseItem->reversed());
+    auto [reverseFrom, reverseTo] = ordinary->orientedEnds(true);
+    QCOMPARE(reverseFrom, bNeg);
+    QCOMPARE(reverseTo, aNeg);
 
     std::vector<DeBruijnNode *> hideA{aPos};
     BandageGraphicsScene::removeGraphicsItemNodes(hideA, false);
+    QVERIFY(ordinary->getGraphicsItemEdge() == nullptr);
+    QVERIFY(g_assemblyGraph->reverseGraphicsItem(ordinary) != nullptr);
     QVERIFY(selfLoop->getGraphicsItemEdge() == nullptr);
-    QVERIFY(selfLoopReverse->getGraphicsItemEdge() != nullptr);
-    QVERIFY(reverseOrdinary->getGraphicsItemEdge() != nullptr);
+    QVERIFY(g_assemblyGraph->reverseGraphicsItem(selfLoop) != nullptr);
+    QVERIFY(hairpin->getGraphicsItemEdge() == nullptr);
+    QVERIFY(palindromeLink->getGraphicsItemEdge() != nullptr);
+    QVERIFY(g_assemblyGraph->reverseGraphicsItem(palindromeLink) != nullptr);
     countSceneItems(*doubled, nodes, edges);
-    QCOMPARE(edges, 6);
+    QCOMPARE(edges, 5);
+
+    std::vector<DeBruijnNode *> hideS{s};
+    BandageGraphicsScene::removeGraphicsItemNodes(hideS, false);
+    QVERIFY(palindromeLink->getGraphicsItemEdge() == nullptr);
+    QVERIFY(g_assemblyGraph->reverseGraphicsItem(palindromeLink) == nullptr);
+    QVERIFY(palindromeLoop->getGraphicsItemEdge() == nullptr);
 
     cornerError.clear();
     doubled.reset(drawCorners(true, &cornerError));
     if (!cornerError.empty())
         QFAIL(cornerError.c_str());
     BandageGraphicsScene::removeGraphicsItemNodes(hideA, true);
+    QVERIFY(ordinary->getGraphicsItemEdge() == nullptr);
+    QVERIFY(g_assemblyGraph->reverseGraphicsItem(ordinary) == nullptr);
     QVERIFY(selfLoop->getGraphicsItemEdge() == nullptr);
-    QVERIFY(selfLoopReverse->getGraphicsItemEdge() == nullptr);
-    QVERIFY(reverseOrdinary->getGraphicsItemEdge() == nullptr);
+    QVERIFY(g_assemblyGraph->reverseGraphicsItem(selfLoop) == nullptr);
+    QVERIFY(hairpin->getGraphicsItemEdge() == nullptr);
 
     doubled->addGraphicsItemsToScene(*g_assemblyGraph,
                                     GraphLayoutWorker(g_settings->graphLayoutQuality,
@@ -2430,9 +2661,139 @@ void BandageTests::drawEdgeDirections()
                                             .layoutGraph(*g_assemblyGraph));
     countSceneItems(*doubled, nodes, edges);
     QCOMPARE(nodes, 5);
-    QCOMPARE(edges, 10);
-    for (DeBruijnEdge *edge : g_assemblyGraph->m_deBruijnGraphEdges)
+    QCOMPARE(edges, 8);
+    for (DeBruijnEdge *edge : g_assemblyGraph->m_deBruijnGraphEdges) {
         QCOMPARE(edge->getGraphicsItemEdge()->scene(), doubled.data());
+        if (edge->isOwnReverseComplement())
+            QVERIFY(g_assemblyGraph->reverseGraphicsItem(edge) == nullptr);
+        else
+            QCOMPARE(g_assemblyGraph->reverseGraphicsItem(edge)->scene(), doubled.data());
+    }
+}
+
+void BandageTests::duplicateNodeWithSelfLoop()
+{
+    Sequence seq(std::string(8, 'A'));
+    auto addPair = [&](const char *name) {
+        auto *pos = new DeBruijnNode(name, true, 1.0, seq);
+        auto *neg = new DeBruijnNode(name, false, 1.0, seq);
+        pos->setReverseComplement(neg);
+        neg->setReverseComplement(pos);
+        g_assemblyGraph->m_deBruijnGraphNodes[pos->getName()] = pos;
+        g_assemblyGraph->m_deBruijnGraphNodes[neg->getName()] = neg;
+        return pos;
+    };
+    auto *original = addPair("a");
+    addPair("b");
+    addPair("c");
+    addPair("d");
+    g_assemblyGraph->createDeBruijnEdge("a+", "a+", 1, EXACT_OVERLAP);
+    g_assemblyGraph->createDeBruijnEdge("a+", "b+", 1, EXACT_OVERLAP);
+    g_assemblyGraph->createDeBruijnEdge("a+", "c+", 1, EXACT_OVERLAP);
+    g_assemblyGraph->createDeBruijnEdge("a+", "d+", 1, EXACT_OVERLAP);
+    g_assemblyGraph->duplicateNodePair(original, nullptr);
+
+    auto *copy = g_assemblyGraph->m_deBruijnGraphNodes["a_copy+"];
+    QVERIFY(copy != nullptr);
+    bool sawOriginal = false;
+    bool sawB = false;
+    bool sawC = false;
+    bool sawD = false;
+    for (auto link : copy->outgoing_edges()) {
+        if (link.otherNode() == original)
+            sawOriginal = true;
+        else if (link.otherNode()->getName() == "b+")
+            sawB = true;
+        else if (link.otherNode()->getName() == "c+")
+            sawC = true;
+        else if (link.otherNode()->getName() == "d+")
+            sawD = true;
+    }
+    QVERIFY(sawOriginal);
+    QVERIFY(sawB);
+    QVERIFY(sawC);
+    QVERIFY(sawD);
+}
+
+void BandageTests::loadDistinctGfaOverlaps()
+{
+    const QString gfaPath = tempFile("distinct-overlaps.gfa");
+    {
+        QFile gfa(gfaPath);
+        QVERIFY(gfa.open(QIODevice::WriteOnly));
+        gfa.write("S\ta\tAAAA\n"
+                  "S\tb\tCCCC\n"
+                  "L\ta\t+\tb\t+\t*\n"
+                  "L\ta\t+\tb\t+\t0M\n"
+                  "L\ta\t+\tb\t+\t5M1I4M\n"
+                  "J\ta\t+\tb\t+\t*\n"
+                  "J\tb\t-\ta\t-\t*\tCL:Z:blue\n"
+                  "J\ta\t+\tb\t+\t0\n");
+    }
+    requireGraphLoad(gfaPath);
+    auto *aPos = g_assemblyGraph->m_deBruijnGraphNodes["a+"];
+    auto *bPos = g_assemblyGraph->m_deBruijnGraphNodes["b+"];
+    int starLinks = 0;
+    int zeroLinks = 0;
+    int cigarLinks = 0;
+    int starJumps = 0;
+    int zeroJumps = 0;
+    DeBruijnEdge *starJump = nullptr;
+    for (auto *edge : g_assemblyGraph->m_deBruijnGraphEdges) {
+        if (!edge->connects(aPos, bPos))
+            continue;
+        auto keyIt = g_assemblyGraph->m_overlapKeys.find(edge);
+        const bool star = keyIt != g_assemblyGraph->m_overlapKeys.end() && keyIt->second == "*";
+        const bool cigar = keyIt != g_assemblyGraph->m_overlapKeys.end() && keyIt->second == "5M1I4M";
+        if (edge->getOverlapType() == JUMP) {
+            if (star) {
+                ++starJumps;
+                starJump = edge;
+            } else if (edge->getOverlap() == 0 && keyIt == g_assemblyGraph->m_overlapKeys.end()) {
+                ++zeroJumps;
+            }
+        } else if (edge->getOverlapType() == EXACT_OVERLAP) {
+            if (star)
+                ++starLinks;
+            else if (cigar)
+                ++cigarLinks;
+            else if (edge->getOverlap() == 0 && keyIt == g_assemblyGraph->m_overlapKeys.end())
+                ++zeroLinks;
+        }
+    }
+    QCOMPARE(starLinks, 1);
+    QCOMPARE(zeroLinks, 1);
+    QCOMPARE(cigarLinks, 1);
+    QCOMPARE(starJumps, 1);
+    QCOMPARE(zeroJumps, 1);
+    QVERIFY(starJump != nullptr);
+    QCOMPARE(g_assemblyGraph->getCustomColour(starJump), QColor("red"));
+    QCOMPARE(g_assemblyGraph->getCustomColour(starJump, true), QColor("blue"));
+
+    const QString savedPath = tempFile("distinct-overlaps-out.gfa");
+    QVERIFY(gfa::saveEntireGraph(savedPath, *g_assemblyGraph));
+    QFile saved(savedPath);
+    QVERIFY(saved.open(QIODevice::ReadOnly));
+    const QByteArray written = saved.readAll();
+    QVERIFY(written.contains("L\ta\t+\tb\t+\t*"));
+    QVERIFY(written.contains("L\ta\t+\tb\t+\t5M1I4M"));
+    QVERIFY(written.contains("J\ta\t+\tb\t+\t*"));
+    QVERIFY(written.contains("J\ta\t+\tb\t+\t0"));
+}
+
+void BandageTests::loadLoganPalindromicSegment()
+{
+    const QString loganPath = tempFile("palindrome.contigs.fa.gz");
+    {
+        QFile logan(loganPath);
+        QVERIFY(logan.open(QIODevice::WriteOnly));
+        logan.write(">contig_a ka:f:1 L:+:s:+ L:+:s:-\n"
+                    "AAAA\n"
+                    ">contig_s ka:f:1\n"
+                    "ATAT\n");
+    }
+    requireGraphLoad(loganPath);
+    QCOMPARE(static_cast<int>(g_assemblyGraph->m_deBruijnGraphEdges.size()), 1);
 }
 
 static bool writeTextFile(const QString &path, const QByteArray &contents) {
@@ -2814,7 +3175,7 @@ void BandageTests::gfaTagsAndCsvColours() {
     const auto edgeStyleCount = g_assemblyGraph->m_edgeStyles.size();
     const auto edgeTagCount = g_assemblyGraph->m_edgeTags.size();
     g_assemblyGraph->deleteEdges({coloured});
-    QCOMPARE(g_assemblyGraph->m_deBruijnGraphEdges.size(), edgeCount - 2);
+    QCOMPARE(g_assemblyGraph->m_deBruijnGraphEdges.size(), edgeCount - 1);
     QVERIFY(g_assemblyGraph->m_edgeColors.size() < edgeColourCount);
     QVERIFY(g_assemblyGraph->m_edgeStyles.size() < edgeStyleCount);
     QVERIFY(g_assemblyGraph->m_edgeTags.size() < edgeTagCount);
@@ -3229,35 +3590,39 @@ void BandageTests::gfaJumpsOverlapsAndFastaCircularity() {
     if (auto err = builder->build(*g_assemblyGraph))
         QFAIL(bandage::toString(std::move(err)).c_str());
     QVERIFY(builder->hasComplexOverlaps());
-    bool sawUnknown = false;
+    auto hasCigar = [](const DeBruijnEdge *edge) {
+        auto keyIt = g_assemblyGraph->m_overlapKeys.find(edge);
+        return keyIt != g_assemblyGraph->m_overlapKeys.end() && keyIt->second == "5M1I4M" &&
+               edge->getOverlap() == 0;
+    };
+    bool sawCigar = false;
     bool sawTwelve = false;
     for (auto *edge : g_assemblyGraph->m_deBruijnGraphEdges) {
-        if (edge->getOverlapType() == UNKNOWN_OVERLAP && edge->getOverlap() == 0)
-            sawUnknown = true;
+        if (hasCigar(edge))
+            sawCigar = true;
         if (edge->getOverlapType() == EXACT_OVERLAP && edge->getOverlap() == 12)
             sawTwelve = true;
     }
-    QVERIFY(sawUnknown);
+    QVERIFY(sawCigar);
     QVERIFY(sawTwelve);
     const QString writtenOverlaps = tempFile("overlaps-out.gfa");
     QVERIFY(gfa::saveEntireGraph(writtenOverlaps, *g_assemblyGraph));
     QFile overlapFile(writtenOverlaps);
     QVERIFY(overlapFile.open(QIODevice::ReadOnly));
     const QByteArray overlapText = overlapFile.readAll();
-    QVERIFY(overlapText.contains("\t*"));
+    QVERIFY(overlapText.contains("5M1I4M"));
     QVERIFY(overlapText.contains("12M"));
     QVERIFY(!overlapText.contains("0M"));
     requireGraphLoad(writtenOverlaps);
-    bool reloadedUnknown = false;
+    bool reloadedCigar = false;
     bool reloadedTwelve = false;
     for (auto *edge : g_assemblyGraph->m_deBruijnGraphEdges) {
-        if (edge->getOverlapType() == UNKNOWN_OVERLAP && edge->getOverlap() == 0)
-            reloadedUnknown = true;
+        if (hasCigar(edge))
+            reloadedCigar = true;
         if (edge->getOverlapType() == EXACT_OVERLAP && edge->getOverlap() == 12)
             reloadedTwelve = true;
-        QVERIFY(!(edge->getOverlapType() == EXACT_OVERLAP && edge->getOverlap() == 0));
     }
-    QVERIFY(reloadedUnknown);
+    QVERIFY(reloadedCigar);
     QVERIFY(reloadedTwelve);
 
     const QString fastaPath = tempFile("circular.fa");

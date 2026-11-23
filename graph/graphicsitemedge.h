@@ -19,29 +19,44 @@
 #ifndef GRAPHICSITEMEDGE_H
 #define GRAPHICSITEMEDGE_H
 
+#include "debruijnedge.h"
+#include "program/llvm.h"
+
 #include <QGraphicsPathItem>
 #include <QPainterPath>
 #include <QPointF>
 
+#include <utility>
+
+class DeBruijnNode;
 class DeBruijnEdge;
 class AssemblyGraph;
 
 class GraphicsItemEdge : public QGraphicsPathItem {
 public:
     explicit GraphicsItemEdge(DeBruijnEdge *deBruijnEdge, const AssemblyGraph &graph,
-                              QGraphicsItem *parent = nullptr);
+                              bool reversed = false, QGraphicsItem *parent = nullptr);
 
     void paint(QPainter * painter, const QStyleOptionGraphicsItem *, QWidget *) override;
     QPainterPath shape() const override;
 
     virtual void remakePath();
-    DeBruijnEdge *edge() const { return m_deBruijnEdge; }
+    DeBruijnEdge *edge() const { return m_edge.getPointer(); }
+    bool reversed() const { return m_edge.getInt(); }
+
+protected:
+    std::pair<DeBruijnNode *, DeBruijnNode *> orientedNodes() const;
 
 private:
-    DeBruijnEdge *m_deBruijnEdge;
+    // The direction bit is stored in the pointer. DeBruijnEdge is at least
+    // pointer-aligned, so the graphics item stays one word smaller.
+    bandage::PointerIntPair<DeBruijnEdge *, 1, bool> m_edge;
     QColor m_edgeColor;
     Qt::PenStyle m_penStyle;
     float m_width;
 };
+
+static_assert(sizeof(GraphicsItemEdge) == 48,
+              "GraphicsItemEdge must stay in the 48-byte size class");
 
 #endif // GRAPHICSITEMEDGE_H

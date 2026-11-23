@@ -438,17 +438,14 @@ void GraphicsItemNode::fixEdgePaths(std::vector<GraphicsItemNode *> * nodes) con
     }
 
     for (auto *deBruijnEdge : edgesToFix) {
-        //If this edge has a graphics item, adjust it now.
+        // The forward item hangs off the edge. The reverse item exists for
+        // a drawn reverse direction (double mode, both reverse-complement
+        // ends drawn). Moving a node of either strand puts this same object
+        // in edgesToFix, so both items are remade here.
         if (GraphicsItemEdge *graphicsItemEdge = deBruijnEdge->getGraphicsItemEdge())
             graphicsItemEdge->remakePath();
-
-        // If this edge does not have a graphics item, then perhaps its
-        // reverse complement does.  Only do this check if the graph was drawn
-        // on single mode.
-        else if (!g_settings->doubleMode) {
-            if (GraphicsItemEdge *graphicsItemEdge = deBruijnEdge->getReverseComplement()->getGraphicsItemEdge())
-                graphicsItemEdge->remakePath();
-        }
+        if (GraphicsItemEdge *reverseItem = g_assemblyGraph->reverseGraphicsItem(deBruijnEdge))
+            reverseItem->remakePath();
     }
 }
 

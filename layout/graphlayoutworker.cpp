@@ -185,11 +185,12 @@ static void addToOgdfGraph(DeBruijnNode *node,
 
 static void addToOgdfGraph(const DeBruijnEdge *edge,
                            ogdf::Graph &ogdfGraph, ogdf::EdgeArray<double> &edgeArray,
-                           const OGDFGraphLayout &layout) {
+                           const OGDFGraphLayout &layout,
+                           bool reversed) {
     ogdf::node firstEdgeOgdfNode;
     ogdf::node secondEdgeOgdfNode;
 
-    const auto *startingNode = edge->getStartingNode();
+    auto [startingNode, endingNode] = edge->orientedEnds(reversed);
     if (layout.contains(startingNode))
         firstEdgeOgdfNode = layout.segments(startingNode).back();
     else if (layout.contains(startingNode->getReverseComplement()))
@@ -197,7 +198,6 @@ static void addToOgdfGraph(const DeBruijnEdge *edge,
     else
         return; //Ending node or its reverse complement isn't in OGDF
 
-    const auto *endingNode = edge->getEndingNode();
     if (layout.contains(endingNode))
         secondEdgeOgdfNode = layout.segments(endingNode).front();
     else if (layout.contains(endingNode->getReverseComplement()))
@@ -327,13 +327,13 @@ static void buildGraph(ogdf::Graph &ogdfGraph,
 
     // Then loop through each edge determining its drawn status and adding it to OGDF if it is drawn.
     for (const DeBruijnEdge *edge : graph.m_deBruijnGraphEdges) {
-        if (!edge->isDrawn())
-            continue;
-
         if (edge->getOverlapType() == JUMP || edge->getOverlapType() == EXTRA_LINK)
             continue;
 
-        addToOgdfGraph(edge,ogdfGraph, ogdfEdgeLengths, layout);
+        if (edge->isDrawn())
+            addToOgdfGraph(edge, ogdfGraph, ogdfEdgeLengths, layout, false);
+        if (edge->isDrawnReverse())
+            addToOgdfGraph(edge, ogdfGraph, ogdfEdgeLengths, layout, true);
     }
 }
 

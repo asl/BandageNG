@@ -116,6 +116,9 @@ void AssemblyGraph::cleanUp() {
     m_edgeColors.clear();
     m_edgeStyles.clear();
     m_nodeLabels.clear();
+    m_edgeReverseColors.clear();
+    m_reverseGraphicsItems.clear();
+    m_overlapKeys.clear();
     m_nodeCSVData.clear();
     m_csvHeaders.clear();
     m_depthTag.clear();
@@ -134,12 +137,84 @@ static std::string getOppositeNodeName(std::string_view nodeName) {
     return opposite;
 }
 
-//This function makes a double edge: in one direction for the given nodes
-//and the opposite direction for their reverse complements.  It adds the
-//new edges to the vector here and to the nodes themselves.
+// One object per link. The ends are stored in the positive orientation
+// when the link is created. A later rename can make isPositiveEdge()
+// false; the object is still the only link. The opposite direction is
+// that same pointer: connects() matches the stored ends and
+// rc(stored end) -> rc(stored start). The returned MadeLink::reversed is
+// set when the requested ends are that opposite direction.
+AssemblyGraph::MadeLink AssemblyGraph::makeLink(DeBruijnNode *from, DeBruijnNode *to,
+                                                int overlap, EdgeOverlapType overlapType,
+                                                bool allowDistinctOverlap,
+                                                std::string_view overlapKey) {
+    // A hit is an existing link, not a new one. When allowDistinctOverlap
+    // is set, two links between the same ends stay separate when the
+    // length, the overlap type, or the overlap key differ.
+    // createDeBruijnEdge passes false: any connection of these ends is
+    // the link, and a repeat is rejected.
+    for (auto *edge : from->edges()) {
+        if (!edge->connects(from, to))
+            continue;
+        if (allowDistinctOverlap) {
+            auto keyIt = m_overlapKeys.find(edge);
+            auto existingKey = keyIt == m_overlapKeys.end()
+                                   ? std::string_view{}
+                                   : std::string_view(keyIt->second);
+            if (edge->getOverlap() != overlap || edge->getOverlapType() != overlapType ||
+                existingKey != overlapKey)
+                continue;
+        }
+        // Requested ends that are not the stored ends are the opposite
+        // direction. An own-RC link has only one direction, so
+        // reversed stays false.
+        bool reversed = edge->getStartingNode() != from || edge->getEndingNode() != to;
+        if (edge->isOwnReverseComplement())
+            reversed = false;
+        return {edge, reversed, false};
+    }
+
+    // from == rc(to) and to == rc(from): the opposite direction is this
+    // same pair of nodes (A+ -> A-, or a self-loop on a palindromic
+    // segment). Keep the requested ends. Every other negative request is
+    // stored as rc(to) -> rc(from), the positive orientation, and
+    // reversed is set because the request ran the other way.
+    bool own = from == to->getReverseComplement() && to == from->getReverseComplement();
+    DeBruijnNode *storedFrom = from;
+    DeBruijnNode *storedTo = to;
+    bool reversed = false;
+    if (!own && !DeBruijnEdge::isPositiveOrientation(from, to)) {
+        storedFrom = to->getReverseComplement();
+        storedTo = from->getReverseComplement();
+        reversed = true;
+    }
+
+    auto *edge = new DeBruijnEdge(storedFrom, storedTo);
+    m_deBruijnGraphEdges.emplace(edge);
+    // The stored ends always hold the pointer. Their reverse complements
+    // do too, except for an own-RC link, whose reverse complements are
+    // the stored ends already. addEdge drops the second insert when a
+    // node is its own reverse complement.
+    storedFrom->addEdge(edge);
+    storedTo->addEdge(edge);
+    if (!own) {
+        if (DeBruijnNode *rcFrom = storedFrom->getReverseComplement())
+            rcFrom->addEdge(edge);
+        if (DeBruijnNode *rcTo = storedTo->getReverseComplement())
+            rcTo->addEdge(edge);
+    }
+    edge->setOverlap(overlap);
+    edge->setOverlapType(overlapType);
+    // An exact overlap is identified by its length. Any other overlap
+    // also needs its key, kept off the object.
+    if (!overlapKey.empty())
+        m_overlapKeys[edge] = std::string(overlapKey);
+    return {edge, reversed, true};
+}
+
+// One edge object for the link, stored in the positive orientation.
+// All four oriented nodes hold that pointer.
 void AssemblyGraph::createDeBruijnEdge(std::string_view node1Name, std::string_view node2Name,
-                                       int overlap, EdgeOverlapType overlapType)
-{
+                                       int overlap, EdgeOverlapType overlapType) {
     std::string node1Opposite = getOppositeNodeName(node1Name);
     std::string node2Opposite = getOppositeNodeName(node2Name);
 
@@ -154,41 +229,7 @@ void AssemblyGraph::createDeBruijnEdge(std::string_view node1Name, std::string_v
         negNode2 == m_deBruijnGraphNodes.end())
         return;
 
-    //Quit if the edge already exists
-    for (const auto *edge : (*node1)->edges()) {
-        if (edge->getStartingNode() == *node1 &&
-            edge->getEndingNode() == *node2)
-            return;
-    }
-
-    //Usually, an edge has a different pair, but it is possible
-    //for an edge to be its own pair.
-    bool isOwnPair = (*node1 == *negNode2 && *node2 == *negNode1);
-
-    auto * forwardEdge = new DeBruijnEdge(*node1, *node2);
-    DeBruijnEdge * backwardEdge;
-
-    if (isOwnPair)
-        backwardEdge = forwardEdge;
-    else
-        backwardEdge = new DeBruijnEdge(*negNode2, *negNode1);
-
-    forwardEdge->setReverseComplement(backwardEdge);
-    backwardEdge->setReverseComplement(forwardEdge);
-
-    forwardEdge->setOverlap(overlap);
-    backwardEdge->setOverlap(overlap);
-    forwardEdge->setOverlapType(overlapType);
-    backwardEdge->setOverlapType(overlapType);
-
-    m_deBruijnGraphEdges.emplace(forwardEdge);
-    if (!isOwnPair)
-        m_deBruijnGraphEdges.emplace(backwardEdge);
-
-    (*node1)->addEdge(forwardEdge);
-    (*node2)->addEdge(forwardEdge);
-    (*negNode1)->addEdge(backwardEdge);
-    (*negNode2)->addEdge(backwardEdge);
+    makeLink(*node1, *node2, overlap, overlapType, false);
 }
 
 void AssemblyGraph::resetNodes()
@@ -199,9 +240,15 @@ void AssemblyGraph::resetNodes()
 
 void AssemblyGraph::resetEdges()
 {
-    for (DeBruijnEdge *edge : m_deBruijnGraphEdges) {
+    for (DeBruijnEdge *edge : m_deBruijnGraphEdges)
         edge->reset();
-    }
+    m_reverseGraphicsItems.clear();
+}
+
+void AssemblyGraph::clearEdgeGraphicsItems() {
+    for (DeBruijnEdge *edge : m_deBruijnGraphEdges)
+        edge->setGraphicsItemEdge(nullptr);
+    m_reverseGraphicsItems.clear();
 }
 
 
@@ -259,7 +306,6 @@ double AssemblyGraph::getMeanDepth(const std::vector<DeBruijnNode *> &nodes)
     return depthSum / totalLength;
 }
 
-
 void AssemblyGraph::determineGraphInfo()
 {
     m_shortestContig = std::numeric_limits<long long>::max();
@@ -286,16 +332,10 @@ void AssemblyGraph::determineGraphInfo()
         nodeDepths.push_back(entry->getDepth());
     }
 
-    //Count up the edges that will be shown in single mode (i.e. positive
-    //edges).
-    int edgeCount = 0;
-    for (const DeBruijnEdge * edge : m_deBruijnGraphEdges) {
-        if (edge->isPositiveEdge())
-            ++edgeCount;
-    }
-
+    // Each stored edge is one link, including after a rename changes
+    // which orientation isPositiveEdge() would report.
+    m_edgeCount = static_cast<int>(m_deBruijnGraphEdges.size());
     m_nodeCount = nodeCount;
-    m_edgeCount = edgeCount;
     m_totalLength = totalLength;
     m_meanDepth = getMeanDepth();
 
@@ -593,8 +633,8 @@ void AssemblyGraph::markNodesToDraw(const graph::Scope &scope,
             queue.pop_back();
             nodeToDraw(node)->setAsDrawn();
 
-            for (auto *edge : node->edges()) {
-                DeBruijnNode *other = edge->getOtherNode(node);
+            for (auto link : node->incident_edges()) {
+                DeBruijnNode *other = link.otherNode();
                 if (!other)
                     continue;
                 if (seen.insert(other).second)
@@ -897,8 +937,11 @@ void AssemblyGraph::eraseNodeRecords(const DeBruijnNode *node) {
 
 void AssemblyGraph::eraseEdgeRecords(const DeBruijnEdge *edge) {
     m_edgeColors.erase(edge);
+    m_edgeReverseColors.erase(edge);
     m_edgeStyles.erase(edge);
     m_edgeTags.erase(edge);
+    m_reverseGraphicsItems.erase(edge);
+    m_overlapKeys.erase(edge);
 }
 
 void AssemblyGraph::deleteNodes(const std::vector<DeBruijnNode *> &nodes)
@@ -938,14 +981,10 @@ void AssemblyGraph::deleteNodes(const std::vector<DeBruijnNode *> &nodes)
 
 void AssemblyGraph::deleteEdges(const std::vector<DeBruijnEdge *> &edges)
 {
-    //Build a list of edges to delete.
     QSet<DeBruijnEdge *> edgesToDelete;
-    for (auto *edge : edges) {
+    for (auto *edge : edges)
         edgesToDelete.insert(edge);
-        edgesToDelete.insert(edge->getReverseComplement());
-    }
 
-    //Remove the edges from the graph,
     for (DeBruijnEdge *edge : edgesToDelete) {
         DeBruijnNode * startingNode = edge->getStartingNode();
         DeBruijnNode * endingNode = edge->getEndingNode();
@@ -954,9 +993,42 @@ void AssemblyGraph::deleteEdges(const std::vector<DeBruijnEdge *> &edges)
         m_deBruijnGraphEdges.erase(edge);
         startingNode->removeEdge(edge);
         endingNode->removeEdge(edge);
+        if (!edge->isOwnReverseComplement()) {
+            if (DeBruijnNode *rcStart = startingNode->getReverseComplement())
+                rcStart->removeEdge(edge);
+            if (DeBruijnNode *rcEnd = endingNode->getReverseComplement())
+                rcEnd->removeEdge(edge);
+        }
 
         delete edge;
     }
+}
+
+struct DirectedLink {
+    std::string otherName;
+    int overlap = 0;
+    EdgeOverlapType type = UNKNOWN_OVERLAP;
+
+    DirectedLink(std::string otherName, int overlap, EdgeOverlapType type)
+            : otherName(std::move(otherName)), overlap(overlap), type(type) {}
+};
+
+// Copy one direction's links before createDeBruijnEdge. That call attaches
+// the new edge to every end it touches. On a self-loop or hairpin one of
+// those ends is the node being iterated, so its edge list grows under the
+// incident iterator. The iterator holds pointers into the list, and the list
+// moves when it outgrows its inline buffer.
+//
+// Outgoing and incoming are copied separately. Outgoing edges are created
+// first, and one of them can be an incoming edge of the node copied next. A
+// circular merge depends on that: the link from the new node back to the front
+// is in the incoming copy, and creating it leaves a loop on the merged node.
+template <typename Range>
+static std::vector<DirectedLink> snapshotLinks(Range links) {
+    std::vector<DirectedLink> copied;
+    for (auto link : links)
+        copied.emplace_back(link.otherNode()->getName(), link.overlap(), link.overlapType());
+    return copied;
 }
 
 //This function assumes it is receiving a positive node.  It will duplicate both
@@ -990,19 +1062,13 @@ void AssemblyGraph::duplicateNodePair(DeBruijnNode * node, BandageGraphicsScene 
     m_deBruijnGraphNodes.emplace(newPosNodeName, newPosNode);
     m_deBruijnGraphNodes.emplace(newNegNodeName, newNegNode);
 
-    std::vector<DeBruijnEdge *> leavingEdges = originalPosNode->getLeavingEdges();
-    for (auto *edge : leavingEdges) {
-        DeBruijnNode * downstreamNode = edge->getEndingNode();
-        createDeBruijnEdge(newPosNodeName, downstreamNode->getName(),
-                           edge->getOverlap(), edge->getOverlapType());
-    }
+    // Copy each direction before creating its edges. Incoming is second, so a
+    // self-loop's new edge is part of that copy. See snapshotLinks.
+    for (const auto &link : snapshotLinks(originalPosNode->outgoing_edges()))
+        createDeBruijnEdge(newPosNodeName, link.otherName, link.overlap, link.type);
 
-    std::vector<DeBruijnEdge *> enteringEdges = originalPosNode->getEnteringEdges();
-    for (auto *edge : enteringEdges) {
-        DeBruijnNode * upstreamNode = edge->getStartingNode();
-        createDeBruijnEdge(upstreamNode->getName(), newPosNodeName,
-                           edge->getOverlap(), edge->getOverlapType());
-    }
+    for (const auto &link : snapshotLinks(originalPosNode->incoming_edges()))
+        createDeBruijnEdge(link.otherName, newPosNodeName, link.overlap, link.type);
 
     originalPosNode->setDepth(newDepth);
     originalNegNode->setDepth(newDepth);
@@ -1032,29 +1098,31 @@ std::string AssemblyGraph::getNewNodeName(std::string_view oldNodeName) const
 
 static bool canAddNodeToStartOfMergeList(const DeBruijnNode *firstNode,
                                          const DeBruijnNode *potentialNode) {
-    std::vector<DeBruijnEdge *> edgesEnteringFirstNode = firstNode->getEnteringEdges();
-    std::vector<DeBruijnEdge *> edgesLeavingPotentialNode = potentialNode->getLeavingEdges();
-    return (edgesEnteringFirstNode.size() == 1 &&
-            edgesLeavingPotentialNode.size() == 1 &&
-            edgesEnteringFirstNode[0]->getStartingNode() == potentialNode &&
-            edgesLeavingPotentialNode[0]->getEndingNode() == firstNode);
+    auto entering = firstNode->incoming_edges();
+    auto leaving = potentialNode->outgoing_edges();
+    if (!bandage::hasSingleElement(entering) ||
+        !bandage::hasSingleElement(leaving))
+        return false;
+    return entering.begin()->otherNode() == potentialNode &&
+           leaving.begin()->otherNode() == firstNode;
 }
 
 
 static bool canAddNodeToEndOfMergeList(const DeBruijnNode *lastNode,
                                        const DeBruijnNode *potentialNode) {
-    std::vector<DeBruijnEdge *> edgesLeavingLastNode = lastNode->getLeavingEdges();
-    std::vector<DeBruijnEdge *> edgesEnteringPotentialNode = potentialNode->getEnteringEdges();
-    return (edgesLeavingLastNode.size() == 1 &&
-            edgesEnteringPotentialNode.size() == 1 &&
-            edgesLeavingLastNode[0]->getEndingNode() == potentialNode &&
-            edgesEnteringPotentialNode[0]->getStartingNode() == lastNode);
+    auto leaving = lastNode->outgoing_edges();
+    auto entering = potentialNode->incoming_edges();
+    if (!bandage::hasSingleElement(leaving) ||
+        !bandage::hasSingleElement(entering))
+        return false;
+    return leaving.begin()->otherNode() == potentialNode &&
+           entering.begin()->otherNode() == lastNode;
 }
 
 static void mergeGraphicsNodes(const std::vector<DeBruijnNode *> &originalNodes,
                                const std::vector<DeBruijnNode *> &revCompOriginalNodes,
                                DeBruijnNode * newNode,
-                               const AssemblyGraph &graph,
+                               AssemblyGraph &graph,
                                BandageGraphicsScene *scene);
 
 //This function will merge the given nodes, if possible.  Nodes can only be
@@ -1149,13 +1217,13 @@ bool AssemblyGraph::mergeNodes(QList<DeBruijnNode *> nodes, BandageGraphicsScene
     m_deBruijnGraphNodes.emplace(newPosNodeName, newPosNode);
     m_deBruijnGraphNodes.emplace(newNegNodeName, newNegNode);
 
-    for (auto *leavingEdge : orderedList.back()->getLeavingEdges())
-        createDeBruijnEdge(newPosNodeName, leavingEdge->getEndingNode()->getName(), leavingEdge->getOverlap(),
-                           leavingEdge->getOverlapType());
+    // Copy each direction before creating its edges. Incoming is second, so the
+    // edge from the new node back to the front closes the merged node. See snapshotLinks.
+    for (const auto &link : snapshotLinks(orderedList.back()->outgoing_edges()))
+        createDeBruijnEdge(newPosNodeName, link.otherName, link.overlap, link.type);
 
-    for (auto *enteringEdge : orderedList.front()->getEnteringEdges())
-        createDeBruijnEdge(enteringEdge->getStartingNode()->getName(), newPosNodeName, enteringEdge->getOverlap(),
-                           enteringEdge->getOverlapType());
+    for (const auto &link : snapshotLinks(orderedList.front()->incoming_edges()))
+        createDeBruijnEdge(link.otherName, newPosNodeName, link.overlap, link.type);
 
     mergeGraphicsNodes(orderedList, revCompOrderedList, newPosNode,
                        *this, scene);
@@ -1171,7 +1239,7 @@ bool AssemblyGraph::mergeNodes(QList<DeBruijnNode *> nodes, BandageGraphicsScene
 
 static bool mergeGraphicsNodes2(const std::vector<DeBruijnNode *> &originalNodes,
                                 DeBruijnNode *newNode,
-                                const AssemblyGraph &graph,
+                                AssemblyGraph &graph,
                                 BandageGraphicsScene *scene) {
     bool success = true;
     std::vector<QPointF> linePoints;
@@ -1215,13 +1283,8 @@ static bool mergeGraphicsNodes2(const std::vector<DeBruijnNode *> &originalNodes
 
         scene->addItem(newGraphicsItemNode);
 
-        for (auto *newEdge : newNode->edges()) {
-            auto * graphicsItemEdge = new GraphicsItemEdge(newEdge, graph);
-            graphicsItemEdge->setZValue(-1.0);
-            newEdge->setGraphicsItemEdge(graphicsItemEdge);
-            graphicsItemEdge->setFlag(QGraphicsItem::ItemIsSelectable);
-            scene->addItem(graphicsItemEdge);
-        }
+        for (auto *newEdge : newNode->edges())
+            scene->addIncidentEdgeGraphics(newEdge, graph);
     }
     return success;
 }
@@ -1229,7 +1292,7 @@ static bool mergeGraphicsNodes2(const std::vector<DeBruijnNode *> &originalNodes
 static void mergeGraphicsNodes(const std::vector<DeBruijnNode *> &originalNodes,
                                const std::vector<DeBruijnNode *> &revCompOriginalNodes,
                                DeBruijnNode * newNode,
-                               const AssemblyGraph &graph,
+                               AssemblyGraph &graph,
                                BandageGraphicsScene * scene) {
     bool success = mergeGraphicsNodes2(originalNodes, newNode, graph, scene);
     if (success)
@@ -1279,14 +1342,14 @@ int AssemblyGraph::mergeAllPossible(BandageGraphicsScene * scene,
             {
                 extended = false;
                 DeBruijnNode * last = nodesToMerge.back();
-                std::vector<DeBruijnEdge *> outgoingEdges = last->getLeavingEdges();
-                if (outgoingEdges.size() == 1)
+                auto outgoing = last->outgoing_edges();
+                if (bandage::hasSingleElement(outgoing))
                 {
-                    DeBruijnEdge * potentialEdge = outgoingEdges[0];
-                    DeBruijnNode * potentialNode = potentialEdge->getEndingNode();
-                    std::vector<DeBruijnEdge *> edgesEnteringPotentialNode = potentialNode->getEnteringEdges();
-                    if (edgesEnteringPotentialNode.size() == 1 &&
-                            edgesEnteringPotentialNode[0] == potentialEdge &&
+                    auto potentialEdge = *outgoing.begin();
+                    DeBruijnNode * potentialNode = potentialEdge.otherNode();
+                    auto edgesEnteringPotentialNode = potentialNode->incoming_edges();
+                    if (bandage::hasSingleElement(edgesEnteringPotentialNode) &&
+                            edgesEnteringPotentialNode.begin()->edge() == potentialEdge.edge() &&
                             !nodesToMerge.contains(potentialNode) &&
                             uncheckedNodes.contains(potentialNode))
                     {
@@ -1303,14 +1366,14 @@ int AssemblyGraph::mergeAllPossible(BandageGraphicsScene * scene,
             {
                 extended = false;
                 DeBruijnNode * first = nodesToMerge.front();
-                std::vector<DeBruijnEdge *> incomingEdges = first->getEnteringEdges();
-                if (incomingEdges.size() == 1)
+                auto incomingEdges = first->incoming_edges();
+                if (bandage::hasSingleElement(incomingEdges))
                 {
-                    DeBruijnEdge * potentialEdge = incomingEdges[0];
-                    DeBruijnNode * potentialNode = potentialEdge->getStartingNode();
-                    std::vector<DeBruijnEdge *> edgesLeavingPotentialNode = potentialNode->getLeavingEdges();
-                    if (edgesLeavingPotentialNode.size() == 1 &&
-                            edgesLeavingPotentialNode[0] == potentialEdge &&
+                    auto potentialEdge = *incomingEdges.begin();
+                    DeBruijnNode * potentialNode = potentialEdge.otherNode();
+                    auto edgesLeavingPotentialNode = potentialNode->outgoing_edges();
+                    if (bandage::hasSingleElement(edgesLeavingPotentialNode) &&
+                            edgesLeavingPotentialNode.begin()->edge() == potentialEdge.edge() &&
                             !nodesToMerge.contains(potentialNode) &&
                             uncheckedNodes.contains(potentialNode))
                     {
@@ -1351,9 +1414,10 @@ bool AssemblyGraph::hasCustomColour(const DeBruijnNode* node) const {
     return it != m_nodeColors.end() && it->second.isValid();
 }
 
-bool AssemblyGraph::hasCustomColour(const DeBruijnEdge* edge) const {
-    auto it = m_edgeColors.find(edge);
-    return it != m_edgeColors.end() && it->second.isValid();
+bool AssemblyGraph::hasCustomColour(const DeBruijnEdge* edge, bool reverse) const {
+    const auto &colors = reverse ? m_edgeReverseColors : m_edgeColors;
+    auto it = colors.find(edge);
+    return it != colors.end() && it->second.isValid();
 }
 
 bool AssemblyGraph::hasCustomStyle(const DeBruijnEdge* edge) const {
@@ -1365,9 +1429,10 @@ QColor AssemblyGraph::getCustomColour(const DeBruijnNode* node) const {
     return it == m_nodeColors.end() ? QColor() : it->second;
 }
 
-QColor AssemblyGraph::getCustomColour(const DeBruijnEdge* edge) const {
-    auto it = m_edgeColors.find(edge);
-    return it == m_edgeColors.end() ? g_settings->edgeColour : it->second;
+QColor AssemblyGraph::getCustomColour(const DeBruijnEdge* edge, bool reverse) const {
+    const auto &colors = reverse ? m_edgeReverseColors : m_edgeColors;
+    auto it = colors.find(edge);
+    return it == colors.end() ? g_settings->edgeColour : it->second;
 }
 
 AssemblyGraph::EdgeStyle AssemblyGraph::getCustomStyle(const DeBruijnEdge* edge) const {
@@ -1379,11 +1444,35 @@ void AssemblyGraph::setCustomColour(const DeBruijnNode* node, QColor color) {
     m_nodeColors[node] = color;
 }
 
-void AssemblyGraph::setCustomColour(const DeBruijnEdge* edge, QColor color) {
+void AssemblyGraph::setCustomColour(const DeBruijnEdge* edge, QColor color, bool reverse) {
     // To simplify upstream code we ignore null edges
     if (edge == nullptr)
         return;
-    m_edgeColors[edge] = color;
+    if (reverse)
+        m_edgeReverseColors[edge] = color;
+    else
+        m_edgeColors[edge] = color;
+}
+
+GraphicsItemEdge *AssemblyGraph::reverseGraphicsItem(const DeBruijnEdge *edge) const {
+    auto it = m_reverseGraphicsItems.find(edge);
+    return it == m_reverseGraphicsItems.end() ? nullptr : it->second;
+}
+
+void AssemblyGraph::setReverseGraphicsItem(const DeBruijnEdge *edge, GraphicsItemEdge *item) {
+    if (item == nullptr)
+        m_reverseGraphicsItems.erase(edge);
+    else
+        m_reverseGraphicsItems[edge] = item;
+}
+
+GraphicsItemEdge *AssemblyGraph::takeGraphicsItem(DeBruijnEdge *edge, bool reversed) {
+    GraphicsItemEdge *item = reversed ? reverseGraphicsItem(edge) : edge->getGraphicsItemEdge();
+    if (reversed)
+        setReverseGraphicsItem(edge, nullptr);
+    else
+        edge->setGraphicsItemEdge(nullptr);
+    return item;
 }
 
 void AssemblyGraph::setCustomStyle(const DeBruijnEdge* edge, Qt::PenStyle lineStyle) {

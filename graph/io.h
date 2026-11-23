@@ -52,10 +52,13 @@ namespace io {
         bool jumpsAsLinks_ = false;
     };
 
-    bool handleStandardGFAEdgeTags(const DeBruijnEdge *edgePtr,
-                                   const DeBruijnEdge *rcEdgePtr,
+    // See assemblygraphbuilder.cpp. `fillEmptyColoursOnly` defaults to false:
+    // a new link takes every tag, and a repeat record only fills empty colours.
+    bool handleStandardGFAEdgeTags(const DeBruijnEdge *edge,
+                                   bool reversed,
                                    const std::vector<cigar::tag> &tags,
-                                   AssemblyGraph &graph);
+                                   AssemblyGraph &graph,
+                                   bool fillEmptyColoursOnly = false);
 
     bool loadGFAPaths(AssemblyGraph &graph, QString fileName);
     bool loadGFALinks(AssemblyGraph &graph, QString fileName,

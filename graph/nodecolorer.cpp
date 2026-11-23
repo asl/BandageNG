@@ -202,10 +202,9 @@ getNodesCommonToAllPaths(std::vector< std::vector <DeBruijnNode *> > &paths,
 // If includeReverseComplement is true, then this function returns true if
 // all paths lead either to the node or its reverse complement node.
 static bool doesPathLeadOnlyToNode(DeBruijnNode *sNode, const DeBruijnNode *tNode, bool includeReverseComplement) {
-    for (auto *edge : sNode->edges()) {
-        bool outgoingEdge = (sNode == edge->getStartingNode());
-        if (edge->leadsOnlyToNode(outgoingEdge, g_settings->contiguitySearchSteps, tNode,
-                                  { sNode }, includeReverseComplement))
+    for (auto link : sNode->incident_edges()) {
+        if (link.edge()->leadsOnlyToNode(link.outgoing(), g_settings->contiguitySearchSteps, tNode,
+                                         { sNode }, includeReverseComplement))
             return true;
     }
 
@@ -248,13 +247,10 @@ void ContiguityNodeColorer::determineContiguity(DeBruijnNode* node) {
     //outward.  Nodes in any of the paths for an edge are
     //MAYBE_CONTIGUOUS.  Nodes in all of the paths for an edge
     //are CONTIGUOUS.
-    for (auto edge : node->edges()) {
-        bool outgoingEdge = (node == edge->getStartingNode());
-
+    for (auto link : node->incident_edges()) {
         std::vector<std::vector<DeBruijnNode *>> allPaths;
-        edge->tracePaths(outgoingEdge, g_settings->contiguitySearchSteps, allPaths, node);
+        link.edge()->tracePaths(link.outgoing(), g_settings->contiguitySearchSteps, allPaths, node);
 
-        // Set all nodes in the paths as MAYBE_CONTIGUOUS
         for (auto &path : allPaths) {
             QApplication::processEvents();
             for (auto *pNode : path) {
@@ -263,12 +259,9 @@ void ContiguityNodeColorer::determineContiguity(DeBruijnNode* node) {
             }
         }
 
-        // Set all common nodes as CONTIGUOUS_STRAND_SPECIFIC
         for (auto *pNode : getNodesCommonToAllPaths(allPaths, false))
             upgradeContiguityStatus(pNode, CONTIGUOUS_STRAND_SPECIFIC);
 
-        // Set all common nodes (when including reverse complement nodes)
-        // as CONTIGUOUS_EITHER_STRAND
         for (auto *pNode : getNodesCommonToAllPaths(allPaths, true)) {
             upgradeContiguityStatus(pNode, CONTIGUOUS_EITHER_STRAND);
             upgradeContiguityStatus(pNode->getReverseComplement(), CONTIGUOUS_EITHER_STRAND);

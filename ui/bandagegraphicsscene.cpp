@@ -25,6 +25,7 @@
 #include "graph/graphicsitemedge.h"
 #include "graph/graphicsitemlink.h"
 #include "layout/graphlayout.h"
+#include "program/globals.h"
 #include "program/settings.h"
 
 #include <unordered_set>
@@ -204,6 +205,7 @@ void BandageGraphicsScene::possiblyExpandSceneRectangle(std::vector<GraphicsItem
 
 void BandageGraphicsScene::addGraphicsItemsToScene(AssemblyGraph &graph,
                                                    const GraphLayout &layout) {
+    graph.clearEdgeGraphicsItems();
     clear();
 
     double meanDrawnDepth = graph.getMeanDepth(true);
@@ -244,16 +246,24 @@ void BandageGraphicsScene::addGraphicsItemsToScene(AssemblyGraph &graph,
     // Then make the GraphicsItemEdge objects and add them to the scene first,
     // so they are drawn underneath
     for (DeBruijnEdge *edge : graph.m_deBruijnGraphEdges) {
-        if (!edge->isDrawn())
-            continue;
-
-        auto *graphicsItemEdge =
-                edge->getOverlapType() == EdgeOverlapType::EXTRA_LINK ?
-                new GraphicsItemLink(edge, graph) :
-                new GraphicsItemEdge(edge, graph);
-        edge->setGraphicsItemEdge(graphicsItemEdge);
-        graphicsItemEdge->setFlag(QGraphicsItem::ItemIsSelectable);
-        addItem(graphicsItemEdge);
+        if (edge->isDrawn()) {
+            auto *graphicsItemEdge =
+                    edge->getOverlapType() == EdgeOverlapType::EXTRA_LINK ?
+                    new GraphicsItemLink(edge, graph, false) :
+                    new GraphicsItemEdge(edge, graph, false);
+            edge->setGraphicsItemEdge(graphicsItemEdge);
+            graphicsItemEdge->setFlag(QGraphicsItem::ItemIsSelectable);
+            addItem(graphicsItemEdge);
+        }
+        if (edge->isDrawnReverse()) {
+            auto *graphicsItemEdge =
+                    edge->getOverlapType() == EdgeOverlapType::EXTRA_LINK ?
+                    new GraphicsItemLink(edge, graph, true) :
+                    new GraphicsItemEdge(edge, graph, true);
+            graph.setReverseGraphicsItem(edge, graphicsItemEdge);
+            graphicsItemEdge->setFlag(QGraphicsItem::ItemIsSelectable);
+            addItem(graphicsItemEdge);
+        }
     }
 
     // Now add the GraphicsItemNode objects to the scene, so they are drawn
@@ -266,24 +276,41 @@ void BandageGraphicsScene::addGraphicsItemsToScene(AssemblyGraph &graph,
     }
 }
 
+// `reverseComplement` removes both drawn directions. Otherwise only the
+// direction that has `node` as an end.
 void BandageGraphicsScene::removeAllGraphicsEdgesFromNode(DeBruijnNode *node, bool reverseComplement) {
-    std::vector<DeBruijnEdge*> edges(node->edgeBegin(), node->edgeEnd());
-    removeGraphicsItemEdges(edges, reverseComplement);
+    std::unordered_set<GraphicsItemEdge *> graphicsItemEdgesToDelete;
+    for (auto *edge : node->edges()) {
+        for (bool reversed : {false, true}) {
+            if (!reverseComplement) {
+                auto [from, to] = edge->orientedEnds(reversed);
+                if (node != from && node != to)
+                    continue;
+            }
+            if (GraphicsItemEdge *item = g_assemblyGraph->takeGraphicsItem(edge, reversed))
+                graphicsItemEdgesToDelete.insert(item);
+        }
+    }
+
+    if (graphicsItemEdgesToDelete.empty())
+        return;
+
+    BandageGraphicsScene *scene = dynamic_cast<BandageGraphicsScene*>((*graphicsItemEdgesToDelete.begin())->scene());
+    if (!scene)
+        return;
+
+    scene->removeGraphicsItemEdges(graphicsItemEdgesToDelete);
 }
 
 void BandageGraphicsScene::removeGraphicsItemEdges(const std::vector<DeBruijnEdge *> &edges,
                                                    bool reverseComplement) {
     std::unordered_set<GraphicsItemEdge *> graphicsItemEdgesToDelete;
     for (auto *edge : edges) {
-        if (auto *graphicsItemEdge = edge->getGraphicsItemEdge())
-            graphicsItemEdgesToDelete.insert(graphicsItemEdge);
-        edge->setGraphicsItemEdge(nullptr);
-
+        if (GraphicsItemEdge *item = g_assemblyGraph->takeGraphicsItem(edge, false))
+            graphicsItemEdgesToDelete.insert(item);
         if (reverseComplement) {
-            DeBruijnEdge * rcEdge = edge->getReverseComplement();
-            if (auto *graphicsItemEdge = rcEdge->getGraphicsItemEdge())
-                graphicsItemEdgesToDelete.insert(graphicsItemEdge);
-            rcEdge->setGraphicsItemEdge(nullptr);
+            if (GraphicsItemEdge *item = g_assemblyGraph->takeGraphicsItem(edge, true))
+                graphicsItemEdgesToDelete.insert(item);
         }
     }
 
@@ -355,7 +382,7 @@ void BandageGraphicsScene::removeGraphicsItemNodes(const std::unordered_set<Grap
 }
 
 void BandageGraphicsScene::duplicateGraphicsNode(DeBruijnNode *originalNode, DeBruijnNode *newNode,
-                                                 const AssemblyGraph &graph) {
+                                                 AssemblyGraph &graph) {
     GraphicsItemNode * originalGraphicsItemNode = originalNode->getGraphicsItemNode();
     if (originalGraphicsItemNode == nullptr)
         return;
@@ -372,11 +399,48 @@ void BandageGraphicsScene::duplicateGraphicsNode(DeBruijnNode *originalNode, DeB
 
     addItem(newGraphicsItemNode);
 
-    for (auto *newEdge : newNode->edges()) {
-        auto * graphicsItemEdge = new GraphicsItemEdge(newEdge, graph);
-        graphicsItemEdge->setZValue(-1.0);
-        newEdge->setGraphicsItemEdge(graphicsItemEdge);
-        graphicsItemEdge->setFlag(QGraphicsItem::ItemIsSelectable);
-        addItem(graphicsItemEdge);
+    for (auto *newEdge : newNode->edges())
+        addIncidentEdgeGraphics(newEdge, graph);
+}
+
+void BandageGraphicsScene::addIncidentEdgeGraphics(DeBruijnEdge *edge, AssemblyGraph &graph,
+                                                   bool requireDrawn) {
+    auto makeItem = [&](bool reversed) {
+        GraphicsItemEdge *item = edge->getOverlapType() == EdgeOverlapType::EXTRA_LINK
+                                     ? static_cast<GraphicsItemEdge *>(new GraphicsItemLink(edge, graph, reversed))
+                                     : new GraphicsItemEdge(edge, graph, reversed);
+        item->setZValue(-1.0);
+        item->setFlag(QGraphicsItem::ItemIsSelectable);
+        addItem(item);
+        return item;
+    };
+
+    auto directionReady = [](const DeBruijnNode *from, const DeBruijnNode *to) {
+        return from != nullptr && to != nullptr &&
+               from->getGraphicsItemNode() != nullptr &&
+               to->getGraphicsItemNode() != nullptr;
+    };
+    auto strandHasItem = [](const DeBruijnNode *node) {
+        if (node == nullptr)
+            return false;
+        if (node->getGraphicsItemNode() != nullptr)
+            return true;
+        const DeBruijnNode *rc = node->getReverseComplement();
+        return rc != nullptr && rc->getGraphicsItemNode() != nullptr;
+    };
+
+    if (edge->getGraphicsItemEdge() == nullptr && (!requireDrawn || edge->isDrawn())) {
+        auto [from, to] = edge->orientedEnds(false);
+        bool ready = g_settings->doubleMode ? directionReady(from, to)
+                                            : (strandHasItem(from) && strandHasItem(to));
+        if (ready)
+            edge->setGraphicsItemEdge(makeItem(false));
+    }
+    if (g_settings->doubleMode && !edge->isOwnReverseComplement() &&
+        graph.reverseGraphicsItem(edge) == nullptr &&
+        (!requireDrawn || edge->isDrawnReverse())) {
+        auto [from, to] = edge->orientedEnds(true);
+        if (directionReady(from, to))
+            graph.setReverseGraphicsItem(edge, makeItem(true));
     }
 }
