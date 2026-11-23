@@ -25,6 +25,7 @@ namespace CLI {
 struct InfoCmd {
     std::filesystem::path m_graph;
     bool m_tsv = false;
+    bool m_memory = false;
 };
 
 CLI::App *addInfoSubcommand(CLI::App &app,

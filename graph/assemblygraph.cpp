@@ -306,6 +306,47 @@ double AssemblyGraph::getMeanDepth(const std::vector<DeBruijnNode *> &nodes)
     return depthSum / totalLength;
 }
 
+AssemblyGraph::StorageAccount AssemblyGraph::storageAccount() const {
+    StorageAccount account;
+    account.orientedNodes = m_deBruijnGraphNodes.size();
+    account.edges = m_deBruijnGraphEdges.size();
+
+    // A self-reverse-complement segment is one node stored under two keys.
+    std::unordered_set<const DeBruijnNode *> seenNodes;
+    for (auto it = m_deBruijnGraphNodes.begin(); it != m_deBruijnGraphNodes.end(); ++it) {
+        const DeBruijnNode *node = *it;
+        account.nodeIndexKeyBytes += it.key().size();
+        if (!seenNodes.insert(node).second)
+            continue;
+
+        if (!node->isPositiveNode())
+            continue;
+        const uint64_t nameBytes = node->getNameWithoutSign().size();
+        account.nameBytes += nameBytes;
+        ++account.segments;
+        account.segmentNameBytes += nameBytes;
+        account.packedSequenceBytes += node->getSequence().capacity();
+        if (node->sequenceIsMissing()) {
+            ++account.missingSegments;
+            account.missingSequenceBases += node->getLength();
+        }
+    }
+
+    for (auto it = m_deBruijnGraphPaths.begin(); it != m_deBruijnGraphPaths.end(); ++it) {
+        account.pathNameBytes += it.key().size();
+        account.pathSteps += it.value().getNodeCount();
+    }
+    account.paths = m_deBruijnGraphPaths.size();
+
+    for (auto it = m_deBruijnGraphWalks.begin(); it != m_deBruijnGraphWalks.end(); ++it) {
+        account.walkKeyBytes += it.key().size();
+        account.walkSampleBytes += it.value().sampleId.size();
+        account.walkSteps += it.value().walk.getNodeCount();
+    }
+    account.walks = m_deBruijnGraphWalks.size();
+    return account;
+}
+
 void AssemblyGraph::determineGraphInfo()
 {
     m_shortestContig = std::numeric_limits<long long>::max();
