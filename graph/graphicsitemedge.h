@@ -37,7 +37,7 @@ public:
     explicit GraphicsItemEdge(DeBruijnEdge *deBruijnEdge, const AssemblyGraph &graph,
                               bool reversed = false, QGraphicsItem *parent = nullptr);
 
-    void paint(QPainter * painter, const QStyleOptionGraphicsItem *, QWidget *) override;
+    void paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *) override;
     QPainterPath shape() const override;
 
     virtual void remakePath();

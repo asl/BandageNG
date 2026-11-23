@@ -23,7 +23,7 @@
 #include <QMouseEvent>
 #include <QRegularExpression>
 
-InfoTextWidget::InfoTextWidget(QWidget * parent)
+InfoTextWidget::InfoTextWidget(QWidget *parent)
  : QWidget(parent) {
     setFixedSize(16, 16);
     setMouseTracking(true);
@@ -72,6 +72,6 @@ void InfoTextWidget::paintEvent(QPaintEvent * /*event*/) {
 }
 
 
-void InfoTextWidget::mousePressEvent(QMouseEvent * event) {
+void InfoTextWidget::mousePressEvent(QMouseEvent *event) {
     QToolTip::showText(event->globalPosition().toPoint(), toolTip());
 }

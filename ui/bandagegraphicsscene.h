@@ -41,9 +41,9 @@ public:
     std::vector<DeBruijnNode *> getSelectedPositiveNodes();
     std::vector<GraphicsItemNode *> getSelectedGraphicsItemNodes();
     std::vector<DeBruijnEdge *> getSelectedEdges();
-    DeBruijnNode * getOneSelectedNode();
-    DeBruijnEdge * getOneSelectedEdge();
-    DeBruijnNode * getOnePositiveSelectedNode();
+    DeBruijnNode *getOneSelectedNode();
+    DeBruijnEdge *getOneSelectedEdge();
+    DeBruijnNode *getOnePositiveSelectedNode();
     double getTopZValue();
     void setSceneRectangle();
     void possiblyExpandSceneRectangle(std::vector<GraphicsItemNode *> * movedNodes);
@@ -55,7 +55,7 @@ public:
     static void removeAllGraphicsEdgesFromNode(DeBruijnNode *node,
                                                bool reverseComplement);
 
-    void duplicateGraphicsNode(DeBruijnNode * originalNode, DeBruijnNode * newNode,
+    void duplicateGraphicsNode(DeBruijnNode *originalNode, DeBruijnNode *newNode,
                                AssemblyGraph &graph);
     // One graphics item per drawn direction. A second call for the same edge
     // does not create another item.
@@ -63,6 +63,6 @@ public:
                                  bool requireDrawn = false);
 
 private:
-    void removeGraphicsItemNodes(const std::unordered_set<GraphicsItemNode*> &nodes);
-    void removeGraphicsItemEdges(const std::unordered_set<GraphicsItemEdge*> &edges);
+    void removeGraphicsItemNodes(const std::unordered_set<GraphicsItemNode *> &nodes);
+    void removeGraphicsItemEdges(const std::unordered_set<GraphicsItemEdge *> &edges);
 };

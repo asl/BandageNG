@@ -211,7 +211,7 @@ static bool doesPathLeadOnlyToNode(DeBruijnNode *sNode, const DeBruijnNode *tNod
     return false;
 }
 
-ContiguityStatus ContiguityNodeColorer::getContiguityStatus(const DeBruijnNode* node) const {
+ContiguityStatus ContiguityNodeColorer::getContiguityStatus(const DeBruijnNode *node) const {
     auto it = m_nodeStatuses.find(node);
     if (it == m_nodeStatuses.end())
         return ContiguityStatus::NOT_CONTIGUOUS;
@@ -235,7 +235,7 @@ void ContiguityNodeColorer::upgradeContiguityStatus(const DeBruijnNode *node,
 // -Second, it is necessary to check in the opposite direction - for each
 //  of the MAYBE_CONTIGUOUS nodes, do they have a path that unambiguously
 //  leads to this node?  If so, then they are CONTIGUOUS.
-void ContiguityNodeColorer::determineContiguity(DeBruijnNode* node) {
+void ContiguityNodeColorer::determineContiguity(DeBruijnNode *node) {
     upgradeContiguityStatus(node, STARTING);
 
     //A set is used to store all nodes found in the paths, as the nodes

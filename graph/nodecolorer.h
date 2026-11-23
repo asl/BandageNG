@@ -46,7 +46,7 @@ public:
     [[nodiscard]] virtual std::pair<QColor, QColor> get(const GraphicsItemNode *node,
                                                         const GraphicsItemNode *rcNode);
     virtual void reset() {};
-    [[nodiscard]] virtual const char* name() const = 0;
+    [[nodiscard]] virtual const char *name() const = 0;
 
     static std::unique_ptr<INodeColorer> create(NodeColorScheme scheme);
 

@@ -38,7 +38,7 @@ QueryPath::QueryPath(Path path, Query *query)
     const Hit *previousHit = nullptr;
     const auto &pathNodes = m_path.nodes();
     for (int i = 0; i < pathNodes.size(); ++i) {
-        DeBruijnNode * node = pathNodes[i];
+        DeBruijnNode *node = pathNodes[i];
 
         Query::Hits hitsThisNode;
         for (auto &queryHit : query->getHits()) {
@@ -95,17 +95,17 @@ SciNot QueryPath::getEvalueProduct() const {
     int exponentSum = 0;
 
     for (int i = 0; i < m_hits.size(); ++i) {
-        const Hit * thisHit = m_hits[i];
+        const Hit *thisHit = m_hits[i];
         SciNot thisHitEValue = thisHit->m_eValue;
         double eValueLenToRemove = 0.0;
         if (i > 0) {
-            const Hit * previousHit = m_hits[i - 1];
+            const Hit *previousHit = m_hits[i - 1];
             int overlap = getHitOverlap(previousHit, thisHit);
             if (overlap > 0)
                 eValueLenToRemove += overlap / 2.0;
         }
         if (i < m_hits.size() - 1) {
-            const Hit * nextHit = m_hits[i + 1];
+            const Hit *nextHit = m_hits[i + 1];
             int overlap = getHitOverlap(thisHit, nextHit);
             if (overlap > 0)
                 eValueLenToRemove += overlap / 2.0;
@@ -124,7 +124,7 @@ SciNot QueryPath::getEvalueProduct() const {
 }
 
 
-int QueryPath::getHitOverlap(const Hit * hit1, const Hit * hit2) const {
+int QueryPath::getHitOverlap(const Hit *hit1, const Hit *hit2) const {
     int hit1Start, hit1End, hit2Start, hit2End;
 
     // Overlap in the same node is simple.

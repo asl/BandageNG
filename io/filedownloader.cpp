@@ -2,7 +2,7 @@
 #include <QNetworkRequest>
 #include <QUrl>
 
-FileDownloader::FileDownloader(QObject* parent) 
+FileDownloader::FileDownloader(QObject *parent) 
     : QObject(parent), m_manager(new QNetworkAccessManager(this)) {}
 
 void FileDownloader::download(const QString& url, const QString& outputPath) {
@@ -10,7 +10,7 @@ void FileDownloader::download(const QString& url, const QString& outputPath) {
     m_bytesReceived = 0;
 
     QNetworkRequest request(url);
-    QNetworkReply* reply = m_manager->get(request);
+    QNetworkReply *reply = m_manager->get(request);
 
     connect(reply, &QNetworkReply::readyRead, this, [this, reply]() {
         processDataChunk(reply);
@@ -31,7 +31,7 @@ void FileDownloader::download(const QString& url, const QString& outputPath) {
     });
 }
 
-void FileDownloader::processDataChunk(QNetworkReply* reply) {
+void FileDownloader::processDataChunk(QNetworkReply *reply) {
     QByteArray chunk = reply->readAll();
     
     if (chunk.isEmpty()) {
@@ -58,7 +58,7 @@ void FileDownloader::processDataChunk(QNetworkReply* reply) {
     }
 }
 
-void FileDownloader::handleFinished(QNetworkReply* reply) {
+void FileDownloader::handleFinished(QNetworkReply *reply) {
     processDataChunk(reply);
 
     if (m_file.isOpen()) {

@@ -30,7 +30,7 @@ namespace search {
     public:
         // CREATORS
         QueryPath(Path path, Query *query);
-        QueryPath(Path path, Query *query, std::vector<const Hit*> hits);
+        QueryPath(Path path, Query *query, std::vector<const Hit *> hits);
 
         //ACCESSORS
         const Path &getPath() const { return m_path; }
@@ -54,7 +54,7 @@ namespace search {
     private:
         Path m_path;
         Query *m_query;
-        std::vector<const Hit*> m_hits;
+        std::vector<const Hit *> m_hits;
 
         int getHitQueryLength() const;
         int getHitOverlap(const Hit *hit1, const Hit *hit2) const;

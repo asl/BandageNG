@@ -35,7 +35,7 @@ BandageGraphicsScene::BandageGraphicsScene(QObject *parent) :
 { }
 
 
-static bool compareNodePointers(const DeBruijnNode * a, const DeBruijnNode * b) {
+static bool compareNodePointers(const DeBruijnNode *a, const DeBruijnNode *b) {
     QString aName = nodeDisplayName(a);
     QString bName = nodeDisplayName(b);
 
@@ -88,7 +88,7 @@ std::vector<GraphicsItemNode *> BandageGraphicsScene::getSelectedGraphicsItemNod
     std::vector<GraphicsItemNode *> returnVector;
 
     for (auto *selectedItem : selectedItems())
-        if (auto * selectedNodeItem = dynamic_cast<GraphicsItemNode *>(selectedItem))
+        if (auto *selectedNodeItem = dynamic_cast<GraphicsItemNode *>(selectedItem))
             returnVector.push_back(selectedNodeItem);
 
     return returnVector;
@@ -99,13 +99,13 @@ std::vector<DeBruijnEdge *> BandageGraphicsScene::getSelectedEdges() {
     std::vector<DeBruijnEdge *> returnVector;
 
     for (auto *selectedItem : selectedItems())
-        if (auto * selectedEdgeItem = dynamic_cast<GraphicsItemEdge *>(selectedItem))
+        if (auto *selectedEdgeItem = dynamic_cast<GraphicsItemEdge *>(selectedItem))
             returnVector.push_back(selectedEdgeItem->edge());
 
     return returnVector;
 }
 
-DeBruijnNode * BandageGraphicsScene::getOneSelectedNode() {
+DeBruijnNode *BandageGraphicsScene::getOneSelectedNode() {
     std::vector<DeBruijnNode *> selectedNodes = getSelectedNodes();
     if (selectedNodes.empty())
         return nullptr;
@@ -113,7 +113,7 @@ DeBruijnNode * BandageGraphicsScene::getOneSelectedNode() {
     return selectedNodes.front();
 }
 
-DeBruijnEdge * BandageGraphicsScene::getOneSelectedEdge()
+DeBruijnEdge *BandageGraphicsScene::getOneSelectedEdge()
 {
     std::vector<DeBruijnEdge *> selectedEdges = getSelectedEdges();
     if (selectedEdges.empty())
@@ -126,20 +126,20 @@ DeBruijnEdge * BandageGraphicsScene::getOneSelectedEdge()
 //graph and a 0 if it can't be done.  However, it will always return the
 //positive node in the pair, and if two complementary nodes are selected, it
 //will still work.
-DeBruijnNode * BandageGraphicsScene::getOnePositiveSelectedNode()
+DeBruijnNode *BandageGraphicsScene::getOnePositiveSelectedNode()
 {
     std::vector<DeBruijnNode *> selectedNodes = getSelectedNodes();
     if (selectedNodes.empty())
         return nullptr;
 
     if (selectedNodes.size() == 1) {
-        DeBruijnNode * selectedNode = selectedNodes.front();
+        DeBruijnNode *selectedNode = selectedNodes.front();
         return (selectedNode->isPositiveNode() ? selectedNode : selectedNode->getReverseComplement());
     }
 
     if (selectedNodes.size() == 2) {
-        DeBruijnNode * selectedNode1 = selectedNodes[0];
-        DeBruijnNode * selectedNode2 = selectedNodes[1];
+        DeBruijnNode *selectedNode1 = selectedNodes[0];
+        DeBruijnNode *selectedNode2 = selectedNodes[1];
         if (selectedNode1->getReverseComplement() != selectedNode2)
             return nullptr;
 
@@ -156,7 +156,7 @@ double BandageGraphicsScene::getTopZValue()
     QList<QGraphicsItem *> allItems = items();
     for (int i = 0; i < allItems.size(); ++i)
     {
-        QGraphicsItem * item = allItems[i];
+        QGraphicsItem *item = allItems[i];
         if (i == 0)
             topZ = item->zValue();
         else
@@ -295,7 +295,7 @@ void BandageGraphicsScene::removeAllGraphicsEdgesFromNode(DeBruijnNode *node, bo
     if (graphicsItemEdgesToDelete.empty())
         return;
 
-    BandageGraphicsScene *scene = dynamic_cast<BandageGraphicsScene*>((*graphicsItemEdgesToDelete.begin())->scene());
+    BandageGraphicsScene *scene = dynamic_cast<BandageGraphicsScene *>((*graphicsItemEdgesToDelete.begin())->scene());
     if (!scene)
         return;
 
@@ -318,7 +318,7 @@ void BandageGraphicsScene::removeGraphicsItemEdges(const std::vector<DeBruijnEdg
     if (graphicsItemEdgesToDelete.empty())
         return;
 
-    BandageGraphicsScene *scene = dynamic_cast<BandageGraphicsScene*>((*graphicsItemEdgesToDelete.begin())->scene());
+    BandageGraphicsScene *scene = dynamic_cast<BandageGraphicsScene *>((*graphicsItemEdgesToDelete.begin())->scene());
     if (!scene)
         return;
 
@@ -351,7 +351,7 @@ void BandageGraphicsScene::removeGraphicsItemNodes(const std::vector<DeBruijnNod
         node->setGraphicsItemNode(nullptr);
 
         if (reverseComplement) {
-            DeBruijnNode * rcNode = node->getReverseComplement();
+            DeBruijnNode *rcNode = node->getReverseComplement();
             if (auto *graphicsItemNode = rcNode->getGraphicsItemNode())
                 graphicsItemNodesToDelete.insert(graphicsItemNode);
             rcNode->setGraphicsItemNode(nullptr);
@@ -362,14 +362,14 @@ void BandageGraphicsScene::removeGraphicsItemNodes(const std::vector<DeBruijnNod
     if (graphicsItemNodesToDelete.empty())
         return;
 
-    BandageGraphicsScene *scene = dynamic_cast<BandageGraphicsScene*>((*graphicsItemNodesToDelete.begin())->scene());
+    BandageGraphicsScene *scene = dynamic_cast<BandageGraphicsScene *>((*graphicsItemNodesToDelete.begin())->scene());
     if (!scene)
         return;
 
     scene->removeGraphicsItemNodes(graphicsItemNodesToDelete);
 }
 
-void BandageGraphicsScene::removeGraphicsItemNodes(const std::unordered_set<GraphicsItemNode*> &nodes) {
+void BandageGraphicsScene::removeGraphicsItemNodes(const std::unordered_set<GraphicsItemNode *> &nodes) {
     blockSignals(true);
     for (auto *graphicsItemNode : nodes) {
         if (graphicsItemNode == nullptr)
@@ -383,7 +383,7 @@ void BandageGraphicsScene::removeGraphicsItemNodes(const std::unordered_set<Grap
 
 void BandageGraphicsScene::duplicateGraphicsNode(DeBruijnNode *originalNode, DeBruijnNode *newNode,
                                                  AssemblyGraph &graph) {
-    GraphicsItemNode * originalGraphicsItemNode = originalNode->getGraphicsItemNode();
+    GraphicsItemNode *originalGraphicsItemNode = originalNode->getGraphicsItemNode();
     if (originalGraphicsItemNode == nullptr)
         return;
 

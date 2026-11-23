@@ -25,7 +25,7 @@
 
 QSharedPointer<Settings> g_settings;
 QSharedPointer<Memory> g_memory;
-BandageGraphicsView * g_graphicsView;
+BandageGraphicsView *g_graphicsView;
 double g_absoluteZoom;
 std::unique_ptr<search::GraphSearch> g_graphSearch;
 QSharedPointer<AssemblyGraph> g_assemblyGraph;

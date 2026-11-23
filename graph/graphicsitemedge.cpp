@@ -47,7 +47,7 @@ GraphicsItemEdge::GraphicsItemEdge(DeBruijnEdge *deBruijnEdge,
     remakePath();
 }
 
-void GraphicsItemEdge::paint(QPainter * painter, const QStyleOptionGraphicsItem *, QWidget *) {
+void GraphicsItemEdge::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *) {
     QColor penColour = isSelected() ? g_settings->selectionColour : m_edgeColor;
     QPen edgePen(QBrush(penColour), m_width, m_penStyle, Qt::RoundCap);
     painter->setPen(edgePen);
@@ -163,7 +163,7 @@ void GraphicsItemEdge::remakePath() {
     // required, otherwise the edge will be mostly hidden underneath
     // the node.
     if (startingNode == endingNode) {
-        GraphicsItemNode * graphicsItemNode = startingNode->getGraphicsItemNode();
+        GraphicsItemNode *graphicsItemNode = startingNode->getGraphicsItemNode();
         if (!graphicsItemNode)
             graphicsItemNode = startingNode->getReverseComplement()->getGraphicsItemNode();
         if (graphicsItemNode && graphicsItemNode->m_linePoints.size() == 2)

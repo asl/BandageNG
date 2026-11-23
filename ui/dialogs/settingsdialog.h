@@ -42,7 +42,7 @@ public:
 private:
     Ui::SettingsDialog *ui;
 
-    void loadOrSaveSettingsToOrFromWidgets(bool setWidgets, Settings * settings);
+    void loadOrSaveSettingsToOrFromWidgets(bool setWidgets, Settings *settings);
 
 private slots:
     void restoreDefaults();

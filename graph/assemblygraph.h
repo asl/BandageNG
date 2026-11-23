@@ -71,17 +71,17 @@ public:
     ~AssemblyGraph() override;
 
     //Nodes are stored in a map with a key of the node's name.
-    tsl::htrie_map<char, DeBruijnNode*> m_deBruijnGraphNodes;
+    tsl::htrie_map<char, DeBruijnNode *> m_deBruijnGraphNodes;
 
-    using DeBruijnLink = std::pair<DeBruijnNode*, DeBruijnNode*>;
+    using DeBruijnLink = std::pair<DeBruijnNode *, DeBruijnNode *>;
 
     // Edges are stored in a set for fast removal
-    phmap::parallel_flat_hash_set<DeBruijnEdge*> m_deBruijnGraphEdges;
+    phmap::parallel_flat_hash_set<DeBruijnEdge *> m_deBruijnGraphEdges;
 
     // Custom colors
-    phmap::parallel_flat_hash_map<const DeBruijnNode*, QColor> m_nodeColors;
+    phmap::parallel_flat_hash_map<const DeBruijnNode *, QColor> m_nodeColors;
     // Custom labels
-    phmap::parallel_flat_hash_map<const DeBruijnNode*, QString> m_nodeLabels;
+    phmap::parallel_flat_hash_map<const DeBruijnNode *, QString> m_nodeLabels;
     // Edge styles
     struct EdgeStyle {
         float width;
@@ -89,23 +89,23 @@ public:
 
         EdgeStyle();
     };
-    phmap::parallel_flat_hash_map<const DeBruijnEdge*, EdgeStyle> m_edgeStyles;
+    phmap::parallel_flat_hash_map<const DeBruijnEdge *, EdgeStyle> m_edgeStyles;
     // Edge colors
-    phmap::parallel_flat_hash_map<const DeBruijnEdge*, QColor> m_edgeColors;
+    phmap::parallel_flat_hash_map<const DeBruijnEdge *, QColor> m_edgeColors;
     // Colour of the reverse direction. Empty unless that direction sets one.
-    phmap::parallel_flat_hash_map<const DeBruijnEdge*, QColor> m_edgeReverseColors;
+    phmap::parallel_flat_hash_map<const DeBruijnEdge *, QColor> m_edgeReverseColors;
     // Graphics item for the reverse direction. Empty until that direction is drawn.
-    phmap::parallel_flat_hash_map<const DeBruijnEdge*, GraphicsItemEdge*> m_reverseGraphicsItems;
+    phmap::parallel_flat_hash_map<const DeBruijnEdge *, GraphicsItemEdge *> m_reverseGraphicsItems;
     // Overlap text for an overlap that is not a single length. An exact
     // overlap is identified by its length and has no entry here.
-    phmap::parallel_flat_hash_map<const DeBruijnEdge*, std::string> m_overlapKeys;
+    phmap::parallel_flat_hash_map<const DeBruijnEdge *, std::string> m_overlapKeys;
 
     // CSV data
-    phmap::parallel_flat_hash_map<const DeBruijnNode*, QStringList> m_nodeCSVData;
+    phmap::parallel_flat_hash_map<const DeBruijnNode *, QStringList> m_nodeCSVData;
     QStringList m_csvHeaders;
     // Tags
-    phmap::parallel_flat_hash_map<const DeBruijnNode*, std::vector<gfa::tag>> m_nodeTags;
-    phmap::parallel_flat_hash_map<const DeBruijnEdge*, std::vector<gfa::tag>> m_edgeTags;
+    phmap::parallel_flat_hash_map<const DeBruijnNode *, std::vector<gfa::tag>> m_nodeTags;
+    phmap::parallel_flat_hash_map<const DeBruijnEdge *, std::vector<gfa::tag>> m_edgeTags;
 
     // Paths
     tsl::htrie_map<char, Path> m_deBruijnGraphPaths;
@@ -166,12 +166,12 @@ public:
     void markNodesToDraw(const graph::Scope &scope,
                          const std::vector<DeBruijnNode *>& startingNodes = {});
 
-    bool loadCSV(const QString& filename, QStringList * columns, QString * errormsg, bool * coloursLoaded);
+    bool loadCSV(const QString& filename, QStringList *columns, QString *errormsg, bool *coloursLoaded);
 
     static bool checkIfStringHasNodes(QString nodesString);
     static std::string generateNodesNotFoundErrorMessage(const std::vector<QString> &nodesNotInGraph,
                                                          bool exact);
-    std::pair<DeBruijnNode*, DeBruijnNode*> getNodes(const QString &nodeName) const;
+    std::pair<DeBruijnNode *, DeBruijnNode *> getNodes(const QString &nodeName) const;
 
     std::vector<DeBruijnNode *> getNodesFromStringList(QString nodeNamesString,
                                                        bool exactMatch,
@@ -183,11 +183,11 @@ public:
     int getDrawnNodeCount() const;
     void deleteNodes(const std::vector<DeBruijnNode *> &nodes);
     void deleteEdges(const std::vector<DeBruijnEdge *> &edges);
-    void duplicateNodePair(DeBruijnNode * node, BandageGraphicsScene * scene);
-    bool mergeNodes(QList<DeBruijnNode *> nodes, BandageGraphicsScene * scene);
+    void duplicateNodePair(DeBruijnNode *node, BandageGraphicsScene *scene);
+    bool mergeNodes(QList<DeBruijnNode *> nodes, BandageGraphicsScene *scene);
 
-    int mergeAllPossible(BandageGraphicsScene * scene = 0,
-                         MyProgressDialog * progressDialog = 0);
+    int mergeAllPossible(BandageGraphicsScene *scene = 0,
+                         MyProgressDialog *progressDialog = 0);
 
     void changeNodeName(const QString& oldName, const QString& newName);
     NodeNameStatus checkNodeNameValidity(const QString& nodeName) const;
@@ -195,8 +195,8 @@ public:
                          double newDepth);
 
     unsigned int getDeadEndCount() const;
-    void getNodeStats(int * n50, int * shortestNode, int * firstQuartile, int * median, int * thirdQuartile, int * longestNode) const;
-    void getGraphComponentCountAndLargestComponentSize(int * componentCount, int * largestComponentLength) const;
+    void getNodeStats(int *n50, int *shortestNode, int *firstQuartile, int *median, int *thirdQuartile, int *longestNode) const;
+    void getGraphComponentCountAndLargestComponentSize(int *componentCount, int *largestComponentLength) const;
     double getMedianDepthByBase() const;
 
     long long getEstimatedSequenceLength(double medianDepthByBase) const;
@@ -204,32 +204,32 @@ public:
     QPair<int, int> getOverlapRange() const;
     long long getTotalLengthOrphanedNodes() const;
 
-    bool hasCustomColour(const DeBruijnNode* node) const;
-    bool hasCustomColour(const DeBruijnEdge* edge, bool reverse = false) const;
-    QColor getCustomColour(const DeBruijnNode* node) const;
-    QColor getCustomColour(const DeBruijnEdge* edge, bool reverse = false) const;
-    void setCustomColour(const DeBruijnNode* node, QColor color);
-    void setCustomColour(const DeBruijnEdge* edge, QColor color, bool reverse = false);
+    bool hasCustomColour(const DeBruijnNode *node) const;
+    bool hasCustomColour(const DeBruijnEdge *edge, bool reverse = false) const;
+    QColor getCustomColour(const DeBruijnNode *node) const;
+    QColor getCustomColour(const DeBruijnEdge *edge, bool reverse = false) const;
+    void setCustomColour(const DeBruijnNode *node, QColor color);
+    void setCustomColour(const DeBruijnEdge *edge, QColor color, bool reverse = false);
 
     GraphicsItemEdge *reverseGraphicsItem(const DeBruijnEdge *edge) const;
     void setReverseGraphicsItem(const DeBruijnEdge *edge, GraphicsItemEdge *item);
     // The graphics item for one direction. Clears that pointer.
     GraphicsItemEdge *takeGraphicsItem(DeBruijnEdge *edge, bool reversed);
 
-    EdgeStyle getCustomStyle(const DeBruijnEdge* edge) const;
-    void setCustomStyle(const DeBruijnEdge* edge, Qt::PenStyle lineStyle);
-    void setCustomStyle(const DeBruijnEdge* edge, float width);
-    void setCustomStyle(const DeBruijnEdge* edge, EdgeStyle style);
-    bool hasCustomStyle(const DeBruijnEdge* edge) const;
+    EdgeStyle getCustomStyle(const DeBruijnEdge *edge) const;
+    void setCustomStyle(const DeBruijnEdge *edge, Qt::PenStyle lineStyle);
+    void setCustomStyle(const DeBruijnEdge *edge, float width);
+    void setCustomStyle(const DeBruijnEdge *edge, EdgeStyle style);
+    bool hasCustomStyle(const DeBruijnEdge *edge) const;
 
-    QString getCustomLabel(const DeBruijnNode* node) const;
-    void setCustomLabel(const DeBruijnNode* node, QString newLabel);
+    QString getCustomLabel(const DeBruijnNode *node) const;
+    void setCustomLabel(const DeBruijnNode *node, QString newLabel);
 
-    bool hasCsvData(const DeBruijnNode* node) const;
+    bool hasCsvData(const DeBruijnNode *node) const;
     QStringList getAllCsvData(const DeBruijnNode *node) const;
     std::optional<QString> getCsvLine(const DeBruijnNode *node, int i) const;
-    void setCsvData(const DeBruijnNode* node, QStringList csvData);
-    void clearCsvData(const DeBruijnNode* node);
+    void setCsvData(const DeBruijnNode *node, QStringList csvData);
+    void clearCsvData(const DeBruijnNode *node);
 
     QColor getCustomColourForDisplay(const DeBruijnNode *node) const;
     QStringList getCustomLabelForDisplay(const DeBruijnNode *node) const;

@@ -46,7 +46,7 @@ public:
         Range mapped_range;
     };
 
-    using MappingPath = std::vector<std::pair<DeBruijnNode*, MappingRange>>;
+    using MappingPath = std::vector<std::pair<DeBruijnNode *, MappingRange>>;
     
     //CREATORS
     Path() {}
@@ -73,19 +73,19 @@ public:
     [[nodiscard]] QString getString(bool spaces) const;
     int getLength() const;
     QList<Path> extendPathInAllPossibleWays() const;
-    bool canNodeFitOnEnd(DeBruijnNode * node, Path * extendedPath) const;
-    bool canNodeFitAtStart(DeBruijnNode * node, Path * extendedPath) const;
+    bool canNodeFitOnEnd(DeBruijnNode *node, Path *extendedPath) const;
+    bool canNodeFitAtStart(DeBruijnNode *node, Path *extendedPath) const;
 
     std::vector<int> getPosition(const DeBruijnNode *node) const;
     std::vector<DeBruijnNode *> getNodesAt(int startPosition, int endPosition) const;
     MappingPath getNodeCovering(int startPosition, int endPosition) const;
 
-    bool containsNode(const DeBruijnNode * node) const;
-    bool containsEntireNode(const DeBruijnNode * node) const;
-    bool isInMiddleOfPath(const DeBruijnNode * node) const;
-    unsigned int numberOfOccurrencesInMiddleOfPath(const DeBruijnNode * node) const;
-    bool isStartingNode(const DeBruijnNode * node) const;
-    bool isEndingNode(const DeBruijnNode * node) const;
+    bool containsNode(const DeBruijnNode *node) const;
+    bool containsEntireNode(const DeBruijnNode *node) const;
+    bool isInMiddleOfPath(const DeBruijnNode *node) const;
+    unsigned int numberOfOccurrencesInMiddleOfPath(const DeBruijnNode *node) const;
+    bool isStartingNode(const DeBruijnNode *node) const;
+    bool isEndingNode(const DeBruijnNode *node) const;
     double getStartFraction() const;
     double getEndFraction() const;
     size_t getNodeCount() const { return m_nodes.size(); }
@@ -94,7 +94,7 @@ public:
     bool operator==(Path const &other) const;
 
     //MODIFERS
-    bool addNode(DeBruijnNode * newNode, bool strandSpecific, bool makeCircularIfPossible);
+    bool addNode(DeBruijnNode *newNode, bool strandSpecific, bool makeCircularIfPossible);
     void extendPathToIncludeEntirityOfNodes();
     void trim(int start = 0, int end = 0);
 

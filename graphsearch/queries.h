@@ -29,7 +29,7 @@ public:
     Queries();
     ~Queries();
 
-    Query * getQueryFromName(QString queryName) const;
+    Query *getQueryFromName(QString queryName) const;
 
     bool empty() const { return m_queries.empty(); }
     const auto &operator[](size_t idx) const { return m_queries[idx]; }
@@ -40,8 +40,8 @@ public:
     auto end() { return m_queries.end(); }
     const auto end() const { return m_queries.end(); }
 
-    void addQuery(Query * newQuery);
-    QString renameQuery(Query * newQuery, QString newName);
+    void addQuery(Query *newQuery);
+    QString renameQuery(Query *newQuery, QString newName);
     void clearAllQueries();
     void clearSomeQueries(const std::vector<Query *> &queriesToRemove);
     void searchOccurred();
@@ -51,7 +51,7 @@ public:
     size_t getQueryCountWithAtLeastOnePath() const;
     size_t getQueryPathCount() const ;
     size_t getQueryCount(QuerySequenceType sequenceType) const;
-    bool isQueryPresent(const Query * query) const;
+    bool isQueryPresent(const Query *query) const;
     Query::Hits allHits() const;
     size_t numHits() const;
     const auto &queries() const { return m_queries; }
@@ -67,7 +67,7 @@ private:
     QString getUniqueName(QString name);
 
     // FIXME: This should really own the queries!
-    std::vector<Query*> m_queries;
+    std::vector<Query *> m_queries;
     std::vector<QColor> m_presetColours;
 };
 

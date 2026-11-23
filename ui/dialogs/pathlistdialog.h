@@ -49,8 +49,8 @@ public:
     void refinePathOrder(const std::vector<DeBruijnNode *> &nodes = {});
 private:
 
-    std::vector<std::pair<std::string, const Path*>> m_orderedPaths;
-    phmap::parallel_flat_hash_map<const DeBruijnNode*, phmap::flat_hash_set<const Path*>> m_coverageMap;
+    std::vector<std::pair<std::string, const Path *>> m_orderedPaths;
+    phmap::parallel_flat_hash_map<const DeBruijnNode *, phmap::flat_hash_set<const Path *>> m_coverageMap;
     const DeBruijnNode *m_node = nullptr;
     const AssemblyGraph &graph;
 };

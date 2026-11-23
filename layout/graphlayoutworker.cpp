@@ -277,7 +277,7 @@ void determineLinearNodePositions(ogdf::Graph &ogdfGraph,
             continue;
         std::vector<DeBruijnNode *> upstreamNodes = node->getUpstreamNodes();
         for (size_t j = 0; j < upstreamNodes.size(); ++j) {
-            DeBruijnNode * upstreamNode = upstreamNodes[j];
+            DeBruijnNode *upstreamNode = upstreamNodes[j];
             if (!layout.contains(upstreamNode))
                 continue;
 

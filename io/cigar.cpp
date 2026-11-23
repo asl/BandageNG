@@ -29,7 +29,7 @@ std::ostream &operator<<(std::ostream &s, const tag &t) {
     return std::visit([&](const auto& value) -> std::ostream& { return s << value; }, t.val);
 }
 
-std::optional<tag> parseTag(const char* line, size_t len) {
+std::optional<tag> parseTag(const char *line, size_t len) {
     lexy::visualization_options opts;
     opts.max_lexeme_width = 35;
 

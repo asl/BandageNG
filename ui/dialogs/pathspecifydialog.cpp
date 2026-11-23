@@ -124,7 +124,7 @@ void PathSpecifyDialog::setPathValidityUiElements(bool pathValid)
 
 void PathSpecifyDialog::copyPathToClipboard()
 {
-    QClipboard * clipboard = QApplication::clipboard();
+    QClipboard *clipboard = QApplication::clipboard();
     clipboard->setText(g_memory->userSpecifiedPath.getPathSequence());
 }
 
@@ -146,7 +146,7 @@ void PathSpecifyDialog::savePathToFile()
 }
 
 
-void PathSpecifyDialog::addNodeName(DeBruijnNode * node)
+void PathSpecifyDialog::addNodeName(DeBruijnNode *node)
 {
     QString pathText = ui->pathTextEdit->toPlainText();
 

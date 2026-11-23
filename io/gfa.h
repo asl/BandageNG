@@ -245,5 +245,5 @@ struct walk {
 
 using record = std::variant<header, segment, link, gaplink, path, walk>;
 
-std::optional<gfa::record> parseRecord(const char* line, size_t len);
+std::optional<gfa::record> parseRecord(const char *line, size_t len);
 } // namespace gfa

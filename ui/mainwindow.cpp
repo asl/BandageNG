@@ -511,7 +511,7 @@ void MainWindow::loadGraphLinks(QString fullFileName) {
     if (fullFileName.isEmpty())
         return; // user clicked on cancel
 
-    std::vector<DeBruijnEdge*> newEdges;
+    std::vector<DeBruijnEdge *> newEdges;
     try {
         if (selectedFilter == "Links in tab-separated format (*.tsv)")
             io::loadLinks(*g_assemblyGraph, fullFileName, &newEdges);
@@ -1159,7 +1159,7 @@ void MainWindow::resetScene() {
 }
 
 
-std::vector<DeBruijnNode *> MainWindow::getNodesFromLineEdit(QLineEdit * lineEdit, bool exactMatch, std::vector<QString> * nodesNotInGraph)
+std::vector<DeBruijnNode *> MainWindow::getNodesFromLineEdit(QLineEdit *lineEdit, bool exactMatch, std::vector<QString> * nodesNotInGraph)
 {
     return g_assemblyGraph->getNodesFromStringList(lineEdit->text(), exactMatch, nodesNotInGraph);
 }
@@ -1302,7 +1302,7 @@ void MainWindow::copySelectedSequencesToClipboard() {
     if (selectedNodes.empty())
         return;
 
-    QClipboard * clipboard = QApplication::clipboard();
+    QClipboard *clipboard = QApplication::clipboard();
     QString clipboardText;
 
     for (size_t i = 0; i < selectedNodes.size(); ++i)
@@ -1378,7 +1378,7 @@ void MainWindow::copySelectedPathToClipboard()
         return;
     }
 
-    QClipboard * clipboard = QApplication::clipboard();
+    QClipboard *clipboard = QApplication::clipboard();
     clipboard->setText(nodePath.getPathSequence());
 }
 
@@ -1460,7 +1460,7 @@ void MainWindow::switchColourScheme(int idx) {
 
     if (scheme == TAG_VALUE) {
         ui->tagsComboBox->clear();
-        auto *colorer = dynamic_cast<TagValueNodeColorer*>(&*g_settings->nodeColorer);
+        auto *colorer = dynamic_cast<TagValueNodeColorer *>(&*g_settings->nodeColorer);
         auto tagNames = colorer->tagNames();
         for (const auto &tag : tagNames)
             ui->tagsComboBox->addItem(tag.c_str());
@@ -1469,7 +1469,7 @@ void MainWindow::switchColourScheme(int idx) {
         ui->tagsComboBox->setVisible(true);
     } else if (scheme == CSV_COLUMN) {
         ui->tagsComboBox->clear();
-        auto *colorer = dynamic_cast<CSVNodeColorer*>(&*g_settings->nodeColorer);
+        auto *colorer = dynamic_cast<CSVNodeColorer *>(&*g_settings->nodeColorer);
         ui->tagsComboBox->addItems(g_assemblyGraph->m_csvHeaders);
         if (!g_assemblyGraph->m_csvHeaders.empty())
             colorer->setColumnIdx(0);
@@ -1484,7 +1484,7 @@ void MainWindow::switchColourScheme(int idx) {
 
 
 void MainWindow::determineContiguityFromSelectedNode() {
-    auto *colorer = dynamic_cast<ContiguityNodeColorer*>(&*g_settings->nodeColorer);
+    auto *colorer = dynamic_cast<ContiguityNodeColorer *>(&*g_settings->nodeColorer);
     colorer->reset();
 
     std::vector<DeBruijnNode *> selectedNodes = m_scene->getSelectedNodes();
@@ -1811,8 +1811,8 @@ void MainWindow::doSelectNodes(const std::vector<DeBruijnNode *> &nodesToSelect,
     int foundNodes = 0;
     QColor color1, color2;
     for (size_t i = 0; i < nodesToSelect.size(); ++i) {
-        GraphicsItemNode * graphicsItemNode = nodesToSelect[i]->getGraphicsItemNode();
-        GraphicsItemNode * rcgraphicsItemNode = nodesToSelect[i]->getReverseComplement()->getGraphicsItemNode();
+        GraphicsItemNode *graphicsItemNode = nodesToSelect[i]->getGraphicsItemNode();
+        GraphicsItemNode *rcgraphicsItemNode = nodesToSelect[i]->getReverseComplement()->getGraphicsItemNode();
 
         // If the GraphicsItemNode isn't found, try the reverse complement.  This
         // is only done for single node mode.
@@ -2169,7 +2169,7 @@ void MainWindow::bringSelectedNodesToFront() {
     double newZ = topZ + 1.0;
 
     for (auto *selectedNode : selectedNodes) {
-        if (GraphicsItemNode * graphicsItemNode = selectedNode->getGraphicsItemNode())
+        if (GraphicsItemNode *graphicsItemNode = selectedNode->getGraphicsItemNode())
             graphicsItemNode->setZValue(newZ);
     }
 
@@ -2233,13 +2233,13 @@ void MainWindow::selectNodesWithDeadEnds()
     bool atLeastOneNodeSelected = false;
 
     for (auto &entry : g_assemblyGraph->m_deBruijnGraphNodes) {
-        DeBruijnNode * node = entry;
+        DeBruijnNode *node = entry;
 
         bool nodeHasDeadEnd = node->getDeadEndCount() > 0;
         if (nodeHasDeadEnd)
             atLeastOneNodeHasDeadEnd = true;
 
-        GraphicsItemNode * graphicsItemNode = node->getGraphicsItemNode();
+        GraphicsItemNode *graphicsItemNode = node->getGraphicsItemNode();
 
         if (graphicsItemNode == nullptr)
             continue;
@@ -2333,7 +2333,7 @@ void MainWindow::selectNotContiguous()
 }
 
 void MainWindow::resetNodeContiguityStatus() {
-    auto *colorer = dynamic_cast<ContiguityNodeColorer*>(&*g_settings->nodeColorer);
+    auto *colorer = dynamic_cast<ContiguityNodeColorer *>(&*g_settings->nodeColorer);
     if (!colorer)
         return;
 
@@ -2341,7 +2341,7 @@ void MainWindow::resetNodeContiguityStatus() {
 }
 
 void MainWindow::selectBasedOnContiguity(ContiguityStatus targetContiguityStatus) {
-    auto *colorer = dynamic_cast<ContiguityNodeColorer*>(&*g_settings->nodeColorer);
+    auto *colorer = dynamic_cast<ContiguityNodeColorer *>(&*g_settings->nodeColorer);
     if (!colorer || colorer->empty()) {
         QMessageBox::information(this, "Contiguity determination not done",
                                        "To select nodes by their contiguity status, while in 'Colour "
@@ -2354,7 +2354,7 @@ void MainWindow::selectBasedOnContiguity(ContiguityStatus targetContiguityStatus
     m_scene->clearSelection();
 
     for (auto *node : g_assemblyGraph->m_deBruijnGraphNodes) {
-        GraphicsItemNode * graphicsItemNode = node->getGraphicsItemNode();
+        GraphicsItemNode *graphicsItemNode = node->getGraphicsItemNode();
         if (graphicsItemNode == nullptr)
             continue;
 
@@ -2449,7 +2449,7 @@ void MainWindow::openPathSpecifyDialog()
         return;
 
     auto *pathSpecifyDialog = new PathSpecifyDialog(this);
-    connect(g_graphicsView, SIGNAL(doubleClickedNode(DeBruijnNode*)), pathSpecifyDialog, SLOT(addNodeName(DeBruijnNode*)));
+    connect(g_graphicsView, SIGNAL(doubleClickedNode(DeBruijnNode *)), pathSpecifyDialog, SLOT(addNodeName(DeBruijnNode *)));
     pathSpecifyDialog->show();
 }
 
@@ -2564,7 +2564,7 @@ void MainWindow::webBlastSelectedNodes()
         QMessageBox::information(this, "Long sequences", "The selected node sequences are too long to pass to the BLAST web "
                                                          "interface via the URL.  Bandage has put them in your clipboard so "
                                                          "you can paste them in.");
-        QClipboard * clipboard = QApplication::clipboard();
+        QClipboard *clipboard = QApplication::clipboard();
         clipboard->setText(selectedNodesFasta);
 
         QByteArray url = "http://blast.ncbi.nlm.nih.gov/Blast.cgi?PROGRAM=blastn&PAGE_TYPE=BlastSearch&LINK_LOC=blasthome";
@@ -2751,7 +2751,7 @@ void MainWindow::cleanUpGraphSearch() {
 
 void MainWindow::changeNodeName()
 {
-    DeBruijnNode * selectedNode = m_scene->getOnePositiveSelectedNode();
+    DeBruijnNode *selectedNode = m_scene->getOnePositiveSelectedNode();
     if (selectedNode == nullptr) {
         QMessageBox::information(this, "Improper selection", "You must select exactly one node in the graph before using this function.");
         return;
@@ -2818,7 +2818,7 @@ void MainWindow::exportGraphLayout() {
 }
 
 void MainWindow::showPathListDialog() {
-    std::vector<DeBruijnNode*> selectedNodes;
+    std::vector<DeBruijnNode *> selectedNodes;
     for (auto *node : m_scene->getSelectedNodes()) {
         selectedNodes.push_back(node);
         // In single mode add also reverse-complements
@@ -2832,7 +2832,7 @@ void MainWindow::showPathListDialog() {
 
 // FIXME: dedup
 void MainWindow::showWalkListDialog() {
-    std::vector<DeBruijnNode*> selectedNodes;
+    std::vector<DeBruijnNode *> selectedNodes;
     for (auto *node : m_scene->getSelectedNodes()) {
         selectedNodes.push_back(node);
         // In single mode add also reverse-complements

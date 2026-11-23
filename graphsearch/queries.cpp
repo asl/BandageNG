@@ -48,7 +48,7 @@ Query *Queries::getQueryFromName(QString queryName) const {
     return *res;
 }
 
-void Queries::addQuery(Query * newQuery) {
+void Queries::addQuery(Query *newQuery) {
     newQuery->setName(getUniqueName(newQuery->getName()));
 
     // Give the new query a colour
@@ -60,7 +60,7 @@ void Queries::addQuery(Query * newQuery) {
 // This function renames the query.  It returns the name given, because that
 // might not be exactly the same as the name passed to the function if it
 // wasn't unique.
-QString Queries::renameQuery(Query * newQuery, QString newName) {
+QString Queries::renameQuery(Query *newQuery, QString newName) {
     newQuery->setName(getUniqueName(newName));
     return newQuery->getName();
 }
@@ -143,7 +143,7 @@ size_t Queries::getQueryCount(QuerySequenceType sequenceType) const {
 //This function looks to see if a query pointer is in the list
 //of queries.  The query pointer given may or may not still
 //actually exist, so it can't be dereferenced.
-bool Queries::isQueryPresent(const Query * query) const {
+bool Queries::isQueryPresent(const Query *query) const {
     return std::find(m_queries.begin(), m_queries.end(), query) != m_queries.end();
 }
 
@@ -209,7 +209,7 @@ void Queries::addPathHits(const PathHits &hits) {
         const Path *path;
         Path::MappingRange range;
         std::tie(query, path, range) = hit;
-        std::vector<const Hit*> pathHits;
+        std::vector<const Hit *> pathHits;
 
         int pathStart = range.mapped_range.from, pathEnd = range.mapped_range.to;
         int queryStart = range.initial_range.from, queryEnd = range.initial_range.to;
@@ -218,7 +218,7 @@ void Queries::addPathHits(const PathHits &hits) {
         if (invert)
             std::swap(pathStart, pathEnd);
 
-        std::vector<DeBruijnNode*> pathNodes;
+        std::vector<DeBruijnNode *> pathNodes;
         for (auto entry: path->getNodeCovering(pathStart, pathEnd)) {
             DeBruijnNode *node = entry.first;
             int nodeStart = entry.second.mapped_range.from, nodeEnd = entry.second.mapped_range.to;

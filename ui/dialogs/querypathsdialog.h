@@ -37,7 +37,7 @@ class CopyPathSequenceDelegate : public QStyledItemDelegate {
 Q_OBJECT
     Q_DISABLE_COPY(CopyPathSequenceDelegate)
 public:
-    explicit CopyPathSequenceDelegate(QObject* parent = nullptr)
+    explicit CopyPathSequenceDelegate(QObject *parent = nullptr)
             : QStyledItemDelegate(parent)
     {}
 

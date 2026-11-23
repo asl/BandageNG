@@ -24,7 +24,7 @@
 
 using namespace search;
 
-Hit::Hit(Query * query, DeBruijnNode * node,
+Hit::Hit(Query *query, DeBruijnNode *node,
          double percentIdentity, int alignmentLength,
          int numberMismatches, int numberGapOpens,
          int queryStart, int queryEnd,

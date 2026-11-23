@@ -25,6 +25,6 @@ namespace search {
 class Query;
 class Hit;
     
-using NodeHits = std::vector<std::pair<Query*, Hit*>>;
-using PathHits = std::vector<std::tuple<Query*, const Path*, Path::MappingRange>>;
+using NodeHits = std::vector<std::pair<Query *, Hit *>>;
+using PathHits = std::vector<std::tuple<Query *, const Path *, Path::MappingRange>>;
 }

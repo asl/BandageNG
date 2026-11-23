@@ -64,17 +64,17 @@ class GraphicsViewZoom : public QObject
 {
     Q_OBJECT
 public:
-    explicit GraphicsViewZoom(BandageGraphicsView * view);
+    explicit GraphicsViewZoom(BandageGraphicsView *view);
     void gentleZoom(double factor, ZoomSource zoomSource);
     void setModifiers(Qt::KeyboardModifiers modifiers);
     void setZoomFactorBase(double value);
     double m_zoomFactorBase;
 
 private:
-    BandageGraphicsView * m_view;
+    BandageGraphicsView *m_view;
     Qt::KeyboardModifiers m_modifiers;
     QPointF targetScenePos, targetViewportPos;
-    bool eventFilter(QObject * object, QEvent * event) override;
+    bool eventFilter(QObject *object, QEvent *event) override;
 
 signals:
     void zoomed();

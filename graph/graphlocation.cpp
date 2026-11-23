@@ -29,7 +29,7 @@ GraphLocation::GraphLocation()
 GraphLocation::GraphLocation(DeBruijnNode *node, int position)
         : m_node(node), m_position(position) { }
 
-GraphLocation GraphLocation::startOfNode(DeBruijnNode * node)
+GraphLocation GraphLocation::startOfNode(DeBruijnNode *node)
 {
     GraphLocation location(node, 1);
     if (location.isValid())
@@ -39,7 +39,7 @@ GraphLocation GraphLocation::startOfNode(DeBruijnNode * node)
 }
 
 
-GraphLocation GraphLocation::endOfNode(DeBruijnNode * node)
+GraphLocation GraphLocation::endOfNode(DeBruijnNode *node)
 {
     if (node == nullptr)
         return GraphLocation::null();

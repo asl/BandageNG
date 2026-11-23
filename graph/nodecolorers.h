@@ -30,7 +30,7 @@ public:
     using INodeColorer::INodeColorer;
 
     QColor get(const GraphicsItemNode *node) override;
-    [[nodiscard]] const char* name() const override { return "Color by depth"; };
+    [[nodiscard]] const char *name() const override { return "Color by depth"; };
 };
 
 class UniformNodeColorer : public INodeColorer {
@@ -38,7 +38,7 @@ public:
     using INodeColorer::INodeColorer;
 
     QColor get(const GraphicsItemNode *node) override;
-    [[nodiscard]] const char* name() const override { return "Uniform color"; };
+    [[nodiscard]] const char *name() const override { return "Uniform color"; };
 };
 
 class RandomNodeColorer : public INodeColorer {
@@ -48,7 +48,7 @@ public:
     QColor get(const GraphicsItemNode *node) override;
     [[nodiscard]] std::pair<QColor, QColor> get(const GraphicsItemNode *node,
                                                 const GraphicsItemNode *rcNode) override;
-    [[nodiscard]] const char* name() const override { return "Random colors"; };
+    [[nodiscard]] const char *name() const override { return "Random colors"; };
 };
 
 class GrayNodeColorer : public INodeColorer {
@@ -56,7 +56,7 @@ public:
     using INodeColorer::INodeColorer;
 
     QColor get(const GraphicsItemNode *node) override;
-    [[nodiscard]] const char* name() const override { return "Gray colors"; };
+    [[nodiscard]] const char *name() const override { return "Gray colors"; };
 };
 
 class CustomNodeColorer : public INodeColorer {
@@ -64,7 +64,7 @@ public:
     using INodeColorer::INodeColorer;
 
     QColor get(const GraphicsItemNode *node) override;
-    [[nodiscard]] const char* name() const override { return "Custom colors"; };
+    [[nodiscard]] const char *name() const override { return "Custom colors"; };
 };
 
 class DeBruijnNode;
@@ -77,14 +77,14 @@ public:
     bool empty() const { return m_nodeStatuses.empty(); }
 
     QColor get(const GraphicsItemNode *node) override;
-    [[nodiscard]] const char* name() const override { return "Color by contiguity"; };
+    [[nodiscard]] const char *name() const override { return "Color by contiguity"; };
 
-    void determineContiguity(DeBruijnNode*);
-    ContiguityStatus getContiguityStatus(const DeBruijnNode*) const;
+    void determineContiguity(DeBruijnNode *);
+    ContiguityStatus getContiguityStatus(const DeBruijnNode *) const;
     void upgradeContiguityStatus(const DeBruijnNode *node,
                                  ContiguityStatus newStatus);
 
-    std::unordered_map<const DeBruijnNode*, ContiguityStatus> m_nodeStatuses;
+    std::unordered_map<const DeBruijnNode *, ContiguityStatus> m_nodeStatuses;
 };
 
 class GCNodeColorer : public INodeColorer {
@@ -92,7 +92,7 @@ public:
     using INodeColorer::INodeColorer;
 
     QColor get(const GraphicsItemNode *node) override;
-    [[nodiscard]] const char* name() const override { return "Color by GC content"; };
+    [[nodiscard]] const char *name() const override { return "Color by GC content"; };
 };
 
 class TagValueNodeColorer : public INodeColorer {
@@ -105,7 +105,7 @@ public:
 
     QColor get(const GraphicsItemNode *node) override;
     void reset() override;
-    [[nodiscard]] const char* name() const override { return "Color by tag value"; };
+    [[nodiscard]] const char *name() const override { return "Color by tag value"; };
 
     void setTagName(const std::string &tagName) { m_tagName = tagName; }
     [[nodiscard]] auto tagNames() const {
@@ -129,7 +129,7 @@ public:
     }
     QColor get(const GraphicsItemNode *node) override;
     void reset() override;
-    [[nodiscard]] const char* name() const override { return "Color by CSV columns"; };
+    [[nodiscard]] const char *name() const override { return "Color by CSV columns"; };
 
     void setColumnIdx(unsigned idx) { m_colIdx = idx; }
 

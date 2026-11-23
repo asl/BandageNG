@@ -116,5 +116,5 @@ namespace cigar {
         return {};
     }
 
-    std::optional<tag> parseTag(const char* line, size_t len);
+    std::optional<tag> parseTag(const char *line, size_t len);
 }

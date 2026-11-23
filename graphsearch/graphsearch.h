@@ -67,7 +67,7 @@ public:
     size_t getQueryCount(QuerySequenceType sequenceType) const { return m_queries.getQueryCount(sequenceType); }
     size_t getNumHits() const { return m_queries.numHits(); }
 
-    static bool findProgram(const QString& programName, QString * command);
+    static bool findProgram(const QString& programName, QString *command);
 
     static QString cleanQueryName(QString queryName);
     void addQuery(Query *newQuery) { m_queries.addQuery(newQuery); }

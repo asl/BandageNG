@@ -22,7 +22,7 @@
 #include "ui_myprogressdialog.h"
 #include "program/globals.h"
 
-MyProgressDialog::MyProgressDialog(QWidget * parent, const QString& message, bool showCancelButton,
+MyProgressDialog::MyProgressDialog(QWidget *parent, const QString& message, bool showCancelButton,
                                    const QString& cancelButtonText, QString cancelMessage, const QString& cancelInfoText) :
     QDialog(parent),
     ui(new Ui::MyProgressDialog),
