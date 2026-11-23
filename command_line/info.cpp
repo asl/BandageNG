@@ -23,11 +23,48 @@
 
 #include <CLI/CLI.hpp>
 
+#include <cstdint>
+
+#if defined(__APPLE__)
+#include <mach/mach.h>
+#elif defined(__linux__)
+#include <cstdio>
+#include <unistd.h>
+#endif
+
+static uint64_t residentBytes() {
+#if defined(__APPLE__)
+    mach_task_basic_info info;
+    mach_msg_type_number_t count = MACH_TASK_BASIC_INFO_COUNT;
+    if (task_info(mach_task_self(), MACH_TASK_BASIC_INFO,
+                  reinterpret_cast<task_info_t>(&info), &count) != KERN_SUCCESS)
+        return 0;
+    return info.resident_size;
+#elif defined(__linux__)
+    FILE *statm = std::fopen("/proc/self/statm", "r");
+    if (!statm)
+        return 0;
+    unsigned long pages = 0;
+    unsigned long resident = 0;
+    const int n = std::fscanf(statm, "%lu %lu", &pages, &resident);
+    std::fclose(statm);
+    if (n != 2)
+        return 0;
+    long pageSize = sysconf(_SC_PAGESIZE);
+    if (pageSize <= 0)
+        return 0;
+    return static_cast<uint64_t>(resident) * static_cast<uint64_t>(pageSize);
+#else
+    return 0;
+#endif
+}
+
 CLI::App *addInfoSubcommand(CLI::App &app, InfoCmd &cmd) {
     auto *info = app.add_subcommand("info", "Display information about a graph");
     info->add_option("<graph>", cmd.m_graph, "A graph file of any type supported by Bandage")
             ->required()->check(CLI::ExistingFile);
     info->add_flag("--tsv", cmd.m_tsv, "Output the information in a single tab-delimited line starting with the graph file");
+    info->add_flag("--memory", cmd.m_memory, "After loading, print graph storage sizes and process resident memory");
 
     info->footer(
         "Bandage info takes a graph file as input and outputs (to stdout) the following statistics about the graph:\n"
@@ -130,6 +167,27 @@ int handleInfoCmd(QApplication *app,
             << "Longest node (bp):                " << longestNode << "\n"
             << "Median depth:                     " << medianDepthByBase << "\n"
             << "Estimated sequence length (bp):   " << estimatedSequenceLength << "\n";
+    }
+
+    if (cmd.m_memory) {
+        const AssemblyGraph::StorageAccount mem = g_assemblyGraph->storageAccount();
+        out << "Oriented nodes:                   " << mem.orientedNodes << "\n"
+            << "Segments:                         " << mem.segments << "\n"
+            << "Name bytes:                       " << mem.nameBytes << "\n"
+            << "Segment name bytes:               " << mem.segmentNameBytes << "\n"
+            << "Node index key bytes:             " << mem.nodeIndexKeyBytes << "\n"
+            << "Packed sequence bytes:            " << mem.packedSequenceBytes << "\n"
+            << "Missing segments:                 " << mem.missingSegments << "\n"
+            << "Missing sequence bases:           " << mem.missingSequenceBases << "\n"
+            << "Edges:                            " << mem.edges << "\n"
+            << "Paths:                            " << mem.paths << "\n"
+            << "Path name bytes:                  " << mem.pathNameBytes << "\n"
+            << "Path steps:                       " << mem.pathSteps << "\n"
+            << "Walks:                            " << mem.walks << "\n"
+            << "Walk key bytes:                   " << mem.walkKeyBytes << "\n"
+            << "Walk sample bytes:                " << mem.walkSampleBytes << "\n"
+            << "Walk steps:                       " << mem.walkSteps << "\n"
+            << "Resident bytes:                   " << residentBytes() << "\n";
     }
 
     return 0;

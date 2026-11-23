@@ -199,6 +199,31 @@ public:
     void getGraphComponentCountAndLargestComponentSize(int *componentCount, int *largestComponentLength) const;
     double getMedianDepthByBase() const;
 
+    struct StorageAccount {
+        size_t orientedNodes = 0;
+        size_t segments = 0;
+        // Bytes of the unsigned name stored on the positive node. The negative
+        // node stores none, so this is also the per-segment total. The index is separate.
+        uint64_t nameBytes = 0;
+        uint64_t segmentNameBytes = 0;
+        uint64_t nodeIndexKeyBytes = 0;
+        // Packed 2-bit buffers, counted once per segment (the two strands share one).
+        uint64_t packedSequenceBytes = 0;
+        size_t missingSegments = 0;
+        uint64_t missingSequenceBases = 0;
+        // One stored edge per link.
+        size_t edges = 0;
+        size_t paths = 0;
+        uint64_t pathNameBytes = 0;
+        uint64_t pathSteps = 0;
+        size_t walks = 0;
+        uint64_t walkKeyBytes = 0;
+        uint64_t walkSampleBytes = 0;
+        uint64_t walkSteps = 0;
+    };
+
+    StorageAccount storageAccount() const;
+
     long long getEstimatedSequenceLength(double medianDepthByBase) const;
     long long getTotalLengthMinusEdgeOverlaps() const;
     QPair<int, int> getOverlapRange() const;
