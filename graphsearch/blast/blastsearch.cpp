@@ -70,19 +70,22 @@ QString BlastSearch::buildDatabase(const AssemblyGraph &graph, bool includePaths
 
     {
         QTextStream out(&file);
-        for (const auto *node : graph.m_deBruijnGraphNodes) {
+        for (OrientedNode node : graph.oriented_nodes()) {
             if (m_cancelBuildDatabase)
-                return (m_lastError = "Build cancelled.");
-
-            out << node->getFasta(true, false, false);
+                break;
+            out << node.getFasta(true, false, false);
         }
+        if (m_cancelBuildDatabase)
+            return (m_lastError = "Build cancelled.");
 
         if (includePaths) {
+            std::string key;
             for (auto it = graph.m_deBruijnGraphPaths.begin(); it != graph.m_deBruijnGraphPaths.end(); ++it) {
                 if (m_cancelBuildDatabase)
                     return (m_lastError = "Build cancelled.");
 
-                out << it.value().getFasta(it.key().c_str());
+                it.key(key);
+                out << it.value().getFasta(key.c_str());
             }
         }
     }
@@ -384,14 +387,15 @@ buildHitsFromBlastOutput(QString blastOutput,
                 continue;
         }
 
-        auto nodeIt = g_assemblyGraph->m_deBruijnGraphNodes.find(getNodeNameFromString(nodeLabel).toStdString());
+        auto signedName = getNodeNameFromString(nodeLabel).toStdString();
+        auto nodeIt = g_assemblyGraph->m_deBruijnGraphNodes.find(signedName);
         if (nodeIt != g_assemblyGraph->m_deBruijnGraphNodes.end()) {
             // Only save BLAST hits that are on forward strands.
             if (nodeStart > nodeEnd)
                 continue;
 
             nodeHits.emplace_back(query,
-                                  new Hit(query, nodeIt.value(),
+                                  new Hit(query, orientationOf(signedName, nodeIt.value()),
                                           percentIdentity, alignmentLength,
                                           numberMismatches, numberGapOpens,
                                           queryStart, queryEnd,

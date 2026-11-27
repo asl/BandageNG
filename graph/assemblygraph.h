@@ -35,12 +35,15 @@
 #include <QString>
 #include <QPair>
 #include <QObject>
+#include <iterator>
 #include <string>
 #include <string_view>
+#include <type_traits>
 #include <vector>
 
 class DeBruijnNode;
 class DeBruijnEdge;
+class GraphicsItemNode;
 class MyProgressDialog;
 class BandageGraphicsScene;
 
@@ -51,9 +54,95 @@ class AssemblyGraphError : public std::runtime_error {
 
 class AssemblyGraphBuilder;
 
+// One pass over the node trie. Both signed names store the same pointer.
+// A key ending in '-' is the negative name, so it is skipped.
+class NodeIterator
+        : public bandage::iterator_facade_base<NodeIterator,
+                                            std::forward_iterator_tag,
+                                            DeBruijnNode *,
+                                            std::ptrdiff_t,
+                                            DeBruijnNode **,
+                                            DeBruijnNode *> {
+    using TrieIt = tsl::htrie_map<char, DeBruijnNode *>::const_iterator;
+    TrieIt m_it{};
+    TrieIt m_end{};
+
+    void skip() {
+        while (m_it != m_end && (m_it.key_back() == '-' || *m_it == nullptr))
+            ++m_it;
+    }
+
+public:
+    NodeIterator() = default;
+    NodeIterator(TrieIt it, TrieIt end) : m_it(it), m_end(end) { skip(); }
+
+    bool operator==(const NodeIterator &rhs) const { return m_it == rhs.m_it; }
+    DeBruijnNode *operator*() const { return *m_it; }
+    NodeIterator &operator++() {
+        ++m_it;
+        skip();
+        return *this;
+    }
+};
+
+// The positive orientation of each node. A palindrome is that one orientation.
+class CanonicalNodeIterator
+        : public bandage::iterator_facade_base<CanonicalNodeIterator,
+                                            std::forward_iterator_tag,
+                                            OrientedNode,
+                                            std::ptrdiff_t,
+                                            const OrientedNode *,
+                                            OrientedNode> {
+    NodeIterator m_it{};
+
+public:
+    CanonicalNodeIterator() = default;
+    explicit CanonicalNodeIterator(NodeIterator it) : m_it(it) {}
+
+    bool operator==(const CanonicalNodeIterator &rhs) const { return m_it == rhs.m_it; }
+    OrientedNode operator*() const { return OrientedNode(*m_it); }
+    CanonicalNodeIterator &operator++() {
+        ++m_it;
+        return *this;
+    }
+};
+
+// Positive, then the distinct reverse. A palindrome is yielded once.
+class OrientedNodeIterator
+        : public bandage::iterator_facade_base<OrientedNodeIterator,
+                                            std::forward_iterator_tag,
+                                            OrientedNode,
+                                            std::ptrdiff_t,
+                                            const OrientedNode *,
+                                            OrientedNode> {
+    NodeIterator m_it{};
+    bool m_negative = false;
+
+public:
+    OrientedNodeIterator() = default;
+    explicit OrientedNodeIterator(NodeIterator it) : m_it(it) {}
+
+    bool operator==(const OrientedNodeIterator &rhs) const {
+        return m_it == rhs.m_it && m_negative == rhs.m_negative;
+    }
+    OrientedNode operator*() const {
+        OrientedNode positive(*m_it);
+        return m_negative ? positive.reverse() : positive;
+    }
+    OrientedNodeIterator &operator++() {
+        if (!m_negative && *m_it != nullptr && !(*m_it)->isSelfComplement()) {
+            m_negative = true;
+            return *this;
+        }
+        m_negative = false;
+        ++m_it;
+        return *this;
+    }
+};
+
 enum NodeNameStatus {NODE_NAME_OKAY, NODE_NAME_TAKEN, NODE_NAME_EMPTY,
     NODE_NAME_CONTAINS_TAB, NODE_NAME_CONTAINS_NEWLINE, NODE_NAME_CONTAINS_COMMA,
-    NODE_NAME_CONTAINS_SPACE};
+    NODE_NAME_CONTAINS_SPACE, NODE_NAME_ENDS_WITH_SIGN};
 enum SequencesLoadedFromFasta {NOT_READY, NOT_TRIED, TRIED};
 
 struct GraphLoadInfo {
@@ -73,15 +162,30 @@ public:
     //Nodes are stored in a map with a key of the node's name.
     tsl::htrie_map<char, DeBruijnNode *> m_deBruijnGraphNodes;
 
-    using DeBruijnLink = std::pair<DeBruijnNode *, DeBruijnNode *>;
+    // Each node once. The trie is not modified through this range.
+    auto nodes() const {
+        return bandage::make_range(
+                NodeIterator(m_deBruijnGraphNodes.begin(), m_deBruijnGraphNodes.end()),
+                NodeIterator(m_deBruijnGraphNodes.end(), m_deBruijnGraphNodes.end()));
+    }
+    auto canonical_nodes() const {
+        return bandage::make_range(CanonicalNodeIterator(nodes().begin()),
+                                   CanonicalNodeIterator(nodes().end()));
+    }
+    auto oriented_nodes() const {
+        return bandage::make_range(OrientedNodeIterator(nodes().begin()),
+                                   OrientedNodeIterator(nodes().end()));
+    }
+
+    using DeBruijnLink = std::pair<OrientedNode, OrientedNode>;
 
     // Edges are stored in a set for fast removal
     phmap::parallel_flat_hash_set<DeBruijnEdge *> m_deBruijnGraphEdges;
 
     // Custom colors
-    phmap::parallel_flat_hash_map<const DeBruijnNode *, QColor> m_nodeColors;
+    phmap::parallel_flat_hash_map<OrientedNode, QColor> m_nodeColors;
     // Custom labels
-    phmap::parallel_flat_hash_map<const DeBruijnNode *, QString> m_nodeLabels;
+    phmap::parallel_flat_hash_map<OrientedNode, QString> m_nodeLabels;
     // Edge styles
     struct EdgeStyle {
         float width;
@@ -94,14 +198,17 @@ public:
     phmap::parallel_flat_hash_map<const DeBruijnEdge *, QColor> m_edgeColors;
     // Colour of the reverse direction. Empty unless that direction sets one.
     phmap::parallel_flat_hash_map<const DeBruijnEdge *, QColor> m_edgeReverseColors;
-    // Graphics item for the reverse direction. Empty until that direction is drawn.
-    phmap::parallel_flat_hash_map<const DeBruijnEdge *, GraphicsItemEdge *> m_reverseGraphicsItems;
+    // Empty until the reverse direction is drawn. The stored direction's item stays on the edge.
+    phmap::parallel_flat_hash_map<const DeBruijnEdge *, GraphicsItemEdge *> m_reverseEdgeGraphics;
+    // Graphics item for the negative node orientation. Empty in single mode,
+    // which draws one item and keeps it on the node.
+    phmap::parallel_flat_hash_map<const DeBruijnNode *, GraphicsItemNode *> m_negativeNodeGraphics;
     // Overlap text for an overlap that is not a single length. An exact
     // overlap is identified by its length and has no entry here.
     phmap::parallel_flat_hash_map<const DeBruijnEdge *, std::string> m_overlapKeys;
 
     // CSV data
-    phmap::parallel_flat_hash_map<const DeBruijnNode *, QStringList> m_nodeCSVData;
+    phmap::parallel_flat_hash_map<OrientedNode, QStringList> m_nodeCSVData;
     QStringList m_csvHeaders;
     // Tags
     phmap::parallel_flat_hash_map<const DeBruijnNode *, std::vector<gfa::tag>> m_nodeTags;
@@ -141,10 +248,14 @@ public:
     // direction with the same overlap and type returns the existing edge.
     // When allowDistinctOverlap is false, any existing connection is reused.
     // overlapKey distinguishes overlaps that share a numeric length of 0.
-    MadeLink makeLink(DeBruijnNode *from, DeBruijnNode *to,
+    MadeLink makeLink(OrientedNode from, OrientedNode to,
                       int overlap, EdgeOverlapType overlapType,
                       bool allowDistinctOverlap,
                       std::string_view overlapKey = {});
+    // Strand from the key suffix. Both keys point at the one node.
+    OrientedNode orientedNode(std::string_view signedName) const;
+    GraphicsItemNode *negativeNodeGraphics(const DeBruijnNode *node) const;
+    void setNegativeNodeGraphics(DeBruijnNode *node, GraphicsItemNode *item);
     void createDeBruijnEdge(std::string_view node1Name, std::string_view node2Name,
                             int overlap = 0,
                             EdgeOverlapType overlapType = UNKNOWN_OVERLAP);
@@ -153,8 +264,11 @@ public:
     // Drop graphics pointers. Drawn flags stay, so a scene rebuild can
     // create items for edges that are already marked drawn.
     void clearEdgeGraphicsItems();
+    // Null the positive item and the negative side map. Drawn flags stay,
+    // so a scene rebuild can create items for nodes that are already drawn.
+    void clearNodeGraphicsItems();
     double getMeanDepth(bool drawnNodesOnly = false);
-    static double getMeanDepth(const std::vector<DeBruijnNode *> &nodes);
+    static double getMeanDepth(const std::vector<OrientedNode> &nodes);
 
     void determineGraphInfo();
     void clearGraphInfo();
@@ -164,34 +278,51 @@ public:
 
     bandage::Expected<GraphLoadInfo> loadGraphFromFile(const QString& filename);
     void markNodesToDraw(const graph::Scope &scope,
-                         const std::vector<DeBruijnNode *>& startingNodes = {});
+                         const std::vector<OrientedNode> &startingNodes = {});
 
     bool loadCSV(const QString& filename, QStringList *columns, QString *errormsg, bool *coloursLoaded);
 
     static bool checkIfStringHasNodes(QString nodesString);
     static std::string generateNodesNotFoundErrorMessage(const std::vector<QString> &nodesNotInGraph,
                                                          bool exact);
-    std::pair<DeBruijnNode *, DeBruijnNode *> getNodes(const QString &nodeName) const;
+    std::pair<OrientedNode, OrientedNode> getNodes(const QString &nodeName) const;
 
-    std::vector<DeBruijnNode *> getNodesFromStringList(QString nodeNamesString,
-                                                       bool exactMatch,
-                                                       std::vector<QString> * nodesNotInGraph = nullptr) const;
+    std::vector<OrientedNode> getNodesFromStringList(QString nodeNamesString,
+                                                     bool exactMatch,
+                                                     std::vector<QString> * nodesNotInGraph = nullptr) const;
 
     void setAllEdgesExactOverlap(int overlap);
     void autoDetermineAllEdgesExactOverlap();
 
     int getDrawnNodeCount() const;
-    void deleteNodes(const std::vector<DeBruijnNode *> &nodes);
+    void deleteNodes(const std::vector<OrientedNode> &nodes);
     void deleteEdges(const std::vector<DeBruijnEdge *> &edges);
-    void duplicateNodePair(DeBruijnNode *node, BandageGraphicsScene *scene);
-    bool mergeNodes(QList<DeBruijnNode *> nodes, BandageGraphicsScene *scene);
+    // Copy into a vector, then use the overload above. That overload is not a
+    // candidate here, so the call cannot re-enter this template. A braced list
+    // has no type to deduce and uses the vector overload directly.
+    template <typename Range>
+    std::enable_if_t<!std::is_same_v<std::decay_t<Range>, std::vector<OrientedNode>>>
+    deleteNodes(Range &&nodes);
+    template <typename Range>
+    std::enable_if_t<!std::is_same_v<std::decay_t<Range>, std::vector<DeBruijnEdge *>>>
+    deleteEdges(Range &&edges);
+    // Links made while this node was a placeholder treated the two
+    // strand names as different ends. Once the sequence is its own
+    // reverse complement those ends are one orientation, and the extra
+    // edges are the same link.
+    void collapseSelfComplementEdges(DeBruijnNode *node);
+    // Call while the node still has two orientations. Negative colour, label,
+    // and CSV entries move onto the positive key before the hash changes.
+    void rekeySelfComplementRecords(DeBruijnNode *node);
+    void duplicateNodePair(OrientedNode node, BandageGraphicsScene *scene);
+    bool mergeNodes(QList<OrientedNode> nodes, BandageGraphicsScene *scene);
 
     int mergeAllPossible(BandageGraphicsScene *scene = 0,
                          MyProgressDialog *progressDialog = 0);
 
     void changeNodeName(const QString& oldName, const QString& newName);
     NodeNameStatus checkNodeNameValidity(const QString& nodeName) const;
-    void changeNodeDepth(const std::vector<DeBruijnNode *> &nodes,
+    void changeNodeDepth(const std::vector<OrientedNode> &nodes,
                          double newDepth);
 
     unsigned int getDeadEndCount() const;
@@ -200,26 +331,36 @@ public:
     double getMedianDepthByBase() const;
 
     struct StorageAccount {
-        size_t orientedNodes = 0;
-        size_t segments = 0;
-        // Bytes of the unsigned name stored on the positive node. The negative
-        // node stores none, so this is also the per-segment total. The index is separate.
-        uint64_t nameBytes = 0;
-        uint64_t segmentNameBytes = 0;
-        uint64_t nodeIndexKeyBytes = 0;
-        // Packed 2-bit buffers, counted once per segment (the two strands share one).
-        uint64_t packedSequenceBytes = 0;
-        size_t missingSegments = 0;
-        uint64_t missingSequenceBases = 0;
-        // One stored edge per link.
+        size_t nodes = 0;
+        uint64_t nodeBytes = 0;
+        size_t nodesWithoutSequence = 0;
+        // Name characters that did not fit in the node. Short names are in nodeBytes.
+        uint64_t nodeNameBytes = 0;
+        // Sequence heap allocations, the header included. Inline sequences are in nodeBytes.
+        uint64_t sequenceBytes = 0;
+        // Edge pointers that spilled out of the node.
+        uint64_t incidentEdgeBytes = 0;
+        // Signed-name keys plus the pointer stored under each key.
+        uint64_t nodeIndexBytes = 0;
+
         size_t edges = 0;
+        uint64_t edgeBytes = 0;
+        // Pointers in the edge set. Bucket overhead is not visible from here.
+        uint64_t edgeIndexBytes = 0;
+
         size_t paths = 0;
-        uint64_t pathNameBytes = 0;
-        uint64_t pathSteps = 0;
+        uint64_t pathBytes = 0;
         size_t walks = 0;
-        uint64_t walkKeyBytes = 0;
-        uint64_t walkSampleBytes = 0;
-        uint64_t walkSteps = 0;
+        uint64_t walkBytes = 0;
+
+        // Tags, overlap text, labels, CSV, and custom colours. Zero on a plain graph.
+        uint64_t annotationBytes = 0;
+
+        uint64_t accountedBytes() const {
+            return nodeBytes + nodeNameBytes + sequenceBytes + incidentEdgeBytes
+                   + nodeIndexBytes + edgeBytes + edgeIndexBytes + pathBytes
+                   + walkBytes + annotationBytes;
+        }
     };
 
     StorageAccount storageAccount() const;
@@ -229,11 +370,11 @@ public:
     QPair<int, int> getOverlapRange() const;
     long long getTotalLengthOrphanedNodes() const;
 
-    bool hasCustomColour(const DeBruijnNode *node) const;
+    bool hasCustomColour(OrientedNode node) const;
     bool hasCustomColour(const DeBruijnEdge *edge, bool reverse = false) const;
-    QColor getCustomColour(const DeBruijnNode *node) const;
+    QColor getCustomColour(OrientedNode node) const;
     QColor getCustomColour(const DeBruijnEdge *edge, bool reverse = false) const;
-    void setCustomColour(const DeBruijnNode *node, QColor color);
+    void setCustomColour(OrientedNode node, QColor color);
     void setCustomColour(const DeBruijnEdge *edge, QColor color, bool reverse = false);
 
     GraphicsItemEdge *reverseGraphicsItem(const DeBruijnEdge *edge) const;
@@ -247,28 +388,30 @@ public:
     void setCustomStyle(const DeBruijnEdge *edge, EdgeStyle style);
     bool hasCustomStyle(const DeBruijnEdge *edge) const;
 
-    QString getCustomLabel(const DeBruijnNode *node) const;
-    void setCustomLabel(const DeBruijnNode *node, QString newLabel);
+    QString getCustomLabel(OrientedNode node) const;
+    void setCustomLabel(OrientedNode node, QString newLabel);
 
-    bool hasCsvData(const DeBruijnNode *node) const;
-    QStringList getAllCsvData(const DeBruijnNode *node) const;
-    std::optional<QString> getCsvLine(const DeBruijnNode *node, int i) const;
-    void setCsvData(const DeBruijnNode *node, QStringList csvData);
-    void clearCsvData(const DeBruijnNode *node);
+    bool hasCsvData(OrientedNode node) const;
+    QStringList getAllCsvData(OrientedNode node) const;
+    std::optional<QString> getCsvLine(OrientedNode node, int i) const;
+    void setCsvData(OrientedNode node, QStringList csvData);
+    void clearCsvData(OrientedNode node);
 
-    QColor getCustomColourForDisplay(const DeBruijnNode *node) const;
-    QStringList getCustomLabelForDisplay(const DeBruijnNode *node) const;
+    QColor getCustomColourForDisplay(OrientedNode node) const;
+    QStringList getCustomLabelForDisplay(OrientedNode node) const;
 
     std::string getUniqueNodeName(std::string_view baseName) const;
     QString getNodeNameFromString(QString string) const;
 
-    std::vector<DeBruijnNode *> getNodesInDepthRange(double min, double max) const;
+    std::vector<OrientedNode> getNodesInDepthRange(double min, double max) const;
 private:
     void eraseNodeRecords(const DeBruijnNode *node);
     void eraseEdgeRecords(const DeBruijnEdge *edge);
+    // Edges are already unique. deleteEdges builds that set for a vector.
+    void deleteEdgeSet(const phmap::flat_hash_set<DeBruijnEdge *> &edges);
 
-    std::vector<DeBruijnNode *> getNodesFromListExact(const QStringList& nodesList, std::vector<QString> * nodesNotInGraph) const;
-    std::vector<DeBruijnNode *> getNodesFromListPartial(const QStringList& nodesList, std::vector<QString> * nodesNotInGraph) const;
+    std::vector<OrientedNode> getNodesFromListExact(const QStringList& nodesList, std::vector<QString> * nodesNotInGraph) const;
+    std::vector<OrientedNode> getNodesFromListPartial(const QStringList& nodesList, std::vector<QString> * nodesNotInGraph) const;
     std::vector<int> makeOverlapCountVector();
     void clearAllCsvData();
     std::string getNewNodeName(std::string_view oldNodeName) const;
@@ -277,3 +420,15 @@ signals:
     void setMergeTotalCount(int totalCount);
     void setMergeCompletedCount(int completedCount);
 };
+
+template <typename Range>
+std::enable_if_t<!std::is_same_v<std::decay_t<Range>, std::vector<OrientedNode>>>
+AssemblyGraph::deleteNodes(Range &&nodes) {
+    deleteNodes(std::vector<OrientedNode>(std::begin(nodes), std::end(nodes)));
+}
+
+template <typename Range>
+std::enable_if_t<!std::is_same_v<std::decay_t<Range>, std::vector<DeBruijnEdge *>>>
+AssemblyGraph::deleteEdges(Range &&edges) {
+    deleteEdges(std::vector<DeBruijnEdge *>(std::begin(edges), std::end(edges)));
+}

@@ -58,7 +58,7 @@ public:
     auto &queries() { return m_queries; }
     Query *query(size_t idx) { return m_queries[idx]; }
     const Query *query(size_t idx) const { return m_queries[idx]; }
-    std::vector<DeBruijnNode *> getNodesFromHits(const QString& queryName = "") const;
+    std::vector<OrientedNode> getNodesFromHits(const QString& queryName = "") const;
 
     void addNodeHits(const NodeHits &hits);
     void addPathHits(const PathHits &hits);

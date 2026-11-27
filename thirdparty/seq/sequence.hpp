@@ -148,6 +148,9 @@ class Sequence {
             return buf;
         }
 
+        // Header plus the 2-bit words. An all-N buffer asks for no words.
+        static size_t bytesFor(size_t words) { return totalSizeToAlloc<ST>(words); }
+
         static ManagedNuclBuffer *create(size_t nucls, ST *data) {
             void *mem = ::operator new(totalSizeToAlloc<ST>(Sequence::DataSize(nucls)));
             return new (mem) ManagedNuclBuffer(nucls, data);
@@ -595,6 +598,15 @@ public:
         if (LLVM_LIKELY(!rep_.l.data_->empty_nucls_.allNs()))
             return DataSize(size()) * sizeof(ST);
         return 0;
+    }
+
+    // The heap allocation for this sequence, header included. An inline
+    // ACGT sequence reports 0. An all-N sequence is the header alone.
+    size_t allocatedBytes() const {
+        if (is_short() || !rep_.l.data_)
+            return 0;
+        const size_t words = rep_.l.data_->empty_nucls_.allNs() ? 0 : DataSize(size());
+        return ManagedNuclBuffer::bytesFor(words);
     }
 
     bool empty() const { return size() == 0; }

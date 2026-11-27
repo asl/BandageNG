@@ -645,6 +645,25 @@ class htrie_hash {
       return key_buffer;
     }
 
+    // BANDAGE_LOCAL begin
+    // Last character of the current key, without building the key string.
+    CharT key_back() const {
+      if (!m_read_trie_node_value) {
+        tsl_ht_assert(m_current_hash_node != nullptr);
+        if (m_array_hash_iterator.key_size() > 0) {
+          return m_array_hash_iterator
+              .key()[m_array_hash_iterator.key_size() - 1];
+        }
+        if (m_current_hash_node->parent() != nullptr)
+          return m_current_hash_node->child_of_char();
+      } else if (m_current_trie_node != nullptr &&
+                 m_current_trie_node->parent() != nullptr) {
+        return m_current_trie_node->child_of_char();
+      }
+      return CharT{};
+    }
+    // BANDAGE_LOCAL end
+
     template <class U = T,
               typename std::enable_if<has_value<U>::value>::type* = nullptr>
     reference value() const {

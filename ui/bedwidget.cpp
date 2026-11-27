@@ -30,13 +30,12 @@ BedWidget::BedWidget(QWidget *parent) : QWidget(parent) {
             auto &annotationGroup = g_annotationsManager->createAnnotationGroup(g_settings->bedAnnotationGroupName);
             for (const auto &bedLine : bedLines) {
                 auto nodeName = g_assemblyGraph->getNodeNameFromString(bedLine.chrom.c_str());
-                auto it = g_assemblyGraph->m_deBruijnGraphNodes.find(nodeName.toStdString());
-                if (it != g_assemblyGraph->m_deBruijnGraphNodes.end()) {
-                    DeBruijnNode *node = it.value();
-                    if (bedLine.strand == bed::Strand::REVERSE_COMPLEMENT)
-                        node = node->getReverseComplement();
-                    addBedAnnotation(annotationGroup, node, bedLine);
-                }
+                OrientedNode node = g_assemblyGraph->orientedNode(nodeName.toStdString());
+                if (!node)
+                    continue;
+                if (bedLine.strand == bed::Strand::REVERSE_COMPLEMENT)
+                    node = node.reverse();
+                addBedAnnotation(annotationGroup, node, bedLine);
             }
         } catch (std::exception &err) {
             QString errorTitle = "Error loading BED file";

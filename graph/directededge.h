@@ -17,12 +17,12 @@
 
 #pragma once
 
+#include "debruijnnode.h"
 #include "program/llvm.h"
 #include "small_vector/small_pod_vector.hpp"
 
 #include <iterator>
 
-class DeBruijnNode;
 class DeBruijnEdge;
 
 enum EdgeOverlapType {
@@ -34,24 +34,24 @@ enum EdgeOverlapType {
 };
 
 // Which incidences an iterator yields. Both visits an edge twice when it
-// leaves and enters the same node, once in each direction.
+// leaves and enters the same orientation, once in each direction.
 enum class IncidentFilter { Outgoing, Incoming, Both };
 
-// A stored edge as seen from the node being iterated. otherNode() is the
-// far end in this direction; the stored orientation may be the opposite one.
+// A stored edge as seen from the orientation being iterated. otherNode() is
+// the far end in this direction; the stored orientation may be the opposite one.
 class DirectedEdge {
     DeBruijnEdge *m_edge = nullptr;
-    const DeBruijnNode *m_origin = nullptr;
+    OrientedNode m_origin;
     bool m_outgoing = true;
 
 public:
     DirectedEdge() = default;
-    DirectedEdge(DeBruijnEdge *edge, const DeBruijnNode *origin, bool outgoing)
+    DirectedEdge(DeBruijnEdge *edge, OrientedNode origin, bool outgoing)
             : m_edge(edge), m_origin(origin), m_outgoing(outgoing) {}
 
     DeBruijnEdge *edge() const { return m_edge; }
     bool outgoing() const { return m_outgoing; }
-    DeBruijnNode *otherNode() const;
+    OrientedNode otherNode() const;
     int overlap() const;
     EdgeOverlapType overlapType() const;
 };
@@ -69,7 +69,7 @@ class IncidentEdgeIterator
     EdgeIt m_it{};
     EdgeIt m_begin{};
     EdgeIt m_end{};
-    const DeBruijnNode *m_origin = nullptr;
+    OrientedNode m_origin;
     IncidentFilter m_filter = IncidentFilter::Outgoing;
     bool m_outgoingPass = true;
 
@@ -78,7 +78,7 @@ class IncidentEdgeIterator
 
 public:
     IncidentEdgeIterator() = default;
-    IncidentEdgeIterator(EdgeIt begin, EdgeIt end, const DeBruijnNode *origin,
+    IncidentEdgeIterator(EdgeIt begin, EdgeIt end, OrientedNode origin,
                          IncidentFilter filter, bool isEnd);
 
     bool operator==(const IncidentEdgeIterator &rhs) const {
@@ -91,3 +91,13 @@ public:
 
 using OutgoingEdgeIterator = IncidentEdgeIterator;
 using IncomingEdgeIterator = IncidentEdgeIterator;
+
+inline auto outgoingEdges(OrientedNode node) {
+    return bandage::make_range(node.outgoing_begin(), node.outgoing_end());
+}
+inline auto incomingEdges(OrientedNode node) {
+    return bandage::make_range(node.incoming_begin(), node.incoming_end());
+}
+inline auto incidentEdges(OrientedNode node) {
+    return bandage::make_range(node.incident_begin(), node.incident_end());
+}

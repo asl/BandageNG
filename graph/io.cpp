@@ -71,11 +71,11 @@ namespace {
                 continue;
 
             if (auto *path = std::get_if<gfa::path>(&*val)) {
-                std::vector<DeBruijnNode *> pathNodes;
+                std::vector<OrientedNode> pathNodes;
                 pathNodes.reserve(path->segments.size());
 
                 for (const auto &node: path->segments)
-                    pathNodes.push_back(graph.m_deBruijnGraphNodes.at(node));
+                    pathNodes.push_back(orientationOf(node, graph.m_deBruijnGraphNodes.at(node)));
                 graph.m_deBruijnGraphPaths.emplace(path->name,
                                                    Path::makeFromOrderedNodes(pathNodes, false));
             }
@@ -174,7 +174,7 @@ namespace {
             if (!path)
                 continue;
 
-            std::vector<DeBruijnNode *> pathNodes;
+            std::vector<OrientedNode> pathNodes;
             pathNodes.reserve(path->segments.size());
 
             // FIXME: handle orientation
@@ -191,7 +191,7 @@ namespace {
                 else
                     throw std::runtime_error(std::string("invalid path string: ").append(node));
 
-                pathNodes.push_back(graph.m_deBruijnGraphNodes.at(nodeName));
+                pathNodes.push_back(orientationOf(nodeName, graph.m_deBruijnGraphNodes.at(nodeName)));
             }
 
             Path p(Path::makeFromOrderedNodes(pathNodes, false));
@@ -239,17 +239,18 @@ namespace {
             auto addPath =
                     [&](const std::string &name,
                         const QString &pathPart, const QString &start, const QString &end) {
-                std::vector<DeBruijnNode *> pathNodes;
+                std::vector<OrientedNode> pathNodes;
                 for (const auto &nodeName: pathPart.split(","))
-                    pathNodes.push_back(graph.m_deBruijnGraphNodes.at(nodeName.toStdString()));
+                    pathNodes.push_back(orientationOf(nodeName.toStdString(),
+                                                    graph.m_deBruijnGraphNodes.at(nodeName.toStdString())));
 
                 Path p(Path::makeFromOrderedNodes(pathNodes, false));
                 int sPos = start.toInt(); // if conversion fails, we'd end with zero, we're ok with it.
                 bool ok = false;
                 int ePos = end.toInt(&ok); // if conversion fails, we'd need end of the node, not zero here.
                 if (!ok)
-                    ePos = pathNodes.back()->getLength() - 1;
-                p.trim(sPos, pathNodes.back()->getLength() - ePos - 1);
+                    ePos = int(pathNodes.back().getLength()) - 1;
+                p.trim(sPos, int(pathNodes.back().getLength()) - ePos - 1);
                 graph.m_deBruijnGraphPaths.emplace(name, std::move(p));
             };
             if (pathParts.size() == 1) {
@@ -272,7 +273,7 @@ namespace {
                          QString fileName) {
         enum class State {
             PathName, // e.g. NODE_1_length_348461_cov_16.477994, we verify NODE_ prefix
-            Segment,  // Ends with ";" or newline
+            Path,  // Node list. Ends with ";" or newline
         };
 
         QFile inputFile(fileName);
@@ -294,21 +295,22 @@ namespace {
                     if (!line.startsWith("NODE_"))
                         throw std::logic_error("invalid path name: does not start with NODE");
                     pathName = line.toStdString(); pathIdx = 1;
-                    state = State::Segment;
+                    state = State::Path;
                     break;
                 }
-                case State::Segment: {
+                case State::Path: {
                     if (line.endsWith(";")) {
-                        state = State::Segment;
+                        state = State::Path;
                         line = line.chopped(1);
                     } else
                         state = State::PathName;
 
                     auto addPath = [&](const std::string &name,
                                        const QString &path) {
-                        std::vector<DeBruijnNode *> pathNodes;
+                        std::vector<OrientedNode> pathNodes;
                         for (const auto &nodeName: path.split(","))
-                            pathNodes.push_back(graph.m_deBruijnGraphNodes.at(nodeName.toStdString()));
+                            pathNodes.push_back(orientationOf(nodeName.toStdString(),
+                                                    graph.m_deBruijnGraphNodes.at(nodeName.toStdString())));
 
                         graph.m_deBruijnGraphPaths.emplace(name,
                                                            Path::makeFromOrderedNodes(pathNodes, false));
@@ -319,7 +321,7 @@ namespace {
                         continue;
 
                     if (pathIdx == 1 && state == State::PathName)
-                        // Keep the name as-is in case of single-segment path
+                        // Keep the name as-is in case of a single-node path
                         addPath(pathName, line);
                     else
                         addPath(pathName + "_" + std::to_string(pathIdx++), line);

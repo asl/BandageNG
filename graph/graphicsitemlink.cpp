@@ -101,17 +101,17 @@ void GraphicsItemLink::remakePath() {
     // Link goes from the median of one node into median of other node.
     QLineF startMidSegment, endMidSegment;
 
-    if (const auto *startingGraphicsItemNode = startingNode->getGraphicsItemNode()) {
+    if (const auto *startingGraphicsItemNode = startingNode.getGraphicsItemNode()) {
         startMidSegment = startingGraphicsItemNode->getMedianSegment();
     } else if (const auto *startingGraphicsItemRcNode =
-               startingNode->getReverseComplement()->getGraphicsItemNode()) {
+               startingNode.reverse().getGraphicsItemNode()) {
         startMidSegment = startingGraphicsItemRcNode->getMedianSegment();
     }
 
-    if (const auto *endingGraphicsItemNode = endingNode->getGraphicsItemNode()) {
+    if (const auto *endingGraphicsItemNode = endingNode.getGraphicsItemNode()) {
         endMidSegment = endingGraphicsItemNode->getMedianSegment();
     } else if (const auto *endingGraphicsItemRcNode
-               = endingNode->getReverseComplement()->getGraphicsItemNode()) {
+               = endingNode.reverse().getGraphicsItemNode()) {
         endMidSegment = endingGraphicsItemRcNode->getMedianSegment();
     }
 
@@ -120,7 +120,7 @@ void GraphicsItemLink::remakePath() {
     // If this edge is connecting a node to itself (or a reverse-complement in
     // single mode), then a special path is required
     if (startingNode == endingNode ||
-        startingNode == endingNode->getReverseComplement()) {
+        startingNode == endingNode.reverse()) {
         makePathConnectingNodeToSelf(path, startMidSegment);
     } else {
         makeOrdinaryPath(path, startMidSegment, endMidSegment);

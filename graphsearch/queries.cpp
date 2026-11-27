@@ -174,8 +174,8 @@ Query::Hits Queries::allHits() const {
     return res;
 }
 
-std::vector<DeBruijnNode *> Queries::getNodesFromHits(const QString& queryName) const {
-    std::vector<DeBruijnNode *> returnVector;
+std::vector<OrientedNode> Queries::getNodesFromHits(const QString& queryName) const {
+    std::vector<OrientedNode> returnVector;
 
     if (empty())
         return returnVector;
@@ -218,13 +218,13 @@ void Queries::addPathHits(const PathHits &hits) {
         if (invert)
             std::swap(pathStart, pathEnd);
 
-        std::vector<DeBruijnNode *> pathNodes;
+        std::vector<OrientedNode> pathNodes;
         for (auto entry: path->getNodeCovering(pathStart, pathEnd)) {
-            DeBruijnNode *node = entry.first;
+            OrientedNode node = entry.first;
             int nodeStart = entry.second.mapped_range.from, nodeEnd = entry.second.mapped_range.to;
             if (invert) {
-                int nodeLength = node->getLength();
-                node = node->getReverseComplement();
+                int nodeLength = node.getLength();
+                node = node.reverse();
                 nodeEnd = nodeLength - nodeEnd + 1;
                 nodeStart = nodeLength - nodeStart + 1;
                 std::swap(nodeEnd, nodeStart);
@@ -247,7 +247,7 @@ void Queries::addPathHits(const PathHits &hits) {
         // Something went wrong, ignore
         if (p.nodes().size() != pathNodes.size())
             continue;
-        p.trim(pathHits.front()->m_nodeStart - 1, pathHits.back()->m_node->getLength() - pathHits.back()->m_nodeEnd);
+        p.trim(pathHits.front()->m_nodeStart - 1, pathHits.back()->m_node.getLength() - pathHits.back()->m_nodeEnd);
 
         QueryPath queryPath(std::move(p), query, pathHits);
 

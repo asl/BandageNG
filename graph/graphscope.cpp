@@ -40,25 +40,25 @@ namespace graph {
         return out;
     }
 
-    static void appendUnique(std::vector<DeBruijnNode *> &nodes,
-                             std::unordered_set<DeBruijnNode *> &seen,
-                             const std::vector<DeBruijnNode *> &more) {
-        for (auto *node : more) {
+    static void appendUnique(std::vector<OrientedNode> &nodes,
+                             std::unordered_set<OrientedNode> &seen,
+                             const std::vector<OrientedNode> &more) {
+        for (OrientedNode node : more) {
             if (seen.insert(node).second)
                 nodes.push_back(node);
         }
     }
 
-    static bandage::Expected<std::vector<DeBruijnNode *>>
+    static bandage::Expected<std::vector<OrientedNode>>
     textError(std::string title, std::string message) {
         return bandage::make_error<bandage::TextError>(std::move(title), std::move(message));
     }
 
-    bandage::Expected<std::vector<DeBruijnNode *>>
+    bandage::Expected<std::vector<OrientedNode>>
     getStartingNodes(const AssemblyGraph &graph, const Scope &graphScope) {
         switch (graphScope.graphScope()) {
             default:
-                return std::vector<DeBruijnNode *>{};
+                return std::vector<OrientedNode>{};
             case AROUND_NODE: {
                 if (AssemblyGraph::checkIfStringHasNodes(graphScope.nodeList())) {
                     return textError("No starting nodes",
@@ -68,7 +68,7 @@ namespace graph {
 
                 // Make sure the nodes the user typed in are actually in the graph.
                 std::vector<QString> nodesNotInGraph;
-                std::vector<DeBruijnNode *> nodesInGraph =
+                std::vector<OrientedNode> nodesInGraph =
                         graph.getNodesFromStringList(graphScope.nodeList(),
                                                      g_settings->startingNodesExactMatch,
                                                      &nodesNotInGraph);
@@ -105,8 +105,8 @@ namespace graph {
                                      "'Around connected component' scope. Separate multiple names with commas.");
                 }
 
-                std::unordered_set<DeBruijnNode *> seen;
-                std::vector<DeBruijnNode *> nodesInGraph;
+                std::unordered_set<OrientedNode> seen;
+                std::vector<OrientedNode> nodesInGraph;
 
                 if (hasNodes) {
                     std::vector<QString> nodesNotInGraph;
@@ -157,7 +157,7 @@ namespace graph {
                 return nodesInGraph;
             }
             case AROUND_QUERY_HITS: {
-                std::vector<DeBruijnNode *> startingNodes;
+                std::vector<OrientedNode> startingNodes;
                 if (const auto *queries = graphScope.queries())
                     startingNodes = queries->getNodesFromHits(graphScope.queryName());
                 if (startingNodes.empty()) {
@@ -181,7 +181,7 @@ namespace graph {
             }
         }
 
-        return std::vector<DeBruijnNode *>{};
+        return std::vector<OrientedNode>{};
     }
 
     Scope scope(GraphScope graphScope, const QString &nodesList,

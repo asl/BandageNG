@@ -74,6 +74,10 @@ void ChangeNodeNameDialog::checkNodeNameValidity()
             ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
             ui->errorLabel->setText("Space not allowed");
             break;
+        case NodeNameStatus::NODE_NAME_ENDS_WITH_SIGN:
+            ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
+            ui->errorLabel->setText("Name cannot end with + or -");
+            break;
         default:
             //Catch any other error cases (shouldn't happen, but just in case)
             ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);

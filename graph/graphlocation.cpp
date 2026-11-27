@@ -26,10 +26,10 @@ GraphLocation::GraphLocation()
         : m_node(nullptr), m_position(0) { }
 
 
-GraphLocation::GraphLocation(DeBruijnNode *node, int position)
+GraphLocation::GraphLocation(OrientedNode node, int position)
         : m_node(node), m_position(position) { }
 
-GraphLocation GraphLocation::startOfNode(DeBruijnNode *node)
+GraphLocation GraphLocation::startOfNode(OrientedNode node)
 {
     GraphLocation location(node, 1);
     if (location.isValid())
@@ -39,12 +39,12 @@ GraphLocation GraphLocation::startOfNode(DeBruijnNode *node)
 }
 
 
-GraphLocation GraphLocation::endOfNode(DeBruijnNode *node)
+GraphLocation GraphLocation::endOfNode(OrientedNode node)
 {
     if (node == nullptr)
         return GraphLocation::null();
 
-    int pos = node->getLength();
+    int pos = int(node.getLength());
     GraphLocation location(node, pos);
     if (location.isValid())
         return location;
@@ -64,13 +64,13 @@ bool GraphLocation::isValid() const
         return false;
     if (m_position < 1)
         return false;
-    return m_position <= m_node->getLength();
+    return m_position <= int(m_node.getLength());
 }
 
 GraphLocation GraphLocation::reverseComplementLocation() const
 {
-    int newPos = m_node->getLength() - m_position + 1;
-    GraphLocation newLocation(m_node->getReverseComplement(), newPos);
+    int newPos = int(m_node.getLength()) - m_position + 1;
+    GraphLocation newLocation(m_node.reverse(), newPos);
 
     if (newLocation.isValid())
         return newLocation;
@@ -93,7 +93,7 @@ void GraphLocation::moveForward(int change)
 {
     //See if there are enough bases left in this node to move by the
     //required amount.  If so, we're done!
-    int basesLeftInNode = m_node->getLength() - m_position;
+    int basesLeftInNode = int(m_node.getLength()) - m_position;
     if (change <= basesLeftInNode)
     {
         m_position += change;
@@ -102,7 +102,7 @@ void GraphLocation::moveForward(int change)
 
     // If there aren't enough bases left, then we recursively try with the
     // next nodes.
-    for (auto *node : m_node->getDownstreamNodes())
+    for (OrientedNode node : m_node.getDownstreamNodes())
     {
         GraphLocation nextNodeLocation = GraphLocation::startOfNode(node);
         nextNodeLocation.moveForward(change - basesLeftInNode - 1);
@@ -134,7 +134,7 @@ void GraphLocation::moveBackward(int change)
 
     //If there aren't enough bases left, then we recursively try with the
     //next nodes.
-    for (auto *node : m_node->getUpstreamNodes())
+    for (OrientedNode node : m_node.getUpstreamNodes())
     {
         GraphLocation nextNodeLocation = GraphLocation::endOfNode(node);
         nextNodeLocation.moveBackward(change - basesLeftInNode - 1);
@@ -159,7 +159,7 @@ char GraphLocation::getBase() const
     if (!isValid())
         return '\0';
     else
-        return m_node->getBaseAt(m_position - 1);
+        return m_node.getBaseAt(m_position - 1);
 }
 
 
@@ -171,7 +171,7 @@ bool GraphLocation::isAtStartOfNode() const
 
 bool GraphLocation::isAtEndOfNode() const
 {
-    return (isValid() && m_position == m_node->getLength());
+    return (isValid() && m_position == int(m_node.getLength()));
 }
 
 bool GraphLocation::operator==(GraphLocation const &other) const

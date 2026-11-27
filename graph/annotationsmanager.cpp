@@ -22,20 +22,20 @@
 #include "graphsearch/query.h"
 #include "program/settings.h"
 
-std::vector<DeBruijnNode *> AnnotationGroup::getNodesWithAnnotations(bool doubleMode) const {
-    std::vector<DeBruijnNode *> result;
+std::vector<OrientedNode> AnnotationGroup::getNodesWithAnnotations(bool doubleMode) const {
+    std::vector<OrientedNode> result;
 
     for (const auto &[node, annotations] : annotationMap) {
         if (annotations.empty())
             continue;
 
         if (doubleMode) {
-            result.push_back(const_cast<DeBruijnNode *>(node));
+            result.push_back(node);
             continue;
         }
 
         // Prefer the canonical map entry when both strands are annotated.
-        DeBruijnNode *canonical = node->getCanonical();
+        OrientedNode canonical = node.getCanonical();
         if (node != canonical && !getAnnotations(canonical).empty())
             continue;
         result.push_back(canonical);
@@ -146,7 +146,7 @@ int64_t bedIntervalStart(int64_t start, int64_t end) {
 }
 }
 
-void addBedAnnotation(AnnotationGroup &group, DeBruijnNode *node, const bed::Line &bedLine) {
+void addBedAnnotation(AnnotationGroup &group, OrientedNode node, const bed::Line &bedLine) {
     constexpr double mainWidth = 1;
     constexpr double thickWidth = 1.3;
     constexpr double blockWidth = 1.6;

@@ -144,11 +144,11 @@ void GraphSearch::addPathHit(Query *query, Path *path,
         std::swap(pathStart, pathEnd);
 
     for (auto entry: path->getNodeCovering(pathStart, pathEnd)) {
-        DeBruijnNode *node = entry.first;
+        OrientedNode node = entry.first;
         int nodeStart = entry.second.mapped_range.from, nodeEnd = entry.second.mapped_range.to;
         if (invert) {
-            int nodeLength = node->getLength();
-            node = node->getReverseComplement();
+            int nodeLength = node.getLength();
+            node = node.reverse();
             nodeEnd = nodeLength - nodeEnd + 1;
             nodeStart = nodeLength - nodeStart + 1;
             std::swap(nodeEnd, nodeStart);

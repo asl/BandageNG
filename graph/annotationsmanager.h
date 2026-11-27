@@ -19,12 +19,11 @@
 #pragma once
 
 #include "annotation.h"
+#include "debruijnnode.h"
 #include <QObject>
 #include <unordered_map>
 #include <vector>
 #include <utility>
-
-class DeBruijnNode;
 struct AnnotationSetting;
 namespace search {
     class Query;
@@ -48,13 +47,13 @@ const V &getFromMapOrDefaultConstructed(const MapLike<K, V> &map, const K &key) 
 
 struct AnnotationGroup {
     using AnnotationVector = std::vector<std::unique_ptr<Annotation>>;
-    using AnnotationMap = std::unordered_map<const DeBruijnNode *, AnnotationVector>;
+    using AnnotationMap = std::unordered_map<OrientedNode, AnnotationVector>;
 
     const AnnotationGroupId id;
     const QString name;
     AnnotationMap annotationMap;
 
-    const AnnotationVector &getAnnotations(const DeBruijnNode *node) const {
+    const AnnotationVector &getAnnotations(OrientedNode node) const {
             auto it = annotationMap.find(node);
             if (it != annotationMap.end())
                 return it->second;
@@ -65,10 +64,10 @@ struct AnnotationGroup {
 
     // Nodes with non-empty annotations. In single mode, one canonical representative
     // per +/- pair (a hit on either strand qualifies the pair).
-    [[nodiscard]] std::vector<DeBruijnNode *> getNodesWithAnnotations(bool doubleMode) const;
+    [[nodiscard]] std::vector<OrientedNode> getNodesWithAnnotations(bool doubleMode) const;
 };
 
-void addBedAnnotation(AnnotationGroup &group, DeBruijnNode *node, const bed::Line &bedLine);
+void addBedAnnotation(AnnotationGroup &group, OrientedNode node, const bed::Line &bedLine);
 
 class AnnotationsManager : public QObject {
 Q_OBJECT

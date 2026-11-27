@@ -24,6 +24,7 @@
 #include <CLI/CLI.hpp>
 
 #include <cstdint>
+#include <cstring>
 
 #if defined(__APPLE__)
 #include <mach/mach.h>
@@ -171,23 +172,31 @@ int handleInfoCmd(QApplication *app,
 
     if (cmd.m_memory) {
         const AssemblyGraph::StorageAccount mem = g_assemblyGraph->storageAccount();
-        out << "Oriented nodes:                   " << mem.orientedNodes << "\n"
-            << "Segments:                         " << mem.segments << "\n"
-            << "Name bytes:                       " << mem.nameBytes << "\n"
-            << "Segment name bytes:               " << mem.segmentNameBytes << "\n"
-            << "Node index key bytes:             " << mem.nodeIndexKeyBytes << "\n"
-            << "Packed sequence bytes:            " << mem.packedSequenceBytes << "\n"
-            << "Missing segments:                 " << mem.missingSegments << "\n"
-            << "Missing sequence bases:           " << mem.missingSequenceBases << "\n"
-            << "Edges:                            " << mem.edges << "\n"
-            << "Paths:                            " << mem.paths << "\n"
-            << "Path name bytes:                  " << mem.pathNameBytes << "\n"
-            << "Path steps:                       " << mem.pathSteps << "\n"
-            << "Walks:                            " << mem.walks << "\n"
-            << "Walk key bytes:                   " << mem.walkKeyBytes << "\n"
-            << "Walk sample bytes:                " << mem.walkSampleBytes << "\n"
-            << "Walk steps:                       " << mem.walkSteps << "\n"
-            << "Resident bytes:                   " << residentBytes() << "\n";
+        auto line = [&](const char *label, uint64_t value) {
+            out << label;
+            const int pad = 32 - int(std::strlen(label));
+            for (int i = 0; i < pad; ++i)
+                out << ' ';
+            out << value << '\n';
+        };
+        line("Nodes:", mem.nodes);
+        line("Node bytes:", mem.nodeBytes);
+        line("Nodes without sequence:", mem.nodesWithoutSequence);
+        line("Node name bytes:", mem.nodeNameBytes);
+        line("Sequence bytes:", mem.sequenceBytes);
+        line("Incident edge bytes:", mem.incidentEdgeBytes);
+        line("Node index bytes:", mem.nodeIndexBytes);
+        line("Edges:", mem.edges);
+        line("Edge bytes:", mem.edgeBytes);
+        line("Edge index bytes:", mem.edgeIndexBytes);
+        line("Paths:", mem.paths);
+        line("Path bytes:", mem.pathBytes);
+        line("Walks:", mem.walks);
+        line("Walk bytes:", mem.walkBytes);
+        if (mem.annotationBytes != 0)
+            line("Annotation bytes:", mem.annotationBytes);
+        line("Accounted bytes:", mem.accountedBytes());
+        line("Resident bytes:", residentBytes());
     }
 
     return 0;

@@ -50,19 +50,19 @@ namespace gfa {
 
     // This function gets the node's sequence for a GFA file.
     // If the sequence is missing, it will just give "*"
-    QByteArray getSequenceForGfa(const DeBruijnNode *node) {
-        if (node->sequenceIsMissing())
+    QByteArray getSequenceForGfa(OrientedNode node) {
+        if (node.sequenceIsMissing())
             return {"*"};
 
-        return utils::sequenceToQByteArray(node->getSequence());
+        return utils::sequenceToQByteArray(node.node()->getSequence());
     }
 
-    static QByteArray getGfaSegmentLine(const DeBruijnNode *node, const AssemblyGraph &graph,
+    static QByteArray getGfaSegmentLine(OrientedNode node, const AssemblyGraph &graph,
                                         const QString &depthTag) {
         QByteArray gfaSequence = getSequenceForGfa(node);
 
         QByteArray gfaSegmentLine = "S";
-        const std::string_view segmentName = node->getNameWithoutSign();
+        const std::string_view segmentName = node.getNameWithoutSign();
         gfaSegmentLine += "\t" + QByteArray(segmentName.data(), int(segmentName.size()));
         gfaSegmentLine += "\t" + gfaSequence;
         gfaSegmentLine += "\tLN:i:" + QString::number(gfaSequence.length()).toLatin1();
@@ -71,27 +71,30 @@ namespace gfa {
         //If it is empty, that implies that the loaded graph did not have depth
         //information and so we don't save depth.
         if (depthTag == "DP" || depthTag == "dp")
-            gfaSegmentLine += "\tDP:f:" + QString::number(node->getDepth()).toLatin1();
+            gfaSegmentLine += "\tDP:f:" + QString::number(node.getDepth()).toLatin1();
         else if (depthTag == "rd")
-            gfaSegmentLine += "\trd:i:" + QString::number(node->getDepth()-1).toLatin1();
+            gfaSegmentLine += "\trd:i:" + QString::number(node.getDepth()-1).toLatin1();
         else if (depthTag == "KC" || depthTag == "RC" || depthTag == "FC")
             gfaSegmentLine += "\t" + depthTag.toLatin1() + ":i:" +
-                              QString::number(int(node->getDepth() * gfaSequence.length() + 0.5)).toLatin1();
+                              QString::number(int(node.getDepth() * gfaSequence.length() + 0.5)).toLatin1();
 
         //If the user has included custom labels or colours, include those.
         QString label = graph.getCustomLabel(node);
         if (!label.isEmpty())
             gfaSegmentLine += "\tLB:Z:" + label.toLatin1();
 
-        QString rcLabel = graph.getCustomLabel(node->getReverseComplement());
-        if (!rcLabel.isEmpty())
-            gfaSegmentLine += "\tL2:Z:" + rcLabel.toLatin1();
+        if (!node.isSelfComplement()) {
+            OrientedNode reverseNode = node.reverse();
+            QString rcLabel = graph.getCustomLabel(reverseNode);
+            if (!rcLabel.isEmpty())
+                gfaSegmentLine += "\tL2:Z:" + rcLabel.toLatin1();
+            if (graph.hasCustomColour(reverseNode))
+                gfaSegmentLine += "\tC2:Z:" + getColourName(graph.getCustomColour(reverseNode)).toLatin1();
+        }
         if (graph.hasCustomColour(node))
             gfaSegmentLine += "\tCL:Z:" + getColourName(graph.getCustomColour(node)).toLatin1();
-        if (graph.hasCustomColour(node->getReverseComplement()))
-            gfaSegmentLine += "\tC2:Z:" + getColourName(graph.getCustomColour(node->getReverseComplement())).toLatin1();
 
-        auto tagIt = graph.m_nodeTags.find(node);
+        auto tagIt = graph.m_nodeTags.find(node.node());
         if (tagIt != graph.m_nodeTags.end())
             printTags(gfaSegmentLine, tagIt->second);
 
@@ -99,20 +102,20 @@ namespace gfa {
     }
 
     static QByteArray getGfaLinkLine(const DeBruijnEdge *edge, const AssemblyGraph &graph) {
-        const DeBruijnNode *startingNode = edge->getStartingNode();
-        const DeBruijnNode *endingNode = edge->getEndingNode();
+        OrientedNode startingNode = edge->getStartingNode();
+        OrientedNode endingNode = edge->getEndingNode();
         bool isJump = edge->getOverlapType() == JUMP;
 
         QByteArray gfaLinkLine = isJump ? "J\t" : "L\t";
-        const std::string_view startingName = startingNode->getNameWithoutSign();
-        const std::string_view endingName = endingNode->getNameWithoutSign();
+        const std::string_view startingName = startingNode.getNameWithoutSign();
+        const std::string_view endingName = endingNode.getNameWithoutSign();
         gfaLinkLine += QByteArray(startingName.data(), int(startingName.size()));
         gfaLinkLine += '\t';
-        gfaLinkLine += startingNode->getSign();
+        gfaLinkLine += startingNode.getSign();
         gfaLinkLine += '\t';
         gfaLinkLine += QByteArray(endingName.data(), int(endingName.size()));
         gfaLinkLine += '\t';
-        gfaLinkLine += endingNode->getSign();
+        gfaLinkLine += endingNode.getSign();
         gfaLinkLine += '\t';
         const auto overlapType = edge->getOverlapType();
         auto keyIt = graph.m_overlapKeys.find(edge);
@@ -156,16 +159,16 @@ namespace gfa {
         // same length for circular paths
         for (size_t i = 0; i < edges.size(); ++i) {
             const auto *edge = edges[i];
-            const std::string stepName = nodes[i]->getName();
+            const std::string stepName = nodes[i].getName();
             gfaPathLine += QByteArray(stepName.data(), int(stepName.size()));
             gfaPathLine += edge->getOverlapType() == JUMP ? ';' : ',';
         }
         // Handle last node: for circular paths we're adding extra node here
         if (nodes.size() == edges.size()) { // circular path
-            const std::string stepName = nodes.front()->getName();
+            const std::string stepName = nodes.front().getName();
             gfaPathLine += QByteArray(stepName.data(), int(stepName.size()));
         } else {
-            const std::string stepName = nodes.back()->getName();
+            const std::string stepName = nodes.back().getName();
             gfaPathLine += QByteArray(stepName.data(), int(stepName.size()));
         }
 
@@ -177,8 +180,8 @@ namespace gfa {
     static bool pathFullyDrawn(const Path &path) {
         if (path.nodes().empty())
             return false;
-        for (const auto *node : path.nodes()) {
-            if (!node->thisNodeOrReverseComplementIsDrawn())
+        for (OrientedNode node : path.nodes()) {
+            if (!node.thisNodeOrReverseComplementIsDrawn())
                 return false;
         }
         return true;
@@ -196,19 +199,21 @@ namespace gfa {
         line += '\t';
         line += QByteArray::number(walk.seqEnd);
         line += '\t';
-        for (const auto *node : walk.walk.nodes()) {
-            line += node->isPositiveNode() ? '>' : '<';
-            const auto name = node->getNameWithoutSign();
+        for (OrientedNode node : walk.walk.nodes()) {
+            line += node.positive() ? '>' : '<';
+            const auto name = node.getNameWithoutSign();
             line += QByteArray(name.data(), int(name.size()));
         }
         return line;
     }
 
     static void writeWalks(QTextStream &out, const AssemblyGraph &graph, bool onlyFullyDrawn) {
+        std::string key;
         for (auto it = graph.m_deBruijnGraphWalks.begin(); it != graph.m_deBruijnGraphWalks.end(); ++it) {
             if (onlyFullyDrawn && !pathFullyDrawn(it->walk))
                 continue;
-            out << getGfaWalkLine(it.key(), *it) << '\n';
+            it.key(key);
+            out << getGfaWalkLine(key, *it) << '\n';
         }
     }
 
@@ -220,10 +225,8 @@ namespace gfa {
 
         QTextStream out(&file);
 
-        for (const auto *node: graph.m_deBruijnGraphNodes) {
-            if (node->isPositiveNode())
-                out << getGfaSegmentLine(node, graph, graph.m_depthTag) << '\n';
-        }
+        for (OrientedNode node : graph.canonical_nodes())
+            out << getGfaSegmentLine(node, graph, graph.m_depthTag) << '\n';
 
         QList<const DeBruijnEdge *> edgesToSave;
         for (const DeBruijnEdge *edge : graph.m_deBruijnGraphEdges)
@@ -234,8 +237,11 @@ namespace gfa {
         for (const auto *edge: edgesToSave)
             out << getGfaLinkLine(edge, graph) << '\n';
 
-        for (auto it = graph.m_deBruijnGraphPaths.begin(); it != graph.m_deBruijnGraphPaths.end(); ++it)
-            out << getGfaPathLine(it.key(), *it, graph) << '\n';
+        std::string key;
+        for (auto it = graph.m_deBruijnGraphPaths.begin(); it != graph.m_deBruijnGraphPaths.end(); ++it) {
+            it.key(key);
+            out << getGfaPathLine(key, *it, graph) << '\n';
+        }
 
         writeWalks(out, graph, false);
         return true;
@@ -248,15 +254,15 @@ namespace gfa {
 
         QTextStream out(&file);
 
-        for (const auto *node: graph.m_deBruijnGraphNodes) {
-            if (node->thisNodeOrReverseComplementIsDrawn() && node->isPositiveNode())
-                out << getGfaSegmentLine(node, graph, graph.m_depthTag) << '\n';
+        for (OrientedNode positive : graph.canonical_nodes()) {
+            if (positive.thisNodeOrReverseComplementIsDrawn())
+                out << getGfaSegmentLine(positive, graph, graph.m_depthTag) << '\n';
         }
 
         QList<const DeBruijnEdge *> edgesToSave;
         for (const DeBruijnEdge *edge : graph.m_deBruijnGraphEdges) {
-            if (edge->getStartingNode()->thisNodeOrReverseComplementIsDrawn() &&
-                edge->getEndingNode()->thisNodeOrReverseComplementIsDrawn())
+            if (edge->getStartingNode().thisNodeOrReverseComplementIsDrawn() &&
+                edge->getEndingNode().thisNodeOrReverseComplementIsDrawn())
                 edgesToSave.push_back(edge);
         }
 
@@ -265,9 +271,12 @@ namespace gfa {
         for (const auto *node: edgesToSave)
             out << getGfaLinkLine(node, graph) << '\n';
 
+        std::string key;
         for (auto it = graph.m_deBruijnGraphPaths.begin(); it != graph.m_deBruijnGraphPaths.end(); ++it) {
-            if (pathFullyDrawn(*it))
-                out << getGfaPathLine(it.key(), *it, graph) << '\n';
+            if (pathFullyDrawn(*it)) {
+                it.key(key);
+                out << getGfaPathLine(key, *it, graph) << '\n';
+            }
         }
 
         writeWalks(out, graph, true);

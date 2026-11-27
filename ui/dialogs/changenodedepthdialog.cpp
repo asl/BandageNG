@@ -7,7 +7,7 @@
 #include "graph/nodedisplayname.h"
 
 ChangeNodeDepthDialog::ChangeNodeDepthDialog(QWidget *parent,
-                                                     std::vector<DeBruijnNode *> * nodes,
+                                                     std::vector<OrientedNode> * nodes,
                                                      double oldDepth) :
     QDialog(parent),
     ui(new Ui::ChangeNodeDepthDialog)

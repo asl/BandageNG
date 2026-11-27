@@ -17,13 +17,14 @@
 
 #pragma once
 
-#include "directededge.h"
 #include "program/llvm.h"
 #include "seq/sequence.hpp"
 #include "small_vector/small_pod_vector.hpp"
 
-#include <QColor>
 #include <QByteArray>
+#include <QColor>
+
+#include <cstdint>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -45,38 +46,52 @@ inline SignedNodeName splitSignedNodeName(std::string_view signedName) {
     return {signedName, true};
 }
 
+// One object per node. The strand lives on OrientedNode, not on a second
+// copy of this object. The stored sequence is the positive orientation.
 class DeBruijnNode
 {
 public:
-    //CREATORS
-    // `name` is the unsigned name. A negative node stores nothing.
-    DeBruijnNode(std::string_view name, bool positive, float depth, const Sequence &sequence, unsigned length = 0);
+    // `name` is the unsigned name.
+    DeBruijnNode(std::string_view name, float depth, const Sequence &sequence, unsigned length = 0);
     ~DeBruijnNode() = default;
 
-    //ACCESSORS
-    std::string getName() const;
-    std::string_view getNameWithoutSign() const;
-    char getSign() const { return isPositiveNode() ? '+' : '-'; }
+    std::string_view getNameWithoutSign() const { return m_name; }
+    // Unsigned name. A trailing + or - is stripped. Empty is refused.
+    void setName(std::string_view newName);
 
-    double getDepth() const {return m_depth;}
-
+    double getDepth() const { return m_depth; }
+    void setDepth(double newDepth) { m_depth = float(newDepth); }
     float getGC() const;
 
-    const Sequence &getSequence() const;
-    Sequence &getSequence();
+    const Sequence &getSequence() const { return m_sequence; }
+    Sequence &getSequence() { return m_sequence; }
+    void setSequence(const QByteArray &newSeq);
+    void setSequence(const Sequence &newSeq);
+    // 30 bits. A longer sequence is rejected by loaders before it is stored.
+    static constexpr unsigned MaxLength = (1u << 30) - 1;
 
-    unsigned getLength() const {return m_length;}
-    unsigned getLengthWithoutTrailingOverlap() const;
+    static bool sequenceIsSelfComplement(const Sequence &sequence) {
+        if (sequence.empty() || sequence.missing())
+            return false;
+        // The ends disagree, so the reverse complement cannot match.
+        if (nucl_complement(sequence[0]) != sequence[sequence.size() - 1])
+            return false;
+        return sequence == sequence.GetReverseComplement();
+    }
 
-    QByteArray getFasta(bool sign, bool newLines = true, bool evenIfEmpty = true) const;
-    QByteArray getAAFasta(unsigned shift, bool sign, bool newLines, bool evenIfEmpty) const;
+    unsigned getLength() const { return m_lengthAndSpecial & LengthMask; }
+    bool sequenceIsMissing() const;
+    bool isInDepthRange(double min, double max) const { return m_depth >= min && m_depth <= max; }
 
-    char getBaseAt(int i) const {if (i >= 0 && i < m_sequence.size()) return m_sequence[i]; else return '\0';} // NOTE
-    DeBruijnNode *getReverseComplement() const {return m_reverseComplement;}
-    DeBruijnNode *getCanonical() const { return isPositiveNode() ? const_cast<DeBruijnNode *>(this) : m_reverseComplement; }
+    // Forward sequence. A negative orientation indexes the reverse complement
+    // through OrientedNode::getBaseAt.
+    char getBaseAt(int i) const {
+        if (i >= 0 && i < m_sequence.size())
+            return m_sequence[i];
+        return '\0';
+    }
 
-    GraphicsItemNode *getGraphicsItemNode() const {return m_graphicsItemNode;}
-    bool hasGraphicsItem() const {return m_graphicsItemNode != nullptr;}
+    bool isSelfComplement() const { return graphicsBit(SelfComplement); }
 
     auto edgeBegin() { return m_edges.begin(); }
     const auto edgeBegin() const { return m_edges.begin(); }
@@ -84,75 +99,101 @@ public:
     const auto edgeEnd() const { return m_edges.end(); }
     auto edges() { return bandage::make_range(edgeBegin(), edgeEnd()); }
     const auto edges() const { return bandage::make_range(edgeBegin(), edgeEnd()); }
-
-    OutgoingEdgeIterator outgoing_begin() const;
-    OutgoingEdgeIterator outgoing_end() const;
-    auto outgoing_edges() const {
-        return bandage::make_range(outgoing_begin(), outgoing_end());
-    }
-    IncomingEdgeIterator incoming_begin() const;
-    IncomingEdgeIterator incoming_end() const;
-    auto incoming_edges() const {
-        return bandage::make_range(incoming_begin(), incoming_end());
-    }
-    IncidentEdgeIterator incident_begin() const;
-    IncidentEdgeIterator incident_end() const;
-    auto incident_edges() const {
-        return bandage::make_range(incident_begin(), incident_end());
-    }
-
-    std::vector<DeBruijnNode *> getDownstreamNodes() const;
-    std::vector<DeBruijnNode *> getUpstreamNodes() const;
-    std::vector<DeBruijnNode *> getAllConnectedPositiveNodes() const;
-    bool isSpecialNode() const {return m_specialNode;}
-    bool isDrawn() const {return m_drawn;}
-    bool thisNodeOrReverseComplementIsDrawn() const {return isDrawn() || getReverseComplement()->isDrawn();}
-    bool isNotDrawn() const {return !m_drawn;}
-    bool isPositiveNode() const { return !m_name.empty(); }
-    bool isNegativeNode() const { return m_name.empty(); }
-
-    bool isNodeConnected(DeBruijnNode *node) const;
-    DeBruijnEdge *doesNodeLeadIn(DeBruijnNode *node) const;
-    DeBruijnEdge *doesNodeLeadAway(DeBruijnNode *node) const;
-    bool isInDepthRange(double min, double max) const;
-    bool sequenceIsMissing() const;
-    DeBruijnEdge *getSelfLoopingEdge() const;
-    int getDeadEndCount() const;
-
-    void setSequence(const QByteArray &newSeq) {m_sequence = Sequence(newSeq); m_length = m_sequence.size();}
-    void setSequence(const Sequence &newSeq) {m_sequence = newSeq; m_length = m_sequence.size();}
-    void setReverseComplement(DeBruijnNode *rc) {m_reverseComplement = rc;}
-    void setGraphicsItemNode(GraphicsItemNode *gin) {m_graphicsItemNode = gin;}
-    void setAsSpecial() {m_specialNode = true;}
-    void setAsNotSpecial() {m_specialNode = false;}
-    void setAsDrawn() {m_drawn = true;}
-    void setAsNotDrawn() {m_drawn = false;}
-    void resetNode();
+    // Edge pointers that spilled out of this object.
+    uint64_t edgeListHeapBytes() const;
+    // Name characters that did not fit in this object. A short name reports 0.
+    uint64_t nameHeapBytes() const;
     void addEdge(DeBruijnEdge *edge);
     void removeEdge(DeBruijnEdge *edge);
-    void labelNeighbouringNodesAsDrawn(int nodeDistance);
-    void setDepth(double newDepth) {m_depth = newDepth;}
-    // Unsigned name. Empty is refused: that would make this node look negative.
-    void setName(std::string_view newName);
+
+    // The graphics item for the positive orientation, which is the only item
+    // single mode draws. The negative orientation's item lives on the graph.
+    // setPointer keeps the flag bits. Assigning a new pair would clear them.
+    GraphicsItemNode *getGraphicsItemNode() const { return m_graphicsItem.getPointer(); }
+    void setGraphicsItemNode(GraphicsItemNode *item) { m_graphicsItem.setPointer(item); }
+
+    bool isDrawn(bool negative) const {
+        if (isSelfComplement())
+            negative = false;
+        return graphicsBit(negative ? DrawnNegative : DrawnPositive);
+    }
+    void setDrawn(bool negative, bool drawn) {
+        if (isSelfComplement())
+            negative = false;
+        setGraphicsBit(negative ? DrawnNegative : DrawnPositive, drawn);
+    }
+    bool isSpecial(bool negative) const {
+        if (isSelfComplement())
+            negative = false;
+        return specialBit(negative ? SpecialNegative : SpecialPositive);
+    }
+    void setSpecial(bool negative, bool special) {
+        if (isSelfComplement())
+            negative = false;
+        setSpecialBit(negative ? SpecialNegative : SpecialPositive, special);
+    }
+    void resetNode();
 
 private:
+    // GraphicsItemNode is incomplete in this header. Its alignment is 8,
+    // so the pointer has three spare bits: two drawn flags and self-complement.
+    struct GraphicsItemPointerTraits {
+        static void *getAsVoidPointer(GraphicsItemNode *pointer) { return pointer; }
+        static GraphicsItemNode *getFromVoidPointer(void *pointer) {
+            return static_cast<GraphicsItemNode *>(pointer);
+        }
+        static constexpr int NumLowBitsAvailable = 3;
+    };
+
+    enum GraphicsBit : unsigned {
+        DrawnPositive = 1u << 0,
+        DrawnNegative = 1u << 1,
+        SelfComplement = 1u << 2,
+    };
+
+    // Bits 0–29 are the length, up to 1 Gbp. The top two bits are the
+    // per-orientation special flags.
+    static constexpr uint32_t LengthMask = MaxLength;
+    static constexpr uint32_t SpecialPositive = 1u << 30;
+    static constexpr uint32_t SpecialNegative = 1u << 31;
+
+    bool graphicsBit(unsigned bit) const { return (m_graphicsItem.getInt() & bit) != 0; }
+    void setGraphicsBit(unsigned bit, bool on) {
+        unsigned bits = m_graphicsItem.getInt();
+        if (on)
+            bits |= bit;
+        else
+            bits &= ~bit;
+        m_graphicsItem.setInt(bits);
+    }
+    bool specialBit(uint32_t bit) const { return (m_lengthAndSpecial & bit) != 0; }
+    void setSpecialBit(uint32_t bit, bool on) {
+        if (on)
+            m_lengthAndSpecial |= bit;
+        else
+            m_lengthAndSpecial &= ~bit;
+    }
+    void setStoredLength(unsigned length);
+
     std::string m_name;
     Sequence m_sequence;
-    DeBruijnNode *m_reverseComplement;
-    adt::SmallPODVector<DeBruijnEdge *> m_edges;
+    // A third edge is a separate allocation.
+    adt::SmallPODVector<DeBruijnEdge *,
+                        adt::impl::HybridAllocatedStorage<DeBruijnEdge *, 2>> m_edges;
+    bandage::PointerIntPair<GraphicsItemNode *, 3, unsigned, GraphicsItemPointerTraits> m_graphicsItem;
+    float m_depth = 0;
+    uint32_t m_lengthAndSpecial = 0;
 
-    GraphicsItemNode *m_graphicsItemNode;
-
-    float m_depth;
-
-    unsigned m_length : 30;
-    bool m_specialNode : 1;
-    bool m_drawn : 1;
-
-    QByteArray getNodeNameForFasta(bool sign) const;
-    QByteArray getUpstreamSequence(int upstreamSequenceLength) const;
-
-    static std::vector<DeBruijnNode *> getNodesCommonToAllPaths(std::vector< std::vector <DeBruijnNode *> > * paths,
-                                                                bool includeReverseComplements) ;
-    bool doesPathLeadOnlyToNode(DeBruijnNode *node, bool includeReverseComplement);
+    void refreshSelfComplement();
 };
+
+// std::string is 24 bytes in libc++ and 32 in libstdc++ and MSVC.
+static_assert(sizeof(DeBruijnNode) ==
+                      sizeof(std::string) + sizeof(Sequence) +
+                      sizeof(adt::SmallPODVector<DeBruijnEdge *,
+                                                 adt::impl::HybridAllocatedStorage<DeBruijnEdge *, 2>>) +
+                      16,
+              "drawn, special, and self-complement flags must stay in the existing words");
+
+#include "orientednode.h"
+#include "directededge.h"

@@ -17,12 +17,12 @@
 
 #pragma once
 
+#include "graph/debruijnnode.h"
 #include "parallel_hashmap/phmap.h"
 #include "small_vector/small_pod_vector.hpp"
 
 #include <QPointF>
 
-class DeBruijnNode;
 class AssemblyGraph;
 
 template<class T>
@@ -32,12 +32,12 @@ public:
             : m_graph(graph) {}
 
     [[nodiscard]] const AssemblyGraph &graph() const { return m_graph; }
-    bool contains(const DeBruijnNode *node) const { return m_data.contains(node); }
-    void add(DeBruijnNode *node, T point) { m_data[node].emplace_back(point); }
+    bool contains(OrientedNode node) const { return m_data.contains(node); }
+    void add(OrientedNode node, T point) { m_data[node].emplace_back(point); }
     size_t size() const { return m_data.size(); }
 
-    const auto& segments(const DeBruijnNode *node) const { return m_data.at(node); }
-    auto& segments(DeBruijnNode *node) { return m_data[node]; }
+    const auto& points(OrientedNode node) const { return m_data.at(node); }
+    auto& points(OrientedNode node) { return m_data[node]; }
 
     auto begin() { return m_data.begin(); }
     auto begin() const { return m_data.begin(); }
@@ -46,7 +46,7 @@ public:
 
 private:
     const AssemblyGraph &m_graph;
-    phmap::flat_hash_map<DeBruijnNode *, adt::SmallPODVector<T>> m_data;
+    phmap::flat_hash_map<OrientedNode, adt::SmallPODVector<T>> m_data;
 };
 
 using GraphLayout = GraphLayoutStorage<QPointF>;

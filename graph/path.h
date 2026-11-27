@@ -46,15 +46,15 @@ public:
         Range mapped_range;
     };
 
-    using MappingPath = std::vector<std::pair<DeBruijnNode *, MappingRange>>;
+    using MappingPath = std::vector<std::pair<OrientedNode, MappingRange>>;
     
     //CREATORS
     Path() {}
     Path(GraphLocation location);
 
-    static Path makeFromUnorderedNodes(const std::vector<DeBruijnNode *> &nodes,
+    static Path makeFromUnorderedNodes(const std::vector<OrientedNode> &nodes,
                                        bool strandSpecific);
-    static Path makeFromOrderedNodes(const std::vector<DeBruijnNode *> &nodes,
+    static Path makeFromOrderedNodes(const std::vector<OrientedNode> &nodes,
                                      bool circular);
     static bandage::Expected<Path> makeFromString(const QString& pathString,
                                                   const AssemblyGraph &graph,
@@ -73,19 +73,19 @@ public:
     [[nodiscard]] QString getString(bool spaces) const;
     int getLength() const;
     QList<Path> extendPathInAllPossibleWays() const;
-    bool canNodeFitOnEnd(DeBruijnNode *node, Path *extendedPath) const;
-    bool canNodeFitAtStart(DeBruijnNode *node, Path *extendedPath) const;
+    bool canNodeFitOnEnd(OrientedNode node, Path *extendedPath) const;
+    bool canNodeFitAtStart(OrientedNode node, Path *extendedPath) const;
 
-    std::vector<int> getPosition(const DeBruijnNode *node) const;
-    std::vector<DeBruijnNode *> getNodesAt(int startPosition, int endPosition) const;
+    std::vector<int> getPosition(OrientedNode node) const;
+    std::vector<OrientedNode> getNodesAt(int startPosition, int endPosition) const;
     MappingPath getNodeCovering(int startPosition, int endPosition) const;
 
-    bool containsNode(const DeBruijnNode *node) const;
-    bool containsEntireNode(const DeBruijnNode *node) const;
-    bool isInMiddleOfPath(const DeBruijnNode *node) const;
-    unsigned int numberOfOccurrencesInMiddleOfPath(const DeBruijnNode *node) const;
-    bool isStartingNode(const DeBruijnNode *node) const;
-    bool isEndingNode(const DeBruijnNode *node) const;
+    bool containsNode(OrientedNode node) const;
+    bool containsEntireNode(OrientedNode node) const;
+    bool isInMiddleOfPath(OrientedNode node) const;
+    unsigned int numberOfOccurrencesInMiddleOfPath(OrientedNode node) const;
+    bool isStartingNode(OrientedNode node) const;
+    bool isEndingNode(OrientedNode node) const;
     double getStartFraction() const;
     double getEndFraction() const;
     size_t getNodeCount() const { return m_nodes.size(); }
@@ -94,7 +94,14 @@ public:
     bool operator==(Path const &other) const;
 
     //MODIFERS
-    bool addNode(DeBruijnNode *newNode, bool strandSpecific, bool makeCircularIfPossible);
+    bool addNode(OrientedNode newNode, bool strandSpecific, bool makeCircularIfPossible);
+    // A collapsed palindrome link deletes one of two edge objects. Paths that
+    // stored the deleted pointer are pointed at the edge that was kept.
+    void replaceEdge(DeBruijnEdge *from, DeBruijnEdge *to) {
+        for (DeBruijnEdge *&edge : m_edges)
+            if (edge == from)
+                edge = to;
+    }
     void extendPathToIncludeEntirityOfNodes();
     void trim(int start = 0, int end = 0);
 
@@ -107,7 +114,7 @@ public:
 private:
     GraphLocation m_startLocation;
     GraphLocation m_endLocation;
-    std::vector<DeBruijnNode *> m_nodes;
+    std::vector<OrientedNode> m_nodes;
     std::vector<DeBruijnEdge *> m_edges;
 
     bool checkForOtherEdges();

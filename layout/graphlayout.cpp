@@ -24,21 +24,19 @@ namespace layout {
     GraphLayout fromGraph(const AssemblyGraph &graph, bool simplified) {
         GraphLayout res(graph);
 
-        for (auto *node : graph.m_deBruijnGraphNodes) {
-            if (node->isNotDrawn())
-                continue;
-            if (!node->hasGraphicsItem())
+        for (OrientedNode node : graph.oriented_nodes()) {
+            if (node.isNotDrawn() || !node.hasGraphicsItem())
                 continue;
 
-            const auto &segments = node->getGraphicsItemNode()->m_linePoints;
-            if (segments.empty())
+            const auto &points = node.getGraphicsItemNode()->m_linePoints;
+            if (points.empty())
                 continue;
 
             if (simplified) {
-                size_t idx = (segments.size() - 1) / 2;
-                res.add(node, segments[idx]);
+                size_t idx = (points.size() - 1) / 2;
+                res.add(node, points[idx]);
             } else {
-                res.segments(node) = segments;
+                res.points(node) = points;
             }
         }
 
@@ -49,7 +47,7 @@ namespace layout {
         // First, determine the set of nodes to be drawn from the layout
         graph.resetNodes();
         for (auto& entry : layout)
-            entry.first->setAsDrawn();
+            entry.first.setAsDrawn();
 
         // Then loop through each edge determining its drawn status
         for (auto &entry : graph.m_deBruijnGraphEdges)
