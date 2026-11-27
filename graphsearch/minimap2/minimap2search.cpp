@@ -60,19 +60,22 @@ QString Minimap2Search::buildDatabase(const AssemblyGraph &graph, bool includePa
 
     {
         QTextStream out(&file);
-        for (const auto *node : graph.m_deBruijnGraphNodes) {
+        for (OrientedNode node : graph.oriented_nodes()) {
             if (m_cancelBuildDatabase)
-                return (m_lastError = "Build cancelled.");
-
-            out << node->getFasta(true, false, false);
+                break;
+            out << node.getFasta(true, false, false);
         }
+        if (m_cancelBuildDatabase)
+            return (m_lastError = "Build cancelled.");
 
         if (includePaths) {
+            std::string key;
             for (auto it = graph.m_deBruijnGraphPaths.begin(); it != graph.m_deBruijnGraphPaths.end(); ++it) {
                 if (m_cancelBuildDatabase)
                     return (m_lastError = "Build cancelled.");
 
-                out << it.value().getFasta(it.key().c_str());
+                it.key(key);
+                out << it.value().getFasta(key.c_str());
             }
         }
     }
@@ -168,13 +171,14 @@ buildHitsFromPAF(const QString &PAF,
                 continue;
         }
 
-        auto nodeIt = g_assemblyGraph->m_deBruijnGraphNodes.find(getNodeNameFromString(nodeLabel).toStdString());
+        const std::string signedName = getNodeNameFromString(nodeLabel).toStdString();
+        auto nodeIt = g_assemblyGraph->m_deBruijnGraphNodes.find(signedName);
         if (nodeIt != g_assemblyGraph->m_deBruijnGraphNodes.end()) {
             if (!strand)
                 continue;
 
             nodeHits.emplace_back(query,
-                                  new Hit(query, nodeIt.value(),
+                                  new Hit(query, orientationOf(signedName, nodeIt.value()),
                                           -1, alignmentLength,
                                           -1, -1,
                                           queryStart, queryEnd,

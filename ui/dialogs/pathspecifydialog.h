@@ -36,7 +36,7 @@ public:
     ~PathSpecifyDialog() override;
 
 public slots:
-    void addNodeName(DeBruijnNode *node);
+    void addNodeName(OrientedNode node);
 
 private:
     Ui::PathSpecifyDialog *ui;

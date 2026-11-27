@@ -86,7 +86,7 @@ private:
                              QString & selectedNodeListText, QString & selectedNodeLengthText, QString &selectedNodeDepthText,
                              QString &selectNodeTagText);
     QString getSelectedEdgeListText();
-    std::vector<DeBruijnNode *> getNodesFromLineEdit(QLineEdit *lineEdit, bool exactMatch, std::vector<QString> * nodesNotInGraph = nullptr);
+    std::vector<OrientedNode> getNodesFromLineEdit(QLineEdit *lineEdit, bool exactMatch, std::vector<QString> * nodesNotInGraph = nullptr);
     void setUiState(UiState uiState);
     void selectBasedOnContiguity(ContiguityStatus contiguityStatus);
     void setWidgetsFromSettings();
@@ -106,7 +106,7 @@ private:
     void setWalkSelectionWidgetVisibility(bool visible);
 
     static QByteArray makeStringUrlSafe(QByteArray s);
-    std::vector<DeBruijnNode *> addComplementaryNodes(std::vector<DeBruijnNode *> nodes);
+    std::vector<OrientedNode> addComplementaryNodes(std::vector<OrientedNode> nodes);
     void resetNodeContiguityStatus();
 
 private slots:
@@ -140,7 +140,7 @@ private slots:
     void hideNodes();
     void openSettingsDialog();
     void openAboutDialog();
-    void doSelectNodes(const std::vector<DeBruijnNode *> &nodesToSelect,
+    void doSelectNodes(const std::vector<OrientedNode> &nodesToSelect,
                        const std::vector<QString> &nodesNotInGraph,
                        bool recolor = false);
     void selectPathNodes();

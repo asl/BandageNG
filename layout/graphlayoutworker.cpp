@@ -37,6 +37,7 @@
 #include <QtConcurrent>
 
 #include <ctime>
+#include <unordered_set>
 
 GraphLayouter::GraphLayouter(int graphLayoutQuality, bool useLinearLayout,
                              double graphLayoutComponentSeparation, double aspectRatio)
@@ -125,8 +126,8 @@ static double getNodeLengthPerMegabase() {
     return g_settings->manualNodeLengthPerMegabase;
 }
 
-static double getDrawnNodeLength(const DeBruijnNode *node) {
-    double drawnNodeLength = getNodeLengthPerMegabase() * double(node->getLength()) / 1000000.0;
+static double getDrawnNodeLength(OrientedNode node) {
+    double drawnNodeLength = getNodeLengthPerMegabase() * double(node.getLength()) / 1000000.0;
     if (drawnNodeLength < g_settings->minimumNodeLength)
         drawnNodeLength = g_settings->minimumNodeLength;
     return drawnNodeLength;
@@ -141,14 +142,14 @@ static int getNumberOfOgdfGraphEdges(double drawnNodeLength) {
 
 using OGDFGraphLayout = GraphLayoutStorage<ogdf::node>;
 
-static void addToOgdfGraph(DeBruijnNode *node,
+static void addToOgdfGraph(OrientedNode node,
                            ogdf::Graph &ogdfGraph, ogdf::GraphAttributes &GA,
                            ogdf::EdgeArray<double> &edgeLengths,
                            OGDFGraphLayout &layout,
                            double xPos, double yPos, bool linearLayout) {
-    // If this node or its reverse complement is already in OGDF, then
-    // it's not necessary to make the node.
-    if (layout.contains(node) || layout.contains(node->getReverseComplement()))
+    // If this orientation or its reverse is already in OGDF, then
+    // it's not necessary to make the node. A palindrome is its own reverse.
+    if (layout.contains(node) || layout.contains(node.reverse()))
         return;
 
     // Each node in the graph sense is made up of multiple nodes in the
@@ -192,22 +193,22 @@ static void addToOgdfGraph(const DeBruijnEdge *edge,
 
     auto [startingNode, endingNode] = edge->orientedEnds(reversed);
     if (layout.contains(startingNode))
-        firstEdgeOgdfNode = layout.segments(startingNode).back();
-    else if (layout.contains(startingNode->getReverseComplement()))
-        firstEdgeOgdfNode = layout.segments(startingNode->getReverseComplement()).front();
+        firstEdgeOgdfNode = layout.points(startingNode).back();
+    else if (layout.contains(startingNode.reverse()))
+        firstEdgeOgdfNode = layout.points(startingNode.reverse()).front();
     else
         return; //Ending node or its reverse complement isn't in OGDF
 
     if (layout.contains(endingNode))
-        secondEdgeOgdfNode = layout.segments(endingNode).front();
-    else if (layout.contains(endingNode->getReverseComplement()))
-        secondEdgeOgdfNode = layout.segments(endingNode->getReverseComplement()).back();
+        secondEdgeOgdfNode = layout.points(endingNode).front();
+    else if (layout.contains(endingNode.reverse()))
+        secondEdgeOgdfNode = layout.points(endingNode.reverse()).back();
     else
         return; //Ending node or its reverse complement isn't in OGDF
 
-    // If this in an edge connected a single-segment node to itself, then we
+    // If this edge connects a node drawn as a single line to itself, then we
     // don't want to put it in the OGDF graph, because it would be redundant
-    // with the node segment (and created conflict with the node/edge length).
+    // with that line (and created conflict with the node/edge length).
     if (startingNode == endingNode &&
         getNumberOfOgdfGraphEdges(getDrawnNodeLength(startingNode)) == 1)
         return;
@@ -221,16 +222,18 @@ void determineLinearNodePositions(ogdf::Graph &ogdfGraph,
                                   ogdf::EdgeArray<double> &ogdfEdgeLengths,
                                   OGDFGraphLayout &layout) {
     const AssemblyGraph &graph = layout.graph();
-    QList<DeBruijnNode *> sortedDrawnNodes;
+    QList<OrientedNode> sortedDrawnNodes;
 
     // We first try to sort the nodes numerically.
-    QList<QPair<int, DeBruijnNode *>> numericallySortedDrawnNodes;
+    QList<QPair<int, OrientedNode>> numericallySortedDrawnNodes;
     bool successfulIntConversion = true;
-    for (auto *node : graph.m_deBruijnGraphNodes) {
-        if (!node->isDrawn())
+    for (OrientedNode node : graph.oriented_nodes()) {
+        if (!successfulIntConversion)
+            break;
+        if (!node.isDrawn())
             continue;
 
-        const std::string_view nodeName = node->getNameWithoutSign();
+        const std::string_view nodeName = node.getNameWithoutSign();
         int nodeInt = 0;
         const char *nameEnd = nodeName.data() + nodeName.size();
         auto [parsedEnd, parseError] = std::from_chars(nodeName.data(), nameEnd, nodeInt);
@@ -249,15 +252,15 @@ void determineLinearNodePositions(ogdf::Graph &ogdfGraph,
             sortedDrawnNodes.push_back(entry.second);
     } // If any of the conversions from node name to integer failed, then we instead sort the nodes alphabetically.
     else {
-        for (auto *node : graph.m_deBruijnGraphNodes) {
-            if (!node->isDrawn())
+        for (OrientedNode node : graph.oriented_nodes()) {
+            if (!node.isDrawn())
                 continue;
             sortedDrawnNodes.push_back(node);
         }
         std::sort(sortedDrawnNodes.begin(), sortedDrawnNodes.end(),
-                  [](const DeBruijnNode *a, const DeBruijnNode *b) {
-            const std::string_view aName = a->getNameWithoutSign();
-            const std::string_view bName = b->getNameWithoutSign();
+                  [](OrientedNode a, OrientedNode b) {
+            const std::string_view aName = a.getNameWithoutSign();
+            const std::string_view bName = b.getNameWithoutSign();
             const size_t n = std::min(aName.size(), bName.size());
             for (size_t i = 0; i < n; ++i) {
                 const unsigned char aChar = static_cast<unsigned char>(std::toupper(static_cast<unsigned char>(aName[i])));
@@ -272,16 +275,16 @@ void determineLinearNodePositions(ogdf::Graph &ogdfGraph,
     // Now we add the drawn nodes to the OGDF graph, given them initial positions based on their sort order.
     QSet<QPair<long long, long long> > usedStartPositions;
     double lastXPos = 0.0;
-    for (auto *node : sortedDrawnNodes) {
-        if (layout.contains(node) || layout.contains(node->getReverseComplement()))
+    for (OrientedNode node : sortedDrawnNodes) {
+        if (layout.contains(node) || layout.contains(node.reverse()))
             continue;
-        std::vector<DeBruijnNode *> upstreamNodes = node->getUpstreamNodes();
+        std::vector<OrientedNode> upstreamNodes = node.getUpstreamNodes();
         for (size_t j = 0; j < upstreamNodes.size(); ++j) {
-            DeBruijnNode *upstreamNode = upstreamNodes[j];
+            OrientedNode upstreamNode = upstreamNodes[j];
             if (!layout.contains(upstreamNode))
                 continue;
 
-            ogdf::node upstreamEnd = layout.segments(upstreamNode).back();
+            ogdf::node upstreamEnd = layout.points(upstreamNode).back();
             double upstreamEndPos = ogdfGraphAttributes.x(upstreamEnd);
             if (j == 0)
                 lastXPos = upstreamEndPos;
@@ -298,7 +301,7 @@ void determineLinearNodePositions(ogdf::Graph &ogdfGraph,
         }
         addToOgdfGraph(node, ogdfGraph, ogdfGraphAttributes, ogdfEdgeLengths, layout, xPos, yPos, true);
         usedStartPositions.insert(QPair<long long, long long>(intXPos, intYPos));
-        lastXPos = ogdfGraphAttributes.x(layout.segments(node).back());
+        lastXPos = ogdfGraphAttributes.x(layout.points(node).back());
     }
 }
 
@@ -314,9 +317,9 @@ static void buildGraph(ogdf::Graph &ogdfGraph,
                                      layout);
         // If the layout isn't linear, then we don't worry about the initial positions because they'll be randomised anyway.
     } else {
-        for (auto *node : graph.m_deBruijnGraphNodes) {
-            if (!node->isDrawn() ||
-                layout.contains(node) || layout.contains(node->getReverseComplement()))
+        for (OrientedNode node : graph.oriented_nodes()) {
+            if (!node.isDrawn() ||
+                layout.contains(node) || layout.contains(node.reverse()))
                 continue;
 
             addToOgdfGraph(node,
@@ -625,8 +628,10 @@ GraphLayout GraphLayoutWorker::layoutGraph(const AssemblyGraph &graph) {
     }
     // In double mode add layout for the reverse-complement nodes (in opposite direction)
     for (const auto & entry : layout) {
-        auto *rcNode = entry.first->getReverseComplement();
-        if (!rcNode->isDrawn())
+        OrientedNode rcNode = entry.first.reverse();
+        // A palindrome is its own reverse. Appending the reversed points
+        // would write them onto the same layout key.
+        if (rcNode == entry.first || !rcNode.isDrawn())
             continue;
         for (auto rIt = entry.second.rbegin(); rIt != entry.second.rend(); ++rIt)
             res.add(rcNode, { GA.x(*rIt), GA.y(*rIt) });

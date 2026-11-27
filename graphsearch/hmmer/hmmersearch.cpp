@@ -71,9 +71,9 @@ QString HmmerSearch::buildDatabase(const AssemblyGraph &graph, bool includePaths
         QTextStream out(&file);
         // nhmmer alphabet detection has a bug (https://github.com/tseemann/barrnap/issues/54)
         // in order to mitigate this, emit the largest (=more diverse) node first
-        const DeBruijnNode *longest = nullptr;
+        DeBruijnNode *longest = nullptr;
         size_t length = 0;
-        for (const auto *node : graph.m_deBruijnGraphNodes) {
+        for (DeBruijnNode *node : graph.nodes()) {
             if (!node->sequenceIsMissing() && node->getLength() > length) {
                 length = node->getLength();
                 longest = node;
@@ -83,24 +83,27 @@ QString HmmerSearch::buildDatabase(const AssemblyGraph &graph, bool includePaths
         if (!longest)
             return (m_lastError = "Cannot build the hmmer input set as this graph contains no sequences");
 
-        out << longest->getFasta(true, false, false);
+        const OrientedNode first(longest, false);
+        out << first.getFasta(true, false, false);
 
-        for (const auto *node : graph.m_deBruijnGraphNodes) {
+        for (OrientedNode node : graph.oriented_nodes()) {
             if (m_cancelBuildDatabase)
-                return (m_lastError = "Build cancelled.");
-
-            if (node == longest)
-                continue;;
-
-            out << node->getFasta(true, false, false);
+                break;
+            if (node == first)
+                continue;
+            out << node.getFasta(true, false, false);
         }
+        if (m_cancelBuildDatabase)
+            return (m_lastError = "Build cancelled.");
 
         if (includePaths) {
+            std::string key;
             for (auto it = graph.m_deBruijnGraphPaths.begin(); it != graph.m_deBruijnGraphPaths.end(); ++it) {
                 if (m_cancelBuildDatabase)
                     return (m_lastError = "Build cancelled.");
 
-                out << it.value().getFasta(it.key().c_str());
+                it.key(key);
+                out << it.value().getFasta(key.c_str());
             }
         }
     }
@@ -113,21 +116,24 @@ QString HmmerSearch::buildDatabase(const AssemblyGraph &graph, bool includePaths
 
         QTextStream out(&file);
 
-        for (const auto *node : graph.m_deBruijnGraphNodes) {
+        for (OrientedNode node : graph.oriented_nodes()) {
             if (m_cancelBuildDatabase)
-                return (m_lastError = "Build cancelled.");
-
+                break;
             for (unsigned shift = 0; shift < 3; ++shift)
-                out << node->getAAFasta(shift, true, false, false);
+                out << node.getAAFasta(shift, true, false, false);
         }
+        if (m_cancelBuildDatabase)
+            return (m_lastError = "Build cancelled.");
 
         if (includePaths) {
+            std::string key;
             for (auto it = graph.m_deBruijnGraphPaths.begin(); it != graph.m_deBruijnGraphPaths.end(); ++it) {
                 if (m_cancelBuildDatabase)
                     return (m_lastError = "Build cancelled.");
 
+                it.key(key);
                 for (unsigned shift = 0; shift < 3; ++shift)
-                    out << it.value().getAAFasta(shift, it.key().c_str());
+                    out << it.value().getAAFasta(shift, key.c_str());
             }
         }
 
@@ -396,14 +402,15 @@ buildHitsFromTblOut(QString hmmerOutput,
                 continue;
         }
 
-        auto nodeIt = g_assemblyGraph->m_deBruijnGraphNodes.find(getNodeNameFromString(nodeLabel).toStdString());
+        const std::string signedName = getNodeNameFromString(nodeLabel).toStdString();
+        auto nodeIt = g_assemblyGraph->m_deBruijnGraphNodes.find(signedName);
         if (nodeIt != g_assemblyGraph->m_deBruijnGraphNodes.end()) {
             // Only save hits that are on forward strands.
             if (nodeStart > nodeEnd)
                 continue;
 
             nodeHits.emplace_back(query,
-                                  new Hit(query, nodeIt.value(),
+                                  new Hit(query, orientationOf(signedName, nodeIt.value()),
                                           -1, alignmentLength,
                                           -1, -1,
                                           queryStart, queryEnd,
@@ -477,7 +484,8 @@ buildHitsFromDomTblOut(QString hmmerOutput,
                 continue;
         }
 
-        auto nodeIt = g_assemblyGraph->m_deBruijnGraphNodes.find(getNodeNameFromString(nodeLabel).toStdString());
+        const std::string signedName = getNodeNameFromString(nodeLabel).toStdString();
+        auto nodeIt = g_assemblyGraph->m_deBruijnGraphNodes.find(signedName);
         if (nodeIt != g_assemblyGraph->m_deBruijnGraphNodes.end()) {
             // Only save hits that are on forward strands.
             if (nodeStart > nodeEnd)
@@ -492,7 +500,7 @@ buildHitsFromDomTblOut(QString hmmerOutput,
             nodeEnd = (nodeEnd - 1) * 3 + shift + 1;
 
             nodeHits.emplace_back(query,
-                                  new Hit(query, nodeIt.value(),
+                                  new Hit(query, orientationOf(signedName, nodeIt.value()),
                                           -1, alignmentLength,
                                           -1, -1,
                                           queryStart, queryEnd,

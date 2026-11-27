@@ -572,7 +572,7 @@ void MainWindow::clearGraphDetails()
 
 void MainWindow::selectionChanged()
 {
-    std::vector<DeBruijnNode *> selectedNodes = m_scene->getSelectedNodes();
+    std::vector<OrientedNode> selectedNodes = m_scene->getSelectedNodes();
     std::vector<DeBruijnEdge *> selectedEdges = m_scene->getSelectedEdges();
 
     if (selectedNodes.empty())
@@ -641,7 +641,7 @@ void MainWindow::getSelectedNodeInfo(int & selectedNodeCount, QString & selected
                                      QString & selectedNodeListText, QString & selectedNodeLengthText, QString & selectedNodeDepthText,
                                      QString &selectNodeTagsText)
 {
-    std::vector<DeBruijnNode *> selectedNodes = m_scene->getSelectedNodes();
+    std::vector<OrientedNode> selectedNodes = m_scene->getSelectedNodes();
 
     selectedNodeCount = int(selectedNodes.size());
     selectedNodeCountText = formatIntForDisplay(selectedNodeCount);
@@ -657,7 +657,7 @@ void MainWindow::getSelectedNodeInfo(int & selectedNodeCount, QString & selected
         if (i != int(selectedNodes.size()) - 1)
             selectedNodeListText += ", ";
 
-        totalLength += selectedNodes[i]->getLength();
+        totalLength += selectedNodes[i].getLength();
     }
 
     selectedNodeLengthText = formatIntForDisplay(totalLength) + " bp";
@@ -665,9 +665,9 @@ void MainWindow::getSelectedNodeInfo(int & selectedNodeCount, QString & selected
 
     if (selectedNodeCount == 1) {
         // FIXME: Hack!
-        selectedNodeDepthText += " GC: " + formatDoubleForDisplay(100 * selectedNodes[0]->getGC(), 1) + "%";
+        selectedNodeDepthText += " GC: " + formatDoubleForDisplay(100 * selectedNodes[0].getGC(), 1) + "%";
 
-        auto tags = g_assemblyGraph->m_nodeTags.find(selectedNodes.front());
+        auto tags = g_assemblyGraph->m_nodeTags.find(selectedNodes.front().node());
         if (tags != g_assemblyGraph->m_nodeTags.end()) {
             std::stringstream txt;
             for (const auto &tag : tags->second)
@@ -1034,8 +1034,11 @@ void MainWindow::setupPathSelectionLineEdit(QLineEdit *lineEdit) {
                 if (sz > 1000) {
                     res << "Too many paths to show";
                 } else {
-                    for (auto it = prefix_range.first; it != prefix_range.second; ++it)
-                        res.push_back(it.key().c_str());
+                    std::string key;
+                    for (auto it = prefix_range.first; it != prefix_range.second; ++it) {
+                        it.key(key);
+                        res.push_back(QString::fromLatin1(key.data(), int(key.size())));
+                    }
                 }
 
                 if (res.empty())
@@ -1072,8 +1075,11 @@ void MainWindow::setupWalkSelectionLineEdit(QLineEdit *lineEdit) {
                 if (sz > 1000) {
                     res << "Too many walks to show";
                 } else {
-                    for (auto it = prefix_range.first; it != prefix_range.second; ++it)
-                        res.push_back(it.key().c_str());
+                    std::string key;
+                    for (auto it = prefix_range.first; it != prefix_range.second; ++it) {
+                        it.key(key);
+                        res.push_back(QString::fromLatin1(key.data(), int(key.size())));
+                    }
                 }
 
                 if (res.empty())
@@ -1159,7 +1165,7 @@ void MainWindow::resetScene() {
 }
 
 
-std::vector<DeBruijnNode *> MainWindow::getNodesFromLineEdit(QLineEdit *lineEdit, bool exactMatch, std::vector<QString> * nodesNotInGraph)
+std::vector<OrientedNode> MainWindow::getNodesFromLineEdit(QLineEdit *lineEdit, bool exactMatch, std::vector<QString> * nodesNotInGraph)
 {
     return g_assemblyGraph->getNodesFromStringList(lineEdit->text(), exactMatch, nodesNotInGraph);
 }
@@ -1283,7 +1289,7 @@ void MainWindow::zoomToFitRect(QRectF rect)
 //selected.  If there aren't, then it will prompt the user.
 void MainWindow::copySelectedSequencesToClipboardActionTriggered()
 {
-    std::vector<DeBruijnNode *> selectedNodes = m_scene->getSelectedNodes();
+    std::vector<OrientedNode> selectedNodes = m_scene->getSelectedNodes();
     if (selectedNodes.empty()) {
         QMessageBox::information(this, "Copy sequences to clipboard",
                                  "No nodes are selected.\n\n"
@@ -1298,7 +1304,7 @@ void MainWindow::copySelectedSequencesToClipboardActionTriggered()
 //This function copies selected sequences to clipboard, if any sequences are
 //selected.
 void MainWindow::copySelectedSequencesToClipboard() {
-    std::vector<DeBruijnNode *> selectedNodes = m_scene->getSelectedNodes();
+    std::vector<OrientedNode> selectedNodes = m_scene->getSelectedNodes();
     if (selectedNodes.empty())
         return;
 
@@ -1307,7 +1313,7 @@ void MainWindow::copySelectedSequencesToClipboard() {
 
     for (size_t i = 0; i < selectedNodes.size(); ++i)
     {
-        clipboardText += utils::sequenceToQByteArray(selectedNodes[i]->getSequence());
+        clipboardText += utils::sequenceToQByteArray(selectedNodes[i].getSequence());
         if (i != selectedNodes.size() - 1)
             clipboardText += "\n";
     }
@@ -1320,7 +1326,7 @@ void MainWindow::copySelectedSequencesToClipboard() {
 //any sequences are selected.  If there aren't, then it will prompt the user.
 void MainWindow::saveSelectedSequencesToFileActionTriggered()
 {
-    std::vector<DeBruijnNode *> selectedNodes = m_scene->getSelectedNodes();
+    std::vector<OrientedNode> selectedNodes = m_scene->getSelectedNodes();
     if (selectedNodes.empty())  {
         QMessageBox::information(this, "Save sequences to FASTA", "No nodes are selected.\n\n"
                                  "You must first select nodes in the graph before you can save their sequences to a FASTA file.");
@@ -1335,7 +1341,7 @@ void MainWindow::saveSelectedSequencesToFileActionTriggered()
 //any sequences are selected.
 void MainWindow::saveSelectedSequencesToFile()
 {
-    std::vector<DeBruijnNode *> selectedNodes = m_scene->getSelectedNodes();
+    std::vector<OrientedNode> selectedNodes = m_scene->getSelectedNodes();
     if (selectedNodes.empty())
         return;
 
@@ -1351,14 +1357,14 @@ void MainWindow::saveSelectedSequencesToFile()
     QTextStream out(&file);
 
     for (auto & selectedNode : selectedNodes)
-        out << selectedNode->getFasta(true);
+        out << selectedNode.getFasta(true);
 
     g_memory->rememberedPath = QFileInfo(fullFileName).absolutePath();
 }
 
 void MainWindow::copySelectedPathToClipboard()
 {
-    std::vector<DeBruijnNode *> selectedNodes = m_scene->getSelectedNodes();
+    std::vector<OrientedNode> selectedNodes = m_scene->getSelectedNodes();
     if (selectedNodes.empty())
     {
         QMessageBox::information(this, "Copy path sequence to clipboard", "No nodes are selected.\n\n"
@@ -1386,7 +1392,7 @@ void MainWindow::copySelectedPathToClipboard()
 
 void MainWindow::saveSelectedPathToFile()
 {
-    std::vector<DeBruijnNode *> selectedNodes = m_scene->getSelectedNodes();
+    std::vector<OrientedNode> selectedNodes = m_scene->getSelectedNodes();
     if (selectedNodes.empty())
     {
         QMessageBox::information(this, "Save path sequence to FASTA", "No nodes are selected.\n\n"
@@ -1421,15 +1427,9 @@ void MainWindow::saveSelectedPathToFile()
 
 
 void MainWindow::resetAllNodeColours() {
-    for (auto &entry : g_assemblyGraph->m_deBruijnGraphNodes) {
-        auto *graphicsItemNode = entry->getGraphicsItemNode();
-        if (!graphicsItemNode)
-            continue;
-
-        graphicsItemNode->setNodeColour(g_settings->nodeColorer->get(graphicsItemNode));
-    }
-
-    g_graphicsView->viewport()->update();
+    BandageGraphicsScene::recolourNodeGraphics(*g_assemblyGraph);
+    if (g_graphicsView != nullptr)
+        g_graphicsView->viewport()->update();
 }
 
 void MainWindow::switchTagValue() {
@@ -1487,7 +1487,7 @@ void MainWindow::determineContiguityFromSelectedNode() {
     auto *colorer = dynamic_cast<ContiguityNodeColorer *>(&*g_settings->nodeColorer);
     colorer->reset();
 
-    std::vector<DeBruijnNode *> selectedNodes = m_scene->getSelectedNodes();
+    std::vector<OrientedNode> selectedNodes = m_scene->getSelectedNodes();
     if (selectedNodes.empty()) {
         QMessageBox::information(this, "No nodes selected", "Please select one or more nodes for which "
                                                             "contiguity is to be determined.");
@@ -1498,7 +1498,7 @@ void MainWindow::determineContiguityFromSelectedNode() {
     progress.setWindowModality(Qt::WindowModal);
     progress.show();
 
-    for (auto *selectedNode : selectedNodes)
+    for (OrientedNode selectedNode : selectedNodes)
         colorer->determineContiguity(selectedNode);
 
     resetAllNodeColours();
@@ -1714,7 +1714,7 @@ void MainWindow::fontButtonPressed()
 
 
 void MainWindow::setNodeCustomColour() {
-    std::vector<DeBruijnNode *> selectedNodes = m_scene->getSelectedNodes();
+    std::vector<OrientedNode> selectedNodes = m_scene->getSelectedNodes();
     if (selectedNodes.empty())
         return;
 
@@ -1737,8 +1737,8 @@ void MainWindow::setNodeCustomColour() {
 
     for (auto & selectedNode : selectedNodes) {
         g_assemblyGraph->setCustomColour(selectedNode, newColour);
-        if (selectedNode->getGraphicsItemNode() != nullptr)
-            selectedNode->getGraphicsItemNode()->setNodeColour(newColour);
+        if (selectedNode.getGraphicsItemNode() != nullptr)
+            selectedNode.getGraphicsItemNode()->setNodeColour(newColour);
     }
 
     g_graphicsView->viewport()->update();
@@ -1746,7 +1746,7 @@ void MainWindow::setNodeCustomColour() {
 
 void MainWindow::setNodeCustomLabel()
 {
-    std::vector<DeBruijnNode *> selectedNodes = m_scene->getSelectedNodes();
+    std::vector<OrientedNode> selectedNodes = m_scene->getSelectedNodes();
     if (selectedNodes.empty())
         return;
 
@@ -1772,11 +1772,11 @@ void MainWindow::setNodeCustomLabel()
 
 //Takes a vector of nodes and returns a vector of the same nodes, along with
 //their complements.  Does not check for duplicates.
-std::vector<DeBruijnNode *> MainWindow::addComplementaryNodes(std::vector<DeBruijnNode *> nodes)
+std::vector<OrientedNode> MainWindow::addComplementaryNodes(std::vector<OrientedNode> nodes)
 {
-    std::vector<DeBruijnNode *> complementaryNodes;
+    std::vector<OrientedNode> complementaryNodes;
     for (auto & node : nodes)
-        complementaryNodes.push_back(node->getReverseComplement());
+        complementaryNodes.push_back(node.reverse());
     nodes.insert(nodes.end(), complementaryNodes.begin(), complementaryNodes.end());
     return nodes;
 }
@@ -1799,7 +1799,7 @@ void MainWindow::openSettingsDialog() {
     resetAllNodeColours();
 }
 
-void MainWindow::doSelectNodes(const std::vector<DeBruijnNode *> &nodesToSelect,
+void MainWindow::doSelectNodes(const std::vector<OrientedNode> &nodesToSelect,
                                const std::vector<QString> &nodesNotInGraph,
                                bool recolor) {
     m_scene->blockSignals(true);
@@ -1811,8 +1811,8 @@ void MainWindow::doSelectNodes(const std::vector<DeBruijnNode *> &nodesToSelect,
     int foundNodes = 0;
     QColor color1, color2;
     for (size_t i = 0; i < nodesToSelect.size(); ++i) {
-        GraphicsItemNode *graphicsItemNode = nodesToSelect[i]->getGraphicsItemNode();
-        GraphicsItemNode *rcgraphicsItemNode = nodesToSelect[i]->getReverseComplement()->getGraphicsItemNode();
+        GraphicsItemNode *graphicsItemNode = nodesToSelect[i].getGraphicsItemNode();
+        GraphicsItemNode *rcgraphicsItemNode = nodesToSelect[i].reverse().getGraphicsItemNode();
 
         // If the GraphicsItemNode isn't found, try the reverse complement.  This
         // is only done for single node mode.
@@ -1885,7 +1885,7 @@ void MainWindow::selectUserSpecifiedNodes()
     }
 
     std::vector<QString> nodesNotInGraph;
-    std::vector<DeBruijnNode *> nodesToSelect = getNodesFromLineEdit(ui->selectionSearchNodesLineEdit,
+    std::vector<OrientedNode> nodesToSelect = getNodesFromLineEdit(ui->selectionSearchNodesLineEdit,
                                                                      ui->selectionSearchNodesExactMatchRadioButton->isChecked(),
                                                                      &nodesNotInGraph);
 
@@ -1894,7 +1894,7 @@ void MainWindow::selectUserSpecifiedNodes()
 
 void MainWindow::selectPathNodes() {
     std::vector<QString> nodesNotInGraph;
-    std::vector<DeBruijnNode *> nodesToSelect;
+    std::vector<OrientedNode> nodesToSelect;
 
     QString pathName = ui->pathSelectionLineEdit2->displayText();
     auto pathIt = g_assemblyGraph->m_deBruijnGraphPaths.find(pathName.toStdString());
@@ -1907,7 +1907,7 @@ void MainWindow::selectPathNodes() {
 
     QString posText = ui->pathSelectionPositionLineEdit->text();
     if (posText.isEmpty()) {
-        for (auto *node : p.nodes())
+        for (OrientedNode node : p.nodes())
             nodesToSelect.push_back(node);
     } else {
         bool ok = true;
@@ -1941,7 +1941,7 @@ void MainWindow::selectPathNodes() {
 // FIXME: deduplicate
 void MainWindow::selectWalkNodes() {
     std::vector<QString> nodesNotInGraph;
-    std::vector<DeBruijnNode *> nodesToSelect;
+    std::vector<OrientedNode> nodesToSelect;
 
     QString walkName = ui->walkSelectionLineEdit2->displayText();
     auto walkIt = g_assemblyGraph->m_deBruijnGraphWalks.find(walkName.toStdString());
@@ -1954,7 +1954,7 @@ void MainWindow::selectWalkNodes() {
 
     QString posText = ui->walkSelectionPositionLineEdit->text();
     if (posText.isEmpty()) {
-        for (auto *node : p.walk.nodes())
+        for (OrientedNode node : p.walk.nodes())
             nodesToSelect.push_back(node);
     } else {
         bool ok = true;
@@ -2157,7 +2157,7 @@ void MainWindow::showHidePanels()
 void MainWindow::bringSelectedNodesToFront() {
     m_scene->blockSignals(true);
 
-    std::vector<DeBruijnNode *> selectedNodes = m_scene->getSelectedNodes();
+    std::vector<OrientedNode> selectedNodes = m_scene->getSelectedNodes();
     if (selectedNodes.empty()) {
         QMessageBox::information(this, "No nodes selected",
                                  "You must first select nodes in the graph before using "
@@ -2168,8 +2168,8 @@ void MainWindow::bringSelectedNodesToFront() {
     double topZ = m_scene->getTopZValue();
     double newZ = topZ + 1.0;
 
-    for (auto *selectedNode : selectedNodes) {
-        if (GraphicsItemNode *graphicsItemNode = selectedNode->getGraphicsItemNode())
+    for (OrientedNode selectedNode : selectedNodes) {
+        if (GraphicsItemNode *graphicsItemNode = selectedNode.getGraphicsItemNode())
             graphicsItemNode->setZValue(newZ);
     }
 
@@ -2190,7 +2190,7 @@ void MainWindow::selectNodesWithQueryHits() {
 
     auto nodesWithHits = hitsGroup
             ? hitsGroup->getNodesWithAnnotations(g_settings->doubleMode)
-            : std::vector<DeBruijnNode *>{};
+            : std::vector<OrientedNode>{};
 
     if (nodesWithHits.empty()) {
         QMessageBox::information(this, "No query hits",
@@ -2203,8 +2203,8 @@ void MainWindow::selectNodesWithQueryHits() {
     m_scene->clearSelection();
 
     bool atLeastOneNodeSelected = false;
-    for (DeBruijnNode *node : nodesWithHits) {
-        GraphicsItemNode *graphicsItemNode = node->getGraphicsItemNode();
+    for (OrientedNode node : nodesWithHits) {
+        GraphicsItemNode *graphicsItemNode = node.getGraphicsItemNode();
         if (graphicsItemNode == nullptr)
             continue;
         graphicsItemNode->setSelected(true);
@@ -2232,14 +2232,12 @@ void MainWindow::selectNodesWithDeadEnds()
     bool atLeastOneNodeHasDeadEnd = false;
     bool atLeastOneNodeSelected = false;
 
-    for (auto &entry : g_assemblyGraph->m_deBruijnGraphNodes) {
-        DeBruijnNode *node = entry;
-
-        bool nodeHasDeadEnd = node->getDeadEndCount() > 0;
+    for (OrientedNode node : g_assemblyGraph->oriented_nodes()) {
+        bool nodeHasDeadEnd = node.getDeadEndCount() > 0;
         if (nodeHasDeadEnd)
             atLeastOneNodeHasDeadEnd = true;
 
-        GraphicsItemNode *graphicsItemNode = node->getGraphicsItemNode();
+        GraphicsItemNode *graphicsItemNode = node.getGraphicsItemNode();
 
         if (graphicsItemNode == nullptr)
             continue;
@@ -2353,8 +2351,8 @@ void MainWindow::selectBasedOnContiguity(ContiguityStatus targetContiguityStatus
     m_scene->blockSignals(true);
     m_scene->clearSelection();
 
-    for (auto *node : g_assemblyGraph->m_deBruijnGraphNodes) {
-        GraphicsItemNode *graphicsItemNode = node->getGraphicsItemNode();
+    for (OrientedNode node : g_assemblyGraph->oriented_nodes()) {
+        GraphicsItemNode *graphicsItemNode = node.getGraphicsItemNode();
         if (graphicsItemNode == nullptr)
             continue;
 
@@ -2362,7 +2360,7 @@ void MainWindow::selectBasedOnContiguity(ContiguityStatus targetContiguityStatus
         //node and its complement.
         ContiguityStatus nodeContiguityStatus = colorer->getContiguityStatus(node);
         if (!g_settings->doubleMode) {
-            ContiguityStatus twinContiguityStatus = colorer->getContiguityStatus(node->getReverseComplement());
+            ContiguityStatus twinContiguityStatus = colorer->getContiguityStatus(node.reverse());
             if (twinContiguityStatus < nodeContiguityStatus)
                 nodeContiguityStatus = twinContiguityStatus;
         }
@@ -2449,7 +2447,8 @@ void MainWindow::openPathSpecifyDialog()
         return;
 
     auto *pathSpecifyDialog = new PathSpecifyDialog(this);
-    connect(g_graphicsView, SIGNAL(doubleClickedNode(DeBruijnNode *)), pathSpecifyDialog, SLOT(addNodeName(DeBruijnNode *)));
+    connect(g_graphicsView, &BandageGraphicsView::doubleClickedNode,
+            pathSpecifyDialog, &PathSpecifyDialog::addNodeName);
     pathSpecifyDialog->show();
 }
 
@@ -2540,7 +2539,7 @@ void MainWindow::saveVisibleGraphToGfa() {
 
 void MainWindow::webBlastSelectedNodes()
 {
-    std::vector<DeBruijnNode *> selectedNodes = m_scene->getSelectedNodes();
+    std::vector<OrientedNode> selectedNodes = m_scene->getSelectedNodes();
     if (selectedNodes.empty())
     {
         QMessageBox::information(this, "Web BLAST selected nodes", "No nodes are selected.\n\n"
@@ -2550,7 +2549,7 @@ void MainWindow::webBlastSelectedNodes()
 
     QByteArray selectedNodesFasta;
     for (auto & selectedNode : selectedNodes)
-        selectedNodesFasta += selectedNode->getFasta(true, false);
+        selectedNodesFasta += selectedNode.getFasta(true, false);
     selectedNodesFasta.chop(1); //remove last newline
 
     QByteArray urlSafeFasta = makeStringUrlSafe(selectedNodesFasta);
@@ -2595,7 +2594,7 @@ QByteArray MainWindow::makeStringUrlSafe(QByteArray s)
 //actual graph.
 void MainWindow::hideNodes()
 {
-    std::vector<DeBruijnNode *> selectedNodes = m_scene->getSelectedNodes();
+    std::vector<OrientedNode> selectedNodes = m_scene->getSelectedNodes();
     m_scene->removeGraphicsItemNodes(selectedNodes, !g_settings->doubleMode);
 }
 
@@ -2604,7 +2603,7 @@ void MainWindow::hideNodes()
 void MainWindow::removeSelection()
 {
     std::vector<DeBruijnEdge *> selectedEdges = m_scene->getSelectedEdges();
-    std::vector<DeBruijnNode *> selectedNodes = m_scene->getSelectedNodes();
+    std::vector<OrientedNode> selectedNodes = m_scene->getSelectedNodes();
 
     m_scene->removeGraphicsItemEdges(selectedEdges, true);
     m_scene->removeGraphicsItemNodes(selectedNodes, true);
@@ -2627,7 +2626,7 @@ void MainWindow::removeSelection()
 
 void MainWindow::duplicateSelectedNodes()
 {
-    std::vector<DeBruijnNode *> selectedNodes = m_scene->getSelectedNodes();
+    std::vector<OrientedNode> selectedNodes = m_scene->getSelectedNodes();
     if (selectedNodes.empty())
     {
         QMessageBox::information(this, "No nodes selected", "You must first select one or more nodes before using the 'Duplicate selected nodes' function.");
@@ -2636,11 +2635,11 @@ void MainWindow::duplicateSelectedNodes()
 
     //Nodes are always duplicated in pairs (both positive and negative), so we
     //want to compile a list of only positive nodes.
-    QList<DeBruijnNode *> nodesToDuplicate;
+    QList<OrientedNode> nodesToDuplicate;
     for (auto node : selectedNodes)
     {
-        if (node->isNegativeNode())
-            node = node->getReverseComplement();
+        if (node.negative())
+            node = node.reverse();
         if (!nodesToDuplicate.contains(node))
             nodesToDuplicate.push_back(node);
     }
@@ -2659,7 +2658,7 @@ void MainWindow::duplicateSelectedNodes()
 }
 
 void MainWindow::mergeSelectedNodes() {
-    std::vector<DeBruijnNode *> selectedNodes = m_scene->getSelectedNodes();
+    std::vector<OrientedNode> selectedNodes = m_scene->getSelectedNodes();
     if (selectedNodes.size() < 2) {
         QMessageBox::information(this, "Not enough nodes selected", "You must first select two or more nodes before using the 'Merge selected nodes' function.");
         return;
@@ -2667,10 +2666,10 @@ void MainWindow::mergeSelectedNodes() {
 
     //Nodes are always merged in pairs (both positive and negative), so we
     //want to compile a list of only positive nodes.
-    QList<DeBruijnNode *> nodesToMerge;
+    QList<OrientedNode> nodesToMerge;
     for (auto node : selectedNodes) {
-        if (node->isNegativeNode())
-            node = node->getReverseComplement();
+        if (node.negative())
+            node = node.reverse();
         if (!nodesToMerge.contains(node))
             nodesToMerge.push_back(node);
     }
@@ -2751,7 +2750,7 @@ void MainWindow::cleanUpGraphSearch() {
 
 void MainWindow::changeNodeName()
 {
-    DeBruijnNode *selectedNode = m_scene->getOnePositiveSelectedNode();
+    OrientedNode selectedNode = m_scene->getOnePositiveSelectedNode();
     if (selectedNode == nullptr) {
         QMessageBox::information(this, "Improper selection", "You must select exactly one node in the graph before using this function.");
         return;
@@ -2770,7 +2769,7 @@ void MainWindow::changeNodeName()
 
 void MainWindow::changeNodeDepth()
 {
-    std::vector<DeBruijnNode *> selectedNodes = m_scene->getSelectedPositiveNodes();
+    std::vector<OrientedNode> selectedNodes = m_scene->getSelectedPositiveNodes();
     if (selectedNodes.empty()) {
         QMessageBox::information(this, "Improper selection", "You must select at least one node in the graph before using this function.");
         return;
@@ -2818,12 +2817,12 @@ void MainWindow::exportGraphLayout() {
 }
 
 void MainWindow::showPathListDialog() {
-    std::vector<DeBruijnNode *> selectedNodes;
-    for (auto *node : m_scene->getSelectedNodes()) {
+    std::vector<OrientedNode> selectedNodes;
+    for (OrientedNode node : m_scene->getSelectedNodes()) {
         selectedNodes.push_back(node);
         // In single mode add also reverse-complements
         if (!g_settings->doubleMode)
-            selectedNodes.push_back(node->getReverseComplement());
+            selectedNodes.push_back(node.reverse());
     }
 
     PathListDialog pathListDialog(*g_assemblyGraph, selectedNodes, this);
@@ -2832,12 +2831,12 @@ void MainWindow::showPathListDialog() {
 
 // FIXME: dedup
 void MainWindow::showWalkListDialog() {
-    std::vector<DeBruijnNode *> selectedNodes;
-    for (auto *node : m_scene->getSelectedNodes()) {
+    std::vector<OrientedNode> selectedNodes;
+    for (OrientedNode node : m_scene->getSelectedNodes()) {
         selectedNodes.push_back(node);
         // In single mode add also reverse-complements
         if (!g_settings->doubleMode)
-            selectedNodes.push_back(node->getReverseComplement());
+            selectedNodes.push_back(node.reverse());
     }
 
     WalkListDialog walkListDialog(*g_assemblyGraph, selectedNodes, this);

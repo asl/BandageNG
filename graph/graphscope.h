@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "debruijnnode.h"
 #include "program/error.h"
 
 #include <QString>
@@ -163,7 +164,7 @@ namespace graph {
 
     // The list may be empty: the whole-graph scope has no seeds. A failure is a
     // bandage::TextError with a title and a message.
-    bandage::Expected<std::vector<DeBruijnNode *>>
+    bandage::Expected<std::vector<OrientedNode>>
     getStartingNodes(const AssemblyGraph &graph,
                      const Scope &graphScope = Scope::wholeGraph());
 }

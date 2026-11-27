@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include "debruijnnode.h"
 #include "small_vector/small_pod_vector.hpp"
 
 #include <QPointF>
@@ -37,19 +38,19 @@ class Path;
 class GraphicsItemNode : public QGraphicsItem
 {
 public:
-    GraphicsItemNode(DeBruijnNode *deBruijnNode,
+    GraphicsItemNode(OrientedNode deBruijnNode,
                      GraphicsItemNode *toCopy,
                      QGraphicsItem *parent = nullptr);
-    GraphicsItemNode(DeBruijnNode *deBruijnNode,
+    GraphicsItemNode(OrientedNode deBruijnNode,
                      double depthRelativeToMeanDrawnDepth,
                      const std::vector<QPointF> &linePoints,
                      QGraphicsItem *parent = nullptr);
-    GraphicsItemNode(DeBruijnNode *deBruijnNode,
+    GraphicsItemNode(OrientedNode deBruijnNode,
                      double depthRelativeToMeanDrawnDepth,
                      const adt::SmallPODVector<QPointF> &linePoints,
                      QGraphicsItem *parent = nullptr);
 
-    DeBruijnNode *m_deBruijnNode;
+    OrientedNode m_deBruijnNode;
     adt::SmallPODVector<QPointF> m_linePoints;
     QColor m_colour;
     QPainterPath m_path;
@@ -103,7 +104,7 @@ public:
 private:
     void exactPathHighlightNode(QPainter *painter);
     void queryPathHighlightNode(QPainter *painter);
-    void pathHighlightNode2(QPainter *painter, DeBruijnNode *node, bool reverse, Path *path);
+    void pathHighlightNode2(QPainter *painter, OrientedNode node, bool reverse, Path *path);
     QPainterPath buildPartialHighlightPath(double startFraction, double endFraction, bool reverse);
     void shiftPointSideways(bool left);
 };

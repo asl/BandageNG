@@ -29,8 +29,11 @@ namespace utils {
             return false;
 
         QTextStream out(&file);
-        for (const auto *node: graph.m_deBruijnGraphNodes)
-            out << node->getFasta(true);
+        for (OrientedNode positive : graph.canonical_nodes()) {
+            out << positive.getFasta(true);
+            // reverse() of a palindrome is that same orientation, so it is written twice.
+            out << positive.reverse().getFasta(true);
+        }
 
         return true;
     }
@@ -42,10 +45,8 @@ namespace utils {
             return false;
 
         QTextStream out(&file);
-        for (const auto *node: graph.m_deBruijnGraphNodes) {
-            if (node->isPositiveNode())
-                out << node->getFasta(false);
-        }
+        for (OrientedNode positive : graph.canonical_nodes())
+            out << positive.getFasta(false);
 
         return true;
     }

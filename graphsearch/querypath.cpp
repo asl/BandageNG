@@ -38,7 +38,7 @@ QueryPath::QueryPath(Path path, Query *query)
     const Hit *previousHit = nullptr;
     const auto &pathNodes = m_path.nodes();
     for (int i = 0; i < pathNodes.size(); ++i) {
-        DeBruijnNode *node = pathNodes[i];
+        OrientedNode node = pathNodes[i];
 
         Query::Hits hitsThisNode;
         for (auto &queryHit : query->getHits()) {
@@ -139,7 +139,7 @@ int QueryPath::getHitOverlap(const Hit *hit1, const Hit *hit2) const {
     // the second hit's coordinates in terms of the first hit's node.
     else {
         bool found = false;
-        for (const DeBruijnEdge *edge : hit1->m_node->edges()) {
+        for (const DeBruijnEdge *edge : hit1->m_node.edges()) {
             if (!edge->connects(hit1->m_node, hit2->m_node))
                 continue;
             if (edge->getOverlapType() == JUMP)
@@ -150,7 +150,7 @@ int QueryPath::getHitOverlap(const Hit *hit1, const Hit *hit2) const {
             int overlap = edge->getOverlap();
             hit1Start = hit1->m_nodeStart;
             hit1End = hit1->m_nodeEnd;
-            int hit1NodeLen = hit1->m_node->getLength();
+            int hit1NodeLen = hit1->m_node.getLength();
             hit2Start = hit2->m_nodeStart + hit1NodeLen - overlap;
             hit2End = hit2->m_nodeEnd + hit1NodeLen - overlap;
 

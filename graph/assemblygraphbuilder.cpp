@@ -37,6 +37,7 @@
 #include <kseq/kseq.h>
 #include <type_traits>
 #include <algorithm>
+#include <unordered_set>
 #include <zlib.h>
 #include <zstd.h>
 
@@ -168,10 +169,31 @@ static ssize_t gzgetline(char **buf, size_t *bufsiz, gzFile fp) {
     return read;
 }
 
+static Sequence storedPositiveSequence(std::string_view signedName, const Sequence &sequence) {
+    SignedNodeName strand = splitSignedNodeName(signedName);
+    if (!strand.positive && !sequence.empty() && !sequence.missing())
+        return sequence.GetReverseComplement();
+    return sequence;
+}
+
+static void assignSequence(AssemblyGraph &graph, DeBruijnNode *node, const Sequence &sequence) {
+    if (DeBruijnNode::sequenceIsSelfComplement(sequence) && !node->isSelfComplement())
+        graph.rekeySelfComplementRecords(node);
+    node->setSequence(sequence);
+    graph.collapseSelfComplementEdges(node);
+}
+
+static void insertSegmentKeys(AssemblyGraph &graph, DeBruijnNode *node) {
+    const std::string base(node->getNameWithoutSign());
+    graph.m_deBruijnGraphNodes[base + "+"] = node;
+    graph.m_deBruijnGraphNodes[base + "-"] = node;
+}
+
 static DeBruijnNode *createStrandNode(std::string_view signedName, double depth,
                                       const Sequence &sequence, unsigned length = 0) {
     SignedNodeName strand = splitSignedNodeName(signedName);
-    return new DeBruijnNode(strand.base, strand.positive, float(depth), sequence, length);
+    return new DeBruijnNode(strand.base, float(depth),
+                            storedPositiveSequence(signedName, sequence), length);
 }
 
 static DeBruijnNode *createStrandNode(const QString &signedName, double depth,
@@ -230,9 +252,7 @@ static bool attemptToLoadSequencesFromFasta(AssemblyGraph &graph) {
             if (posNode->sequenceIsMissing()) {
                 Sequence sequence{sequences[i]};
                 atLeastOneNodeSequenceLoaded = true;
-                posNode->setSequence(sequence);
-                DeBruijnNode *negNode = graph.m_deBruijnGraphNodes.at((name + "-").toStdString());
-                negNode->setSequence(sequence.GetReverseComplement());
+                assignSequence(graph, posNode, sequence);
             }
         }
     }
@@ -282,7 +302,7 @@ static void maybeAddGFATags(Key k, Container &c,
 }
 
 template<class Entity>
-static bool maybeAddCustomColor(const Entity *e,
+static bool maybeAddCustomColor(Entity e,
                                 const std::vector<gfa::tag> &tags,
                                 const char *tag,
                                 AssemblyGraph &graph) {
@@ -343,22 +363,23 @@ namespace io {
         return hasCustomColours;
     }
 
-    std::pair<bool, bool> handleStandardGFANodeTags(const DeBruijnNode *nodePtr,
-                                                    const DeBruijnNode *rcNodePtr,
+    std::pair<bool, bool> handleStandardGFANodeTags(OrientedNode node,
+                                                    OrientedNode reverseNode,
                                                     const std::vector<gfa::tag> &tags,
                                                     AssemblyGraph &graph) {
         bool hasCustomColours = false, hasCustomLabels = false;
-        hasCustomColours |= maybeAddCustomColor(nodePtr, tags, "CL", graph);
-        hasCustomColours |= maybeAddCustomColor(rcNodePtr, tags, "C2", graph);
+        hasCustomColours |= maybeAddCustomColor(node, tags, "CL", graph);
+        if (node && !node.isSelfComplement())
+            hasCustomColours |= maybeAddCustomColor(reverseNode, tags, "C2", graph);
 
         auto lb = gfa::getTag<std::string>("LB", tags);
         auto l2 = gfa::getTag<std::string>("L2", tags);
         hasCustomLabels = lb || l2;
-        if (lb) graph.setCustomLabel(nodePtr, lb->c_str());
-        if (l2) graph.setCustomLabel(rcNodePtr, l2->c_str());
+        if (lb) graph.setCustomLabel(node, lb->c_str());
+        if (l2 && node && !node.isSelfComplement())
+            graph.setCustomLabel(reverseNode, l2->c_str());
 
-        maybeAddGFATags(nodePtr, graph.m_nodeTags, tags);
-        maybeAddGFATags(rcNodePtr, graph.m_nodeTags, tags);
+        maybeAddGFATags(node.node(), graph.m_nodeTags, tags);
 
         return { hasCustomColours, hasCustomLabels };
     }
@@ -373,114 +394,68 @@ namespace io {
             if (!placeholder->getSequence().empty())
                 return nullptr;
 
-            // Takeover the placeholder
             placeholder->setDepth(nodeDepth);
-            placeholder->setSequence(sequence);
-
+            assignSequence(graph, placeholder, storedPositiveSequence(nodeName, sequence));
             return placeholder;
         }
 
-        return (graph.m_deBruijnGraphNodes[nodeName]
-                = createStrandNode(nodeName, nodeDepth, sequence));
+        auto *added = createStrandNode(nodeName, nodeDepth, sequence);
+        insertSegmentKeys(graph, added);
+        return added;
     }
 
-    using NodePair = std::pair<DeBruijnNode *, DeBruijnNode *>;
-    static bandage::Expected<NodePair>
+    static bandage::Expected<DeBruijnNode *>
     addSegmentPair(std::string_view nodeName,
-                   double nodeDepth, Sequence sequence,
-                   AssemblyGraph &graph) {
+            double nodeDepth, Sequence sequence,
+            AssemblyGraph &graph) {
         std::string oppositeNodeName = getOppositeNodeName(nodeName);
 
         auto *nodePtr = maybeAddSegment(nodeName, nodeDepth, sequence, graph);
         if (!nodePtr)
             return bandage::createStringError("Duplicate segment named: " + std::string(nodeName));
 
-        // Handle self-rc nodes. We record the same node under different names
-        DeBruijnNode *oppositeNodePtr = nullptr;
-        auto rcSeq = sequence.GetReverseComplement();
-        if (!sequence.empty() && !sequence.missing() && sequence == rcSeq) {
-            // We might already have opposite node recorded (e.g. a placeholder).
-            // If yes, we'd need to transfer the edges
-            auto [oppositeNodeStorage, inserted] = graph.m_deBruijnGraphNodes.insert(oppositeNodeName, nodePtr);
-            if (!inserted) {
-                oppositeNodePtr = *oppositeNodeStorage;
-                // connects() uses the reverse complement. Point both names at
-                // the surviving node before comparing links through it.
-                nodePtr->setReverseComplement(nodePtr);
-                oppositeNodePtr->setReverseComplement(nodePtr);
-
-                std::vector<DeBruijnEdge *> moved(oppositeNodePtr->edgeBegin(),
-                                                  oppositeNodePtr->edgeEnd());
-                for (auto *edge : moved) {
-                    if (edge->getEndingNode() == oppositeNodePtr)
-                        edge->setEndingNode(nodePtr);
-                    if (edge->getStartingNode() == oppositeNodePtr)
-                        edge->setStartingNode(nodePtr);
-                    oppositeNodePtr->removeEdge(edge);
-                    nodePtr->addEdge(edge);
-                }
-
-                std::vector<DeBruijnEdge *> incident(nodePtr->edgeBegin(), nodePtr->edgeEnd());
-                std::vector<DeBruijnEdge *> drop;
-                auto keyOf = [&](const DeBruijnEdge *edge) {
-                    auto it = graph.m_overlapKeys.find(edge);
-                    return it == graph.m_overlapKeys.end() ? std::string() : it->second;
-                };
-                for (size_t i = 0; i < incident.size(); ++i) {
-                    for (size_t j = 0; j < i; ++j) {
-                        DeBruijnEdge *edge = incident[i];
-                        DeBruijnEdge *kept = incident[j];
-                        if (std::find(drop.begin(), drop.end(), kept) != drop.end())
-                            continue;
-                        if (edge->getOverlap() != kept->getOverlap() ||
-                            edge->getOverlapType() != kept->getOverlapType() ||
-                            keyOf(edge) != keyOf(kept))
-                            continue;
-                        if (edge->connects(kept->getStartingNode(), kept->getEndingNode())) {
-                            drop.push_back(edge);
-                            break;
-                        }
-                    }
-                }
-                if (!drop.empty())
-                    graph.deleteEdges(drop);
-
-                *oppositeNodeStorage = nodePtr;
+        // A link can create the opposite name before this segment arrives.
+        // Both keys normally already point at nodePtr. A distinct placeholder
+        // is folded in and then deleted.
+        auto oppositeIt = graph.m_deBruijnGraphNodes.find(oppositeNodeName);
+        if (oppositeIt != graph.m_deBruijnGraphNodes.end() && oppositeIt.value() != nodePtr) {
+            DeBruijnNode *opposite = oppositeIt.value();
+            std::vector<DeBruijnEdge *> moved(opposite->edgeBegin(), opposite->edgeEnd());
+            for (DeBruijnEdge *edge : moved) {
+                if (edge->getEndingNode().node() == opposite)
+                    edge->setEndingNode(OrientedNode(nodePtr, edge->getEndingNode().negative()));
+                if (edge->getStartingNode().node() == opposite)
+                    edge->setStartingNode(OrientedNode(nodePtr, edge->getStartingNode().negative()));
+                opposite->removeEdge(edge);
+                nodePtr->addEdge(edge);
             }
-
-            oppositeNodePtr = nodePtr;
-        } else {
-            oppositeNodePtr =
-                    maybeAddSegment(getOppositeNodeName(nodeName), nodeDepth, rcSeq, graph);
-            if (!oppositeNodePtr)
-                return bandage::createStringError("Duplicate segment named: " + oppositeNodeName);
+            graph.m_deBruijnGraphNodes[oppositeNodeName] = nodePtr;
+            delete opposite;
+        } else if (oppositeIt == graph.m_deBruijnGraphNodes.end()) {
+            graph.m_deBruijnGraphNodes[oppositeNodeName] = nodePtr;
         }
 
-        nodePtr->setReverseComplement(oppositeNodePtr);
-        oppositeNodePtr->setReverseComplement(nodePtr);
-
-        return std::pair{nodePtr, oppositeNodePtr};
+        return nodePtr;
     }
 
     // Add placeholder
     static auto
     addSegmentPair(const std::string &nodeName,
-                   AssemblyGraph &graph) {
+            AssemblyGraph &graph) {
         return addSegmentPair(nodeName, 0, Sequence(), graph);
     }
 
-    static bandage::Expected<DeBruijnNode *> getNode(const std::string &name,
-                                                 AssemblyGraph &graph) {
+    static bandage::Expected<OrientedNode> getNode(const std::string &name,
+                                                   AssemblyGraph &graph) {
         auto nodeIt = graph.m_deBruijnGraphNodes.find(name);
-        if (nodeIt != graph.m_deBruijnGraphNodes.end())
-            return *nodeIt;
+        if (nodeIt == graph.m_deBruijnGraphNodes.end()) {
+            auto nodeOrErr = addSegmentPair(name, graph);
+            if (!nodeOrErr)
+                return nodeOrErr.takeError();
+            nodeIt = graph.m_deBruijnGraphNodes.find(name);
+        }
 
-        // Add placeholder
-        auto nodePairOrErr = addSegmentPair(name, graph);
-        if (!nodePairOrErr)
-            return nodePairOrErr.takeError();
-
-        return nodePairOrErr.get().first;
+        return orientationOf(name, *nodeIt);
     }
 
     static bandage::Expected<AssemblyGraph::MadeLink> addLink(const std::string &fromNode,
@@ -489,7 +464,7 @@ namespace io {
                                                               int overlap,
                                                               EdgeOverlapType overlapType,
                                                               std::string_view overlapKey = {}) {
-        DeBruijnNode *fromNodePtr, *toNodePtr;
+        OrientedNode fromNodePtr, toNodePtr;
 
         if (auto nodeOrErr = getNode(fromNode, graph))
             fromNodePtr = *nodeOrErr;
@@ -525,12 +500,21 @@ namespace io {
             // If there is a sequence, then the LN tag will be ignored.
             size_t length = seq.size();
             Sequence sequence;
-            if (!length ||
-                length == 1 && seq[0] == '*') {
+            const bool sequenceMissing = !length || (length == 1 && seq[0] == '*');
+            if (sequenceMissing) {
                 auto lnTag = gfa::getTag<int64_t>("LN", record.tags);
-                if (lnTag)
+                if (lnTag) {
+                    if (*lnTag < 0)
+                        return bandage::createStringError(
+                                "Negative LN tag on segment " + std::string(record.name));
                     length = size_t(*lnTag);
-
+                }
+            }
+            if (length > DeBruijnNode::MaxLength)
+                return bandage::createStringError(
+                        "Segment " + std::string(record.name) + " is longer than " +
+                        std::to_string(DeBruijnNode::MaxLength) + " bp");
+            if (sequenceMissing) {
                 sequencesAreMissing = true;
                 sequence = Sequence(length, /* allNs */ true);
             } else
@@ -561,14 +545,13 @@ namespace io {
             }
 
             // FIXME: get rid of copies and QString's
-            auto nodePairOrErr = addSegmentPair(nodeName, nodeDepth, sequence, graph);
-            if (!nodePairOrErr)
-                return nodePairOrErr.takeError();
+            auto nodeOrErr = addSegmentPair(nodeName, nodeDepth, sequence, graph);
+            if (!nodeOrErr)
+                return nodeOrErr.takeError();
 
-            auto [nodePtr, oppositeNodePtr] = nodePairOrErr.get();
-
+            OrientedNode node = orientationOf(nodeName, *nodeOrErr);
             auto [hasCustomColors, hasCustomLabels] =
-                    handleStandardGFANodeTags(nodePtr, oppositeNodePtr, record.tags, graph);
+                    handleStandardGFANodeTags(node, node.reverse(), record.tags, graph);
             hasCustomColours_ |= hasCustomColors;
             hasCustomLabels_ |= hasCustomLabels;
 
@@ -662,7 +645,7 @@ namespace io {
 
         bandage::Error handlePath(const gfa::path &record,
                                AssemblyGraph &graph) {
-            std::vector<DeBruijnNode *> pathNodes;
+            std::vector<OrientedNode> pathNodes;
             pathNodes.reserve(record.segments.size());
 
             for (const auto &node: record.segments) {
@@ -671,7 +654,7 @@ namespace io {
                     return bandage::createStringError(bandage::Twine("malformed path string for path '")
                                                + record.name + "', invalid node in path: " + node);
 
-                pathNodes.push_back(nodeIt.value());
+                pathNodes.push_back(orientationOf(node, nodeIt.value()));
             }
             Path p(Path::makeFromOrderedNodes(pathNodes, false));
             if (p.nodes().size() != pathNodes.size()) {
@@ -688,7 +671,7 @@ namespace io {
 
         bandage::Error handleWalk(const gfa::walk &record,
                                AssemblyGraph &graph) {
-            std::vector<DeBruijnNode *> walkNodes;
+            std::vector<OrientedNode> walkNodes;
             walkNodes.reserve(record.Walk.size());
 
             for (const auto &node: record.Walk) {
@@ -708,7 +691,7 @@ namespace io {
                     return bandage::createStringError(bandage::Twine("malformed path string for walk '")
                                                + record.SeqId + "', invalid node in path: " + node);
 
-                walkNodes.push_back(nodeIt.value());
+                walkNodes.push_back(orientationOf(nodeName, nodeIt.value()));
             }
 
             Path p(Path::makeFromOrderedNodes(walkNodes, false));
@@ -792,33 +775,16 @@ namespace io {
         }
     };
 
-    static void pointEachNodeToItsReverseComplement(AssemblyGraph &graph) {
-        for (auto &entry: graph.m_deBruijnGraphNodes) {
-            DeBruijnNode *positiveNode = entry;
-            if (!positiveNode->isPositiveNode())
-                continue;
-
-            if (DeBruijnNode *negativeNode =
-                    graph.m_deBruijnGraphNodes[getOppositeNodeName(positiveNode->getName())]) {
-                positiveNode->setReverseComplement(negativeNode);
-                negativeNode->setReverseComplement(positiveNode);
-            }
-        }
-    }
-
-    // `signedName` is the map key. A negative node's stored name is empty until
-    // its reverse complement is linked, so getName() cannot rebuild that key.
-    static void makeReverseComplementNodeIfNecessary(AssemblyGraph &graph, DeBruijnNode *node,
-                                                    std::string_view signedName) {
-        auto reverseComplementName = getOppositeNodeName(signedName);
-        if (!graph.m_deBruijnGraphNodes.count(reverseComplementName)) {
-            Sequence nodeSequence{};
-            if (!node->sequenceIsMissing())
-                nodeSequence = node->getSequence();
-            auto newNode = createStrandNode(reverseComplementName, node->getDepth(),
-                                            nodeSequence.GetReverseComplement(),
-                                            node->getLength());
-            graph.m_deBruijnGraphNodes.emplace(reverseComplementName, newNode);
+    static void insertMissingSignedKeys(AssemblyGraph &graph) {
+        std::vector<DeBruijnNode *> nodes;
+        for (DeBruijnNode *node : graph.nodes())
+            nodes.push_back(node);
+        for (DeBruijnNode *node : nodes) {
+            const std::string base(node->getNameWithoutSign());
+            if (!graph.m_deBruijnGraphNodes.count(base + "+"))
+                graph.m_deBruijnGraphNodes.emplace(base + "+", node);
+            if (!graph.m_deBruijnGraphNodes.count(base + "-"))
+                graph.m_deBruijnGraphNodes.emplace(base + "-", node);
         }
     }
 
@@ -909,9 +875,8 @@ namespace io {
 
                 auto node = createStrandNode(name, depth, sequence);
                 graph.m_deBruijnGraphNodes.emplace(name.toStdString(), node);
-                makeReverseComplementNodeIfNecessary(graph, node, name.toStdString());
             }
-            pointEachNodeToItsReverseComplement(graph);
+            insertMissingSignedKeys(graph);
 
             // For any circular nodes, make an edge connecting them to themselves.
             for (const auto &circularNodeName: circularNodeNames) {
@@ -934,7 +899,20 @@ namespace io {
                 std::vector<QString> edgeStartingNodeNames;
                 std::vector<QString> edgeEndingNodeNames;
                 DeBruijnNode *node = nullptr;
+                bool sequenceIsPositive = true;
                 QByteArray sequenceBytes;
+                // FASTG has a record for each strand. Both names point at one
+                // node; only the positive record's sequence is stored.
+                std::unordered_set<std::string> seenRecords;
+                auto commitSequence = [&]() {
+                    if (node == nullptr || sequenceBytes.isEmpty())
+                        return;
+                    if (sequenceIsPositive)
+                        assignSequence(graph, node, Sequence(sequenceBytes));
+                    else if (node->getSequence().empty())
+                        assignSequence(graph, node, Sequence(sequenceBytes).GetReverseComplement());
+                    sequenceBytes.clear();
+                };
 
                 QTextStream in(&inputFile);
                 while (!in.atEnd()) {
@@ -945,10 +923,7 @@ namespace io {
 
                     //If the line starts with a '>', then we are beginning a new node.
                     if (line.startsWith(">")) {
-                        if (node != nullptr) {
-                            node->setSequence(sequenceBytes);
-                            sequenceBytes.clear();
-                        }
+                        commitSequence();
                         line.remove(0, 1); //Remove '>' from start
                         line.chop(1); //Remove ';' from end
                         QStringList nodeDetails = line.split(":");
@@ -968,7 +943,8 @@ namespace io {
                             nodeName += "-";
                         else
                             nodeName += "+";
-                        if (graph.m_deBruijnGraphNodes.count(nodeName.toStdString()))
+                        const std::string signedName = nodeName.toStdString();
+                        if (!seenRecords.insert(signedName).second)
                             return bandage::createStringError("load error");
 
                         QString nodeDepthString = thisNodeDetails.at(5);
@@ -979,10 +955,16 @@ namespace io {
                         }
                         nodeDepth = nodeDepthString.toDouble();
 
-                        //Make the node
-                        node = createStrandNode(nodeName, nodeDepth,
-                                                {}); //Sequence string is currently empty - will be added to on subsequent lines of the fastg file
-                        graph.m_deBruijnGraphNodes.emplace(nodeName.toStdString(), node);
+                        auto existing = graph.m_deBruijnGraphNodes.find(signedName);
+                        if (existing == graph.m_deBruijnGraphNodes.end()) {
+                            node = createStrandNode(nodeName, nodeDepth, {});
+                            insertSegmentKeys(graph, node);
+                        } else {
+                            node = existing.value();
+                        }
+                        sequenceIsPositive = !negativeNode;
+                        if (sequenceIsPositive)
+                            node->setDepth(nodeDepth);
 
                         //The second part of nodeDetails is a comma-delimited list of edge nodes.
                         //Edges aren't made right now (because the other node might not yet exist),
@@ -1019,27 +1001,11 @@ namespace io {
                         sequenceBytes.push_back(line.simplified().toLocal8Bit());
                     }
                 }
-                if (node != nullptr) {
-                    node->setSequence(sequenceBytes);
-                    sequenceBytes.clear();
-                }
+                commitSequence();
 
                 inputFile.close();
 
-                // Add fake reverse-complementary nodes for all self-reverse-complement ones
-                {
-                    std::vector<std::pair<DeBruijnNode *, std::string>> nodes;
-                    for (auto it = graph.m_deBruijnGraphNodes.begin();
-                         it != graph.m_deBruijnGraphNodes.end(); ++it) {
-                        std::string signedName = it.key();
-                        if (!graph.m_deBruijnGraphNodes.count(getOppositeNodeName(signedName)))
-                            nodes.emplace_back(*it, std::move(signedName));
-                    }
-
-                    for (auto &entry: nodes)
-                        makeReverseComplementNodeIfNecessary(graph, entry.first, entry.second);
-                }
-                pointEachNodeToItsReverseComplement(graph);
+                insertMissingSignedKeys(graph);
 
 
                 //Create all of the edges.
@@ -1166,20 +1132,7 @@ namespace io {
                     }
                 }
 
-                //Pair up reverse complements, creating them if necessary.
-                {
-                    std::vector<std::pair<DeBruijnNode *, std::string>> nodes;
-                    for (auto it = graph.m_deBruijnGraphNodes.begin();
-                         it != graph.m_deBruijnGraphNodes.end(); ++it) {
-                        std::string signedName = it.key();
-                        if (!graph.m_deBruijnGraphNodes.count(getOppositeNodeName(signedName)))
-                            nodes.emplace_back(*it, std::move(signedName));
-                    }
-
-                    for (auto &entry: nodes)
-                        makeReverseComplementNodeIfNecessary(graph, entry.first, entry.second);
-                }
-                pointEachNodeToItsReverseComplement(graph);
+                insertMissingSignedKeys(graph);
 
                 //Create all of the edges.
                 for (size_t i = 0; i < edgeStartingNodeNames.size(); ++i) {
@@ -1302,21 +1255,7 @@ namespace io {
                 }
             }
 
-            //Even though the Trinity.fasta file only contains positive nodes, Bandage
-            //expects negative reverse complements nodes, so make them now.
-            {
-                std::vector<std::pair<DeBruijnNode *, std::string>> nodes;
-                for (auto it = graph.m_deBruijnGraphNodes.begin();
-                     it != graph.m_deBruijnGraphNodes.end(); ++it) {
-                    std::string signedName = it.key();
-                    if (!graph.m_deBruijnGraphNodes.count(getOppositeNodeName(signedName)))
-                        nodes.emplace_back(*it, std::move(signedName));
-                }
-
-                for (auto &entry: nodes)
-                    makeReverseComplementNodeIfNecessary(graph, entry.first, entry.second);
-            }
-            pointEachNodeToItsReverseComplement(graph);
+            insertMissingSignedKeys(graph);
 
             //Create all of the edges.  The createDeBruijnEdge function checks for
             //duplicates, so it's okay if we try to add the same edge multiple times.
@@ -1410,11 +1349,9 @@ namespace io {
             }
 
             // FIXME: get rid of copies and QString's
-            auto nodePairOrErr = addSegmentPair(nodeName, nodeDepth, sequence, graph);
-            if (!nodePairOrErr)
-                return nodePairOrErr.takeError();
-
-            auto [nodePtr, oppositeNodePtr] = nodePairOrErr.get();
+            auto nodeOrErr = addSegmentPair(nodeName, nodeDepth, sequence, graph);
+            if (!nodeOrErr)
+                return nodeOrErr.takeError();
 
             return bandage::Error::success();
         }

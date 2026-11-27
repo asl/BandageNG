@@ -44,9 +44,12 @@
 #include <cstdlib>
 #include <utility>
 
+static_assert(alignof(GraphicsItemNode) >= 8,
+              "GraphicsItemNode must keep 3 spare bits in its pointer");
+
 //This constructor makes a new GraphicsItemNode by copying the line points of
 //the given node.
-GraphicsItemNode::GraphicsItemNode(DeBruijnNode *deBruijnNode,
+GraphicsItemNode::GraphicsItemNode(OrientedNode deBruijnNode,
                                    GraphicsItemNode *toCopy,
                                    QGraphicsItem *parent) :
     QGraphicsItem(parent), m_deBruijnNode(deBruijnNode),
@@ -60,7 +63,7 @@ GraphicsItemNode::GraphicsItemNode(DeBruijnNode *deBruijnNode,
 
 // This constructor makes a new GraphicsItemNode with a specific collection of
 // line points.
-GraphicsItemNode::GraphicsItemNode(DeBruijnNode *deBruijnNode,
+GraphicsItemNode::GraphicsItemNode(OrientedNode deBruijnNode,
                                    double depthRelativeToMeanDrawnDepth,
                                    const std::vector<QPointF> &linePoints,
                                    QGraphicsItem *parent)
@@ -73,7 +76,7 @@ GraphicsItemNode::GraphicsItemNode(DeBruijnNode *deBruijnNode,
     remakePath();
 }
 
-GraphicsItemNode::GraphicsItemNode(DeBruijnNode *deBruijnNode,
+GraphicsItemNode::GraphicsItemNode(OrientedNode deBruijnNode,
                                    double depthRelativeToMeanDrawnDepth,
                                    const adt::SmallPODVector<QPointF> &linePoints,
                                    QGraphicsItem *parent)
@@ -181,7 +184,7 @@ void GraphicsItemNode::paint(QPainter *painter, const QStyleOptionGraphicsItem *
         const auto &annotations = annotationGroup->getAnnotations(m_deBruijnNode);
         const auto &revCompAnnotations = g_settings->doubleMode
                                          ? emptyAnnotations
-                                         : annotationGroup->getAnnotations(m_deBruijnNode->getReverseComplement());
+                                         : annotationGroup->getAnnotations(m_deBruijnNode.reverse());
 
         for (const auto &annotation : annotations) {
             annotation->drawFigure(*painter, *this, false, annotationSettings.viewsToShow);
@@ -253,7 +256,7 @@ void GraphicsItemNode::paint(QPainter *painter, const QStyleOptionGraphicsItem *
         const auto &annotations = annotationGroup->getAnnotations(m_deBruijnNode);
         const auto &revCompAnnotations = g_settings->doubleMode
                                          ? emptyAnnotations
-                                         : annotationGroup->getAnnotations(m_deBruijnNode->getReverseComplement());
+                                         : annotationGroup->getAnnotations(m_deBruijnNode.reverse());
 
         for (const auto &annotation : annotations) {
             annotation->drawDescription(*painter, *this, false);
@@ -427,12 +430,12 @@ void GraphicsItemNode::fixEdgePaths(std::vector<GraphicsItemNode *> * nodes) con
     std::set<DeBruijnEdge *> edgesToFix;
 
     if (nodes == nullptr) {
-        for (auto *edge : m_deBruijnNode->edges())
+        for (auto *edge : m_deBruijnNode.edges())
             edgesToFix.insert(edge);
     } else {
         for (auto &graphicNode : *nodes) {
-            DeBruijnNode *node = graphicNode->m_deBruijnNode;
-            for (auto *edge : node->edges())
+            OrientedNode node = graphicNode->m_deBruijnNode;
+            for (auto *edge : node.edges())
                 edgesToFix.insert(edge);
         }
     }
@@ -587,7 +590,7 @@ QPointF GraphicsItemNode::findLocationOnPath(double fraction)
 
 bool GraphicsItemNode::usePositiveNodeColour() const
 {
-    return !m_hasArrow || m_deBruijnNode->isPositiveNode();
+    return !m_hasArrow || m_deBruijnNode.isPositiveNode();
 }
 
 
@@ -683,17 +686,17 @@ QStringList GraphicsItemNode::getNodeText() const
     if (g_settings->displayNodeNames)
     {
         // Temporary label text. Not stored on the item: names are usually hidden,
-        // and a drawn graph can have one item per segment.
-        const std::string signedName = m_deBruijnNode->getName();
+        // and a drawn graph can have one item per node.
+        const std::string signedName = m_deBruijnNode.getName();
         QString nodeName = QString::fromLatin1(signedName.data(), int(signedName.size()));
         if (!g_settings->doubleMode)
             nodeName.chop(1);
         nodeText << nodeName;
     }
     if (g_settings->displayNodeLengths)
-        nodeText << formatIntForDisplay(m_deBruijnNode->getLength()) + " bp";
+        nodeText << formatIntForDisplay(m_deBruijnNode.getLength()) + " bp";
     if (g_settings->displayNodeDepth)
-        nodeText << formatDepthForDisplay(m_deBruijnNode->getDepth());
+        nodeText << formatDepthForDisplay(m_deBruijnNode.getDepth());
     if (g_settings->displayNodeCsvData) {
         auto data = g_assemblyGraph->getCsvLine(m_deBruijnNode, g_settings->displayNodeCsvDataCol);
         if (data)
@@ -801,7 +804,7 @@ void GraphicsItemNode::shiftPointSideways(bool left)
 
 double GraphicsItemNode::posToFraction(int64_t pos) const {
     // All positions are 1-based to be compatible with query hits results
-    return static_cast<double>(pos - 1) / m_deBruijnNode->getLength();
+    return static_cast<double>(pos - 1) / m_deBruijnNode.getLength();
 }
 
 
@@ -813,8 +816,8 @@ void GraphicsItemNode::exactPathHighlightNode(QPainter *painter)
         pathHighlightNode2(painter, m_deBruijnNode, false, &g_memory->userSpecifiedPath);
 
     if (!g_settings->doubleMode &&
-            g_memory->userSpecifiedPath.containsNode(m_deBruijnNode->getReverseComplement()))
-        pathHighlightNode2(painter, m_deBruijnNode->getReverseComplement(), true, &g_memory->userSpecifiedPath);
+            g_memory->userSpecifiedPath.containsNode(m_deBruijnNode.reverse()))
+        pathHighlightNode2(painter, m_deBruijnNode.reverse(), true, &g_memory->userSpecifiedPath);
 }
 
 
@@ -832,8 +835,8 @@ void GraphicsItemNode::queryPathHighlightNode(QPainter *painter)
             pathHighlightNode2(painter, m_deBruijnNode, false, path);
 
         if (!g_settings->doubleMode &&
-                path->containsNode(m_deBruijnNode->getReverseComplement()))
-            pathHighlightNode2(painter, m_deBruijnNode->getReverseComplement(), true, path);
+                path->containsNode(m_deBruijnNode.reverse()))
+            pathHighlightNode2(painter, m_deBruijnNode.reverse(), true, path);
     }
 }
 
@@ -851,7 +854,7 @@ static void pathHighlightNode3(QPainter *painter,
 }
 
 void GraphicsItemNode::pathHighlightNode2(QPainter *painter,
-                                          DeBruijnNode *node,
+                                          OrientedNode node,
                                           bool reverse,
                                           Path *path)
 {

@@ -19,6 +19,7 @@
 
 #include "nodecolorer.h"
 #include "contiguity.h"
+#include "debruijnnode.h"
 
 #include <tsl/htrie_map.h>
 #include <vector>
@@ -67,8 +68,6 @@ public:
     [[nodiscard]] const char *name() const override { return "Custom colors"; };
 };
 
-class DeBruijnNode;
-
 class ContiguityNodeColorer : public INodeColorer {
 public:
     using INodeColorer::INodeColorer;
@@ -79,12 +78,12 @@ public:
     QColor get(const GraphicsItemNode *node) override;
     [[nodiscard]] const char *name() const override { return "Color by contiguity"; };
 
-    void determineContiguity(DeBruijnNode *);
-    ContiguityStatus getContiguityStatus(const DeBruijnNode *) const;
-    void upgradeContiguityStatus(const DeBruijnNode *node,
+    void determineContiguity(OrientedNode);
+    ContiguityStatus getContiguityStatus(OrientedNode) const;
+    void upgradeContiguityStatus(OrientedNode node,
                                  ContiguityStatus newStatus);
 
-    std::unordered_map<const DeBruijnNode *, ContiguityStatus> m_nodeStatuses;
+    std::unordered_map<OrientedNode, ContiguityStatus> m_nodeStatuses;
 };
 
 class GCNodeColorer : public INodeColorer {

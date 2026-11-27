@@ -259,11 +259,14 @@ struct HybridAllocatedStorage : public SmallPODVectorData<T> {
     }
 
     HybridAllocatedStorage(const HybridAllocatedStorage &that) {
-        // This will allocate memory and setup buffers as necessary
-        grow(that.size());
-
-        void *data = that.data_.getPointer(), *new_data = data;
-        memcpy(new_data, data, this->size() * sizeof(T));
+        // BANDAGE_LOCAL begin
+        // grow() points this object at its own storage. Copy the source
+        // elements there. The source pointer is not that storage, and in
+        // vector mode it is the vector object rather than the elements.
+        const size_type n = that.size();
+        grow(n);
+        memcpy(this->data(), that.cdata(), n * sizeof(T));
+        // BANDAGE_LOCAL end
     }
 
     HybridAllocatedStorage(HybridAllocatedStorage &&that) {
@@ -359,7 +362,11 @@ struct HybridAllocatedStorage : public SmallPODVectorData<T> {
 template<class T, class Container = impl::HybridAllocatedStorage<T>>
 class SmallPODVector {
     Container data_;
-    typedef SmallPODVector<T> self;
+    // BANDAGE_LOCAL begin
+    // Include Container. SmallPODVector<T> is only the default 3-inline list,
+    // so a 2-inline list would not use these as its copy and move operations.
+    typedef SmallPODVector<T, Container> self;
+    // BANDAGE_LOCAL end
 
 public:
     typedef size_t size_type;

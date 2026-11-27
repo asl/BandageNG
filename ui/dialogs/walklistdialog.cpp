@@ -39,7 +39,7 @@ enum Columns : unsigned {
 };
 
 WalkListDialog::WalkListDialog(const AssemblyGraph &graph,
-                               const std::vector<DeBruijnNode *> &startNodes,
+                               const std::vector<OrientedNode> &startNodes,
                                QWidget *parent)
     : m_graph(graph),
       QDialog(parent),
@@ -93,12 +93,12 @@ void WalkListDialog::refineByNode() {
 }
 
 WalkListModel::WalkListModel(const AssemblyGraph &g,
-                             const std::vector<DeBruijnNode *> &startNodes,
+                             const std::vector<OrientedNode> &startNodes,
                              QObject *parent)
   : QAbstractTableModel(parent), graph(g) {
     // Build a coverage map: which node is covered by which walks (used for filtering)
     for (const auto &w : graph.m_deBruijnGraphWalks)
-        for (const auto *node : w.walk.nodes())
+        for (OrientedNode node : w.walk.nodes())
             m_coverageMap[node].insert(&w);
 
     refineWalkOrder(startNodes);
@@ -235,7 +235,7 @@ QVariant WalkListModel::data(const QModelIndex &index, int role) const {
     return {};
 }
 
-void WalkListModel::refineWalkOrder(const std::vector<DeBruijnNode *> &nodes) {
+void WalkListModel::refineWalkOrder(const std::vector<OrientedNode> &nodes) {
     beginResetModel();
 
     m_orderedWalks.clear();
@@ -244,14 +244,17 @@ void WalkListModel::refineWalkOrder(const std::vector<DeBruijnNode *> &nodes) {
     // No node: whole graph and all walks
     if (nodes.empty()) {
         m_orderedWalks.reserve(graph.m_deBruijnGraphWalks.size());
-        for (auto it = graph.m_deBruijnGraphWalks.begin(); it != graph.m_deBruijnGraphWalks.end(); ++it)
-            m_orderedWalks.emplace_back(it.key(), &*it);
+        std::string key;
+        for (auto it = graph.m_deBruijnGraphWalks.begin(); it != graph.m_deBruijnGraphWalks.end(); ++it) {
+            it.key(key);
+            m_orderedWalks.emplace_back(key, &*it);
+        }
     } else {
         phmap::flat_hash_set<const Walk *> walks;
         if (nodes.size() == 1)
             m_node = nodes.front();
 
-        for (const auto *node: nodes) {
+        for (OrientedNode node : nodes) {
             auto entry = m_coverageMap.find(node);
             if (entry == m_coverageMap.end())
                 continue;
@@ -260,9 +263,13 @@ void WalkListModel::refineWalkOrder(const std::vector<DeBruijnNode *> &nodes) {
         }
 
         // We have to iterate over all walks as names are stored as name in the map
-        for (auto it = graph.m_deBruijnGraphWalks.begin(); it != graph.m_deBruijnGraphWalks.end(); ++it)
-            if (walks.contains(&*it))
-                m_orderedWalks.emplace_back(it.key(), &*it);
+        std::string key;
+        for (auto it = graph.m_deBruijnGraphWalks.begin(); it != graph.m_deBruijnGraphWalks.end(); ++it) {
+            if (walks.contains(&*it)) {
+                it.key(key);
+                m_orderedWalks.emplace_back(key, &*it);
+            }
+        }
     }
 
     endResetModel();

@@ -23,8 +23,9 @@
 #include <QPoint>
 #include <QLineF>
 
+#include "graph/debruijnnode.h"
+
 class GraphicsViewZoom;
-class DeBruijnNode;
 
 class BandageGraphicsView : public QGraphicsView
 {
@@ -68,7 +69,7 @@ private:
     static bool sideOfLine(QPointF p, QLineF line);
 
 signals:
-    void doubleClickedNode(DeBruijnNode *node);
+    void doubleClickedNode(OrientedNode node);
     void copySelectedSequencesToClipboard();
     void saveSelectedSequencesToFile();
 };

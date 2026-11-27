@@ -3,7 +3,7 @@
 
 #include <QDialog>
 
-class DeBruijnNode;
+#include "graph/debruijnnode.h"
 
 namespace Ui {
 class ChangeNodeDepthDialog;
@@ -15,7 +15,7 @@ class ChangeNodeDepthDialog : public QDialog
 
 public:
     explicit ChangeNodeDepthDialog(QWidget *parent,
-                                       std::vector<DeBruijnNode *> *nodes,
+                                       std::vector<OrientedNode> *nodes,
                                        double oldDepth);
     ~ChangeNodeDepthDialog() override;
 

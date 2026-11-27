@@ -18,20 +18,20 @@
 
 #pragma once
 
-class DeBruijnNode;
+#include "debruijnnode.h"
 
 class GraphLocation
 {
 public:
     //CREATORS
     GraphLocation();
-    GraphLocation(DeBruijnNode *node, int position);
-    static GraphLocation startOfNode(DeBruijnNode *node);
-    static GraphLocation endOfNode(DeBruijnNode *node);
+    GraphLocation(OrientedNode node, int position);
+    static GraphLocation startOfNode(OrientedNode node);
+    static GraphLocation endOfNode(OrientedNode node);
     static GraphLocation null();
 
     //ACCESSORS
-    DeBruijnNode *getNode() const {return m_node;}
+    OrientedNode getNode() const {return m_node;}
     int getPosition() const {return m_position;}
     bool isValid() const;
     bool isNull() const { return (m_node == nullptr || m_position == 0); }
@@ -48,6 +48,6 @@ private:
     void moveForward(int change);
     void moveBackward(int change);
 
-    DeBruijnNode *m_node;
+    OrientedNode m_node;
     int m_position;
 };

@@ -29,8 +29,8 @@ class DeBruijnEdge
     // Two drawn bits share the overlap word, so the edge stays 32 bytes.
     static constexpr unsigned OVERLAP_BITS = 27;
 
-    DeBruijnNode *m_startingNode;
-    DeBruijnNode *m_endingNode;
+    OrientedNode m_startingNode;
+    OrientedNode m_endingNode;
     GraphicsItemEdge *m_graphicsItemEdge;
 
     bool m_drawn : 1;
@@ -40,15 +40,15 @@ class DeBruijnEdge
 
 public:
     //CREATORS
-    DeBruijnEdge(DeBruijnNode *startingNode, DeBruijnNode *endingNode);
+    DeBruijnEdge(OrientedNode startingNode, OrientedNode endingNode);
 
-    DeBruijnNode *getStartingNode() const {return m_startingNode;}
-    DeBruijnNode *getEndingNode() const {return m_endingNode;}
-    void setStartingNode(DeBruijnNode *node) { m_startingNode = node;}
-    void setEndingNode(DeBruijnNode *node) { m_endingNode = node;}
+    OrientedNode getStartingNode() const {return m_startingNode;}
+    OrientedNode getEndingNode() const {return m_endingNode;}
+    void setStartingNode(OrientedNode node) { m_startingNode = node;}
+    void setEndingNode(OrientedNode node) { m_endingNode = node;}
 
     // Stored orientation, or the opposite direction when `reversed` is set.
-    std::pair<DeBruijnNode *, DeBruijnNode *> orientedEnds(bool reversed) const;
+    std::pair<OrientedNode, OrientedNode> orientedEnds(bool reversed) const;
 
     GraphicsItemEdge *getGraphicsItemEdge() const {return m_graphicsItemEdge;}
     bool isDrawn() const {return m_drawn;}
@@ -67,51 +67,48 @@ public:
     // One object stores one ordered pair of ends. The reverse direction is
     // rc(stored end) -> rc(stored start). An own-RC link is that pair
     // reversed onto itself (A+ -> A-, or a self-loop on a palindromic
-    // segment), so it has a single direction. The node in these queries
+    // node), so it has a single direction. The node in these queries
     // holds the pointer: a stored end, or the reverse complement of one.
 
     // The other end of the orientation `node` is on. The stored start and
     // the stored end swap. rc(stored end) and rc(stored start) swap. This
     // is one node for either direction. downstream() and upstream() are
     // what split a palindromic node.
-    DeBruijnNode *other(const DeBruijnNode *node) const;
-    // Same as other().
-    DeBruijnNode *getOtherNode(const DeBruijnNode *node) const { return other(node); }
+    OrientedNode other(OrientedNode node) const;
     // Neighbour along this edge. DirectedEdge::otherNode() uses
     // downstream() when the edge leaves `node` and upstream() when it
-    // enters. A node with a distinct reverse complement is incident from
-    // one side, and both return other(). A palindromic node is one object
-    // on both sides: downstream() is the node reached by leaving,
-    // upstream() the node reached by entering. Stored as S -> B,
-    // downstream(S) is B and upstream(S) is rc(B). A self-loop S -> S
-    // stays on S either way.
-    DeBruijnNode *downstream(const DeBruijnNode *node) const;
-    DeBruijnNode *upstream(const DeBruijnNode *node) const;
+    // enters. An ordinary orientation is incident from one side, and both
+    // return other(). A palindromic node is one orientation on both
+    // sides: downstream() is the node reached by leaving, upstream() the
+    // node reached by entering. Stored as S -> B, downstream(S) is B and
+    // upstream(S) is rc(B). A self-loop S -> S stays on S either way.
+    OrientedNode downstream(OrientedNode node) const;
+    OrientedNode upstream(OrientedNode node) const;
     // This edge departs `node`. `node` is the stored start, or rc(stored
     // end) on a link with a distinct reverse direction.
-    bool leaves(const DeBruijnNode *node) const;
+    bool leaves(OrientedNode node) const;
     // This edge arrives at `node`. `node` is the stored end, or
     // rc(stored start) on a link with a distinct reverse direction.
-    bool enters(const DeBruijnNode *node) const;
+    bool enters(OrientedNode node) const;
     // `from` -> `to` is the stored pair, or rc(stored end) -> rc(stored
-    // start) when that direction is a different pair of nodes.
-    bool connects(const DeBruijnNode *from, const DeBruijnNode *to) const;
+    // start) when that direction is a different pair of orientations.
+    bool connects(OrientedNode from, OrientedNode to) const;
 
     bool testExactOverlap(int overlap) const;
     void tracePaths(bool forward,
                     int stepsRemaining,
-                    std::vector<std::vector<DeBruijnNode *> > &allPaths,
-                    const DeBruijnNode *startingNode,
-                    std::vector<DeBruijnNode *> pathSoFar = {}) const;
+                    std::vector<std::vector<OrientedNode>> &allPaths,
+                    OrientedNode startingNode,
+                    std::vector<OrientedNode> pathSoFar = {}) const;
     bool leadsOnlyToNode(bool forward,
                          int stepsRemaining,
-                         const DeBruijnNode *target,
-                         std::vector<DeBruijnNode *> pathSoFar,
+                         OrientedNode target,
+                         std::vector<OrientedNode> pathSoFar,
                          bool includeReverseComplement) const;
     // True when the stored ends are a positive orientation.
     bool isPositiveEdge() const;
     bool isNegativeEdge() const {return !isPositiveEdge();}
-    static bool isPositiveOrientation(const DeBruijnNode *from, const DeBruijnNode *to);
+    static bool isPositiveOrientation(OrientedNode from, OrientedNode to);
     bool isOwnReverseComplement() const;
     static bool compareEdgePointers(const DeBruijnEdge *a, const DeBruijnEdge *b);
 
@@ -125,5 +122,5 @@ public:
     void autoDetermineExactOverlap();
 
 private:
-    static unsigned timesNodeInPath(const DeBruijnNode *node, const std::vector<DeBruijnNode *> &path);
+    static unsigned timesNodeInPath(OrientedNode node, const std::vector<OrientedNode> &path);
 };

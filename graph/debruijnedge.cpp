@@ -27,102 +27,100 @@
 
 static_assert(sizeof(DeBruijnEdge) == 32, "DeBruijnEdge must stay in the 32-byte size class");
 
-DeBruijnEdge::DeBruijnEdge(DeBruijnNode *startingNode, DeBruijnNode *endingNode) :
+DeBruijnEdge::DeBruijnEdge(OrientedNode startingNode, OrientedNode endingNode) :
     m_startingNode(startingNode), m_endingNode(endingNode), m_graphicsItemEdge(nullptr),
     m_drawn(false), m_drawnReverse(false), m_overlapType(UNKNOWN_OVERLAP), m_overlap(0) {
 }
 
 bool DeBruijnEdge::isOwnReverseComplement() const {
-    return m_startingNode == m_endingNode->getReverseComplement() &&
-           m_endingNode == m_startingNode->getReverseComplement();
+    return m_startingNode == m_endingNode.reverse() &&
+           m_endingNode == m_startingNode.reverse();
 }
 
-std::pair<DeBruijnNode *, DeBruijnNode *> DeBruijnEdge::orientedEnds(bool reversed) const {
+std::pair<OrientedNode, OrientedNode> DeBruijnEdge::orientedEnds(bool reversed) const {
     if (!reversed || isOwnReverseComplement())
         return {m_startingNode, m_endingNode};
-    return {m_endingNode->getReverseComplement(), m_startingNode->getReverseComplement()};
+    return {m_endingNode.reverse(), m_startingNode.reverse()};
 }
 
-DeBruijnNode *DeBruijnEdge::other(const DeBruijnNode *node) const {
+OrientedNode DeBruijnEdge::other(OrientedNode node) const {
     if (node == m_startingNode)
         return m_endingNode;
     if (node == m_endingNode)
         return m_startingNode;
     if (!isOwnReverseComplement()) {
-        if (node == m_endingNode->getReverseComplement())
-            return m_startingNode->getReverseComplement();
-        if (node == m_startingNode->getReverseComplement())
-            return m_endingNode->getReverseComplement();
+        if (node == m_endingNode.reverse())
+            return m_startingNode.reverse();
+        if (node == m_startingNode.reverse())
+            return m_endingNode.reverse();
     }
     return m_startingNode;
 }
 
-static bool nodeIsOwnReverseComplement(const DeBruijnNode *node) {
-    return node != nullptr && node->getReverseComplement() == node;
+static bool nodeIsOwnReverseComplement(OrientedNode node) {
+    return node && node.reverse() == node;
 }
 
-DeBruijnNode *DeBruijnEdge::downstream(const DeBruijnNode *node) const {
+OrientedNode DeBruijnEdge::downstream(OrientedNode node) const {
     if (!nodeIsOwnReverseComplement(node))
         return other(node);
     if (node == m_startingNode)
         return m_endingNode;
-    if (!isOwnReverseComplement() && node == m_endingNode->getReverseComplement())
-        return m_startingNode->getReverseComplement();
+    if (!isOwnReverseComplement() && node == m_endingNode.reverse())
+        return m_startingNode.reverse();
     return other(node);
 }
 
-DeBruijnNode *DeBruijnEdge::upstream(const DeBruijnNode *node) const {
+OrientedNode DeBruijnEdge::upstream(OrientedNode node) const {
     if (!nodeIsOwnReverseComplement(node))
         return other(node);
     if (node == m_endingNode && node != m_startingNode)
         return m_startingNode;
     if (node == m_startingNode && !isOwnReverseComplement())
-        return m_endingNode->getReverseComplement();
+        return m_endingNode.reverse();
     if (node == m_endingNode)
         return m_startingNode;
     return other(node);
 }
 
-bool DeBruijnEdge::leaves(const DeBruijnNode *node) const {
+bool DeBruijnEdge::leaves(OrientedNode node) const {
     if (node == m_startingNode)
         return true;
     if (isOwnReverseComplement())
         return false;
-    return node == m_endingNode->getReverseComplement();
+    return node == m_endingNode.reverse();
 }
 
-bool DeBruijnEdge::enters(const DeBruijnNode *node) const {
+bool DeBruijnEdge::enters(OrientedNode node) const {
     if (node == m_endingNode)
         return true;
     if (isOwnReverseComplement())
         return false;
-    return node == m_startingNode->getReverseComplement();
+    return node == m_startingNode.reverse();
 }
 
-bool DeBruijnEdge::connects(const DeBruijnNode *from, const DeBruijnNode *to) const {
+bool DeBruijnEdge::connects(OrientedNode from, OrientedNode to) const {
     if (m_startingNode == from && m_endingNode == to)
         return true;
     if (isOwnReverseComplement())
         return false;
-    return from == m_endingNode->getReverseComplement() &&
-           to == m_startingNode->getReverseComplement();
+    return from == m_endingNode.reverse() &&
+           to == m_startingNode.reverse();
 }
 
 bool DeBruijnEdge::determineIfDrawn() {
-    auto strandDrawn = [](const DeBruijnNode *node) {
-        return node->isDrawn() ||
-               (node->getReverseComplement() != nullptr && node->getReverseComplement()->isDrawn());
+    auto strandDrawn = [](OrientedNode node) {
+        return node.isDrawn() || node.reverse().isDrawn();
     };
 
     if (g_settings->doubleMode) {
-        m_drawn = m_startingNode->isDrawn() && m_endingNode->isDrawn();
+        m_drawn = m_startingNode.isDrawn() && m_endingNode.isDrawn();
         if (isOwnReverseComplement()) {
             m_drawnReverse = false;
         } else {
-            DeBruijnNode *revFrom = m_endingNode->getReverseComplement();
-            DeBruijnNode *revTo = m_startingNode->getReverseComplement();
-            m_drawnReverse = revFrom != nullptr && revTo != nullptr &&
-                             revFrom->isDrawn() && revTo->isDrawn();
+            OrientedNode revFrom = m_endingNode.reverse();
+            OrientedNode revTo = m_startingNode.reverse();
+            m_drawnReverse = revFrom.isDrawn() && revTo.isDrawn();
         }
     } else {
         // Single mode draws the stored (positive) direction once.
@@ -135,21 +133,20 @@ bool DeBruijnEdge::determineIfDrawn() {
 // Stored ends are the positive direction. Mixed signs use the same name
 // comparison the old pair used against the reverse edge's start, which is
 // the reverse complement of the stored end.
-bool DeBruijnEdge::isPositiveOrientation(const DeBruijnNode *from, const DeBruijnNode *to) {
-    if (from->isPositiveNode() && to->isPositiveNode())
+bool DeBruijnEdge::isPositiveOrientation(OrientedNode from, OrientedNode to) {
+    if (from.positive() && to.positive())
         return true;
-    if (from->isNegativeNode() && to->isNegativeNode())
+    if (from.negative() && to.negative())
         return false;
-    if (from == to->getReverseComplement() && to == from->getReverseComplement())
+    if (from == to.reverse() && to == from.reverse())
         return true;
     // The opposite direction is two positive ends, so this request is the
-    // other way. A null reverse complement keeps the name comparison.
-    DeBruijnNode *rcFrom = from->getReverseComplement();
-    DeBruijnNode *rcTo = to->getReverseComplement();
-    if (rcFrom != nullptr && rcTo != nullptr &&
-        rcFrom->isPositiveNode() && rcTo->isPositiveNode())
+    // other way.
+    OrientedNode rcFrom = from.reverse();
+    OrientedNode rcTo = to.reverse();
+    if (rcFrom.positive() && rcTo.positive())
         return false;
-    return from->getName() > to->getReverseComplement()->getName();
+    return from.getName() > to.reverse().getName();
 }
 
 bool DeBruijnEdge::isPositiveEdge() const {
@@ -164,15 +161,15 @@ bool DeBruijnEdge::isPositiveEdge() const {
 //(ending nodes to starting nodes).
 void DeBruijnEdge::tracePaths(bool forward,
                               int stepsRemaining,
-                              std::vector< std::vector <DeBruijnNode *> > &allPaths,
-                              const DeBruijnNode *startingNode,
-                              std::vector<DeBruijnNode *> pathSoFar) const {
+                              std::vector<std::vector<OrientedNode>> &allPaths,
+                              OrientedNode startingNode,
+                              std::vector<OrientedNode> pathSoFar) const {
     //This can go for a while, so keep the UI responsive.
     QApplication::processEvents();
 
     // The edge may be stored in the opposite orientation from this path.
-    const DeBruijnNode *here = pathSoFar.empty() ? startingNode : pathSoFar.back();
-    DeBruijnNode *nextNode = forward ? downstream(here) : upstream(here);
+    OrientedNode here = pathSoFar.empty() ? startingNode : pathSoFar.back();
+    OrientedNode nextNode = forward ? downstream(here) : upstream(here);
 
     //Add that node to the path so far.
     pathSoFar.push_back(nextNode);
@@ -186,13 +183,13 @@ void DeBruijnEdge::tracePaths(bool forward,
     }
 
     //If the code got here, then more steps remain.
-    auto links = forward ? nextNode->outgoing_edges() : nextNode->incoming_edges();
+    auto links = forward ? outgoingEdges(nextNode) : incomingEdges(nextNode);
     if (links.empty()) {
         allPaths.push_back(pathSoFar);
         return;
     }
     for (auto link : links) {
-        DeBruijnNode *nextNextNode = link.otherNode();
+        OrientedNode nextNextNode = link.otherNode();
 
         if (nextNextNode == startingNode) {
             allPaths.push_back(pathSoFar);
@@ -206,9 +203,9 @@ void DeBruijnEdge::tracePaths(bool forward,
 
 
 // This function counts how many times a node appears in a path
-unsigned DeBruijnEdge::timesNodeInPath(const DeBruijnNode *node, const std::vector<DeBruijnNode *> &path) {
+unsigned DeBruijnEdge::timesNodeInPath(OrientedNode node, const std::vector<OrientedNode> &path) {
     unsigned count = 0;
-    for (auto *i : path)
+    for (OrientedNode i : path)
         count += (i == node);
 
     return count;
@@ -218,16 +215,16 @@ unsigned DeBruijnEdge::timesNodeInPath(const DeBruijnNode *node, const std::vect
 
 bool DeBruijnEdge::leadsOnlyToNode(bool forward,
                                    int stepsRemaining,
-                                   const DeBruijnNode *target,
-                                   std::vector<DeBruijnNode *> pathSoFar,
+                                   OrientedNode target,
+                                   std::vector<OrientedNode> pathSoFar,
                                    bool includeReverseComplement) const
 {
     //This can go for a while, so keep the UI responsive.
     QApplication::processEvents();
 
     // Callers pass the node this edge was reached from as the last entry.
-    DeBruijnNode *nextNode = forward ? downstream(pathSoFar.back())
-                                     : upstream(pathSoFar.back());
+    OrientedNode nextNode = forward ? downstream(pathSoFar.back())
+                                    : upstream(pathSoFar.back());
 
     //Add that node to the path so far.
     pathSoFar.push_back(nextNode);
@@ -245,7 +242,7 @@ bool DeBruijnEdge::leadsOnlyToNode(bool forward,
 
     //If we are including reverse complements and the next node is
     //the reverse complement of the target, the search succeeded!
-    if (includeReverseComplement && nextNode->getReverseComplement() == target)
+    if (includeReverseComplement && nextNode.reverse() == target)
         return true;
 
     //If there are no steps left, then the search failed.
@@ -254,11 +251,11 @@ bool DeBruijnEdge::leadsOnlyToNode(bool forward,
         return false;
 
     //If the code got here, then more steps remain.
-    auto links = forward ? nextNode->outgoing_edges() : nextNode->incoming_edges();
+    auto links = forward ? outgoingEdges(nextNode) : incomingEdges(nextNode);
     if (links.empty())
         return false;
     for (auto link : links) {
-        DeBruijnNode *nextNextNode = link.otherNode();
+        OrientedNode nextNextNode = link.otherNode();
         if (timesNodeInPath(nextNextNode, pathSoFar) < 2) {
             if (!link.edge()->leadsOnlyToNode(forward, stepsRemaining, target, pathSoFar,
                                               includeReverseComplement))
@@ -278,7 +275,7 @@ void DeBruijnEdge::autoDetermineExactOverlap()
     m_overlapType = AUTO_DETERMINED_EXACT_OVERLAP;
 
     //Find an appropriate search range
-    int minPossibleOverlap = std::min(m_startingNode->getLength(), m_endingNode->getLength());
+    int minPossibleOverlap = std::min(m_startingNode.getLength(), m_endingNode.getLength());
     if (minPossibleOverlap < g_settings->minAutoFindEdgeOverlap)
         return;
     int min = std::min(minPossibleOverlap, g_settings->minAutoFindEdgeOverlap);
@@ -311,13 +308,13 @@ bool DeBruijnEdge::testExactOverlap(int overlap) const
 {
     bool mismatchFound = false;
 
-    int seq1Offset = m_startingNode->getLength() - overlap;
+    int seq1Offset = int(m_startingNode.getLength()) - overlap;
 
     //Look at each position in the overlap
     for (int j = 0; j < overlap && !mismatchFound; ++j)
     {
-        char a = m_startingNode->getBaseAt(seq1Offset + j);
-        char b = m_endingNode->getBaseAt(j);
+        char a = m_startingNode.getBaseAt(seq1Offset + j);
+        char b = m_endingNode.getBaseAt(j);
         if (a != b)
             mismatchFound = true;
     }
@@ -335,16 +332,16 @@ static bool parseWholeNumber(std::string_view text, long long &value) {
 }
 
 bool DeBruijnEdge::compareEdgePointers(const DeBruijnEdge *a, const DeBruijnEdge *b) {
-    const std::string aStart = a->getStartingNode()->getName();
-    const std::string bStart = b->getStartingNode()->getName();
+    const std::string aStart = a->getStartingNode().getName();
+    const std::string bStart = b->getStartingNode().getName();
     long long aStartNumber = 0;
     long long bStartNumber = 0;
     long long aEndNumber = 0;
     long long bEndNumber = 0;
-    const bool ok1 = parseWholeNumber(a->getStartingNode()->getNameWithoutSign(), aStartNumber);
-    const bool ok2 = parseWholeNumber(b->getStartingNode()->getNameWithoutSign(), bStartNumber);
-    const bool ok3 = parseWholeNumber(a->getEndingNode()->getNameWithoutSign(), aEndNumber);
-    const bool ok4 = parseWholeNumber(b->getEndingNode()->getNameWithoutSign(), bEndNumber);
+    const bool ok1 = parseWholeNumber(a->getStartingNode().getNameWithoutSign(), aStartNumber);
+    const bool ok2 = parseWholeNumber(b->getStartingNode().getNameWithoutSign(), bStartNumber);
+    const bool ok3 = parseWholeNumber(a->getEndingNode().getNameWithoutSign(), aEndNumber);
+    const bool ok4 = parseWholeNumber(b->getEndingNode().getNameWithoutSign(), bEndNumber);
 
     //If the node names are essentially numbers, then sort them as numbers.
     if (ok1 && ok2 && ok3 && ok4)

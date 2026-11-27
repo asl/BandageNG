@@ -35,7 +35,7 @@ enum Columns : unsigned {
 };
 
 PathListDialog::PathListDialog(const AssemblyGraph &graph,
-                               const std::vector<DeBruijnNode *> &startNodes,
+                               const std::vector<OrientedNode> &startNodes,
                                QWidget *parent)
     : m_graph(graph),
       QDialog(parent),
@@ -89,12 +89,12 @@ void PathListDialog::refineByNode() {
 }
 
 PathListModel::PathListModel(const AssemblyGraph &g,
-                             const std::vector<DeBruijnNode *> &startNodes,
+                             const std::vector<OrientedNode> &startNodes,
                              QObject *parent)
   : QAbstractTableModel(parent), graph(g) {
     // Build a coverage map: which node is covered by which paths (used for filtering)
     for (const auto &p : graph.m_deBruijnGraphPaths)
-        for (const auto *node : p.nodes())
+        for (OrientedNode node : p.nodes())
             m_coverageMap[node].insert(&p);
 
     refinePathOrder(startNodes);
@@ -189,7 +189,7 @@ QVariant PathListModel::data(const QModelIndex &index, int role) const {
     return {};
 }
 
-void PathListModel::refinePathOrder(const std::vector<DeBruijnNode *> &nodes) {
+void PathListModel::refinePathOrder(const std::vector<OrientedNode> &nodes) {
     beginResetModel();
 
     m_orderedPaths.clear();
@@ -198,14 +198,17 @@ void PathListModel::refinePathOrder(const std::vector<DeBruijnNode *> &nodes) {
     // No node: whole graph and all paths
     if (nodes.empty()) {
         m_orderedPaths.reserve(graph.m_deBruijnGraphPaths.size());
-        for (auto it = graph.m_deBruijnGraphPaths.begin(); it != graph.m_deBruijnGraphPaths.end(); ++it)
-            m_orderedPaths.emplace_back(it.key(), &*it);
+        std::string key;
+        for (auto it = graph.m_deBruijnGraphPaths.begin(); it != graph.m_deBruijnGraphPaths.end(); ++it) {
+            it.key(key);
+            m_orderedPaths.emplace_back(key, &*it);
+        }
     } else {
         phmap::flat_hash_set<const Path *> paths;
         if (nodes.size() == 1)
             m_node = nodes.front();
 
-        for (const auto *node: nodes) {
+        for (OrientedNode node : nodes) {
             auto entry = m_coverageMap.find(node);
             if (entry == m_coverageMap.end())
                 continue;
@@ -214,9 +217,13 @@ void PathListModel::refinePathOrder(const std::vector<DeBruijnNode *> &nodes) {
         }
 
         // We have to iterate over all paths as names are stored as name in the map
-        for (auto it = graph.m_deBruijnGraphPaths.begin(); it != graph.m_deBruijnGraphPaths.end(); ++it)
-            if (paths.contains(&*it))
-                m_orderedPaths.emplace_back(it.key(), &*it);
+        std::string key;
+        for (auto it = graph.m_deBruijnGraphPaths.begin(); it != graph.m_deBruijnGraphPaths.end(); ++it) {
+            if (paths.contains(&*it)) {
+                it.key(key);
+                m_orderedPaths.emplace_back(key, &*it);
+            }
+        }
     }
 
     endResetModel();

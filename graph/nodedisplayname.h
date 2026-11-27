@@ -22,12 +22,12 @@
 #include <QString>
 
 // View-side copy of a node name. Storage stays std::string.
-inline QString nodeDisplayName(const DeBruijnNode *node) {
-    const std::string name = node->getName();
+inline QString nodeDisplayName(OrientedNode node) {
+    const std::string name = node.getName();
     return QString::fromLatin1(name.data(), int(name.size()));
 }
 
-inline QString nodeDisplayNameWithoutSign(const DeBruijnNode *node) {
-    const std::string_view name = node->getNameWithoutSign();
+inline QString nodeDisplayNameWithoutSign(OrientedNode node) {
+    const std::string_view name = node.getNameWithoutSign();
     return QString::fromLatin1(name.data(), int(name.size()));
 }

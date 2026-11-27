@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "graph/debruijnnode.h"
 #include "parallel_hashmap/phmap.h"
 
 #include <QDialog>
@@ -37,7 +38,7 @@ Q_OBJECT
 
 public:
     PathListModel(const AssemblyGraph &g,
-                  const std::vector<DeBruijnNode *> &startNodes = {},
+                  const std::vector<OrientedNode> &startNodes = {},
                   QObject *parent = nullptr);
 
     int rowCount(const QModelIndex &) const override;
@@ -46,12 +47,12 @@ public:
     QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
     void sort(int column, Qt::SortOrder order = Qt::AscendingOrder) override;
 
-    void refinePathOrder(const std::vector<DeBruijnNode *> &nodes = {});
+    void refinePathOrder(const std::vector<OrientedNode> &nodes = {});
 private:
 
     std::vector<std::pair<std::string, const Path *>> m_orderedPaths;
-    phmap::parallel_flat_hash_map<const DeBruijnNode *, phmap::flat_hash_set<const Path *>> m_coverageMap;
-    const DeBruijnNode *m_node = nullptr;
+    phmap::parallel_flat_hash_map<OrientedNode, phmap::flat_hash_set<const Path *>> m_coverageMap;
+    OrientedNode m_node;
     const AssemblyGraph &graph;
 };
 
@@ -61,7 +62,7 @@ class PathListDialog : public QDialog
 
 public:
     PathListDialog(const AssemblyGraph &graph,
-                   const std::vector<DeBruijnNode *> &startNodes = {},
+                   const std::vector<OrientedNode> &startNodes = {},
                    QWidget *parent = nullptr);
     ~PathListDialog();
 

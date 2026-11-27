@@ -31,12 +31,12 @@ namespace layout::io {
               const GraphLayout &layout) {
         QJsonObject jsonLayout;
         for (const auto &entry: layout) {
-            QJsonArray segments;
+            QJsonArray points;
             for (QPointF point: entry.second)
-                segments.append(QJsonArray{point.x(), point.y()});
+                points.append(QJsonArray{point.x(), point.y()});
 
-            const std::string nodeName = entry.first->getName();
-            jsonLayout[QString::fromLatin1(nodeName.data(), int(nodeName.size()))] = segments;
+            const std::string nodeName = entry.first.getName();
+            jsonLayout[QString::fromLatin1(nodeName.data(), int(nodeName.size()))] = points;
         }
 
         QFile saveFile(filename);
@@ -56,9 +56,9 @@ namespace layout::io {
 
         QTextStream out(&saveFile);
         for (const auto &entry: layout) {
-            const DeBruijnNode *node = entry.first;
+            OrientedNode node = entry.first;
             QPointF pos = entry.second.front();
-            const std::string nodeName = node->getName();
+            const std::string nodeName = node.getName();
             out << QString::fromLatin1(nodeName.data(), int(nodeName.size()))
                 << '\t' << pos.x() << '\t' << pos.y() << '\n';
         }
@@ -94,7 +94,8 @@ namespace layout::io {
                 QJsonArray pointArray = point.toArray();
                 if (pointArray.size() != 2)
                     throw std::runtime_error("invalid layout format: point size is " + std::to_string(pointArray.size()));
-                layout.add(*node, { pointArray[0].toDouble(), pointArray[1].toDouble() });
+                layout.add(orientationOf(name.toStdString(), *node),
+                       { pointArray[0].toDouble(), pointArray[1].toDouble() });
             }
         }
 

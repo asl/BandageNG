@@ -24,7 +24,7 @@
 
 using namespace search;
 
-Hit::Hit(Query *query, DeBruijnNode *node,
+Hit::Hit(Query *query, OrientedNode node,
          double percentIdentity, int alignmentLength,
          int numberMismatches, int numberGapOpens,
          int queryStart, int queryEnd,
@@ -38,11 +38,11 @@ Hit::Hit(Query *query, DeBruijnNode *node,
     m_eValue(eValue), m_bitScore(bitScore) { }
 
 double Hit::nodeStartFraction() const {
-    return double(m_nodeStart - 1) / m_node->getLength();
+    return double(m_nodeStart - 1) / m_node.getLength();
 }
 
 double Hit::nodeEndFraction() const {
-    return double(m_nodeEnd - 1) / m_node->getLength();
+    return double(m_nodeEnd - 1) / m_node.getLength();
 }
 
 double Hit::queryStartFraction() const {
@@ -81,5 +81,5 @@ GraphLocation Hit::getHitEnd() const {
 
 //This function returns the node sequence for this hit.
 QByteArray Hit::getNodeSequence() const {
-    return utils::sequenceToQByteArray(m_node->getSequence().Subseq(m_nodeStart-1, m_nodeEnd));
+    return utils::sequenceToQByteArray(m_node.getSequence().Subseq(m_nodeStart-1, m_nodeEnd));
 }

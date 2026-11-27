@@ -37,25 +37,26 @@ public:
     void addGraphicsItemsToScene(AssemblyGraph &graph,
                                  const GraphLayout &layout);
 
-    std::vector<DeBruijnNode *> getSelectedNodes();
-    std::vector<DeBruijnNode *> getSelectedPositiveNodes();
+    std::vector<OrientedNode> getSelectedNodes();
+    std::vector<OrientedNode> getSelectedPositiveNodes();
     std::vector<GraphicsItemNode *> getSelectedGraphicsItemNodes();
     std::vector<DeBruijnEdge *> getSelectedEdges();
-    DeBruijnNode *getOneSelectedNode();
+    OrientedNode getOneSelectedNode();
     DeBruijnEdge *getOneSelectedEdge();
-    DeBruijnNode *getOnePositiveSelectedNode();
+    OrientedNode getOnePositiveSelectedNode();
     double getTopZValue();
     void setSceneRectangle();
     void possiblyExpandSceneRectangle(std::vector<GraphicsItemNode *> * movedNodes);
 
+    static void recolourNodeGraphics(AssemblyGraph &graph);
     static void removeGraphicsItemEdges(const std::vector<DeBruijnEdge *> &edges,
                                         bool reverseComplement);
-    static void removeGraphicsItemNodes(const std::vector<DeBruijnNode *> &nodes,
+    static void removeGraphicsItemNodes(const std::vector<OrientedNode> &nodes,
                                         bool reverseComplement);
-    static void removeAllGraphicsEdgesFromNode(DeBruijnNode *node,
+    static void removeAllGraphicsEdgesFromNode(OrientedNode node,
                                                bool reverseComplement);
 
-    void duplicateGraphicsNode(DeBruijnNode *originalNode, DeBruijnNode *newNode,
+    void duplicateGraphicsNode(OrientedNode originalNode, OrientedNode newNode,
                                AssemblyGraph &graph);
     // One graphics item per drawn direction. A second call for the same edge
     // does not create another item.

@@ -62,25 +62,25 @@ QPainterPath GraphicsItemEdge::shape() const {
     return stroker.createStroke(path());
 }
 
-std::pair<DeBruijnNode *, DeBruijnNode *> GraphicsItemEdge::orientedNodes() const {
+std::pair<OrientedNode, OrientedNode> GraphicsItemEdge::orientedNodes() const {
     return edge()->orientedEnds(reversed());
 }
 
-static void getControlPointLocations(DeBruijnNode *startingNode, DeBruijnNode *endingNode,
+static void getControlPointLocations(OrientedNode startingNode, OrientedNode endingNode,
                                      QLineF &start, QLineF &end) {
 
-    if (const auto *startingGraphicsItemNode = startingNode->getGraphicsItemNode()) {
+    if (const auto *startingGraphicsItemNode = startingNode.getGraphicsItemNode()) {
         start = startingGraphicsItemNode->getLastSegment();
     } else if (const auto *startingGraphicsItemRcNode =
-               startingNode->getReverseComplement()->getGraphicsItemNode()) {
+               startingNode.reverse().getGraphicsItemNode()) {
         auto segment = startingGraphicsItemRcNode->getFirstSegment();
         start.setPoints(segment.p2(), segment.p1());
     }
 
-    if (const auto *endingGraphicsItemNode = endingNode->getGraphicsItemNode()) {
+    if (const auto *endingGraphicsItemNode = endingNode.getGraphicsItemNode()) {
         end = endingGraphicsItemNode->getFirstSegment();
     } else if (const auto *endingGraphicsItemRcNode
-               = endingNode->getReverseComplement()->getGraphicsItemNode()) {
+               = endingNode.reverse().getGraphicsItemNode()) {
         auto segment = endingGraphicsItemRcNode->getLastSegment();
         end.setPoints(segment.p2(), segment.p1());
     }
@@ -163,14 +163,14 @@ void GraphicsItemEdge::remakePath() {
     // required, otherwise the edge will be mostly hidden underneath
     // the node.
     if (startingNode == endingNode) {
-        GraphicsItemNode *graphicsItemNode = startingNode->getGraphicsItemNode();
+        GraphicsItemNode *graphicsItemNode = startingNode.getGraphicsItemNode();
         if (!graphicsItemNode)
-            graphicsItemNode = startingNode->getReverseComplement()->getGraphicsItemNode();
+            graphicsItemNode = startingNode.reverse().getGraphicsItemNode();
         if (graphicsItemNode && graphicsItemNode->m_linePoints.size() == 2)
             makeSpecialPathConnectingNodeToSelf(path, startSegment);
         else
             makeOrdinaryPath(path, startSegment, endSegment);
-    } else if (startingNode == endingNode->getReverseComplement() &&
+    } else if (startingNode == endingNode.reverse() &&
                !g_settings->doubleMode) {
         // If we are in single mode and the edge connects a node to its reverse
         // complement, then we need a special path to make it visible.

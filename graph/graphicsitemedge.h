@@ -45,7 +45,7 @@ public:
     bool reversed() const { return m_edge.getInt(); }
 
 protected:
-    std::pair<DeBruijnNode *, DeBruijnNode *> orientedNodes() const;
+    std::pair<OrientedNode, OrientedNode> orientedNodes() const;
 
 private:
     // The direction bit is stored in the pointer. DeBruijnEdge is at least

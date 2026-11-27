@@ -31,14 +31,14 @@ namespace search {
 
     class Hit {
     public:
-        Hit(Query *query, DeBruijnNode *node,
+        Hit(Query *query, OrientedNode node,
             double percentIdentity, int alignmentLength,
             int numberMismatches, int numberGapOpens,
             int queryStart, int queryEnd,
             int nodeStart, int nodeEnd, SciNot eValue, double bitScore);
 
         Query *m_query;
-        DeBruijnNode *m_node;
+        OrientedNode m_node;
         double m_percentIdentity;
         int m_alignmentLength;
         int m_numberMismatches;
