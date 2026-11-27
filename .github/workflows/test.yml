@@ -46,6 +46,7 @@ jobs:
         with:
           key: ${{ matrix.os }}
           variant: sccache
+          max-size: 500M
 
       - name: '⚙️ Configure MSVC'
         if: ${{ matrix.os == 'windows-latest' }}
