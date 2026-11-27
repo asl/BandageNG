@@ -412,7 +412,10 @@ check_querypaths_tsv() {
 
 check_querypaths_tsv blast "$bandagepath" querypaths inputs/test_query_paths.gfa inputs/test_query_paths.fasta tmp/qp
 
-if ! hmmbuild --dna tmp/nucl.hmm <(printf '# STOCKHOLM 1.0\n#=GF ID nuclq\nnuclq\tATGAAAACCCTGCTGATCCTGGCAGCAGCAGCAGCAAAAG\n//\n') >/dev/null; then
+# hmmbuild rewinds its input. A process substitution is a pipe, so the
+# Linux build reports it as an empty file.
+printf '# STOCKHOLM 1.0\n#=GF ID nuclq\nnuclq\tATGAAAACCCTGCTGATCCTGGCAGCAGCAGCAGCAAAAG\n//\n' > tmp/nucl.sto
+if ! hmmbuild --dna tmp/nucl.hmm tmp/nucl.sto >/dev/null; then
     fails=$((fails + 1))
     echo "FAIL: hmmbuild"
 else
@@ -421,7 +424,7 @@ else
 fi
 check_querypaths_tsv minimap2 "$bandagepath" querypaths inputs/test_search.gfa inputs/test_search_nucl.fasta tmp/qp --searcher minimap2 --searchp="-x sr --for-only"
 check_querypaths_tsv hmmer "$bandagepath" querypaths inputs/test_search.gfa tmp/nucl.hmm tmp/qp --searcher hmmer --maxevprod off
-rm -f tmp/nucl.hmm
+rm -f tmp/nucl.hmm tmp/nucl.sto
 
 rmdir tmp
 
