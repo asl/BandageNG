@@ -28,57 +28,37 @@ jobs:
 
       - name: Get changelog
         id: changelog
+        env:
+          # The snapshot workflow moves the continuous tag to the tip of dev.
+          # git describe stops there, so a later cron run logs nothing.
+          PREVIOUS_TAG: ${{ steps.version.outputs.current-v-version }}
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
-          TAG="$(git describe --tags --abbrev=0)"
-          GIT_LOG="$(git log $TAG..HEAD --oneline --pretty=format:"- %s [%an]")"
-          CHANGELOG=$(cat << EOF
-          Changelog:
-          $GIT_LOG
-          EOF
-          )
-          CHANGELOG="${CHANGELOG//'%'/'%25'}"
-          CHANGELOG="${CHANGELOG//$'\n'/'%0A'}"
-          CHANGELOG="${CHANGELOG//$'\r'/'%0D'}"
-          CHANGELOG="${CHANGELOG//'#'/''}"
-          echo "::set-output name=content::$CHANGELOG"
+          CHANGELOG="$(git log "${PREVIOUS_TAG}..HEAD" --pretty=format:'- %s [%an]')"
+          write_output() {
+            local name="$1"
+            local value="$2"
+            local delimiter
+            delimiter="$(openssl rand -hex 16)"
+            {
+              echo "${name}<<${delimiter}"
+              printf '%s\n' "$value"
+              echo "${delimiter}"
+            } >> "$GITHUB_OUTPUT"
+          }
+          write_output content "$(printf 'Changelog:\n%s' "$CHANGELOG")"
+          write_output message "$(printf 'Release v%s\n\nChangelog:\n%s' "$VERSION" "$CHANGELOG")"
+          write_output body "$(printf 'Auto-generated pull request for version %s.\n\nPlease use **Squash and merge** to include the changelog in the release message.\n\nChangelog:\n%s' "$VERSION" "$CHANGELOG")"
 
       - name: Display changelog
-        run: echo "${{ steps.changelog.outputs.content }}"
+        env:
+          CHANGELOG: ${{ steps.changelog.outputs.content }}
+        run: printf '%s\n' "$CHANGELOG"
 
       - name: Get version
         run: |
           VERSION="$(cat VERSION.txt)"
           echo "VERSION=$VERSION" >> $GITHUB_ENV
-
-      - name: Get commit message
-        id: message
-        run: |
-          COMMIT_MSG=$(cat << EOF
-          Release v${{ env.VERSION }}
-
-          ${{ steps.changelog.outputs.content }}
-          EOF
-          )
-          COMMIT_MSG="${COMMIT_MSG//'%'/'%25'}"
-          COMMIT_MSG="${COMMIT_MSG//$'\n'/'%0A'}"
-          COMMIT_MSG="${COMMIT_MSG//$'\r'/'%0D'}"
-          echo "::set-output name=content::$COMMIT_MSG"
-
-      - name: Get pull request body message
-        id: body
-        run: |
-          MSG=$(cat << EOF
-          Auto-generated pull request for version ${{ env.VERSION }}.
-
-          Please use **Squash and merge** to include the changelog in the release message.
-
-          ${{ steps.changelog.outputs.content }}
-          EOF
-          )
-          MSG="${MSG//'%'/'%25'}"
-          MSG="${MSG//$'\n'/'%0A'}"
-          MSG="${MSG//$'\r'/'%0D'}"
-          echo "::set-output name=content::$MSG"
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v7
@@ -86,9 +66,9 @@ jobs:
           base: dev
           add-paths: VERSION.txt
           reviewers: asl
-          commit-message: ${{ steps.message.outputs.content }}
+          commit-message: ${{ steps.changelog.outputs.message }}
           signoff: false
           branch: v${{ env.VERSION }}
           delete-branch: true
           title: Automated Release v${{ env.VERSION }}
-          body: ${{ steps.body.outputs.content }}
+          body: ${{ steps.changelog.outputs.body }}
