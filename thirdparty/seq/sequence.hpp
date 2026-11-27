@@ -177,7 +177,11 @@ class Sequence {
     struct LongRep {
         size_t size_ : 32;
         size_t from_ : 31;
-        bool rtl_ : 1;
+        // BANDAGE_LOCAL begin
+        // A bool bit-field is a separate allocation unit in MSVC, so it
+        // would not share this word and LongRep would be 24 bytes.
+        size_t rtl_ : 1;
+        // BANDAGE_LOCAL end
         llvm::IntrusiveRefCntPtr<ManagedNuclBuffer> data_;
 
         LongRep() : size_(0), from_(0), rtl_(false), data_(nullptr) {}
